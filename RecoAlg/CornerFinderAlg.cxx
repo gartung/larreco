@@ -1302,3 +1302,15 @@ TH2D* corner::CornerFinderAlg::GetMaxSuppressHist(unsigned int i_plane){
 
   return fMaxSuppress_histos.at(i_plane);
 }
+
+
+//-----------------------------------------------------------------------------
+void corner::CornerFinderAlg::InitializeGeometry_Eigen( geo::Geometry const *geo ){
+
+  my_geometry = geo;
+
+  // set the sizes of the WireData_histos and WireData_IDs
+  const unsigned int nPlanes = my_geometry->Nplanes();
+  fWireArrays.resize(nPlanes);
+
+}

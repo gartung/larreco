@@ -20,6 +20,7 @@
 #include "RecoBase/EndPoint2D.h"
 #include "Geometry/Geometry.h"
 
+#include "Eigen/Core"
 
 namespace trkf {
   class BezierTrack;
@@ -55,6 +56,10 @@ namespace corner { //<---Not sure if this is the right namespace
     TH2F * GetDerivativeYHist(unsigned int);
     TH2D * GetCornerScoreHist(unsigned int);
     TH2D * GetMaxSuppressHist(unsigned int);
+
+
+    void InitializeGeometry_Eigen( geo::Geometry const *geometry );
+
 
     private:
     
@@ -132,6 +137,11 @@ namespace corner { //<---Not sure if this is the right namespace
 
     void create_smaller_histos();
     void remove_duplicates(std::vector<recob::EndPoint2D>&);
+
+
+    //now the Eigen stuff...
+    std::vector<Eigen::ArrayXXf> fWireArrays;
+
 
    };//<---End of class CornerFinderAlg
 

@@ -70,6 +70,9 @@ include(ArtDictionary)
 include(ArtMake)
 include(BuildPlugins)
 
+#for Eigen, in CornerFinder
+include_directories(/usr/local/)
+
 # source
 add_subdirectory(ClusterFinder)
 add_subdirectory(EventFinder)
