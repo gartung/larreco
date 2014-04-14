@@ -17,8 +17,8 @@
    along with GENFIT.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "Genfit/GFDetPlane.h"
+#include "Genfit/GFException.h"
 
-#include "assert.h"
 #include <iostream>
 #include <cmath>
 #include "TMath.h"
@@ -65,7 +65,7 @@ genf::GFDetPlane::GFDetPlane(const genf::GFDetPlane& rhs): TObject(rhs) {
   fV = rhs.fV;
 }
 genf::GFDetPlane& genf::GFDetPlane::operator=(const genf::GFDetPlane& rhs){
-  assert(this!=&rhs);
+  if (this == &rhs) return *this;
   if(fFinitePlane!=NULL) {
     delete fFinitePlane;
   }
@@ -217,7 +217,8 @@ genf::GFDetPlane::dist(const TVector3& x)const
 
 void
 genf::GFDetPlane::sane(){
-  assert(fU!=fV);
+  if (fU==fV)
+    throw GFException("genf::GFDetPlane::sane() sanity check failed", __LINE__, __FILE__).setFatal();
   // ensure unit vectors
   fU.SetMag(1.);
   fV.SetMag(1.);
@@ -231,22 +232,23 @@ genf::GFDetPlane::sane(){
   TVector3 v=fU;
   v.Rotate(TMath::Pi()*0.5,n);
   TVector3 null=v-fV;
-  assert(null.Mag()<1E-6);
+  if (null.Mag() >= 1E-6)
+    throw GFException("genf::GFDetPlane::sane(): non orthogonal!", __LINE__, __FILE__).setFatal();
  
 }
 
 
 void
-genf::GFDetPlane::Print() const
+genf::GFDetPlane::Print(std::ostream& out /* = std::cout */) const
 {
-  std::cout<<"GFDetPlane: "
+  out<<"GFDetPlane: "
 	   <<"O("<<fO.X()<<","<<fO.Y()<<","<<fO.Z()<<") "
 	   <<"u("<<fU.X()<<","<<fU.Y()<<","<<fU.Z()<<") "
 	   <<"v("<<fV.X()<<","<<fV.Y()<<","<<fV.Z()<<") "
 	   <<"n("<<getNormal().X()<<","<<getNormal().Y()<<","<<getNormal().Z()<<") "
 		   <<std::endl;
-  std::cout << fFinitePlane << std::endl;
-  if(fFinitePlane!=NULL) fFinitePlane->Print();
+  out << fFinitePlane << std::endl;
+  if(fFinitePlane!=NULL) fFinitePlane->Print(out);
     
 }
 

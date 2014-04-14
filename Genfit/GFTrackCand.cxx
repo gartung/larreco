@@ -17,6 +17,7 @@
    along with GENFIT.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "Genfit/GFTrackCand.h"
+#include "Genfit/GFException.h"
 
 #include <algorithm>
 #include <iostream>
@@ -30,14 +31,17 @@ genf::GFTrackCand::~GFTrackCand(){}
 genf::GFTrackCand::GFTrackCand(double curv, double dip, double inv, std::vector<unsigned int> detIDs, std::vector<unsigned int> hitIDs)
   : fDetId(detIDs),fHitId(hitIDs),fCurv(curv), fDip(dip), fInv(inv),fQoverpSeed(0.), fMcTrackId(-1)
 {
-  assert(fDetId.size()==fHitId.size());
+  if (fDetId.size() != fHitId.size())
+    throw GFException("genf::GFTrackCand::GFTrackCand(): hit/det size mismatch", __LINE__, __FILE__).setFatal();
   fRho.resize(fDetId.size(),0.);
 }
 genf::GFTrackCand::GFTrackCand(double curv, double dip, double inv, std::vector<unsigned int> detIDs, std::vector<unsigned int> hitIDs,std::vector<double> rhos)
   : fDetId(detIDs),fHitId(hitIDs),fRho(rhos),fCurv(curv), fDip(dip), fInv(inv),fQoverpSeed(0.), fMcTrackId(-1)
 {
-  assert(fDetId.size()==fHitId.size());
-  assert(fDetId.size()==fRho.size());
+  if (fDetId.size() != fHitId.size())
+    throw GFException("genf::GFTrackCand::GFTrackCand(): hit/det size mismatch", __LINE__, __FILE__).setFatal();
+  if (fDetId.size() != fHitId.size())
+    throw GFException("genf::GFTrackCand::GFTrackCand(): rho/det size mismatch", __LINE__, __FILE__).setFatal();
 }
 
 void 
@@ -87,20 +91,19 @@ bool genf::operator== (const GFTrackCand& lhs, const GFTrackCand& rhs){
   return result;
 }
 
-void genf::GFTrackCand::Print() const {
-  std::cout << "======== GFTrackCand::print ========" << std::endl;
-  if(fMcTrackId>=0) std::cout << "mcTrackId=" << fMcTrackId << std::endl;
-  std::cout << "seed values for pos,direction, and q/p: " << std::endl;
-  fPosSeed.Print();
-  fDirSeed.Print();
-  std::cout << "q/p=" << fQoverpSeed << std::endl;
-  assert(fDetId.size()==fHitId.size());
-  std::cout << "detId|hitId|rho ";
-  for(unsigned int i=0;i<fDetId.size();++i){
-    std::cout << fDetId.at(i) << "|" << fHitId.at(i) 
-	      << "|" << fRho.at(i) << " ";
-  }
-  std::cout << std::endl;
+void genf::GFTrackCand::Print(std::ostream& out /* = std::cout */) const {
+  out << "======== GFTrackCand::print ========";
+  if(fMcTrackId>=0) out << "\nmcTrackId=" << fMcTrackId;
+  out << "\nseed values for pos,direction, and q/p: " << std::endl;
+  PrintROOTobject(out, fPosSeed);
+  PrintROOTobject(out, fDirSeed);
+  out << "q/p=" << fQoverpSeed << std::endl;
+  if (fDetId.size() !=fHitId.size())
+    throw std::runtime_error("genf::GFTrackCand::GFTrackCand(): hit/det size mismatch");
+  out << "detId|hitId|rho ";
+  for(unsigned int i=0;i<fDetId.size();++i)
+    out << fDetId.at(i) << "|" << fHitId.at(i) << "|" << fRho.at(i) << " ";
+  out << std::endl;
 }
 
 void genf::GFTrackCand::append(const GFTrackCand& rhs){

@@ -17,8 +17,8 @@
    along with GENFIT.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "Genfit/GFAbsTrackRep.h"
+#include "Genfit/GFException.h"
 #include <iostream>
-#include <assert.h>
 
 genf::GFAbsTrackRep::GFAbsTrackRep() : fDimension(5),fState(5,1), fCov(5,5), fChiSqu(0), fNdf(0), fStatusFlag(0), fInverted(false), fFirstState(5,1), fFirstCov(5,5), fLastState(5,1), fLastCov(5,5)
 {
@@ -50,7 +50,7 @@ void genf::GFAbsTrackRep::Abort(std::string method){
 	    << "in a track rep which didnt overwrite this method. "
 	    << std::endl << "C++ throw;" << std::endl;
   //system call abort
-  throw;
+  throw GFException("genf::GFAbsTrackRep: " + method + "() not implemented", __LINE__, __FILE__).setFatal();
 }
 
 void genf::GFAbsTrackRep::extrapolateToPoint(const TVector3& /* point */,
@@ -90,17 +90,17 @@ genf::GFAbsTrackRep::reset(){
 }
 
 void
-genf::GFAbsTrackRep::Print() const {
-  std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-  std::cout<<"GFAbsTrackRep::Parameters at reference plane ";
-  fRefPlane.Print();
-  std::cout<<"GFAbsTrackRep::State"<<std::endl;
-  fState.Print();
-  std::cout<<"GFAbsTrackRep::Covariances"<<std::endl;
-  fCov.Print();
-  std::cout<<"GFAbsTrackRep::chi^2"<<std::endl;
-  std::cout<<fChiSqu<<std::endl;
-  std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+genf::GFAbsTrackRep::Print(std::ostream& out /* = std::cout */) const {
+  out << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+  out <<"GFAbsTrackRep::Parameters at reference plane ";
+  fRefPlane.Print(out);
+  out <<"GFAbsTrackRep::State"<<std::endl;
+  PrintROOTmatrix(out, fState);
+  out <<"GFAbsTrackRep::Covariances"<<std::endl;
+  PrintROOTmatrix(out, fCov);
+  out <<"GFAbsTrackRep::chi^2"<<std::endl;
+  out <<fChiSqu<<std::endl;
+  out << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 }
 
 

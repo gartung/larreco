@@ -24,13 +24,10 @@
 
 #include"TObject.h"
 #include"TMatrixT.h"
-#include<stdexcept> // std::logic_error
 #include<vector>
-#include<cassert>
-#include<iostream>
-#include<utility>
 #include<map>
 #include"GFDetPlane.h"
+#include"GFException.h"
 
 namespace genf {
 
@@ -60,19 +57,19 @@ class GFBookkeeping : public TObject {
   void setDetPlane(std::string key,unsigned int index,const GFDetPlane& pl);
   void setNumber(std::string key,unsigned int index, const double& num);
 
-  bool getMatrix(std::string key, unsigned int index, TMatrixT<Double_t>& mat) ;
-  bool getDetPlane(std::string key, unsigned int index, GFDetPlane& pl)  ;
-  bool getNumber(std::string key, unsigned int index, double& num) ;
+  bool getMatrix(std::string key, unsigned int index, TMatrixT<Double_t>& mat) const;
+  bool getDetPlane(std::string key, unsigned int index, GFDetPlane& pl) const;
+  bool getNumber(std::string key, unsigned int index, double& num) const;
 
-  std::vector< std::string > getMatrixKeys() ;
-  std::vector< std::string > getGFDetPlaneKeys() ;
-  std::vector< std::string > getNumberKeys() ;
+  std::vector< std::string > getMatrixKeys() const;
+  std::vector< std::string > getGFDetPlaneKeys() const;
+  std::vector< std::string > getNumberKeys() const;
 
   void addFailedHit(unsigned int);
   unsigned int hitFailed(unsigned int);
   unsigned int getNumFailed();
 
-  GFBookkeeping(){fNhits=-1;}
+  GFBookkeeping(): fNhits(-1) {}
   GFBookkeeping(const GFBookkeeping&);
   virtual ~GFBookkeeping(){clearAll();}
 
@@ -80,14 +77,14 @@ class GFBookkeeping : public TObject {
   void clearAll();
   void clearFailedHits();
 
-  void Print() ;
+  void Print(std::ostream& out = std::cout) const;
 
  private:
   //protect from call of net yet defined assignement operator
-  GFBookkeeping& operator=(const GFBookkeeping& /* rhs */){return *this;}
+  GFBookkeeping& operator=(const GFBookkeeping& /* rhs */) = delete; // {return *this;}
   
   virtual void Print(Option_t*) const
-    { throw std::logic_error(std::string(__func__) + "::Print(Option_t*) not available"); }
+    { throw GFException(std::string(__func__) + "::Print(Option_t*) not available", __LINE__, __FILE__).setFatal(); }
 
   // public:
   //ClassDef(GFBookkeeping,2)

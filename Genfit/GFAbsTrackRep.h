@@ -193,14 +193,10 @@ class GFAbsTrackRep : public TObject{
   //! returns dimension of state vector
   unsigned int getDim() const {return fDimension;}  
   
-  virtual void Print() const;
+  virtual void Print(std::ostream& out = std::cout) const;
 
-  inline TMatrixT<Double_t> getState() const {
-    return fState;
-  }
-  inline TMatrixT<Double_t> getCov() const {
-    return fCov;
-  }
+  const TMatrixT<Double_t>& getState() const { return fState; }
+  const TMatrixT<Double_t>& getCov() const { return fCov; }
 
   double getStateElem(int i) const {return fState(i,0);}
   double getCovElem(int i, int j) const {return fCov(i,j);}

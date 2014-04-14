@@ -94,6 +94,7 @@ namespace trkf {
     double  fLineIntFraction;
 
     std::map<int, std::vector<double> > fEndPointTimes;
+    art::ServiceHandle<geo::Geometry> fGeometryHandle;
   };
 }
 
@@ -126,11 +127,9 @@ namespace trkf {
   FeatureTracker::FeatureTracker(const fhicl::ParameterSet& pset):
     fSP(pset.get<fhicl::ParameterSet>("SpacepointPset")),
     fCorner(pset.get<fhicl::ParameterSet>("CornerPset"))
-
   {
     reconfigure(pset);
     produces< std::vector<recob::Seed> >();
-    
   }
 
   FeatureTracker::~FeatureTracker()
@@ -164,22 +163,16 @@ namespace trkf {
       hitvec.push_back(prod);
     }
     
-    
-    //We will need the geometry.
-    art::ServiceHandle<geo::Geometry> fGeometryHandle;
-    geo::Geometry const& my_geometry(*fGeometryHandle);
-    fCorner.InitializeGeometry(&my_geometry);
-
     //We need to grab out the wires.
     art::Handle< std::vector<recob::Wire> > wireHandle;
     evt.getByLabel(fCalDataModuleLabel,wireHandle);
     std::vector<recob::Wire> const& wireVec(*wireHandle);
 
     //First, have it process the wires.
-    fCorner.GrabWires(wireVec);
+    fCorner.GrabWires(wireVec,*fGeometryHandle);
    
     std::vector<recob::EndPoint2D> EndPoints;
-    fCorner.get_feature_points(EndPoints);
+    fCorner.get_feature_points(EndPoints,*fGeometryHandle);
     
     fEndPointTimes = ExtractEndPointTimes(EndPoints);
     
@@ -269,7 +262,7 @@ namespace trkf {
 
 	    for(size_t p=0; p!=uvw_i.size(); ++p)
 	      {
-		TH2F * RawHist = fCorner.GetWireDataHist(p);
+		TH2F const& RawHist = fCorner.GetWireDataHist(p);
 		
 		double lineint = 
 		  fCorner.line_integral(RawHist, 
@@ -545,7 +538,7 @@ namespace trkf {
     
     for(size_t p=0; p!=uvw_i.size(); ++p)
       {
-	TH2F * RawHist = fCorner.GetWireDataHist(p);
+	TH2F const& RawHist = fCorner.GetWireDataHist(p);
 	
 	double lineint = 
 	  fCorner.line_integral(RawHist, 

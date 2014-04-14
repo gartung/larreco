@@ -16,7 +16,10 @@
    You should have received a copy of the GNU Lesser General Public License
    along with GENFIT.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include"GFException.h"
+
+#include "GFException.h"
+
+#include "TMath.h"
 
 bool GFException::fQuiet = false;
 
@@ -26,16 +29,18 @@ GFException::GFException(std::string _excString, int _line, std::string  _file) 
 GFException::~GFException() throw() {
 }
 
-void GFException::setNumbers(std::string _numbersLabel,
+GFException& GFException::setNumbers(std::string _numbersLabel,
 				 const std::vector<double>& _numbers) {
   fNumbersLabel = _numbersLabel;
   fNumbers = _numbers;
+  return *this;
 }
 
-void GFException::setMatrices(std::string _matricesLabel,
+GFException& GFException::setMatrices(std::string _matricesLabel,
 				  const std::vector< TMatrixT<Double_t> >& _matrices) {
   fMatricesLabel = _matricesLabel;
   fMatrices = _matrices;
+  return *this;
 }
 
 const char* GFException::what() const throw(){
@@ -74,3 +79,13 @@ void GFException::info() {
   }
   std::cout << "===========================" << std::endl;  
 }
+
+
+//------------------------------------------------------------------------------
+template <>
+void genf::PrintROOTobject(std::ostream& out, const TVector3& v) {
+  out << "(x,y,z)=(" << v.X() << "," << v.Y() << "," << v.Z() << ")"
+    " (rho,theta,phi)=(" << v.Mag() << "," << (v.Theta()*TMath::RadToDeg())
+    << "," << (v.Phi()*TMath::RadToDeg()) << ")";
+} // genf::PrintROOTobject<TVector3>()
+

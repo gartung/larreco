@@ -18,13 +18,16 @@
 */
 
 #include<iostream>
-#include<cassert>
 #include"GFRectFinitePlane.h"
+#include"GFException.h"
 
 genf::GFRectFinitePlane::GFRectFinitePlane(const double& umin,const double& umax,
 				     const double& vmin,const double& vmax)
   : fUmin(umin),fUmax(umax),fVmin(vmin),fVmax(vmax)
-{assert(umin<umax);assert(vmin<vmax);}
+{
+  if ((umin >= umax) || (vmin >= vmax))
+    throw GFException(std::string(__func__) + ": unsorted inizialization parameters", __LINE__, __FILE__).setFatal();
+}
 
 genf::GFRectFinitePlane::GFRectFinitePlane()
   : fUmin(1.),fUmax(-1.),fVmin(1.),fVmax(-1.)//for this default ctor inActive always false
@@ -40,7 +43,7 @@ bool genf::GFRectFinitePlane::inActive(const double& u,const double& v) const{
   return false;
 }
 
-void genf::GFRectFinitePlane::Print() const{
-  std::cout << "Rectangular Finite Plane Umin=" << fUmin << ", Umax="
+void genf::GFRectFinitePlane::Print(std::ostream& out /* = std::cout */) const {
+  out << "Rectangular Finite Plane Umin=" << fUmin << ", Umax="
 	    << fUmax << ", Vmin=" << fVmin << ", Vmax=" << fVmax << std::endl;
 }
