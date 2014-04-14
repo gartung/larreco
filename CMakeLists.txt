@@ -71,7 +71,7 @@ include(ArtMake)
 include(BuildPlugins)
 
 #for Eigen, in CornerFinder
-include_directories(/usr/local/)
+include_directories(/usr/local/Eigen/)
 
 # source
 add_subdirectory(ClusterFinder)

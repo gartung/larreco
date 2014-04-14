@@ -63,6 +63,10 @@ namespace corner { //<---Not sure if this is the right namespace
      TH2D const& GetCornerScoreHist(unsigned int);
      TH2D const& GetMaxSuppressHist(unsigned int);
      
+
+     void GrabWires_Eigen( std::vector<recob::Wire> const& wireVec ,
+			   geo::Geometry const&);                                      //this one creates the histograms we want to use
+
     private:
      
      void CleanCornerFinderAlg();
@@ -106,7 +110,10 @@ namespace corner { //<---Not sure if this is the right namespace
      std::vector<TH2D> fMaxSuppress_histos;
      
      //now the Eigen stuff...
-     std::vector<Eigen::ArrayXXf> fWireArrays;
+     std::vector< Eigen::ArrayXXf > fWireArrays;
+
+     void CleanCornerFinderAlg_Eigen();
+     void InitializeGeometry_Eigen(geo::Geometry const&);
 
      unsigned int event_number;
      unsigned int run_number;

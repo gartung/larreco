@@ -135,6 +135,102 @@ void corner::CornerFinderAlg::InitializeGeometry(geo::Geometry const& my_geometr
 
 }
 
+
+//-----------------------------------------------------------------------------
+void corner::CornerFinderAlg::CleanCornerFinderAlg_Eigen(){
+}
+
+//-----------------------------------------------------------------------------
+void corner::CornerFinderAlg::InitializeGeometry_Eigen(geo::Geometry const& my_geometry){
+
+  CleanCornerFinderAlg_Eigen();
+  fWireArrays.resize(my_geometry.Nplanes());
+
+}
+
+//-----------------------------------------------------------------------------
+void corner::CornerFinderAlg::GrabWires_Eigen( std::vector<recob::Wire> const& wireVec, geo::Geometry const& my_geometry){
+
+  InitializeGeometry_Eigen(my_geometry);
+
+  const unsigned int nTimeTicks = wireVec.at(0).NSignal();
+  const unsigned int nPlanes = my_geometry.Nplanes();
+
+
+  for( unsigned int i_plane=0; i_plane < nPlanes; i_plane++)
+    fWireArrays.at(i_plane).resize(my_geometry.Nwires(i_plane),nTimeTicks);
+  
+  for(auto iwire : wireVec){
+
+    geo::WireID this_wireID;
+    try { this_wireID = (my_geometry.ChannelToWire(iwire.Channel())).at(0);}
+    catch(cet::exception& excep) { LOG_ERROR("CornerFinderAlg") << "Bail out! No Possible Wires!\n"; }
+    
+    unsigned int i_plane = this_wireID.Plane;
+    unsigned int i_wire = this_wireID.Wire;
+
+    WireData_IDs.at(i_plane).at(i_wire) = this_wireID;
+    
+    //Note, we make a copy of the wire data here, wire by wire. 
+    //We will overwrite fWireArrays throughout the algorithm, so it's not so wasteful.
+    fWireArrays.at(i_plane).col(i_wire) = 
+      Eigen::Map< const Eigen::VectorXf>( iwire.Signal().data() , iwire.Signal().size() );
+  }
+
+}
+
+//-----------------------------------------------------------------------------------
+// This gives us a vecotr of EndPoint2D objects that correspond to possible corners
+void corner::CornerFinderAlg::GetFeaturePoints_Eigen(std::vector<recob::EndPoint2D> & corner_vector, 
+						     geo::Geometry const& my_geometry){
+
+  
+
+  for(auto pid : my_geometry.PlaneIDs())
+    AttachFeaturePoints_Eigen(fWireArrays.at(pid.Plane),
+			      WireData_IDs.at(pid.Plane),
+			      my_geometry.View(pid),
+			      corner_vector);
+  
+}
+
+
+//-----------------------------------------------------------------------------
+// This puts on all the feature points in a given view, using a given data histogram
+void corner::CornerFinderAlg::AttachFeaturePoints_Eigen( Eigen::ArrayXXf & wireArray, 
+							 std::vector<geo::WireID> wireIDs, 
+							 geo::View_t view, 
+							 std::vector<recob::EndPoint2D> & corner_vector){
+  transform_Input_to_Image(wireArray);
+  Eigen::Array<float,wireArray.rows(),wireArray.cols()> derivativeXArray, derivativeYArray, cornerScoreArray;
+  construct_DerivativeX(wireArray,derivativeXArray);
+  construct_DerivativeY(wireArray,derivativeYArray);
+  construct_CornerScore(derivativeXArray,derivativeYArray,cornerScoreArray);
+  transform_CornerScore_to_MaxSuppress(cornerScoreArray);
+
+}
+
+void corner::CornerFinderAlg::transform_Input_to_Image(Eigen::ArrayXXf & wireArray){
+  //do nothing for now.
+  return;
+}
+
+void corner::CornerFinderAlg::construct_DerivativeX(Eigen::ArrayXXf const& imageArray,
+						    Eigen::ArrayXXf & derivativeXArray){
+}
+
+void corner::CornerFinderAlg::construct_DerivativeY(Eigen::ArrayXXf const& imageArray,
+						    Eigen::ArrayXXf & derivativeYArray){
+}
+
+void corner::CornerFinderAlg::construct_CornerScore(Eigen::ArrayXXf const& derivativeXArray, 
+						    Eigen::ArrayXXf const& derivativeYArray,
+						    Eigen::ArrayXXf & cornerScoreArray){
+}
+
+void corner::CornerFinderAlg::transform_CornerScore_to_MaxSuppress(Eigen::ArrayXXf & cornerScoreArray){
+}
+
 //-----------------------------------------------------------------------------
 void corner::CornerFinderAlg::GrabWires( std::vector<recob::Wire> const& wireVec, geo::Geometry const& my_geometry){
   
