@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 
+#include <cmath>
 #include "RecoAlg/CornerFinderAlg.h"
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -202,9 +203,18 @@ void corner::CornerFinderAlg::AttachFeaturePoints_Eigen( Eigen::ArrayXXf & wireA
 							 geo::View_t view, 
 							 std::vector<recob::EndPoint2D> & corner_vector){
   transform_Input_to_Image(wireArray);
-  Eigen::Array<float,wireArray.rows(),wireArray.cols()> derivativeXArray, derivativeYArray, cornerScoreArray;
+
+  Eigen::Array<float,wireArray.rows(),wireArray.cols()> derivativeXArray 
+    = Eigen::Array<float,wireArray.rows(),wireArray.cols>::Zero();
+  Eigen::Array<float,wireArray.rows(),wireArray.cols()> derivativeYArray = 
+    = Eigen::Array<float,wireArray.rows(),wireArray.cols>::Zero();
+
   construct_DerivativeX(wireArray,derivativeXArray);
   construct_DerivativeY(wireArray,derivativeYArray);
+
+  Eigen::Array<float,wireArray.rows(),wireArray.cols()> cornerScoreArray = 
+        = Eigen::Array<float,wireArray.rows(),wireArray.cols>::Zero();
+
   construct_CornerScore(derivativeXArray,derivativeYArray,cornerScoreArray);
   transform_CornerScore_to_MaxSuppress(cornerScoreArray);
 
@@ -215,12 +225,81 @@ void corner::CornerFinderAlg::transform_Input_to_Image(Eigen::ArrayXXf & wireArr
   return;
 }
 
+float corner::CornerFinderAlg::Gaussian_2D(float x, float y, 
+					   float amp=10, 
+					   float mean_x=0, float mean_y=0,
+					   float sigma_x=1, float sigma_y=1){
+  return amp * std::exp( ((x-mean_x)*(x-mean_x)/sigma_x/sigma_x + (y-mean_y)*(y_mean_y)/sigma_y/sigma_y)*0.5)
+}
+
 void corner::CornerFinderAlg::construct_DerivativeX(Eigen::ArrayXXf const& imageArray,
 						    Eigen::ArrayXXf & derivativeXArray){
+
+  Eigen::Array<float,9,9> GAUSSIAN_2D_KERNEL;
+  for(unsigned int i=0; i<10; i++){
+    for(unsigned int j=0; j<10; i++){
+      GAUSSIAN_2D_KERNEL(i,j) = Gaussian_2D((float)i,(float)j,10,4,4);
+    }
+  }
+
+  const unsigned int nRows = imageArray.rows();
+  const unsigned int nCols = imageArray.cols();
+
+  const Eigen::Array33f SOBEL_KERNEL_X = 
+    (Eigen::Array33f() <<
+     -1, 0, 1
+     -2, 0, 2,
+     -1, 0, 1).finished();
+
+  Eigen::Array<float,derivativeXArray.rows(),derivativeXArray.cols()> tmp_Array = derivativeXArray;
+
+  for(unsigned int irow=1; irow < nRows-1; irow++){
+    for(unsigned int icol=1; icol < nCols-1; icol++){
+      tmp_Array(irow,icol) = (imageArray.block<3,3>(irow-1,icol-1)*SOBEL_KERNEL_X).sum();
+    }
+  }
+
+  for(unsigned int irow=4; irow < tmp_Array.rows()-4; irow++){
+    for(unsigned int icol=4; icol < tmp_Array.cols()-4; icol++){
+      derivativeXArray(irow,icol) = tmp_Array.block<9,9>(irow,icol) * GAUSSIAN_2D_KERNEL;
+    }
+  }
+  
 }
 
 void corner::CornerFinderAlg::construct_DerivativeY(Eigen::ArrayXXf const& imageArray,
 						    Eigen::ArrayXXf & derivativeYArray){
+
+  Eigen::Array<float,9,9> GAUSSIAN_2D_KERNEL;
+  for(unsigned int i=0; i<10; i++){
+    for(unsigned int j=0; j<10; i++){
+      GAUSSIAN_2D_KERNEL(i,j) = Gaussian_2D((float)i,(float)j,10,4,4);
+    }
+  }
+
+  const unsigned int nRows = imageArray.rows();
+  const unsigned int nCols = imageArray.cols();
+
+  const Eigen::Array33f SOBEL_KERNEL_Y = 
+    (Eigen::Array33f() <<
+     -1, -2, -1
+      0,  0,  0,
+      1,  2,  1).finished();
+
+  Eigen::Array<float,derivativeYArray.rows(),derivativeYArray.cols()> tmp_Array = derivativeYArray;
+
+  for(unsigned int irow=1; irow < nRows-1; irow++){
+    for(unsigned int icol=1; icol < nCols-1; icol++){
+      tmp_Array(irow,icol) = (imageArray.block<3,3>(irow-1,icol-1)*SOBEL_KERNEL_Y).sum();
+    }
+  }
+
+  for(unsigned int irow=4; irow < tmp_Array.rows()-4; irow++){
+    for(unsigned int icol=4; icol < tmp_Array.cols()-4; icol++){
+      derivativeYArray(irow,icol) = tmp_Array.block<9,9>(irow,icol) * GAUSSIAN_2D_KERNEL;
+    }
+  }
+
 }
 
 void corner::CornerFinderAlg::construct_CornerScore(Eigen::ArrayXXf const& derivativeXArray, 
