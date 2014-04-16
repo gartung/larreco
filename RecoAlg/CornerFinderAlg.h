@@ -64,8 +64,12 @@ namespace corner { //<---Not sure if this is the right namespace
      TH2D const& GetMaxSuppressHist(unsigned int);
      
 
+     //this one creates the histograms we want to use
      void GrabWires_Eigen( std::vector<recob::Wire> const& wireVec ,
-			   geo::Geometry const&);                                      //this one creates the histograms we want to use
+			   geo::Geometry const&);                                      
+     //and this runs the corner-finding
+     void GetFeaturePoints_Eigen(std::vector<recob::EndPoint2D> & corner_vector,
+				 geo::Geometry const& my_geometry);
 
     private:
      
@@ -114,6 +118,28 @@ namespace corner { //<---Not sure if this is the right namespace
 
      void CleanCornerFinderAlg_Eigen();
      void InitializeGeometry_Eigen(geo::Geometry const&);
+     void AttachFeaturePoints_Eigen( Eigen::ArrayXXf & wireArray, 
+				     std::vector<geo::WireID> wireIDs, 
+				     geo::View_t view, 
+				     std::vector<recob::EndPoint2D> & corner_vector);
+     void transform_Input_to_Image(Eigen::ArrayXXf & wireArray);
+     void construct_DerivativeX(Eigen::ArrayXXf const& imageArray,
+				Eigen::ArrayXXf & derivativeXArray);
+     void construct_DerivativeY(Eigen::ArrayXXf const& imageArray,
+				Eigen::ArrayXXf & derivativeYArray);
+     void construct_CornerScore(Eigen::ArrayXXf const& derivativeXArray, 
+				Eigen::ArrayXXf const& derivativeYArray,
+				Eigen::ArrayXXd & cornerScoreArray);     
+     void fill_CornerVector(Eigen::ArrayXXf const& wireArray,
+			    Eigen::ArrayXXd const& cornerScoreArray,
+			    std::vector<recob::EndPoint2D> & corner_vector,
+			    std::vector<geo::WireID> wireIDs, 
+			    geo::View_t view);
+
+     float Gaussian_2D(float x, float y, 
+		       float amp, 
+		       float mean_x, float mean_y,
+		       float sigma_x, float sigma_y);
 
      unsigned int event_number;
      unsigned int run_number;

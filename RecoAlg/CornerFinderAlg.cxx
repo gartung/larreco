@@ -37,6 +37,8 @@
 
 #include "RecoObjects/BezierTrack.h"
 
+#include "Eigen/LU"
+
 
 // NOTE: In the .h file I assumed this would belong in the cluster class....if 
 // we decide otherwise we will need to search and replace for this
@@ -147,6 +149,10 @@ void corner::CornerFinderAlg::InitializeGeometry_Eigen(geo::Geometry const& my_g
   CleanCornerFinderAlg_Eigen();
   fWireArrays.resize(my_geometry.Nplanes());
 
+  WireData_IDs.resize(my_geometry.Nplanes());
+  for(unsigned int i_plane=0; i_plane < my_geometry.Nplanes(); ++i_plane)
+    WireData_IDs.at(i_plane).resize(my_geometry.Nwires(i_plane));
+
 }
 
 //-----------------------------------------------------------------------------
@@ -174,8 +180,8 @@ void corner::CornerFinderAlg::GrabWires_Eigen( std::vector<recob::Wire> const& w
     
     //Note, we make a copy of the wire data here, wire by wire. 
     //We will overwrite fWireArrays throughout the algorithm, so it's not so wasteful.
-    fWireArrays.at(i_plane).col(i_wire) = 
-      Eigen::Map< const Eigen::VectorXf>( iwire.Signal().data() , iwire.Signal().size() );
+    for(unsigned int tick=0; tick<iwire.Signal().size(); tick++)
+      (fWireArrays.at(i_plane))(i_wire,tick) = iwire.Signal().at(tick); 
   }
 
 }
@@ -204,20 +210,32 @@ void corner::CornerFinderAlg::AttachFeaturePoints_Eigen( Eigen::ArrayXXf & wireA
 							 std::vector<recob::EndPoint2D> & corner_vector){
   transform_Input_to_Image(wireArray);
 
-  Eigen::Array<float,wireArray.rows(),wireArray.cols()> derivativeXArray 
-    = Eigen::Array<float,wireArray.rows(),wireArray.cols>::Zero();
-  Eigen::Array<float,wireArray.rows(),wireArray.cols()> derivativeYArray = 
-    = Eigen::Array<float,wireArray.rows(),wireArray.cols>::Zero();
+  std::cout << "Made image array" << std::endl;
+
+  const unsigned int N_ROWS = wireArray.rows();
+  const unsigned int N_COLS = wireArray.cols();
+
+  Eigen::ArrayXXf derivativeXArray = Eigen::ArrayXXf::Zero(N_ROWS,N_COLS);
+  Eigen::ArrayXXf derivativeYArray = Eigen::ArrayXXf::Zero(N_ROWS,N_COLS);
 
   construct_DerivativeX(wireArray,derivativeXArray);
   construct_DerivativeY(wireArray,derivativeYArray);
 
-  Eigen::Array<float,wireArray.rows(),wireArray.cols()> cornerScoreArray = 
-        = Eigen::Array<float,wireArray.rows(),wireArray.cols>::Zero();
+  std::cout << "Made derivative arrays" << std::endl;
+
+  Eigen::ArrayXXd cornerScoreArray = Eigen::ArrayXXd::Zero(N_ROWS,N_COLS);
 
   construct_CornerScore(derivativeXArray,derivativeYArray,cornerScoreArray);
-  transform_CornerScore_to_MaxSuppress(cornerScoreArray);
 
+  std::cout << "Made corner score array" << std::endl;
+
+  fill_CornerVector(wireArray,
+		    cornerScoreArray,
+		    corner_vector,
+		    wireIDs,
+		    view);
+
+  std::cout << "Filled corner vector" << std::endl;
 }
 
 void corner::CornerFinderAlg::transform_Input_to_Image(Eigen::ArrayXXf & wireArray){
@@ -229,29 +247,36 @@ float corner::CornerFinderAlg::Gaussian_2D(float x, float y,
 					   float amp=10, 
 					   float mean_x=0, float mean_y=0,
 					   float sigma_x=1, float sigma_y=1){
-  return amp * std::exp( ((x-mean_x)*(x-mean_x)/sigma_x/sigma_x + (y-mean_y)*(y_mean_y)/sigma_y/sigma_y)*0.5)
+  return amp * std::exp( ((x-mean_x)*(x-mean_x)/sigma_x/sigma_x + (y-mean_y)*(y-mean_y)/sigma_y/sigma_y)*-0.5);
+
 }
 
 void corner::CornerFinderAlg::construct_DerivativeX(Eigen::ArrayXXf const& imageArray,
 						    Eigen::ArrayXXf & derivativeXArray){
 
+  std::cout << "going to do derivativeX" << std::endl;
+
   Eigen::Array<float,9,9> GAUSSIAN_2D_KERNEL;
-  for(unsigned int i=0; i<10; i++){
-    for(unsigned int j=0; j<10; i++){
-      GAUSSIAN_2D_KERNEL(i,j) = Gaussian_2D((float)i,(float)j,10,4,4);
+  for(unsigned int i=0; i<9; i++){
+    for(unsigned int j=0; j<9; j++){
+      GAUSSIAN_2D_KERNEL(i,j) = Gaussian_2D((float)i,(float)j,1,4,4);
     }
   }
+
+  std::cout << "made 2DGauss array" << std::endl;
 
   const unsigned int nRows = imageArray.rows();
   const unsigned int nCols = imageArray.cols();
 
   const Eigen::Array33f SOBEL_KERNEL_X = 
     (Eigen::Array33f() <<
-     -1, 0, 1
+     -1, 0, 1,
      -2, 0, 2,
      -1, 0, 1).finished();
 
-  Eigen::Array<float,derivativeXArray.rows(),derivativeXArray.cols()> tmp_Array = derivativeXArray;
+  std::cout << "made Sobel array" << std::endl;
+
+  Eigen::ArrayXXf tmp_Array = derivativeXArray;
 
   for(unsigned int irow=1; irow < nRows-1; irow++){
     for(unsigned int icol=1; icol < nCols-1; icol++){
@@ -259,21 +284,25 @@ void corner::CornerFinderAlg::construct_DerivativeX(Eigen::ArrayXXf const& image
     }
   }
 
+  std::cout << "applied sobel kernel" << std::endl;
+
   for(unsigned int irow=4; irow < tmp_Array.rows()-4; irow++){
     for(unsigned int icol=4; icol < tmp_Array.cols()-4; icol++){
-      derivativeXArray(irow,icol) = tmp_Array.block<9,9>(irow,icol) * GAUSSIAN_2D_KERNEL;
+      derivativeXArray(irow,icol) = (tmp_Array.block<9,9>(irow-4,icol-4) * GAUSSIAN_2D_KERNEL).sum();
     }
   }
   
+  std::cout << "applied 2DGauss kernel" << std::endl;
+
 }
 
 void corner::CornerFinderAlg::construct_DerivativeY(Eigen::ArrayXXf const& imageArray,
 						    Eigen::ArrayXXf & derivativeYArray){
 
   Eigen::Array<float,9,9> GAUSSIAN_2D_KERNEL;
-  for(unsigned int i=0; i<10; i++){
-    for(unsigned int j=0; j<10; i++){
-      GAUSSIAN_2D_KERNEL(i,j) = Gaussian_2D((float)i,(float)j,10,4,4);
+  for(unsigned int i=0; i<9; i++){
+    for(unsigned int j=0; j<9; j++){
+      GAUSSIAN_2D_KERNEL(i,j) = Gaussian_2D((float)i,(float)j,1,4,4);
     }
   }
 
@@ -282,11 +311,11 @@ void corner::CornerFinderAlg::construct_DerivativeY(Eigen::ArrayXXf const& image
 
   const Eigen::Array33f SOBEL_KERNEL_Y = 
     (Eigen::Array33f() <<
-     -1, -2, -1
+     -1, -2, -1,
       0,  0,  0,
       1,  2,  1).finished();
 
-  Eigen::Array<float,derivativeYArray.rows(),derivativeYArray.cols()> tmp_Array = derivativeYArray;
+  Eigen::ArrayXXf tmp_Array = derivativeYArray;
 
   for(unsigned int irow=1; irow < nRows-1; irow++){
     for(unsigned int icol=1; icol < nCols-1; icol++){
@@ -296,7 +325,7 @@ void corner::CornerFinderAlg::construct_DerivativeY(Eigen::ArrayXXf const& image
 
   for(unsigned int irow=4; irow < tmp_Array.rows()-4; irow++){
     for(unsigned int icol=4; icol < tmp_Array.cols()-4; icol++){
-      derivativeYArray(irow,icol) = tmp_Array.block<9,9>(irow,icol) * GAUSSIAN_2D_KERNEL;
+      derivativeYArray(irow,icol) = (tmp_Array.block<9,9>(irow-4,icol-4) * GAUSSIAN_2D_KERNEL).sum();
     }
   }
 
@@ -304,10 +333,76 @@ void corner::CornerFinderAlg::construct_DerivativeY(Eigen::ArrayXXf const& image
 
 void corner::CornerFinderAlg::construct_CornerScore(Eigen::ArrayXXf const& derivativeXArray, 
 						    Eigen::ArrayXXf const& derivativeYArray,
-						    Eigen::ArrayXXf & cornerScoreArray){
+						    Eigen::ArrayXXd & cornerScoreArray){
+
+  std::cout << "Going to get corner score now." << std::endl;
+
+  Eigen::Matrix2f structure_tensor = Eigen::Matrix2f::Zero();
+
+  const unsigned int nRows = derivativeXArray.rows();
+  const unsigned int nCols = derivativeXArray.cols();
+
+  std::cout << "entering outer loop" << std::endl;
+
+  for(unsigned int irow=2; irow < nRows-2; irow++){
+    for(unsigned int icol=2; icol < nCols-2; icol++){
+
+      //std::cout << "inside outer loop (" <<irow << "," << icol << ")" << std::endl;
+      
+      structure_tensor = Eigen::Matrix2f::Zero();
+      for(unsigned int jrow=irow-2; jrow<irow+2; jrow++){
+	for(unsigned int jcol=icol-2; jcol<icol+2; jcol++){
+
+	  //std::cout << "inside inner loop (" << jrow << "," << jcol << ")" << std::endl;
+
+	  structure_tensor(0,0) += derivativeXArray(jrow,jcol)*derivativeXArray(jrow,jcol);
+	  structure_tensor(1,1) += derivativeYArray(jrow,jcol)*derivativeYArray(jrow,jcol);
+	  structure_tensor(0,1) += derivativeXArray(jrow,jcol)*derivativeYArray(jrow,jcol);
+	}
+      }
+      structure_tensor(1,0) = structure_tensor(0,1);
+
+      //std::cout << "\n" << structure_tensor << std::endl;
+
+      float trace = structure_tensor.trace();
+      cornerScoreArray(irow,icol) = structure_tensor.determinant() - 0.05 * trace*trace;
+      //std::cout << "\tscore=" << cornerScoreArray(irow,icol) << std::endl;
+    }
+    //std::cout << "finished row " << irow << std::endl;
+  }
+
 }
 
-void corner::CornerFinderAlg::transform_CornerScore_to_MaxSuppress(Eigen::ArrayXXf & cornerScoreArray){
+void corner::CornerFinderAlg::fill_CornerVector(Eigen::ArrayXXf const& wireArray,
+						Eigen::ArrayXXd const& cornerScoreArray,
+						std::vector<recob::EndPoint2D> & corner_vector,
+						std::vector<geo::WireID> wireIDs, 
+						geo::View_t view){
+
+  const unsigned int nRows = cornerScoreArray.rows();
+  const unsigned int nCols = cornerScoreArray.cols();
+  
+  unsigned int max_row; unsigned int max_col;
+
+  for(unsigned int irow=2; irow < nRows-2; irow++){
+    for(unsigned int icol=2; icol < nCols-2; icol++){
+
+      float max = (cornerScoreArray.block<5,5>(irow-2,icol-2)).maxCoeff(&max_row,&max_col);
+      
+      //std::cout << cornerScoreArray.block<5,5>(irow-2,icol-2) << std::endl;
+      //std::cout << "\t(" << irow << "," << icol <<") --- " << max << " " << max_row << " " << max_col << std::endl;
+
+      if(max_row==2 && max_col==2 && max>1e10 && wireArray(irow,icol)>10 )
+	corner_vector.emplace_back(icol,
+				   wireIDs.at(irow),
+				   max,
+				   0,//id
+				   view,
+				   wireArray(irow,icol)); //totalQ
+
+    }
+  }
+
 }
 
 //-----------------------------------------------------------------------------
