@@ -423,7 +423,8 @@ namespace  trkf{
 	  geo::WireID hitWireID = hit.WireID();
 		
 	  const geo::WireGeo& wgeom = geom->WireIDToWireGeo(hit.WireID());
-	  assert(hitWireID.TPC == tpc && hitWireID.Cryostat == cstat);
+	  if (hitWireID.TPC == tpc && hitWireID.Cryostat == cstat)
+	    throw cet::exception("SpacePointAlg") << "compatible(): geometry mismatch\n";
 
 	  // Get angles and distance of wire.
 
@@ -1018,19 +1019,22 @@ namespace  trkf{
       }// end loop over cryostats
     }// end if MC
 
-    // depending on the compilation options, might be a mf::LogDebug or a NeverLogger_;
-    // note that the line number for the later insertions will be misleading
-    auto debug = LOG_DEBUG("SpacePointAlg") << "Total hits = " << hits.size() << "\n\n";
-
-    for(unsigned int cstat = 0; cstat < ncstat; ++cstat){
-      for(unsigned int tpc = 0; tpc < geom->Cryostat(cstat).NTPC(); ++tpc) {
-	int nplane = hitmap[cstat][tpc].size();
-	for(int plane = 0; plane < nplane; ++plane) {
-	  debug << "TPC, Plane: " << tpc << ", " << plane 
-		<< ", hits = " << hitmap[cstat][tpc][plane].size() << "\n";
-	}
-      }
-    }// end loop over cryostats
+    // use mf::LogDebug instead of LOG_DEBUG because we reuse it in many lines
+    // insertions are protected by mf::isDebugEnabled()
+    mf::LogDebug debug("SpacePointAlg");
+    if (mf::isDebugEnabled()) {
+      debug << "Total hits = " << hits.size() << "\n\n";
+      
+      for(unsigned int cstat = 0; cstat < ncstat; ++cstat){
+        for(unsigned int tpc = 0; tpc < geom->Cryostat(cstat).NTPC(); ++tpc) {
+          int nplane = hitmap[cstat][tpc].size();
+          for(int plane = 0; plane < nplane; ++plane) {
+            debug << "TPC, Plane: " << tpc << ", " << plane
+              << ", hits = " << hitmap[cstat][tpc][plane].size() << "\n";
+          }
+        }
+      } // end loop over cryostats
+    } // if debug
 
     // Make empty multimap from hit pointer on preferred
     // (most-populated or collection) plane to space points that
@@ -1501,10 +1505,12 @@ namespace  trkf{
       }// end loop over tpcs
     }// end loop over cryostats
   
-    debug << "\n2-hit space points = " << n2 << "\n"
-	  << "3-hit space points = " << n3 << "\n"
-	  << "2-hit filtered/merged space points = " << n2filt << "\n"
-	  << "3-hit filtered/merged space points = " << n3filt;
+    if (mf::isDebugEnabled()) {
+      debug << "\n2-hit space points = " << n2 << "\n"
+        << "3-hit space points = " << n3 << "\n"
+        << "2-hit filtered/merged space points = " << n2filt << "\n"
+        << "3-hit filtered/merged space points = " << n3filt;
+    } // if debug
   }
 
   //----------------------------------------------------------------------

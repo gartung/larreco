@@ -408,6 +408,10 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 
 	if(seedhits.size() + seederhits.size() == initial_seederhits) {
 
+	  // use mf::LogDebug instead of LOG_DEBUG because we reuse it in many lines;
+	  // insertions are protected by mf::isDebugEnabled()
+	  mf::LogDebug log("Track3DKalmanHit");
+
 	  // Convert seed into initial KTracks on surface located at seed point, 
 	  // and normal to seed direction.
 
@@ -426,13 +430,12 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 	  vec(3) = 0.;
 	  vec(4) = (fInitialMomentum != 0. ? 1./fInitialMomentum : 2.);
 	  
-	  // depending on the compilation options, might be a mf::LogDebug or a NeverLogger_;
-	  // note that the line number for the later insertions will be misleading
-	  auto log = LOG_DEBUG("Track3DKalmanHit")
-	      << "Seed found with " << seedhits.size() <<" hits.\n"
-	      << "(x,y,z) = " << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << "\n"
-	      << "(dx,dy,dz) = " << dir[0] << ", " << dir[1] << ", " << dir[2] << "\n"
-	      << "(x1, y1, z1)) = ";
+	  if (mf::isDebugEnabled()) {
+	    log << "Seed found with " << seedhits.size() <<" hits.\n"
+	        << "(x,y,z) = " << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << "\n"
+	        << "(dx,dy,dz) = " << dir[0] << ", " << dir[1] << ", " << dir[2] << "\n"
+	        << "(x1, y1, z1)) = ";
+	  } // if debug
 
 	  // Cut on the seed slope dx/dz.
 
@@ -466,7 +469,8 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 
 	      unsigned int prefplane = seedcont.getPreferredPlane();
 	      fKFAlg.setPlane(prefplane);
-	      log << "Preferred plane = " << prefplane << "\n";
+	      if (mf::isDebugEnabled())
+	        log << "Preferred plane = " << prefplane << "\n";
 
 	      // Build and smooth seed track.
 
@@ -535,10 +539,15 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 		      KGTrack trg2;
 		      ok = fKFAlg.smoothTrack(trg1, &trg2, fProp);
 		      if(ok) {
-			KETrack tremom;
-			bool pok = fKFAlg.fitMomentum(trg1, fProp, tremom);
-			if(pok)
-			  fKFAlg.updateMomentum(tremom, fProp, trg2);
+
+			// Skip momentum estimate for constant-momentum tracks.
+
+			if(fDoDedx) {
+			  KETrack tremom;
+			  bool pok = fKFAlg.fitMomentum(trg1, fProp, tremom);
+			  if(pok)
+			    fKFAlg.updateMomentum(tremom, fProp, trg2);
+			}
 			trg1 = trg2;
 		      }
 		    }
@@ -548,10 +557,15 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 		    if(ok) {
 		      ok = fKFAlg.smoothTrack(trg1, 0, fProp);
 		      if(ok) {
-			KETrack tremom;
-			bool pok = fKFAlg.fitMomentum(trg1, fProp, tremom);
-			if(pok)
-			  fKFAlg.updateMomentum(tremom, fProp, trg1);
+
+			// Skip momentum estimate for constant-momentum tracks.
+
+			if(fDoDedx) {
+			  KETrack tremom;
+			  bool pok = fKFAlg.fitMomentum(trg1, fProp, tremom);
+			  if(pok)
+			    fKFAlg.updateMomentum(tremom, fProp, trg1);
+			}
 
 			// Save this track.
 
@@ -562,13 +576,11 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 		  }
 		}
 	      }
-	      if(ok) {
-		log << "Find track succeeded.\n";
-	      }
-	      else
-		log << "Find track failed.\n";
-	    }
-
+	      if (mf::isDebugEnabled())
+	        log << (ok? "Find track succeeded.": "Find track failed.") << "\n";
+	    
+	    } // for initial track
+	    
 	    // Loop over newly added tracks and remove hits contained on
 	    // these tracks from hits available for making additional
 	    // tracks or track seeds.
