@@ -20,6 +20,7 @@
 #include "Geometry/Geometry.h"
 
 #include "Eigen/Core"
+#include "Eigen/SparseCore"
 
 namespace trkf {
   class BezierTrack;
@@ -122,6 +123,10 @@ namespace corner { //<---Not sure if this is the right namespace
 				     std::vector<geo::WireID> wireIDs, 
 				     geo::View_t view, 
 				     std::vector<recob::EndPoint2D> & corner_vector);
+     void AttachFeaturePoints_EigenSparse( Eigen::ArrayXXf & wireArray, 
+					   std::vector<geo::WireID> wireIDs, 
+					   geo::View_t view, 
+					   std::vector<recob::EndPoint2D> & corner_vector);
      void transform_Input_to_Image(Eigen::ArrayXXf & wireArray);
      void construct_DerivativeX(Eigen::ArrayXXf const& imageArray,
 				Eigen::ArrayXXf & derivativeXArray);
@@ -135,6 +140,21 @@ namespace corner { //<---Not sure if this is the right namespace
 			    std::vector<recob::EndPoint2D> & corner_vector,
 			    std::vector<geo::WireID> wireIDs, 
 			    geo::View_t view);
+
+     void transform_Input_to_SparseImage(Eigen::ArrayXXf const& wireArray,
+					 Eigen::SparseMatrix<float> & imageSMatrix);
+     void construct_SparseDerivativeX(Eigen::SparseMatrix<float> const& imageSMatrix,
+				      Eigen::SparseMatrix<float> & derivativeXSMatrix);
+     void construct_SparseDerivativeY(Eigen::SparseMatrix<float> const& imageSMatrix,
+				      Eigen::SparseMatrix<float> & derivativeYSMatrix);
+     void construct_SparseCornerScore(Eigen::SparseMatrix<float> const& derivativeXSMatrix,
+				      Eigen::SparseMatrix<float> const& derivativeYSMatrix,
+				      Eigen::SparseMatrix<double> & cornerScoreSMatrix);
+     void fill_SparseCornerVector(Eigen::ArrayXXf const& wireArray,
+				  Eigen::SparseMatrix<double> const& cornerScoreSMatrix,
+				  std::vector<recob::EndPoint2D> & corner_vector,
+				  std::vector<geo::WireID> wireIDs, 
+				  geo::View_t view);
 
      float Gaussian_2D(float x, float y, 
 		       float amp, 

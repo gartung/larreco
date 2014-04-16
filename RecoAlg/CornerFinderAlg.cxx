@@ -194,7 +194,7 @@ void corner::CornerFinderAlg::GetFeaturePoints_Eigen(std::vector<recob::EndPoint
   
 
   for(auto pid : my_geometry.PlaneIDs())
-    AttachFeaturePoints_Eigen(fWireArrays.at(pid.Plane),
+    AttachFeaturePoints_EigenSparse(fWireArrays.at(pid.Plane),
 			      WireData_IDs.at(pid.Plane),
 			      my_geometry.View(pid),
 			      corner_vector);
@@ -238,9 +238,74 @@ void corner::CornerFinderAlg::AttachFeaturePoints_Eigen( Eigen::ArrayXXf & wireA
   std::cout << "Filled corner vector" << std::endl;
 }
 
+
+
+void corner::CornerFinderAlg::AttachFeaturePoints_EigenSparse( Eigen::ArrayXXf & wireArray, 
+							       std::vector<geo::WireID> wireIDs, 
+							       geo::View_t view, 
+							       std::vector<recob::EndPoint2D> & corner_vector){
+  const unsigned int N_ROWS = wireArray.rows();
+  const unsigned int N_COLS = wireArray.cols();
+
+
+  Eigen::SparseMatrix<float> imageSMatrix(N_ROWS,N_COLS);
+  imageSMatrix.reserve(1e5);
+  transform_Input_to_SparseImage(wireArray,imageSMatrix);
+
+  std::cout << "Made image array" << std::endl;
+
+
+  Eigen::SparseMatrix<float> derivativeXArray(N_ROWS,N_COLS);
+  Eigen::SparseMatrix<float> derivativeYArray(N_ROWS,N_COLS);
+
+  derivativeXArray.reserve(1e5);
+  derivativeYArray.reserve(1e5);
+
+  construct_SparseDerivativeX(imageSMatrix,derivativeXArray);
+  construct_SparseDerivativeY(imageSMatrix,derivativeYArray);
+
+  std::cout << "Made derivative arrays" << std::endl;
+
+  Eigen::SparseMatrix<double> cornerScoreArray(N_ROWS,N_COLS);
+  cornerScoreArray.reserve(1e5);
+
+  construct_SparseCornerScore(derivativeXArray,derivativeYArray,cornerScoreArray);
+
+  std::cout << "Made corner score array" << std::endl;
+
+  fill_SparseCornerVector(wireArray,
+		    cornerScoreArray,
+		    corner_vector,
+		    wireIDs,
+		    view);
+
+  std::cout << "Filled corner vector" << std::endl;
+}
+
+
 void corner::CornerFinderAlg::transform_Input_to_Image(Eigen::ArrayXXf & wireArray){
   //do nothing for now.
   return;
+}
+
+void corner::CornerFinderAlg::transform_Input_to_SparseImage(Eigen::ArrayXXf const& wireArray,
+							     Eigen::SparseMatrix<float> & imageSMatrix){
+
+  
+  const unsigned int nRows = wireArray.rows();
+  const unsigned int nCols = wireArray.cols();
+
+  std::vector< Eigen::Triplet<float> > triplet_vector;
+
+  for(unsigned int irow=0; irow<nRows; irow++){
+    for(unsigned int icol=0; icol<nCols; icol++){
+      if(wireArray(irow,icol) > 6)
+	triplet_vector.emplace_back(irow,icol,wireArray(irow,icol));
+    }
+  }
+
+  imageSMatrix.setFromTriplets(triplet_vector.begin(),triplet_vector.end());
+
 }
 
 float corner::CornerFinderAlg::Gaussian_2D(float x, float y, 
@@ -248,6 +313,128 @@ float corner::CornerFinderAlg::Gaussian_2D(float x, float y,
 					   float mean_x=0, float mean_y=0,
 					   float sigma_x=1, float sigma_y=1){
   return amp * std::exp( ((x-mean_x)*(x-mean_x)/sigma_x/sigma_x + (y-mean_y)*(y-mean_y)/sigma_y/sigma_y)*-0.5);
+
+}
+
+void corner::CornerFinderAlg::construct_SparseDerivativeX(Eigen::SparseMatrix<float> const& imageSMatrix,
+							  Eigen::SparseMatrix<float> & derivativeXSMatrix){
+
+  std::cout << "going to do derivativeX" << std::endl;
+
+  Eigen::MatrixXf GAUSSIAN_2D_KERNEL(9,9);
+  for(unsigned int i=0; i<9; i++){
+    for(unsigned int j=0; j<9; j++){
+      GAUSSIAN_2D_KERNEL(i,j) = Gaussian_2D((float)i,(float)j,1,4,4);
+    }
+  }
+
+  std::cout << "made 2DGauss array" << std::endl;
+
+  const unsigned int nRows = imageSMatrix.rows();
+  const unsigned int nCols = imageSMatrix.cols();
+
+  const Eigen::Matrix3f SOBEL_KERNEL_X = 
+    (Eigen::Matrix3f() <<
+     -1, 0, 1,
+     -2, 0, 2,
+     -1, 0, 1).finished();
+
+  std::cout << "made Sobel array" << std::endl;
+
+  std::vector< Eigen::Triplet<float> > triplet_vector;
+
+  for(unsigned int irow=1; irow < nRows-1; irow++){
+    for(unsigned int icol=1; icol < nCols-1; icol++){
+
+      float sum = (imageSMatrix.block(irow-1,icol-1,3,3).cwiseProduct(SOBEL_KERNEL_X)).sum();
+
+      if(std::abs(sum)>1e-3)
+	triplet_vector.emplace_back(irow,icol,sum);
+
+    }
+  }
+
+  Eigen::SparseMatrix<float> tmp_SMatrix(nRows,nCols);
+  tmp_SMatrix.setFromTriplets(triplet_vector.begin(),triplet_vector.end());
+
+  std::cout << "applied sobel kernel" << std::endl;
+  
+  triplet_vector.clear();
+
+  for(unsigned int irow=4; irow < nRows-4; irow++){
+    for(unsigned int icol=4; icol < nCols-4; icol++){
+      float sum = (tmp_SMatrix.block(irow-4,icol-4,9,9).cwiseProduct(GAUSSIAN_2D_KERNEL)).sum();
+
+      if(std::abs(sum)>1e-3)
+	triplet_vector.emplace_back(irow,icol,sum);
+
+    }
+  }
+  
+  derivativeXSMatrix.setFromTriplets(triplet_vector.begin(),triplet_vector.end());
+
+  std::cout << "applied 2DGauss kernel" << std::endl;
+
+}
+
+void corner::CornerFinderAlg::construct_SparseDerivativeY(Eigen::SparseMatrix<float> const& imageSMatrix,
+							  Eigen::SparseMatrix<float> & derivativeYSMatrix){
+
+  std::cout << "going to do derivativeY" << std::endl;
+
+  Eigen::MatrixXf GAUSSIAN_2D_KERNEL(9,9);
+  for(unsigned int i=0; i<9; i++){
+    for(unsigned int j=0; j<9; j++){
+      GAUSSIAN_2D_KERNEL(i,j) = Gaussian_2D((float)i,(float)j,1,4,4);
+    }
+  }
+
+  std::cout << "made 2DGauss array" << std::endl;
+
+  const unsigned int nRows = imageSMatrix.rows();
+  const unsigned int nCols = imageSMatrix.cols();
+
+  const Eigen::Matrix3f SOBEL_KERNEL_Y = 
+    (Eigen::Matrix3f() <<
+     -1, -2, -1,
+      0,  0,  0,
+      1,  2,  1).finished();
+
+  std::cout << "made Sobel array" << std::endl;
+
+  std::vector< Eigen::Triplet<float> > triplet_vector;
+
+  for(unsigned int irow=1; irow < nRows-1; irow++){
+    for(unsigned int icol=1; icol < nCols-1; icol++){
+
+      float sum = (imageSMatrix.block(irow-1,icol-1,3,3).cwiseProduct(SOBEL_KERNEL_Y)).sum();
+
+      if(std::abs(sum)>1e-3)
+	triplet_vector.emplace_back(irow,icol,sum);
+
+    }
+  }
+
+  Eigen::SparseMatrix<float> tmp_SMatrix(nRows,nCols);
+  tmp_SMatrix.setFromTriplets(triplet_vector.begin(),triplet_vector.end());
+
+  std::cout << "applied sobel kernel" << std::endl;
+  
+  triplet_vector.clear();
+
+  for(unsigned int irow=4; irow < nRows-4; irow++){
+    for(unsigned int icol=4; icol < nCols-4; icol++){
+      float sum = (tmp_SMatrix.block(irow-4,icol-4,9,9).cwiseProduct(GAUSSIAN_2D_KERNEL)).sum();
+
+      if(std::abs(sum)>1e-3)
+	triplet_vector.emplace_back(irow,icol,sum);
+
+    }
+  }
+  
+  derivativeYSMatrix.setFromTriplets(triplet_vector.begin(),triplet_vector.end());
+
+  std::cout << "applied 2DGauss kernel" << std::endl;
 
 }
 
@@ -331,6 +518,62 @@ void corner::CornerFinderAlg::construct_DerivativeY(Eigen::ArrayXXf const& image
 
 }
 
+void corner::CornerFinderAlg::construct_SparseCornerScore(Eigen::SparseMatrix<float> const& derivativeXSMatrix, 
+							  Eigen::SparseMatrix<float> const& derivativeYSMatrix,
+							  Eigen::SparseMatrix<double> & cornerScoreSMatrix){
+
+  std::cout << "Going to get corner score now." << std::endl;
+
+  Eigen::Matrix2f structure_tensor = Eigen::Matrix2f::Zero();
+
+  const unsigned int nRows = derivativeXSMatrix.rows();
+  const unsigned int nCols = derivativeXSMatrix.cols();
+
+  std::cout << "entering outer loop" << std::endl;
+
+  std::vector< Eigen::Triplet<double> > triplet_vector;
+
+  for(unsigned int irow=2; irow < nRows-2; irow++){
+    for(unsigned int icol=2; icol < nCols-2; icol++){
+
+      //std::cout << "inside outer loop (" <<irow << "," << icol << ")" << std::endl;
+      
+      structure_tensor = Eigen::Matrix2f::Zero();
+
+      Eigen::Matrix<float,5,5> x_block = derivativeXSMatrix.block(irow-2,icol-2,5,5);
+      Eigen::Matrix<float,5,5> y_block = derivativeYSMatrix.block(irow-2,icol-2,5,5);
+
+      if(x_block.isZero(1e-3) && y_block.isZero(1e-3)) continue;
+
+      for(unsigned int jrow=0; jrow<0; jrow++){
+	for(unsigned int jcol=0; jcol<0; jcol++){
+
+	  //std::cout << "inside inner loop (" << jrow << "," << jcol << ")" << std::endl;
+
+	  structure_tensor(0,0) += x_block(jrow,jcol)*x_block(jrow,jcol);
+	  structure_tensor(1,1) += y_block(jrow,jcol)*y_block(jrow,jcol);
+	  structure_tensor(0,1) += x_block(jrow,jcol)*y_block(jrow,jcol);
+	}
+      }
+      structure_tensor(1,0) = structure_tensor(0,1);
+
+      //std::cout << "\n" << structure_tensor << std::endl;
+
+      double trace = structure_tensor.trace();
+      double score = structure_tensor.determinant() - 0.05 * trace*trace;
+
+      if(score>1e10)
+	triplet_vector.emplace_back(irow,icol,score);
+
+      //std::cout << "\tscore=" << cornerScoreArray(irow,icol) << std::endl;
+    }
+    //std::cout << "finished row " << irow << std::endl;
+  }
+
+  cornerScoreSMatrix.setFromTriplets(triplet_vector.begin(),triplet_vector.end());
+
+}
+
 void corner::CornerFinderAlg::construct_CornerScore(Eigen::ArrayXXf const& derivativeXArray, 
 						    Eigen::ArrayXXf const& derivativeYArray,
 						    Eigen::ArrayXXd & cornerScoreArray){
@@ -369,6 +612,39 @@ void corner::CornerFinderAlg::construct_CornerScore(Eigen::ArrayXXf const& deriv
       //std::cout << "\tscore=" << cornerScoreArray(irow,icol) << std::endl;
     }
     //std::cout << "finished row " << irow << std::endl;
+  }
+
+}
+
+void corner::CornerFinderAlg::fill_SparseCornerVector(Eigen::ArrayXXf const& wireArray,
+						      Eigen::SparseMatrix<double> const& cornerScoreSMatrix,
+						      std::vector<recob::EndPoint2D> & corner_vector,
+						      std::vector<geo::WireID> wireIDs, 
+						      geo::View_t view){
+
+  const unsigned int nRows = cornerScoreSMatrix.rows();
+  const unsigned int nCols = cornerScoreSMatrix.cols();
+  
+  unsigned int max_row; unsigned int max_col;
+
+  for(unsigned int irow=2; irow < nRows-2; irow++){
+    for(unsigned int icol=2; icol < nCols-2; icol++){
+
+      Eigen::Matrix<float,5,5> my_block = cornerScoreSMatrix.block(irow-2,icol-2,5,5);
+      float max = my_block.maxCoeff(&max_row,&max_col);
+      
+      //std::cout << cornerScoreArray.block<5,5>(irow-2,icol-2) << std::endl;
+      //std::cout << "\t(" << irow << "," << icol <<") --- " << max << " " << max_row << " " << max_col << std::endl;
+
+      if(max_row==2 && max_col==2 && max>1e10 && wireArray(irow,icol)>10 )
+	corner_vector.emplace_back(icol,
+				   wireIDs.at(irow),
+				   max,
+				   0,//id
+				   view,
+				   wireArray(irow,icol)); //totalQ
+
+    }
   }
 
 }
