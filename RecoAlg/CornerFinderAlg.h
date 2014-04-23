@@ -8,11 +8,6 @@
 #ifndef CORNERFINDERALG_H
 #define CORNERFINDERALG_H
 
-#include "fhiclcpp/ParameterSet.h" 
-
-#include "TH2.h"
-#include "TF2.h"
-#include "TH1D.h"
 #include <vector>
 #include <string>
 #include "RecoBase/Wire.h"
@@ -35,131 +30,116 @@ namespace corner { //<---Not sure if this is the right namespace
      explicit CornerFinderAlg(fhicl::ParameterSet const& pset); 
      virtual ~CornerFinderAlg();        
      
-     void   reconfigure(fhicl::ParameterSet const& pset);
-    
-     
-     void GrabWires( std::vector<recob::Wire> const& wireVec ,
-		     geo::Geometry const&);                                      //this one creates the histograms we want to use
-     
-     
-     void get_feature_points(std::vector<recob::EndPoint2D> &, 
-			     geo::Geometry const&);                              //here we get feature points with corner score
-
-     void get_feature_points_LineIntegralScore(std::vector<recob::EndPoint2D> &,
-					       geo::Geometry const&);            //here we get feature points with LineIntegral score
-
-
-
-     void get_feature_points_fast(std::vector<recob::EndPoint2D> &,
-				  geo::Geometry const&);                         //here we get feature points with corner score
-     
-     float line_integral(TH2F const& hist, int x1, float y1, int x2, float y2, float threshold);				   
-     
-     std::vector<float> line_integrals(trkf::BezierTrack&, size_t Steps, float threshold);
-     
-     TH2F const& GetWireDataHist(unsigned int);
-     TH2F const& GetConversionHist(unsigned int);
-     TH2F const& GetDerivativeXHist(unsigned int);
-     TH2F const& GetDerivativeYHist(unsigned int);
-     TH2D const& GetCornerScoreHist(unsigned int);
-     TH2D const& GetMaxSuppressHist(unsigned int);
-     
-
      //this one creates the histograms we want to use
-     void GrabWires_Eigen( std::vector<recob::Wire> const& wireVec ,
-			   geo::Geometry const&);                                      
+     void GrabWires( std::vector<recob::Wire> const&, geo::Geometry const&);                                      
+
      //and this runs the corner-finding
-     void GetFeaturePoints_Eigen(std::vector<recob::EndPoint2D> & corner_vector,
-				 geo::Geometry const& my_geometry);
+     void GetFeaturePoints(std::vector<recob::EndPoint2D>&, geo::Geometry const&);
+
+     //setters for our configurations
+     void setSparsify(bool option=true){ fSparsify = option; }
+     void setSparseReserveSize(unsigned int size=1e6)
+     { fSparseReserveSize = size; }
+     void setSmoothKernelParams(unsigned int nX, unsigned int nY,
+				float sigmaX, float sigmaY)
+     { fSmoothNeighborhoodX = nX; fSmoothNeighborhoodY = nY;
+       fSmoothWidthX = sigmaX;    fSmoothSigmaY = sigmaY; }
+
+     void setImageAlg_Threshold(float i_adc_t, float c_adc_t,
+				float i_pass_v=-1, float c_pass_v=-1,
+				float i_fail_v=0, float c_fail_v=0){ 
+       fImageTransformAlg="Threshold";
+       fInductionADCThreshold = i_adc_t;
+       fInductionAboveThresholdValue = i_pass_v;
+       fInductionBelowThresholdValue = i_fail_v;
+       fCollectionADCThreshold = c_adc_t;
+       fCollectionAboveThresholdValue = c_pass_v;
+       fCollectionBelowThresholdValue = c_fail_v;
+     }
+     void setImageAlg_Nothing() { fImageTransformAlg="Nothing"; }
 
     private:
      
-     void CleanCornerFinderAlg();
-     void InitializeGeometry(geo::Geometry const&);
-     
-     // Need to list the things we will take in from the .fcl file
-     
-     std::string  fCalDataModuleLabel;
-     std::string    fConversion_algorithm;
-     std::string    fConversion_func;
-     float          fTrimming_threshold;
-     int            fTrimming_buffer;
-     double         fTrimming_totalThreshold;
-     int            fConversion_func_neighborhood;
-     float          fConversion_threshold;
-     int            fConversion_bins_per_input_x;
-     int            fConversion_bins_per_input_y;
-     std::string    fDerivative_method;
-     int            fDerivative_neighborhood;
-     std::string    fDerivative_BlurFunc;
-     int            fDerivative_BlurNeighborhood;
-     int            fCornerScore_neighborhood;
-     std::string    fCornerScore_algorithm;
-     float          fCornerScore_Noble_epsilon;
-     float          fCornerScore_Harris_kappa;
-     int            fMaxSuppress_neighborhood;
-     int            fMaxSuppress_threshold;
-     float          fIntegral_bin_threshold;
-     float          fIntegral_fraction_threshold;
-     
-     // Making a vector of histograms
-     std::vector<TH2F> WireData_histos;
-     std::vector<TH1D> WireData_histos_ProjectionX;
-     std::vector<TH1D> WireData_histos_ProjectionY;
-     std::vector< std::tuple<int,TH2F,int,int> > WireData_trimmed_histos;
-     std::vector< std::vector<geo::WireID> > WireData_IDs;
-     std::vector<TH2F> fConversion_histos;
-     std::vector<TH2F> fDerivativeX_histos;
-     std::vector<TH2F> fDerivativeY_histos;
-     std::vector<TH2D> fCornerScore_histos;
-     std::vector<TH2D> fMaxSuppress_histos;
-     
-     //now the Eigen stuff...
-     std::vector< Eigen::ArrayXXf > fWireArrays;
+     //internal configurable options
+     bool          fSparsify;
+     unsigned int  fSparseReserveSize;
 
-     void CleanCornerFinderAlg_Eigen();
-     void InitializeGeometry_Eigen(geo::Geometry const&);
-     void AttachFeaturePoints_Eigen( Eigen::ArrayXXf & wireArray, 
-				     std::vector<geo::WireID> wireIDs, 
-				     geo::View_t view, 
-				     std::vector<recob::EndPoint2D> & corner_vector);
-     void AttachFeaturePoints_EigenSparse( Eigen::ArrayXXf & wireArray, 
-					   std::vector<geo::WireID> wireIDs, 
-					   geo::View_t view, 
-					   std::vector<recob::EndPoint2D> & corner_vector);
-     void transform_Input_to_Image(Eigen::ArrayXXf & wireArray);
-     void construct_DerivativeX(Eigen::ArrayXXf const& imageArray,
-				Eigen::ArrayXXf & derivativeXArray);
-     void construct_DerivativeY(Eigen::ArrayXXf const& imageArray,
-				Eigen::ArrayXXf & derivativeYArray);
+     unsigned int  fSmoothNeighborhoodX;
+     unsigned int  fSmoothNeighborhoodY;
+     float         fSmoothWidthX;
+     float         fSmoothWidthY;
+
+     std::string   fImageTransformAlg;
+     float         fInductionADCThreshold;
+     float         fCollectionADCThreshold;
+     float         fInductionBelowThresholdValue;
+     float         fCollectionBelowThresholdValue;
+     float         fInductionAboveThresholdValue;
+     float         fCollectionAboveThresholdValue;
+
+
+     //internal Eigen arrays
+     std::vector< Eigen::ArrayXXf >                fWireArrays;
+     std::vector< std::vector< geo::WireID > >     fWireIDs;
+
+     void CleanCornerFinderAlg(); //optinal cleanup
+     void InitializeGeometry(geo::Geometry const&);
+   
+     void FillSmoothKernel(Eigen::MatrixXf&);
+
+     void AttachFeaturePoints( Eigen::ArrayXXf&,
+			       std::vector<geo::WireID> const&,
+			       geo::View_t, 
+			       std::vector<recob::EndPoint2D>&,
+			       Eigen::MaxtrixXf const&,
+			       Eigen::MaxtrixXf const&,
+			       Eigen::MaxtrixXf const&);
+
+     void thresholdInput_InPlace(Eigen::ArrayXXf & wireArray,
+				 float const threshold_val,
+				 float const output_above_threshold=-1,
+				 float const output_below_threshold=0);
+     void thresholdInput_SparseImage(Eigen::ArrayXXf const&,
+				     Eigen::SparseMatrix<float>&,
+				     float const threshold_val,
+				     float const output_above_threshold=-1);
+     
+     void construct_Derivative(Eigen::ArrayXXf const&,
+			       Eigen::MatrixXf const&,
+			       Eigen::MatrixXf const&,
+			       Eigen::ArrayXXf &);
+
+     void construct_SparseDerivative(Eigen::SparseMatrix<float> const&,
+				     Eigen::MatrixXf const&,
+				     Eigen::MatrixXf const&,
+				     Eigen::SparseMatrix<float> &);
+
      void construct_CornerScore(Eigen::ArrayXXf const& derivativeXArray, 
 				Eigen::ArrayXXf const& derivativeYArray,
 				Eigen::ArrayXXd & cornerScoreArray);     
+
      void fill_CornerVector(Eigen::ArrayXXf const& wireArray,
 			    Eigen::ArrayXXd const& cornerScoreArray,
 			    std::vector<recob::EndPoint2D> & corner_vector,
 			    std::vector<geo::WireID> wireIDs, 
 			    geo::View_t view);
 
-     void transform_Input_to_SparseImage(Eigen::ArrayXXf const& wireArray,
-					 Eigen::SparseMatrix<float> & imageSMatrix);
-     void construct_SparseDerivativeX(Eigen::SparseMatrix<float> const& imageSMatrix,
-				      Eigen::SparseMatrix<float> & derivativeXSMatrix);
-     void construct_SparseDerivativeY(Eigen::SparseMatrix<float> const& imageSMatrix,
-				      Eigen::SparseMatrix<float> & derivativeYSMatrix);
-     void construct_SparseCornerScore(Eigen::SparseMatrix<float> const& derivativeXSMatrix,
-				      Eigen::SparseMatrix<float> const& derivativeYSMatrix,
-				      Eigen::SparseMatrix<double> & cornerScoreSMatrix);
-     void fill_SparseCornerVector(Eigen::ArrayXXf const& wireArray,
-				  Eigen::SparseMatrix<double> const& cornerScoreSMatrix,
-				  std::vector<recob::EndPoint2D> & corner_vector,
-				  std::vector<geo::WireID> wireIDs, 
+
+     
+     void construct_SparseCornerScore(Eigen::SparseMatrix<float> const&,
+				      Eigen::SparseMatrix<float> const&,
+				      Eigen::SparseMatrix<double> &);
+     
+     void fill_SparseCornerVector(Eigen::ArrayXXf const&,
+				  Eigen::SparseMatrix<double> const&,
+				  std::vector<recob::EndPoint2D> &,
+				  std::vector<geo::WireID> const&,
 				  geo::View_t view);
 
      float Gaussian_2D(float x, float y, 
-		       float amp, 
 		       float mean_x, float mean_y,
-		       float sigma_x, float sigma_y);
+		       float sigma_x=1, float sigma_y=1,
+		       float amp = 1.);
 
      unsigned int event_number;
      unsigned int run_number;

@@ -48,7 +48,7 @@ namespace vertex {
     corner::CornerFinderAlg  fCornerAlg;
     art::ServiceHandle<geo::Geometry> fGeometryHandle;
 
-    std::string               fCalDataModuleLabel;
+    std::string    fCalDataModuleLabel;
 
     void printEndpoints(std::vector<recob::EndPoint2D> const& corner_vector);
 
@@ -57,9 +57,7 @@ namespace vertex {
   
 
   //-----------------------------------------------------------------------------
-  CornerFinder::CornerFinder(fhicl::ParameterSet const& pset):
-    fCornerAlg(pset.get<fhicl::ParameterSet>("CornerAlgParamSet"))
-  {  
+  CornerFinder::CornerFinder(fhicl::ParameterSet const& pset) {  
     this->reconfigure(pset);    
     produces< std::vector<recob::EndPoint2D> >();
   }
@@ -69,16 +67,33 @@ namespace vertex {
 
   //---------------------------------------------------------------------------
   void CornerFinder::reconfigure(fhicl::ParameterSet const& pset) {
-    fCalDataModuleLabel = pset.get<std::string>("CalDataModuleLabel");
-    fCornerAlg.reconfigure(pset.get<fhicl::ParameterSet>("CornerAlgParamSet"));
-    return;
+    fCalDataModuleLabel                  = pset.get< std::string  >("CalDataModuleLabel");
+
+    fCornerAlg.setSparsify(pset.get<bool>("Sparsify",true));
+    fCornerAlg.setSparseReserveSize(pset.get<unsigned int>("SparseReserveSize",1e6));
+
+    fCornerAlg.setSmoothKernelParams( pset.get<unsigned int>("SmoothNeighborhoodX",4),
+				      pset.get<unsigned int>("SmoothNeighborhoodY",4),
+				      pset.get<float>("SmoothWidthX",1.),
+				      pset.get<float>("SmoothWidthY",1.));
+
+    if( (pset.get<std::string>("ImageTransformAlg","Threshold")).compare("Threshold")==0 )
+      fCornerAlg.setImageAlg_Threshold( pset.get<float>("InductionADCThreshold",3),
+					pset.get<float>("ColectionADCThreshold",6),
+					pset.get<float>("InductionAboveThresholdValue",-1),
+					pset.get<float>("CollectionAboveThresholdValue",-1),
+					pset.get<float>("InductionBelowThresholdValue",0),
+					pset.get<float>("CollectionBelowThresholdValue",0));
+    else if( (pset.get<std::string>("ImageTransformAlg")).compare("Nothing")==0 )
+      fCornerAlg.setImageAlg_Nothing();
+
   }
 
   //-----------------------------------------------------------------------------
   void CornerFinder::produce(art::Event& evt){
   
     //We need do very little here, as it's all handled by the corner finder.
-    const bool DEBUG_TEST = true; //turn on/off some messages
+    const bool DEBUG_TEST = false; //turn on/off some messages
 
     //We need to grab out the wires.
     art::Handle< std::vector<recob::Wire> > wireHandle;
@@ -91,16 +106,14 @@ namespace vertex {
     //fCornerAlg.GrabWires(wireVec,*fGeometryHandle);
     fCornerAlg.GrabWires_Eigen(wireVec,*fGeometryHandle);
     
-    std::cout << "Got wire vectors" << std::endl;
-
     //now, make a vector of recob::EndPoint2Ds, and hand that to CornerAlg to fill out
     std::unique_ptr< std::vector<recob::EndPoint2D> > corner_vector(new std::vector<recob::EndPoint2D>);
     //fCornerAlg.get_feature_points_fast(*corner_vector,*fGeometryHandle);
     fCornerAlg.GetFeaturePoints_Eigen(*corner_vector,*fGeometryHandle);
 
-    //mf::LogInfo("CornerFinderModule") 
-    std::cout << "CornerFinderAlg finished, and returned " 
-	      << corner_vector->size() << " endpoints." << std::endl;
+    mf::LogInfo("CornerFinderModule") 
+      << "CornerFinderAlg finished, and returned " 
+      << corner_vector->size() << " endpoints." << std::endl;
 
     if(DEBUG_TEST) printEndpoints(*corner_vector);
 
