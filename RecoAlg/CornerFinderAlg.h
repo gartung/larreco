@@ -21,14 +21,14 @@ namespace trkf {
   class BezierTrack;
 }
 
-namespace corner { //<---Not sure if this is the right namespace
+namespace corner {
 
    class CornerFinderAlg {
    
    public:
     
-     explicit CornerFinderAlg(); 
-     virtual ~CornerFinderAlg();        
+     CornerFinderAlg(); 
+     ~CornerFinderAlg();        
      
      //this one creates the histograms we want to use
      void GrabWires( std::vector<recob::Wire> const&, geo::Geometry const&);                                      
@@ -133,7 +133,7 @@ namespace corner { //<---Not sure if this is the right namespace
      void fill_CornerVector(Eigen::ArrayXXf const& wireArray,
 			    Eigen::ArrayXXd const& cornerScoreArray,
 			    std::vector<recob::EndPoint2D> & corner_vector,
-			    std::vector<geo::WireID> const& wireIDs, 
+			    std::vector<geo::WireID>, 
 			    geo::View_t view);
 
 
@@ -146,7 +146,7 @@ namespace corner { //<---Not sure if this is the right namespace
      void fill_SparseCornerVector(Eigen::ArrayXXf const&,
 				  Eigen::SparseMatrix<double> const&,
 				  std::vector<recob::EndPoint2D> &,
-				  std::vector<geo::WireID> const&,
+				  std::vector<geo::WireID>,
 				  geo::View_t view);
 
      float Gaussian_2D(float x, float y, 

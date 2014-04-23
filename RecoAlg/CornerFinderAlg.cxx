@@ -34,11 +34,6 @@
 
 #include "Eigen/LU"
 
-
-// NOTE: In the .h file I assumed this would belong in the cluster class....if 
-// we decide otherwise we will need to search and replace for this
-
-
 //-----------------------------------------------------------------------------
 corner::CornerFinderAlg::CornerFinderAlg(){
   fSparsify = true;
@@ -77,7 +72,7 @@ void corner::CornerFinderAlg::GrabWires(std::vector<recob::Wire> const& wireVec,
 
   for( unsigned int i_plane=0; i_plane < nPlanes; i_plane++)
     fWireArrays.at(i_plane).resize(my_geometry.Nwires(i_plane),nTimeTicks);
-  
+
   for(auto iwire : wireVec){
     
     geo::WireID this_wireID;
@@ -105,7 +100,7 @@ void corner::CornerFinderAlg::GetFeaturePoints(std::vector<recob::EndPoint2D> & 
 
   //declare some kernels used for derivatives.
   //these could be changed to be options declared from input parameters...
-  Eigen::MatrixXf SMOOTH_KERNEL(fSmoothNeighborhoodX,fSmoothNeighborhoodY);
+  Eigen::MatrixXf SMOOTH_KERNEL(fSmoothNeighborhoodX*2+1,fSmoothNeighborhoodY*2+1);
   FillSmoothKernel(SMOOTH_KERNEL);
   
   const Eigen::Matrix3f SOBEL_KERNEL_X = 
@@ -120,8 +115,9 @@ void corner::CornerFinderAlg::GetFeaturePoints(std::vector<recob::EndPoint2D> & 
       0.00,  0.00,  0.00,
       0.25,  0.50,  0.25).finished();
 
-  Eigen::MatrixXf WINDOW_KERNEL(fSTWindowNeighborhood,fSTWindowNeighborhood);
+  Eigen::MatrixXf WINDOW_KERNEL(fSTWindowNeighborhood*2+1,fSTWindowNeighborhood*2+1);
   FillWindowKernel(WINDOW_KERNEL);
+
 
   for(auto pid : my_geometry.PlaneIDs())
     AttachFeaturePoints(fWireArrays.at(pid.Plane),
@@ -132,7 +128,7 @@ void corner::CornerFinderAlg::GetFeaturePoints(std::vector<recob::EndPoint2D> & 
 			SOBEL_KERNEL_Y,
 			SMOOTH_KERNEL,
 			WINDOW_KERNEL);
-  
+
 }
 
 
@@ -145,17 +141,13 @@ void corner::CornerFinderAlg::InitializeGeometry(geo::Geometry const& my_geometr
   fWireIDs.resize(my_geometry.Nplanes());
   for(unsigned int i_plane=0; i_plane < my_geometry.Nplanes(); ++i_plane)
     fWireIDs.at(i_plane).resize(my_geometry.Nwires(i_plane));
-
 }
 
 //-----------------------------------------------------------------------------
 void corner::CornerFinderAlg::FillSmoothKernel(Eigen::MatrixXf & SMOOTH_KERNEL){
 
-  const unsigned int rangeX = fSmoothNeighborhoodX*2+1;
-  const unsigned int rangeY = fSmoothNeighborhoodY*2+1;
-
-  for(unsigned int i=0; i<rangeX; i++){
-    for(unsigned int j=0; j<rangeY; j++){
+  for(unsigned int i=0; i<SMOOTH_KERNEL.rows(); i++){
+    for(unsigned int j=0; j<SMOOTH_KERNEL.cols(); j++){
       SMOOTH_KERNEL(i,j) = Gaussian_2D((float)i,             //xval
 				       (float)j,             //yval
 				       1,                    //amp
@@ -240,6 +232,8 @@ void corner::CornerFinderAlg::AttachFeaturePoints( Eigen::ArrayXXf & wireArray,
       return;
     }
 
+    imageSMatrix.makeCompressed();
+
     //declare some internal temporary arrays
     const unsigned int new_reserve_size = 2*imageSMatrix.nonZeros();
 
@@ -255,9 +249,14 @@ void corner::CornerFinderAlg::AttachFeaturePoints( Eigen::ArrayXXf & wireArray,
     construct_SparseDerivative(imageSMatrix,kernel_derivative_x,kernel_derivative_smooth,derivativeXSMatrix);
     construct_SparseDerivative(imageSMatrix,kernel_derivative_y,kernel_derivative_smooth,derivativeYSMatrix);
     
+    derivativeXSMatrix.makeCompressed();
+    derivativeYSMatrix.makeCompressed();
+
     //get the corner score
     construct_SparseCornerScore(derivativeXSMatrix,derivativeYSMatrix,kernel_window,cornerScoreSMatrix);
     
+    cornerScoreSMatrix.makeCompressed();
+
     //fill the corner vector
     fill_SparseCornerVector(wireArray,cornerScoreSMatrix,corner_vector,wireIDs,view);
     
@@ -416,6 +415,7 @@ void corner::CornerFinderAlg::construct_SparseDerivative(Eigen::SparseMatrix<flo
     }
   }
   
+  std::cout << "Triplet size is " << triplet_vector.size() << std::endl;
   derivativeSMatrix.setFromTriplets(triplet_vector.begin(),triplet_vector.end());
 
 }
@@ -515,6 +515,8 @@ void corner::CornerFinderAlg::construct_SparseCornerScore(Eigen::SparseMatrix<fl
     }
   }
 
+  std::cout << "Triplet size is " << triplet_vector.size() << std::endl;
+
   cornerScoreSMatrix.setFromTriplets(triplet_vector.begin(),triplet_vector.end());
 
 }
@@ -572,45 +574,64 @@ void corner::CornerFinderAlg::construct_CornerScore(Eigen::ArrayXXf const& deriv
 void corner::CornerFinderAlg::fill_SparseCornerVector(Eigen::ArrayXXf const& wireArray,
 						      Eigen::SparseMatrix<double> const& cornerScoreSMatrix,
 						      std::vector<recob::EndPoint2D> & corner_vector,
-						      std::vector<geo::WireID> const& wireIDs, 
+						      std::vector<geo::WireID> wireIDs, 
 						      geo::View_t view){
 
-  const unsigned int nRows = cornerScoreSMatrix.rows();
-  const unsigned int nCols = cornerScoreSMatrix.cols();
+  const int nRows = cornerScoreSMatrix.rows();
+  const int nCols = cornerScoreSMatrix.cols();
   
   unsigned int max_row; unsigned int max_col;
 
   for(int i_outer=0; i_outer < cornerScoreSMatrix.outerSize(); i_outer++){
     for(Eigen::SparseMatrix<double>::InnerIterator it(cornerScoreSMatrix,i_outer); it; ++it){
 
-      if( it.row()<fLocalMaxNeighborhood || it.col()<fLocalMaxNeighborhood || 
-	  it.row()>(nRows-1-fLocalMaxNeighborhood) || it.col()>(nCols-1-fLocalMaxNeighborhood)) continue;
+      std::cout << "Filling corner vector (row,col)=(" << it.row() << "," << it.col() << ")" << std::endl;
 
-      Eigen::MatrixXd my_block = cornerScoreSMatrix.block(it.row()-(int)fLocalMaxNeighborhood,
-							  it.col()-(int)fLocalMaxNeighborhood,
-							  fLocalMaxNeighborhood*2+1,
-							  fLocalMaxNeighborhood*2+1);
+      if( it.row()<(int)fLocalMaxNeighborhood || it.col()<(int)fLocalMaxNeighborhood || 
+	  it.row()>(nRows-1-(int)fLocalMaxNeighborhood) || it.col()>(nCols-1-(int)fLocalMaxNeighborhood)) continue;
+
+      std::cout << "That was true." << std::endl;
+
+      Eigen::MatrixXd my_block(fLocalMaxNeighborhood*2+1,fLocalMaxNeighborhood*2+1);
+      my_block = cornerScoreSMatrix.block(it.row()-fLocalMaxNeighborhood,
+					  it.col()-fLocalMaxNeighborhood,
+					  fLocalMaxNeighborhood*2+1,
+					  fLocalMaxNeighborhood*2+1);
+      std::cout << "Got my block." << std::endl;
+
       double max = my_block.maxCoeff(&max_row,&max_col);
       
-      if( max_row==fLocalMaxNeighborhood && 
-	  max_col==fLocalMaxNeighborhood && 
-	  max>fCornerScoreMin )
-	corner_vector.emplace_back(it.col(),
-				   wireIDs.at(it.row()),
-				   max,
-				   0,//id
-				   view,
-				   wireArray(it.row(),it.col())); //totalQ
+      std::cout << "Got my max: " << max << " at (" << max_row << "," << max_col << ")" << std::endl;
+
+      if( max_row==fLocalMaxNeighborhood && max_col==fLocalMaxNeighborhood && max>fCornerScoreMin ){
+
+	std::cout << "Filling corner vector (row,col)=(" << it.row() << "," << it.col() << ")" << std::endl;
+	std::cout << "Wire ID is " << wireIDs.at(it.row()).Wire << std::endl;
+	std::cout << "Max is " << max << std::endl;
+	std::cout << "View is " << view << std::endl;
+	std::cout << "Charge is " << wireArray(it.row(),it.col()) << std::endl;
+
+	recob::EndPoint2D ep(it.col(),
+			     wireIDs.at(it.row()),
+			     max,
+			     0,//id
+			     view,
+			     wireArray(it.row(),it.col()));
+	  
+	corner_vector.push_back(ep); //totalQ
+      }
 
     }
   }
+
+  std::cout << "Leaving fill corner vector" << std::endl;
 
 }
 
 void corner::CornerFinderAlg::fill_CornerVector(Eigen::ArrayXXf const& wireArray,
 						Eigen::ArrayXXd const& cornerScoreArray,
 						std::vector<recob::EndPoint2D> & corner_vector,
-						std::vector<geo::WireID> const& wireIDs, 
+						std::vector<geo::WireID> wireIDs, 
 						geo::View_t view){
 
   const unsigned int nRows = cornerScoreArray.rows();

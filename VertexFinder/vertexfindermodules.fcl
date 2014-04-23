@@ -56,10 +56,9 @@ standard_cornerfinder:
 {
  module_type:        "CornerFinder"		# module name
  CalWireDataLabel:   "calwire"
+ PrintFlag:          false
  CornerAlgParamSet:  @local::standard_cornerfinderalg	# using the cornerfinder alg
 }
-#Setting cornerfinder to use the Harris score (instead of Nobel)
-standard_cornerfinder.CornerAlgParamSet.CornerScore_algorithm: "Harris"
 
 standard_featurevertexfinderana:
 {
@@ -76,7 +75,7 @@ argoneut_harris:        	@local::standard_harrisvertexfinder
 argoneut_vertexmatch:   	@local::standard_vertexmatch
 argoneut_primaryvertex: 	@local::standard_primaryvertexfinder
 argoneut_vertex2d:     	 	@local::standard_vertexfinder2d
-argoneut_featruevertexfinder:	@local::standard_featurevertexfinder
+argoneut_featurevertexfinder:	@local::standard_featurevertexfinder
 
 
 END_PROLOG

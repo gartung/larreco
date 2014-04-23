@@ -16,6 +16,7 @@
 //Basic includes
 #include <vector>
 #include <string>
+#include <iostream>
 
 //Framework includes
 #include "art/Framework/Core/ModuleMacros.h" 
@@ -45,10 +46,10 @@ namespace vertex {
     void produce(art::Event& evt);
     
   private:
-    corner::CornerFinderAlg  fCornerAlg;
+    corner::CornerFinderAlg           fCornerAlg;
     art::ServiceHandle<geo::Geometry> fGeometryHandle;
-
-    std::string    fCalDataModuleLabel;
+    std::string                       fCalDataModuleLabel;
+    bool                              fPrintFlag;
 
     void printEndpoints(std::vector<recob::EndPoint2D> const& corner_vector);
 
@@ -67,31 +68,34 @@ namespace vertex {
 
   //---------------------------------------------------------------------------
   void CornerFinder::reconfigure(fhicl::ParameterSet const& pset) {
-    fCalDataModuleLabel                  = pset.get< std::string  >("CalDataModuleLabel");
+    fCalDataModuleLabel                = pset.get< std::string  >("CalDataModuleLabel");
+    fPrintFlag                         = pset.get< bool >("PrintFlag",false);
+    fhicl::ParameterSet pset_CornerAlg = pset.get< fhicl::ParameterSet >("CornerAlgParamSet");
 
-    fCornerAlg.setSparsify(pset.get<bool>("Sparsify",true));
-    fCornerAlg.setSparseReserveSize(pset.get<unsigned int>("SparseReserveSize",1e6));
+    fCornerAlg.setSparsify(pset_CornerAlg.get<bool>("Sparsify",true));
+    fCornerAlg.setSparseReserveSize(pset_CornerAlg.get<unsigned int>("SparseReserveSize",1e6));
 
-    fCornerAlg.setSmoothKernelParams( pset.get<unsigned int>("SmoothNeighborhoodX",4),
-				      pset.get<unsigned int>("SmoothNeighborhoodY",4),
-				      pset.get<float>("SmoothWidthX",1.),
-				      pset.get<float>("SmoothWidthY",1.));
+    fCornerAlg.setSmoothKernelParams( pset_CornerAlg.get<unsigned int>("SmoothNeighborhoodX",4),
+				      pset_CornerAlg.get<unsigned int>("SmoothNeighborhoodY",4),
+				      pset_CornerAlg.get<float>("SmoothWidthX",1.),
+				      pset_CornerAlg.get<float>("SmoothWidthY",1.));
 
-    if( (pset.get<std::string>("ImageTransformAlg","Threshold")).compare("Threshold")==0 )
-      fCornerAlg.setImageAlg_Threshold( pset.get<float>("InductionADCThreshold",3),
-					pset.get<float>("ColectionADCThreshold",6),
-					pset.get<float>("InductionAboveThresholdValue",-1),
-					pset.get<float>("CollectionAboveThresholdValue",-1),
-					pset.get<float>("InductionBelowThresholdValue",0),
-					pset.get<float>("CollectionBelowThresholdValue",0));
-    else if( (pset.get<std::string>("ImageTransformAlg")).compare("Nothing")==0 )
+    if( (pset_CornerAlg.get<std::string>("ImageTransformAlg","Threshold")).compare("Threshold")==0 )
+      fCornerAlg.setImageAlg_Threshold( pset_CornerAlg.get<float>("InductionADCThreshold",3),
+					pset_CornerAlg.get<float>("ColectionADCThreshold",6),
+					pset_CornerAlg.get<float>("InductionAboveThresholdValue",-1),
+					pset_CornerAlg.get<float>("CollectionAboveThresholdValue",-1),
+					pset_CornerAlg.get<float>("InductionBelowThresholdValue",0),
+					pset_CornerAlg.get<float>("CollectionBelowThresholdValue",0));
+    else if( (pset_CornerAlg.get<std::string>("ImageTransformAlg")).compare("Nothing")==0 )
       fCornerAlg.setImageAlg_Nothing();
 
-    fCornerAlg.setStructureTensorWindow( pset.get<std::string>("STWindowType","Gaussian"),
-					 pset.get<unsigned int>("STWindowNeighborhood",2));
-    fCornerAlg.SetCornerScoreOptions( pset.get<std::string>("CornerScoreMethod","Harris"),
-				      pset.get<double>("CornerScoreMin",1e10),
-				      pset.get<unsigned int>("LocalMaxNeighborhood",2));
+    fCornerAlg.setStructureTensorWindow( pset_CornerAlg.get<std::string>("STWindowType","Gaussian"),
+					 pset_CornerAlg.get<unsigned int>("STWindowNeighborhood",2));
+
+    fCornerAlg.setCornerScoreOptions( pset_CornerAlg.get<std::string>("CornerScoreMethod","Harris"),
+				      pset_CornerAlg.get<double>("CornerScoreMin",1e10),
+				      pset_CornerAlg.get<unsigned int>("LocalMaxNeighborhood",2));
 
   }
 
@@ -99,23 +103,24 @@ namespace vertex {
   void CornerFinder::produce(art::Event& evt){
   
     //We need do very little here, as it's all handled by the corner finder.
-    const bool DEBUG_TEST = false; //turn on/off some messages
+    const bool DEBUG_TEST = fPrintFlag; //turn on/off some messages
 
     //We need to grab out the wires.
     art::Handle< std::vector<recob::Wire> > wireHandle;
     evt.getByLabel(fCalDataModuleLabel,wireHandle);
     std::vector<recob::Wire> const& wireVec(*wireHandle);
 
-    std::cout << "Got caldata handle" << std::endl;
+    geo::Geometry const& my_geometry(*fGeometryHandle);
 
     //First, have it process the wires.
-    fCornerAlg.GrabWires(wireVec,*fGeometryHandle);
+    fCornerAlg.GrabWires(wireVec,my_geometry);
     
     //now, make a vector of recob::EndPoint2Ds, and hand that to CornerAlg to fill out
     std::unique_ptr< std::vector<recob::EndPoint2D> > corner_vector(new std::vector<recob::EndPoint2D>);
-    fCornerAlg.GetFeaturePoints(*corner_vector,*fGeometryHandle);
+    fCornerAlg.GetFeaturePoints(*corner_vector,my_geometry);
 
-    mf::LogInfo("CornerFinderModule") 
+    //mf::LogInfo("CornerFinderModule") 
+    std::cout  
       << "CornerFinderAlg finished, and returned " 
       << corner_vector->size() << " endpoints." << std::endl;
 
@@ -134,14 +139,14 @@ namespace vertex {
 
     for(auto iter=corner_vector.begin(); iter!=corner_vector.end(); iter++){
       geo::WireID wid = iter->WireID();
-      //mf::LogVerbatim("CornerFinderModule") 
-      std::cout << "Endpoint found: (plane,wire,time,strength,charge)=(" 
-		<< wid.Plane << "," 
-		<< wid.Wire << "," 
-		<< iter->DriftTime() << ","
-		<< iter->Strength() << ","
-		<< iter->Charge() << ","
-		<< ")" << std::endl;
+      mf::LogVerbatim("CornerFinderModule") 
+	<< "Endpoint found: (plane,wire,time,strength,charge)=(" 
+	<< wid.Plane << "," 
+	<< wid.Wire << "," 
+	<< iter->DriftTime() << ","
+	<< iter->Strength() << ","
+	<< iter->Charge() << ","
+	<< ")" << std::endl;
     }
 
   }

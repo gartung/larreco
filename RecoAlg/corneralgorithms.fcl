@@ -1,0 +1,32 @@
+BEGIN_PROLOG
+
+standard_cornerfinderalg:
+{
+    Sparsify:                      true
+    SparseReserveSize:             1e5
+
+    SmoothNeighborhoodX:           4
+    SmoothNeighborhoodY:           4
+    SmoothWidthX:                  1.
+    SmoothWidthY:                  1.
+
+    ImageTransformAlg:             "Threshold"
+    InductionADCThreshold:         3
+    CollectionADCThreshold:        6
+    InductionAboveThresholdValue:  -1
+    CollectionAboveThresholdValue: -1
+    InductionBelowThresholdValue:  0
+    CollectionBelowThresholdValue: 0
+
+    STWindowType:                  "Gaussian"
+    STWindowNeighborhood:          2
+
+    CornerScoreMethod:             "Harris"
+    CornerScoreMin:                1e9
+    LocalMaxNeighborhood:          2
+}
+
+argoneut_cornerfinderalg:		      @local::standard_cornerfinderalg
+microboone_cornerfinderalg:		      @local::standard_cornerfinderalg
+
+END_PROLOG
