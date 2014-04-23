@@ -139,7 +139,8 @@ namespace vertex {
 
     for(auto iter=corner_vector.begin(); iter!=corner_vector.end(); iter++){
       geo::WireID wid = iter->WireID();
-      mf::LogVerbatim("CornerFinderModule") 
+      //mf::LogVerbatim("CornerFinderModule") 
+      std::cout	
 	<< "Endpoint found: (plane,wire,time,strength,charge)=(" 
 	<< wid.Plane << "," 
 	<< wid.Wire << "," 

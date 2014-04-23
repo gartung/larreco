@@ -475,7 +475,6 @@ void corner::CornerFinderAlg::construct_SparseCornerScore(Eigen::SparseMatrix<fl
 
   std::vector< Eigen::Triplet<double> > triplet_vector;
 
-  //I think it's OK to just do this over X derivative ... they should have similar entries to Y derivative
   for(int i_outer=0; i_outer < derivativeXSMatrix.outerSize(); i_outer++){
     for(Eigen::SparseMatrix<float>::InnerIterator it(derivativeXSMatrix,i_outer); it; ++it){
       
@@ -491,13 +490,56 @@ void corner::CornerFinderAlg::construct_SparseCornerScore(Eigen::SparseMatrix<fl
 							 w_rows,
 							 w_cols);
 
-      if(x_block.isZero(1e-3) && y_block.isZero(1e-3)) continue;
+      //if(x_block.isZero(1e-3) && y_block.isZero(1e-3)) continue;
+
 
       structure_tensor(0,0) = (x_block.array()*x_block.array()*windowMatrix.array()).sum();
       structure_tensor(1,1) = (y_block.array()*y_block.array()*windowMatrix.array()).sum();
       structure_tensor(0,1) = (x_block.array()*y_block.array()*windowMatrix.array()).sum();
       structure_tensor(1,0) = structure_tensor(0,1);
+      
+      double score;
+      if(fCornerScoreMethod.compare("Harris")==0)
+	score = structure_tensor.determinant() - 0.05 * structure_tensor.trace()*structure_tensor.trace();
+      else if(fCornerScoreMethod.compare("Noble")==0)
+	score = 2*(structure_tensor.determinant() / (structure_tensor.trace()+1e-5));
+      else{
+	LOG_ERROR("CornerFinderAlg") << "No such corner score option "
+				     << fCornerScoreMethod;
+	return;
+      }
 
+      if(score>fCornerScoreMin)
+	triplet_vector.emplace_back(it.row(),it.col(),score);
+
+    }
+  }
+
+  std::cout << "Triplet size is " << triplet_vector.size() << std::endl;
+
+  for(int i_outer=0; i_outer < derivativeYSMatrix.outerSize(); i_outer++){
+    for(Eigen::SparseMatrix<float>::InnerIterator it(derivativeYSMatrix,i_outer); it; ++it){
+      
+      if( it.row()<w_neighborhood || it.col()<w_neighborhood || 
+	  it.row()>(nRows-1-w_neighborhood) || it.col()>(nCols-1-w_neighborhood)) continue;
+
+      Eigen::MatrixXf x_block = derivativeXSMatrix.block(it.row()-w_neighborhood,
+							 it.col()-w_neighborhood,
+							 w_rows,
+							 w_cols);
+      Eigen::MatrixXf y_block = derivativeYSMatrix.block(it.row()-w_neighborhood,
+							 it.col()-w_neighborhood,
+							 w_rows,
+							 w_cols);
+
+      //if(x_block.isZero(1e-3) && y_block.isZero(1e-3)) continue;
+
+
+      structure_tensor(0,0) = (x_block.array()*x_block.array()*windowMatrix.array()).sum();
+      structure_tensor(1,1) = (y_block.array()*y_block.array()*windowMatrix.array()).sum();
+      structure_tensor(0,1) = (x_block.array()*y_block.array()*windowMatrix.array()).sum();
+      structure_tensor(1,0) = structure_tensor(0,1);
+      
       double score;
       if(fCornerScoreMethod.compare("Harris")==0)
 	score = structure_tensor.determinant() - 0.05 * structure_tensor.trace()*structure_tensor.trace();
@@ -585,46 +627,27 @@ void corner::CornerFinderAlg::fill_SparseCornerVector(Eigen::ArrayXXf const& wir
   for(int i_outer=0; i_outer < cornerScoreSMatrix.outerSize(); i_outer++){
     for(Eigen::SparseMatrix<double>::InnerIterator it(cornerScoreSMatrix,i_outer); it; ++it){
 
-      std::cout << "Filling corner vector (row,col)=(" << it.row() << "," << it.col() << ")" << std::endl;
-
       if( it.row()<(int)fLocalMaxNeighborhood || it.col()<(int)fLocalMaxNeighborhood || 
 	  it.row()>(nRows-1-(int)fLocalMaxNeighborhood) || it.col()>(nCols-1-(int)fLocalMaxNeighborhood)) continue;
-
-      std::cout << "That was true." << std::endl;
 
       Eigen::MatrixXd my_block(fLocalMaxNeighborhood*2+1,fLocalMaxNeighborhood*2+1);
       my_block = cornerScoreSMatrix.block(it.row()-fLocalMaxNeighborhood,
 					  it.col()-fLocalMaxNeighborhood,
 					  fLocalMaxNeighborhood*2+1,
 					  fLocalMaxNeighborhood*2+1);
-      std::cout << "Got my block." << std::endl;
-
       double max = my_block.maxCoeff(&max_row,&max_col);
       
-      std::cout << "Got my max: " << max << " at (" << max_row << "," << max_col << ")" << std::endl;
-
-      if( max_row==fLocalMaxNeighborhood && max_col==fLocalMaxNeighborhood && max>fCornerScoreMin ){
-
-	std::cout << "Filling corner vector (row,col)=(" << it.row() << "," << it.col() << ")" << std::endl;
-	std::cout << "Wire ID is " << wireIDs.at(it.row()).Wire << std::endl;
-	std::cout << "Max is " << max << std::endl;
-	std::cout << "View is " << view << std::endl;
-	std::cout << "Charge is " << wireArray(it.row(),it.col()) << std::endl;
-
-	recob::EndPoint2D ep(it.col(),
-			     wireIDs.at(it.row()),
-			     max,
-			     0,//id
-			     view,
-			     wireArray(it.row(),it.col()));
-	  
-	corner_vector.push_back(ep); //totalQ
-      }
-
+      if( max_row==fLocalMaxNeighborhood && max_col==fLocalMaxNeighborhood && max>fCornerScoreMin )
+	corner_vector.emplace_back(it.col(),
+				   wireIDs.at(it.row()),
+				   max,
+				   0,//id
+				   view,
+				   wireArray(it.row(),it.col())); //totalQ
+      
+      
     }
   }
-
-  std::cout << "Leaving fill corner vector" << std::endl;
 
 }
 

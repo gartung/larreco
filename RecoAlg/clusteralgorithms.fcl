@@ -116,35 +116,6 @@ standard_endpointalg:
   SaveVertexMap:       -1
 }
 
-
-standard_cornerfinderalg:
-{
-  RawDataModuleLabel:           "daq"
-  CalDataModuleLabel:		"caldata"
-  Trimming_threshold:      10
-  Trimming_totalThreshold: 5e4
-  Conversion_algorithm:         "standard"
-  Conversion_function:          "TMath::Gaus(x,0,1)*TMath::Gaus(y,0,1)"
-  Conversion_func_neighborhood: 3
-  Conversion_threshold:		0
-  Conversion_bins_per_input_x:	1
-  Conversion_bins_per_input_y:	1
-  Derivative_method: 		"Sobel" #Noble
-  Derivative_neighborhood:	1 
-  Derivative_BlurFunc:	"NotImplemented" 
-  Derivative_BlurNeighborhood:	5 
-  CornerScore_Noble_epsilon:    1e-5
-  CornerScore_Harris_kappa:     0.05
-  CornerScore_neighborhood:	1
-  CornerScore_algorithm:	"Nobel" #Harris
-  MaxSuppress_neighborhood:	3
-  MaxSuppress_threshold:	1000
-  Integral_bin_threshold:       5
-  Integral_fraction_threshold:  0.95
-  
-
-}
-
 standard_dbscanalg:
 {
   eps:    1.0
@@ -309,7 +280,6 @@ argoneut_houghbasealg.MinHits:       3
 argoneut_houghbasealg.NumAngleCells: 5000
 argoneut_houghbasealg.MaxDistance:   5.0
 argoneut_endpointalg:                @local::standard_endpointalg
-argoneut_cornerfinderalg:		      @local::standard_cornerfinderalg
 argoneut_clusterparamsalg:       @local::standard_clusterparamsalg
 argoneut_clusterparamsalg.HoughBaseAlg: @local::argoneut_houghbasealg
 argoneut_clusterparamsalg.HoughBaseAlg.NumAngleCells:       3000
@@ -330,7 +300,6 @@ microboone_houghbasealg.MinHits:              5
 microboone_houghbasealg.NumAngleCells:        20000
 microboone_houghbasealg.DoHoughLineMerge:     1
 microboone_fuzzyclusteralg:                   @local::standard_fuzzyclusteralg 
-microboone_cornerfinderalg:		      @local::standard_cornerfinderalg
 microboone_clusterparamsalg:                 @local::standard_clusterparamsalg
 microboone_smallclustalg:	   @local::standard_smallclustalg
 microboone_clustercrawleralg:      @local::standard_clustercrawleralg
