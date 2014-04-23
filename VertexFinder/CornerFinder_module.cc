@@ -87,6 +87,12 @@ namespace vertex {
     else if( (pset.get<std::string>("ImageTransformAlg")).compare("Nothing")==0 )
       fCornerAlg.setImageAlg_Nothing();
 
+    fCornerAlg.setStructureTensorWindow( pset.get<std::string>("STWindowType","Gaussian"),
+					 pset.get<unsigned int>("STWindowNeighborhood",2));
+    fCornerAlg.SetCornerScoreOptions( pset.get<std::string>("CornerScoreMethod","Harris"),
+				      pset.get<double>("CornerScoreMin",1e10),
+				      pset.get<unsigned int>("LocalMaxNeighborhood",2));
+
   }
 
   //-----------------------------------------------------------------------------
@@ -103,13 +109,11 @@ namespace vertex {
     std::cout << "Got caldata handle" << std::endl;
 
     //First, have it process the wires.
-    //fCornerAlg.GrabWires(wireVec,*fGeometryHandle);
-    fCornerAlg.GrabWires_Eigen(wireVec,*fGeometryHandle);
+    fCornerAlg.GrabWires(wireVec,*fGeometryHandle);
     
     //now, make a vector of recob::EndPoint2Ds, and hand that to CornerAlg to fill out
     std::unique_ptr< std::vector<recob::EndPoint2D> > corner_vector(new std::vector<recob::EndPoint2D>);
-    //fCornerAlg.get_feature_points_fast(*corner_vector,*fGeometryHandle);
-    fCornerAlg.GetFeaturePoints_Eigen(*corner_vector,*fGeometryHandle);
+    fCornerAlg.GetFeaturePoints(*corner_vector,*fGeometryHandle);
 
     mf::LogInfo("CornerFinderModule") 
       << "CornerFinderAlg finished, and returned " 

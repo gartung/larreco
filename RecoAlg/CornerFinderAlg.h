@@ -27,7 +27,7 @@ namespace corner { //<---Not sure if this is the right namespace
    
    public:
     
-     explicit CornerFinderAlg(fhicl::ParameterSet const& pset); 
+     explicit CornerFinderAlg(); 
      virtual ~CornerFinderAlg();        
      
      //this one creates the histograms we want to use
@@ -43,8 +43,7 @@ namespace corner { //<---Not sure if this is the right namespace
      void setSmoothKernelParams(unsigned int nX, unsigned int nY,
 				float sigmaX, float sigmaY)
      { fSmoothNeighborhoodX = nX; fSmoothNeighborhoodY = nY;
-       fSmoothWidthX = sigmaX;    fSmoothSigmaY = sigmaY; }
-
+       fSmoothWidthX = sigmaX;    fSmoothWidthY = sigmaY; }
      void setImageAlg_Threshold(float i_adc_t, float c_adc_t,
 				float i_pass_v=-1, float c_pass_v=-1,
 				float i_fail_v=0, float c_fail_v=0){ 
@@ -57,7 +56,11 @@ namespace corner { //<---Not sure if this is the right namespace
        fCollectionBelowThresholdValue = c_fail_v;
      }
      void setImageAlg_Nothing() { fImageTransformAlg="Nothing"; }
-
+     void setStructureTensorWindow( std::string type, unsigned int nhood)
+     { fSTWindowType = type; fSTWindowNeighborhood = nhood; }
+     void setCornerScoreOptions(std::string method, double min, unsigned int local_nhood)
+     { fCornerScoreMethod = method; fCornerScoreMin = min; fLocalMaxNeighborhood = local_nhood; }
+     
     private:
      
      //internal configurable options
@@ -77,6 +80,12 @@ namespace corner { //<---Not sure if this is the right namespace
      float         fInductionAboveThresholdValue;
      float         fCollectionAboveThresholdValue;
 
+     std::string   fSTWindowType;
+     unsigned int  fSTWindowNeighborhood;
+
+     std::string   fCornerScoreMethod;
+     double        fCornerScoreMin;
+     unsigned int  fLocalMaxNeighborhood;
 
      //internal Eigen arrays
      std::vector< Eigen::ArrayXXf >                fWireArrays;
@@ -86,14 +95,16 @@ namespace corner { //<---Not sure if this is the right namespace
      void InitializeGeometry(geo::Geometry const&);
    
      void FillSmoothKernel(Eigen::MatrixXf&);
+     void FillWindowKernel(Eigen::MatrixXf&);
 
      void AttachFeaturePoints( Eigen::ArrayXXf&,
 			       std::vector<geo::WireID> const&,
 			       geo::View_t, 
 			       std::vector<recob::EndPoint2D>&,
-			       Eigen::MaxtrixXf const&,
-			       Eigen::MaxtrixXf const&,
-			       Eigen::MaxtrixXf const&);
+			       Eigen::MatrixXf const&,
+			       Eigen::MatrixXf const&,
+			       Eigen::MatrixXf const&,
+			       Eigen::MatrixXf const&);
 
      void thresholdInput_InPlace(Eigen::ArrayXXf & wireArray,
 				 float const threshold_val,
@@ -114,20 +125,22 @@ namespace corner { //<---Not sure if this is the right namespace
 				     Eigen::MatrixXf const&,
 				     Eigen::SparseMatrix<float> &);
 
-     void construct_CornerScore(Eigen::ArrayXXf const& derivativeXArray, 
-				Eigen::ArrayXXf const& derivativeYArray,
-				Eigen::ArrayXXd & cornerScoreArray);     
+     void construct_CornerScore(Eigen::ArrayXXf const&, 
+				Eigen::ArrayXXf const&,
+				Eigen::MatrixXf const&,
+				Eigen::ArrayXXd&);     
 
      void fill_CornerVector(Eigen::ArrayXXf const& wireArray,
 			    Eigen::ArrayXXd const& cornerScoreArray,
 			    std::vector<recob::EndPoint2D> & corner_vector,
-			    std::vector<geo::WireID> wireIDs, 
+			    std::vector<geo::WireID> const& wireIDs, 
 			    geo::View_t view);
 
 
      
      void construct_SparseCornerScore(Eigen::SparseMatrix<float> const&,
 				      Eigen::SparseMatrix<float> const&,
+				      Eigen::MatrixXf const&,
 				      Eigen::SparseMatrix<double> &);
      
      void fill_SparseCornerVector(Eigen::ArrayXXf const&,
@@ -140,40 +153,6 @@ namespace corner { //<---Not sure if this is the right namespace
 		       float mean_x, float mean_y,
 		       float sigma_x=1, float sigma_y=1,
 		       float amp = 1.);
-
-     unsigned int event_number;
-     unsigned int run_number;
-     
-     void create_image_histo(TH2F const& h_wire_data, TH2F & h_conversion);
-     void create_derivative_histograms(TH2F const& h_conversion, TH2F & h_derivative_x, TH2F & h_derivative_y);
-     void create_cornerScore_histogram(TH2F const& h_derivative_x, TH2F const& h_derivative_y, TH2D & h_cornerScore);
-     size_t perform_maximum_suppression(TH2D const& h_cornerScore, 
-					std::vector<recob::EndPoint2D> & corner_vector,
-					std::vector<geo::WireID> wireIDs, 
-					geo::View_t view,
-					TH2D & h_maxSuppress,
-					int startx=0,
-					int starty=0);
-     
-     size_t calculate_line_integral_score( TH2F const& h_wire_data, 
-					   std::vector<recob::EndPoint2D> const & corner_vector, 
-					   std::vector<recob::EndPoint2D> & corner_lineIntegralScore_vector,
-					   TH2F & h_lineIntegralScore);
-     
-     void attach_feature_points(TH2F const& h_wire_data, 
-				std::vector<geo::WireID> wireIDs, 
-				geo::View_t view,
-				std::vector<recob::EndPoint2D>&,
-				int startx=0,int starty=0);
-     void attach_feature_points_LineIntegralScore(TH2F const& h_wire_data, 
-						  std::vector<geo::WireID> wireIDs, 
-						  geo::View_t view,
-						  std::vector<recob::EndPoint2D>&);
-     
-     
-     void create_smaller_histos(geo::Geometry const&);
-     void remove_duplicates(std::vector<recob::EndPoint2D>&);
-     
 
    };//<---End of class CornerFinderAlg
    
