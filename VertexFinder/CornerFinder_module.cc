@@ -17,6 +17,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <algorithm>
 
 //Framework includes
 #include "art/Framework/Core/ModuleMacros.h" 
@@ -52,6 +53,11 @@ namespace vertex {
     bool                              fPrintFlag;
 
     void printEndpoints(std::vector<recob::EndPoint2D> const& corner_vector);
+
+    struct scoreCompare{
+      bool operator() (recob::EndPoint2D a, recob::EndPoint2D b)
+      { return a.Strength() > b.Strength(); }
+    } fScoreCompare;
 
   }; //class CornerFinder
   
@@ -119,13 +125,15 @@ namespace vertex {
     std::unique_ptr< std::vector<recob::EndPoint2D> > corner_vector(new std::vector<recob::EndPoint2D>);
     fCornerAlg.GetFeaturePoints(*corner_vector,my_geometry);
 
+    std::sort (corner_vector->begin(),corner_vector->end(),fScoreCompare);
+    
     //mf::LogInfo("CornerFinderModule") 
     std::cout  
       << "CornerFinderAlg finished, and returned " 
       << corner_vector->size() << " endpoints." << std::endl;
-
+    
     if(DEBUG_TEST) printEndpoints(*corner_vector);
-
+    
     //and now, put this on the event.
     evt.put(std::move(corner_vector));
 

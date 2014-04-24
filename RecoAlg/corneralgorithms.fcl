@@ -11,19 +11,19 @@ standard_cornerfinderalg:
     SmoothWidthY:                  1.
 
     ImageTransformAlg:             "Threshold"
-    InductionADCThreshold:         3
-    CollectionADCThreshold:        6
-    InductionAboveThresholdValue:  -1
-    CollectionAboveThresholdValue: -1
+    InductionADCThreshold:         5
+    CollectionADCThreshold:        10
+    InductionAboveThresholdValue:  100
+    CollectionAboveThresholdValue: 100
     InductionBelowThresholdValue:  0
     CollectionBelowThresholdValue: 0
 
     STWindowType:                  "Gaussian"
-    STWindowNeighborhood:          2
+    STWindowNeighborhood:          5
 
     CornerScoreMethod:             "Harris"
-    CornerScoreMin:                1e9
-    LocalMaxNeighborhood:          2
+    CornerScoreMin:                100
+    LocalMaxNeighborhood:          5
 }
 
 argoneut_cornerfinderalg:		      @local::standard_cornerfinderalg

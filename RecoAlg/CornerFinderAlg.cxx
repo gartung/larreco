@@ -128,7 +128,6 @@ void corner::CornerFinderAlg::GetFeaturePoints(std::vector<recob::EndPoint2D> & 
 			SOBEL_KERNEL_Y,
 			SMOOTH_KERNEL,
 			WINDOW_KERNEL);
-
 }
 
 
@@ -415,7 +414,6 @@ void corner::CornerFinderAlg::construct_SparseDerivative(Eigen::SparseMatrix<flo
     }
   }
   
-  std::cout << "Triplet size is " << triplet_vector.size() << std::endl;
   derivativeSMatrix.setFromTriplets(triplet_vector.begin(),triplet_vector.end());
 
 }
@@ -515,8 +513,6 @@ void corner::CornerFinderAlg::construct_SparseCornerScore(Eigen::SparseMatrix<fl
     }
   }
 
-  std::cout << "Triplet size is " << triplet_vector.size() << std::endl;
-
   for(int i_outer=0; i_outer < derivativeYSMatrix.outerSize(); i_outer++){
     for(Eigen::SparseMatrix<float>::InnerIterator it(derivativeYSMatrix,i_outer); it; ++it){
       
@@ -556,8 +552,6 @@ void corner::CornerFinderAlg::construct_SparseCornerScore(Eigen::SparseMatrix<fl
 
     }
   }
-
-  std::cout << "Triplet size is " << triplet_vector.size() << std::endl;
 
   cornerScoreSMatrix.setFromTriplets(triplet_vector.begin(),triplet_vector.end());
 
