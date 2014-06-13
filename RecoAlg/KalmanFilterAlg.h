@@ -12,10 +12,13 @@
 /// MaxPErr       - Maximum pointing error for free propagation.
 /// GoodPErr      - Pointing error threshold for switching to free propagation.
 /// MaxIncChisq   - Maximum incremental chisquare to accept a hit.
+/// MaxSeedIncChisq - Maximum incremental chisquare to accept in seed phase.
+/// MaxSmoothIncChisq - Maximum incremental chisquare to accept in smooth phase.
 /// MaxEndChisq   - Maximum incremental chisquare for endpoint hit.
 /// MinLHits      - Minimum number of hits to turn off linearized propagation.
 /// MaxLDist      - Maximum distance for linearized propagation.
 /// MaxPredDist   - Maximum prediciton distance to accept a hit.
+/// MaxSeedPredDist - Maximum prediciton distance to accept a hit in seed phase.
 /// MaxPropDist   - Maximum propagation distance to candidate surface.
 /// MinSortDist   - Sort low distance threshold.
 /// MaxSortDist   - Sort high distance threshold.
@@ -25,17 +28,29 @@
 /// MinSampleDist - Minimum sample distance (for momentum measurement).
 /// FitMomRange   - Fit momentum using range.
 /// FitMomMS      - Fit momentum using multiple scattering.
+/// GTrace        - Graphical trace flag.
+/// GTraceWW      - Graphical trace window width (pixels).
+/// GTraceWH      - Graphical trace window height (pixels).
+/// GTraceXMin    - Graphical trace minimum x (same for each view).
+/// GTraceXMax    - Graphical trace maximum x (same for each view).
+/// GTraceZMin    - Graphical trace minimum z (vector).
+/// GTraceZMax    - Graphical trace maximum z (vector).
 ///
 ////////////////////////////////////////////////////////////////////////
 
 #ifndef KALMANFILTERALG_H
 #define KALMANFILTERALG_H
 
+#include <vector>
+#include <memory>
 #include "RecoObjects/KGTrack.h"
 #include "RecoObjects/Propagator.h"
 #include "RecoObjects/KHitContainer.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Persistency/Common/PtrVector.h"
+#include "TCanvas.h"
+#include "TMarker.h"
+#include "TPaveText.h"
 
 namespace trkf {
 
@@ -116,10 +131,13 @@ namespace trkf {
     double fMaxPErr;         ///< Maximum pointing error for free propagation.
     double fGoodPErr;        ///< Pointing error threshold for switching to free propagation.
     double fMaxIncChisq;     ///< Maximum incremental chisquare to accept a hit.
+    double fMaxSeedIncChisq; ///< Maximum incremental chisquare to accept a hit in seed phase.
+    double fMaxSmoothIncChisq; ///< Maximum incremental chisquare to accept a hit in smooth phase.
     double fMaxEndChisq;     ///< Maximum incremental chisquare for endpoint hit.
     int fMinLHits;           ///< Minimum number of hits to turn off linearized propagation.
     double fMaxLDist;        ///< Maximum distance for linearized propagation.
     double fMaxPredDist;     ///< Maximum prediciton distance to accept a hit.
+    double fMaxSeedPredDist; ///< Maximum prediciton distance to accept a hit in seed phase.
     double fMaxPropDist;     ///< Maximum propagation distance to candidate surface.
     double fMinSortDist;     ///< Sort low distance threshold.
     double fMaxSortDist;     ///< Sort high distance threshold.
@@ -129,10 +147,22 @@ namespace trkf {
     double fMinSampleDist;   ///< Minimum sample distance (for momentum measurement).
     bool fFitMomRange;       ///< Fit momentum using range.
     bool fFitMomMS;          ///< Fit momentum using multiple scattering.
+    bool fGTrace;            ///< Graphical trace flag.
+    double fGTraceWW;        ///< Window width.
+    double fGTraceWH;        ///< Window height.
+    double fGTraceXMin;      ///< Graphical trace minimum x.
+    double fGTraceXMax;      ///< Graphical trace maximum x.
+    std::vector<double> fGTraceZMin;  ///< Graphical trace minimum z for each view.
+    std::vector<double> fGTraceZMax;  ///< Graphical trace maximum z for each view.
 
     // Other attributes.
 
-    int fPlane;          ///< Preferred view plane.
+    int fPlane;              ///< Preferred view plane.
+    mutable std::vector<std::unique_ptr<TCanvas> > fCanvases; ///< Graphical trace canvases.
+    mutable std::vector<TVirtualPad*> fPads;                  ///< View pads in current canvas.
+    mutable TVirtualPad* fInfoPad;                            ///< Information pad.
+    mutable TPaveText* fMessages;                             ///< Message box.
+    mutable std::map<int, TMarker*> fMarkerMap;               ///< Markers in current canvas.
   };
 }
 

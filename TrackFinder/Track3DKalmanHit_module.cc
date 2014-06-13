@@ -15,6 +15,8 @@
 // MaxTcut            - Maximum delta ray energy in Mev for dE/dx.
 // DoDedx             - Global dE/dx enable flag.
 // MinSeedHits        - Minimum number of hits per track seed.
+// MinSeedChopHits:   - Potentially chop seeds that exceed this length.
+// MaxChopHits        - Maximum number of hits to chop from each end of seed.
 // MaxSeedChiDF       - Maximum seed track chisquare/dof.
 // MinSeedSlope       - Minimum seed slope (dx/dz).
 // InitialMomentum    - Initial momentum guess.
@@ -24,6 +26,7 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
+#include <cmath>
 #include <algorithm>
 #include <vector>
 #include <deque>
@@ -153,7 +156,9 @@ namespace trkf {
     std::string fClusterModuleLabel;    ///< Clustered Hits.
     double fMaxTcut;                    ///< Maximum delta ray energy in MeV for restricted dE/dx.
     bool fDoDedx;                       ///< Global dE/dx enable flag.
-    double fMinSeedHits;                ///< Minimum number of hits per track seed.
+    int fMinSeedHits;                   ///< Minimum number of hits per track seed.
+    int fMinSeedChopHits;               ///< Potentially chop seeds that exceed this length.
+    int fMaxChopHits;                   ///< Maximum number of hits to chop from each end of seed.
     double fMaxSeedChiDF;               ///< Maximum seed track chisquare/dof.
     double fMinSeedSlope;               ///< Minimum seed slope (dx/dz).
     double fInitialMomentum;            ///< Initial (or constant) momentum.
@@ -195,7 +200,9 @@ trkf::Track3DKalmanHit::Track3DKalmanHit(fhicl::ParameterSet const & pset) :
   fUseClusterHits(false),
   fMaxTcut(0.),
   fDoDedx(false),
-  fMinSeedHits(0.),
+  fMinSeedHits(0),
+  fMinSeedChopHits(0),
+  fMaxChopHits(0),
   fMaxSeedChiDF(0.),
   fMinSeedSlope(0.),
   fInitialMomentum(0.),
@@ -247,7 +254,9 @@ void trkf::Track3DKalmanHit::reconfigure(fhicl::ParameterSet const & pset)
   fClusterModuleLabel = pset.get<std::string>("ClusterModuleLabel");
   fMaxTcut = pset.get<double>("MaxTcut");
   fDoDedx = pset.get<bool>("DoDedx");
-  fMinSeedHits = pset.get<double>("MinSeedHits");
+  fMinSeedHits = pset.get<int>("MinSeedHits");
+  fMinSeedChopHits = pset.get<int>("MinSeedChopHits");
+  fMaxChopHits = pset.get<int>("MaxChopHits");
   fMaxSeedChiDF = pset.get<double>("MaxSeedChiDF");
   fMinSeedSlope = pset.get<double>("MinSeedSlope");
   fInitialMomentum = pset.get<double>("InitialMomentum");
@@ -365,6 +374,7 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
   // suitable for tracks.
 
   art::PtrVector<recob::Hit> seederhits = hits;
+  //std::cout << "Track3DKalmanHit: " << hits.size() << " total hits." << std::endl;
 
   // Start of loop.
 
@@ -395,9 +405,23 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
       for(;sit != seeds.end() && hpsit != hitsperseed.end(); ++sit, ++hpsit) {
 	
 	const recob::Seed& seed = *sit;
-	art::PtrVector<recob::Hit> seedhits = *hpsit;
-      
-	// Filter hits used by seed from hits available to make future seeds.
+
+	// Chop a couple of hits off each end of the seed.
+	// Seems like seeds often end at delta rays, Michel electrons,
+	// or other pathologies.
+
+	int nchopmax = std::max(0, int((hpsit->size() - fMinSeedChopHits)/2));
+	int nchop = std::min(nchopmax, fMaxChopHits);
+	art::PtrVector<recob::Hit>::const_iterator itb = hpsit->begin();
+	art::PtrVector<recob::Hit>::const_iterator ite = hpsit->end();
+	itb += nchop;
+	ite -= nchop;
+	art::PtrVector<recob::Hit> seedhits;
+	seedhits.reserve(hpsit->size());
+	for(art::PtrVector<recob::Hit>::const_iterator it = itb; it != ite; ++it)
+	  seedhits.push_back(*it);
+
+	// Filter hits used by (chopped) seed from hits available to make future seeds.
 	// No matter what, we will never use these hits for another seed.
 	// This eliminates the possibility of an infinite loop.
 
@@ -433,8 +457,7 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 	  if (mf::isDebugEnabled()) {
 	    log << "Seed found with " << seedhits.size() <<" hits.\n"
 	        << "(x,y,z) = " << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << "\n"
-	        << "(dx,dy,dz) = " << dir[0] << ", " << dir[1] << ", " << dir[2] << "\n"
-	        << "(x1, y1, z1)) = ";
+	        << "(dx,dy,dz) = " << dir[0] << ", " << dir[1] << ", " << dir[2] << "\n";
 	  } // if debug
 
 	  // Cut on the seed slope dx/dz.
@@ -446,7 +469,14 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 
 	    int pdg = 13;
 	    std::vector<KTrack> initial_tracks;
-	    int ninit = (fDoDedx ? 2 : 1);
+
+	    // The build_all flag specifies whether we should attempt to make
+	    // tracks from all initial tracks, or alternatively, whether we 
+	    // should declare victory and quit after getting a successful
+	    // track from one initial track.
+
+	    bool build_all = fDoDedx;
+	    int ninit = 2;
 	    initial_tracks.reserve(ninit);
 	    initial_tracks.push_back(KTrack(psurf, vec, Surface::FORWARD, pdg));
 	    if(ninit > 1)
@@ -485,7 +515,7 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 		  // Do additional quality cuts.
 
 		  size_t n = trg1.numHits();
-		  ok = (n >= fMinSeedHits &&
+		  ok = (int(n) >= fMinSeedHits &&
 			trg0.startTrack().getChisq() <= n * fMaxSeedChiDF &&
 			trg0.endTrack().getChisq() <= n * fMaxSeedChiDF &&
 			trg1.startTrack().getChisq() <= n * fMaxSeedChiDF &&
@@ -506,10 +536,13 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 		    art::PtrVector<recob::Hit> trackhits = hits;
 
 		    // Do an extend + smooth loop here.
+		    // Exit after two consecutive failures to extend (i.e. from each end),
+		    // or if the iteration count reaches the maximum.
 
 		    int niter = 6;
+		    int nfail = 0;  // Number of consecutive extend fails.
 
-		    for(int ix = 0; ok && ix < niter; ++ix) {
+		    for(int ix = 0; ok && ix < niter && nfail < 2; ++ix) {
 
 		      // Fill a collection of hits from the last good track
 		      // (initially the seed track).
@@ -529,8 +562,12 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 		      // Extend the track.  It is not an error for the
 		      // extend operation to fail, meaning that no new hits
 		      // were added.
-
-		      fKFAlg.extendTrack(trg1, fProp, trackcont);
+		      
+		      bool extendok = fKFAlg.extendTrack(trg1, fProp, trackcont);
+		      if(extendok)
+			nfail = 0;
+		      else
+			++nfail;
 
 		      // Smooth the extended track, and make a new
 		      // unidirectionally fit track in the opposite
@@ -578,7 +615,8 @@ void trkf::Track3DKalmanHit::produce(art::Event & evt)
 	      }
 	      if (mf::isDebugEnabled())
 	        log << (ok? "Find track succeeded.": "Find track failed.") << "\n";
-	    
+	      if(ok && !build_all)
+		break;	    
 	    } // for initial track
 	    
 	    // Loop over newly added tracks and remove hits contained on

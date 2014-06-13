@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 ///
 /// \file   KalmanFilterAlg.cxx
 ///
@@ -13,10 +13,71 @@
 #include "cetlib/exception.h"
 #include "boost/numeric/ublas/vector_proxy.hpp"
 #include "boost/numeric/ublas/matrix_proxy.hpp"
+#include "RecoObjects/KHit.h"
+#include "RecoObjects/SurfYZPlane.h"
+#include "Geometry/Geometry.h"
+#include "TGaxis.h"
+#include "TText.h"
+#include "TLegend.h"
+#include "TLegendEntry.h"
+#include "TText.h"
 
 // Local functions.
 
 namespace {
+
+  void hit_position(const trkf::KHitBase& hit, double& z, double &x) {
+
+    // Map hit -> (z,x) for plotting.
+
+    // Default result.
+
+    z = 0.;
+    x = 0.;
+
+    // Cast this hit to KHit<1>.  Only know how to handle 1D hits.
+
+    const trkf::KHit<1>* phit1 = dynamic_cast<const trkf::KHit<1>*>(&hit);
+    if(phit1) {
+      const std::shared_ptr<const trkf::Surface>& psurf = hit.getMeasSurface();
+
+      // Currently only handle SurfYZPlane (could add other surfaces if needed in future).
+
+      const trkf::SurfYZPlane* pyz = dynamic_cast<const trkf::SurfYZPlane*>(&*psurf);
+      if(pyz) {
+
+	// Now finished doing casts.
+	// We have a kind of hit and measurement surface that we know how to handle.
+
+	// Get x coordinate from hit.
+
+	x = phit1->getMeasVector()(0);
+
+	// Get z position from surface parameters.
+	// The "z" position is actually calculated as the perpendicular distance 
+	// from a corner, which is a proxy for wire number.
+
+	double z0 = pyz->z0();
+	double y0 = pyz->y0();
+	double phi = pyz->phi();
+	art::ServiceHandle<geo::Geometry> geom;
+	double ymax = geom->DetHalfWidth();
+	if(phi > 0.)
+	  z = z0 * std::cos(phi) + (ymax - y0) * std::sin(phi);
+	else
+	  z = z0 * std::cos(phi) - (ymax + y0) * std::sin(phi);
+
+	//int pl = hit.getMeasPlane();
+	//std::cout << "pl = " << pl
+	//	  << ", x=" << x
+	//	  << ", z0=" << z0
+	//	  << ", y0=" << y0
+	//	  << ", phi=" << phi
+	//	  << ", z=" << z
+	//	  << std::endl;
+      }
+    }
+  }
 
   void update_momentum(const trkf::KVector<2>::type& defl,
 		       const trkf::KSymMatrix<2>::type& errc,
@@ -122,10 +183,13 @@ trkf::KalmanFilterAlg::KalmanFilterAlg(const fhicl::ParameterSet& pset) :
   fMaxPErr(0.),
   fGoodPErr(0.),
   fMaxIncChisq(0.),
+  fMaxSeedIncChisq(0.),
+  fMaxSmoothIncChisq(0.),
   fMaxEndChisq(0.),
   fMinLHits(0),
   fMaxLDist(0.),
   fMaxPredDist(0.),
+  fMaxSeedPredDist(0.),
   fMaxPropDist(0.),
   fMinSortDist(0.),
   fMaxSortDist(0.),
@@ -135,7 +199,12 @@ trkf::KalmanFilterAlg::KalmanFilterAlg(const fhicl::ParameterSet& pset) :
   fMinSampleDist(0.),
   fFitMomRange(false),
   fFitMomMS(false),
-  fPlane(-1)
+  fGTrace(false),
+  fGTraceWW(0),
+  fGTraceWH(0),
+  fPlane(-1),
+  fInfoPad(0),
+  fMessages(0)
 {
   mf::LogInfo("KalmanFilterAlg") << "KalmanFilterAlg instantiated.";
 
@@ -155,10 +224,13 @@ void trkf::KalmanFilterAlg::reconfigure(const fhicl::ParameterSet& pset)
   fMaxPErr = pset.get<double>("MaxPErr");
   fGoodPErr = pset.get<double>("GoodPErr");
   fMaxIncChisq = pset.get<double>("MaxIncChisq");
+  fMaxSeedIncChisq = pset.get<double>("MaxSeedIncChisq");
+  fMaxSmoothIncChisq = pset.get<double>("MaxSmoothIncChisq");
   fMaxEndChisq = pset.get<double>("MaxEndChisq");
   fMinLHits = pset.get<int>("MinLHits");
   fMaxLDist = pset.get<double>("MaxLDist");
   fMaxPredDist = pset.get<double>("MaxPredDist");
+  fMaxSeedPredDist = pset.get<double>("MaxSeedPredDist");
   fMaxPropDist = pset.get<double>("MaxPropDist");
   fMinSortDist = pset.get<double>("MinSortDist");
   fMaxSortDist = pset.get<double>("MaxSortDist");
@@ -168,6 +240,15 @@ void trkf::KalmanFilterAlg::reconfigure(const fhicl::ParameterSet& pset)
   fMinSampleDist = pset.get<double>("MinSampleDist");
   fFitMomRange = pset.get<bool>("FitMomRange");
   fFitMomMS = pset.get<bool>("FitMomMS");
+  fGTrace = pset.get<bool>("GTrace");
+  if(fGTrace) {
+    fGTraceWW = pset.get<double>("GTraceWW");
+    fGTraceWH = pset.get<double>("GTraceWH");
+    fGTraceXMin = pset.get<double>("GTraceXMin");
+    fGTraceXMax = pset.get<double>("GTraceXMax");
+    fGTraceZMin = pset.get<std::vector<double> >("GTraceZMin");
+    fGTraceZMax = pset.get<std::vector<double> >("GTraceZMax");
+  }
 }
 
 /// Add hits to track.
@@ -207,9 +288,207 @@ bool trkf::KalmanFilterAlg::buildTrack(const KTrack& trk,
     throw cet::exception("KalmanFilterAlg") 
 	<< "No direction for Kalman fit.\n";
 
+  // Set up canvas for graphical trace.
+
+  if(fGTrace) {
+
+    // Make a new canvas with a unique name.
+
+    static int cnum=0;
+    ++cnum;
+    std::ostringstream ostr;
+    ostr << "khit" << cnum;
+    fCanvases.emplace_back(new TCanvas(ostr.str().c_str(), ostr.str().c_str(),
+				       fGTraceWW, fGTraceWH));
+    fPads.clear();
+    fMarkerMap.clear();
+    int nview = 3;
+    fCanvases.back()->Divide(2, nview/2 + 1);
+
+    // Make subpad for each view.
+
+    for(int iview=0; iview < nview; ++iview) {
+
+      std::ostringstream ostr;
+      ostr << "Plane " << iview;
+
+      fCanvases.back()->cd(iview+1);
+      double zmin = 0.06;
+      double zmax = 0.94;
+      double xmin = 0.04;
+      double xmax = 0.95;
+      TPad* p = new TPad(ostr.str().c_str(), ostr.str().c_str(), zmin, xmin, zmax, xmax);
+      p->SetBit(kCanDelete);   // Give away ownership.
+      p->Range(fGTraceZMin[iview], fGTraceXMin, fGTraceZMax[iview], fGTraceXMax);
+      p->SetFillStyle(4000);   // Transparent.
+      p->Draw();
+      fPads.push_back(p);
+
+      // Draw label.
+
+      TText* t = new TText(zmax-0.02, xmax-0.03, ostr.str().c_str());
+      t->SetBit(kCanDelete);   // Give away ownership.
+      t->SetTextAlign(33);
+      t->SetTextFont(42);
+      t->SetTextSize(0.04);
+      t->Draw();
+
+      // Draw axes.
+
+      TGaxis* pz1 = new TGaxis(zmin, xmin, zmax, xmin,
+			       fGTraceZMin[iview], fGTraceZMax[iview], 510, "");
+      pz1->SetBit(kCanDelete);   // Give away ownership.
+      pz1->Draw();
+
+      TGaxis* px1 = new TGaxis(zmin, xmin, zmin, xmax,
+			       fGTraceXMin, fGTraceXMax, 510, "");
+      px1->SetBit(kCanDelete);   // Give away ownership.
+      px1->Draw();
+      
+      TGaxis* pz2 = new TGaxis(zmin, xmax, zmax, xmax,
+			       fGTraceZMin[iview], fGTraceZMax[iview], 510, "-");
+      pz2->SetBit(kCanDelete);   // Give away ownership.
+      pz2->Draw();
+
+      TGaxis* px2 = new TGaxis(zmax, xmin, zmax, xmax,
+			       fGTraceXMin, fGTraceXMax, 510, "L+");
+      px2->SetBit(kCanDelete);   // Give away ownership.
+      px2->Draw();
+      
+    }
+
+    // Draw legend.
+
+    fCanvases.back()->cd(nview+1);
+    fInfoPad = gPad;
+    TLegend* leg = new TLegend(0.6, 0.5, 0.99, 0.99);
+    leg->SetBit(kCanDelete);   // Give away ownership.
+
+    TLegendEntry* entry = 0;
+    TMarker* m = 0;
+
+    m = new TMarker(0., 0., 20);
+    m->SetBit(kCanDelete);
+    m->SetMarkerSize(1.2);
+    m->SetMarkerColor(kRed);
+    entry = leg->AddEntry(m, "Hits on Track", "P");
+    entry->SetBit(kCanDelete);
+
+    m = new TMarker(0., 0., 20);
+    m->SetBit(kCanDelete);
+    m->SetMarkerSize(1.2);
+    m->SetMarkerColor(kBlack);
+    entry = leg->AddEntry(m, "Available Hits", "P");
+    entry->SetBit(kCanDelete);
+
+    m = new TMarker(0., 0., 20);
+    m->SetBit(kCanDelete);
+    m->SetMarkerSize(1.2);
+    m->SetMarkerColor(kBlue);
+    entry = leg->AddEntry(m, "Rejected Hits", "P");
+    entry->SetBit(kCanDelete);
+
+    m = new TMarker(0., 0., 20);
+    m->SetBit(kCanDelete);
+    m->SetMarkerSize(1.2);
+    m->SetMarkerColor(kGreen);
+    entry = leg->AddEntry(m, "Removed Hits", "P");
+    entry->SetBit(kCanDelete);
+
+    m = new TMarker(0., 0., 20);
+    m->SetBit(kCanDelete);
+    m->SetMarkerSize(1.2);
+    m->SetMarkerColor(kMagenta);
+    entry = leg->AddEntry(m, "Seed Hits", "P");
+    entry->SetBit(kCanDelete);
+
+    m = new TMarker(0., 0., 20);
+    m->SetBit(kCanDelete);
+    m->SetMarkerSize(1.2);
+    m->SetMarkerColor(kCyan);
+    entry = leg->AddEntry(m, "Unreachable Seed Hits", "P");
+    entry->SetBit(kCanDelete);
+
+    leg->Draw();
+
+    // Draw message box.
+    
+    fMessages = new TPaveText(0.01, 0.01, 0.55, 0.99, "");
+    fMessages->SetBit(kCanDelete);
+    fMessages->SetTextFont(42);
+    fMessages->SetTextSize(0.04);
+    fMessages->SetTextAlign(12);
+    fMessages->Draw();
+    TText* t = fMessages->AddText("Enter buildTrack");
+    t->SetBit(kCanDelete);
+
+    fCanvases.back()->Update();
+  }
+
   // Sort container using this seed track.
 
   hits.sort(trk, true, prop, Propagator::UNKNOWN);
+
+  // Draw hits and populate hit->marker map.
+
+  if(fGTrace && fCanvases.size() > 0) {
+
+    // Loop over sorted KHitGroups.
+    // Paint sorted seed hits magenta.
+
+    const std::list<KHitGroup>& groups = hits.getSorted();
+    for(auto const& gr : groups) {
+
+      // Loop over hits in this group.
+
+      const std::vector<std::shared_ptr<const KHitBase> >& phits = gr.getHits();
+      for(auto const& phit : phits) {
+	const KHitBase& hit = *phit;
+	int pl = hit.getMeasPlane();
+	if(pl >= 0 && pl < int(fPads.size())) {
+	  double z = 0.;
+	  double x = 0.;
+	  hit_position(hit, z, x);
+	  TMarker* marker = new TMarker(z, x, 20);
+	  fMarkerMap[hit.getID()] = marker;
+	  fPads[pl]->cd();
+	  marker->SetBit(kCanDelete);   // Give away ownership.
+	  marker->SetMarkerSize(0.5);
+	  marker->SetMarkerColor(kMagenta);
+	  marker->Draw();
+	}
+      }
+    }
+
+    // Loop over unsorted KHitGroups.
+    // Paint unsorted seed hits cyan.
+    // There should be few, if any, unsorted seed hits.
+
+    const std::list<KHitGroup>& ugroups = hits.getUnsorted();
+    for(auto const& gr : ugroups) {
+
+      // Loop over hits in this group.
+
+      const std::vector<std::shared_ptr<const KHitBase> >& phits = gr.getHits();
+      for(auto const& phit : phits) {
+	const KHitBase& hit = *phit;
+	int pl = hit.getMeasPlane();
+	if(pl >= 0 && pl < int(fPads.size())) {
+	  double z = 0.;
+	  double x = 0.;
+	  hit_position(hit, z, x);
+	  TMarker* marker = new TMarker(z, x, 20);
+	  fMarkerMap[hit.getID()] = marker;
+	  fPads[pl]->cd();
+	  marker->SetBit(kCanDelete);   // Give away ownership.
+	  marker->SetMarkerSize(0.5);
+	  marker->SetMarkerColor(kCyan);
+	  marker->Draw();
+	}
+      }
+    }
+    fCanvases.back()->Update();
+  }
 
   // Loop over measurements (KHitGroup) from sorted list.
 
@@ -218,6 +497,7 @@ bool trkf::KalmanFilterAlg::buildTrack(const KTrack& trk,
   int step = 0;              // Step count.
   int nsame = 0;             // Number of consecutive measurements in same plane.
   int last_plane = -1;       // Last plane.
+  bool has_pref_plane = false; // Set to true when first preferred plane hit is added to track.
 
   // Make a copy of the starting track, in the form of a KFitTrack,
   // which we will update as we go.
@@ -311,6 +591,17 @@ bool trkf::KalmanFilterAlg::buildTrack(const KTrack& trk,
 	  ihit != hits.end(); ++ihit) {
 	const KHitBase& hit = **ihit;
 
+	// Turn this hit blue.
+
+	if(fGTrace && fCanvases.size() > 0) {
+	  auto marker_it = fMarkerMap.find(hit.getID());
+	  if(marker_it != fMarkerMap.end()) {
+	    TMarker* marker = marker_it->second;
+	    marker->SetMarkerColor(kBlue);
+	  }
+	  //fCanvases.back()->Update();
+	}
+
 	// Update predction using current track hypothesis and get
 	// incremental chisquare.
 
@@ -318,7 +609,14 @@ bool trkf::KalmanFilterAlg::buildTrack(const KTrack& trk,
 	if(ok) {
 	  double chisq = hit.getChisq();
 	  double preddist = hit.getPredDistance();
-	  if((pref != 0 || best_chisq < fMaxIncChisq) && abs(preddist) < fMaxPredDist &&
+	  if(fTrace) {
+	    log << "Trying Hit.\n"
+		<< hit
+		<< "\nchisq = " << chisq << "\n"
+		<< "preddist = " << preddist << "\n";
+	  }
+	  if(chisq < fMaxSeedIncChisq && 
+	     (!has_pref_plane || abs(preddist) < fMaxSeedPredDist) &&
 	     (best_hit.get() == 0 || chisq < best_chisq) ) {
 	    best_hit = *ihit;
 	    best_chisq = chisq;
@@ -331,6 +629,8 @@ bool trkf::KalmanFilterAlg::buildTrack(const KTrack& trk,
 	  log << *best_hit;
 	}
       }
+      if(fGTrace && fCanvases.size() > 0)
+	fCanvases.back()->Update();
 
       // If we found a best measurement, and if the incremental
       // chisquare passes the cut, add it to the track and update 
@@ -372,10 +672,31 @@ bool trkf::KalmanFilterAlg::buildTrack(const KTrack& trk,
 	}
 	if(nsame <= fMaxSamePlane) {
 
+	  // Turn best hit red.
+
+	  if(fGTrace && fCanvases.size() > 0) {
+	    int pl = best_hit->getMeasPlane();
+	    if(pl >= 0 && pl < int(fPads.size())) {
+	      auto marker_it = fMarkerMap.find(best_hit->getID());
+	      if(marker_it != fMarkerMap.end()) {
+		TMarker* marker = marker_it->second;
+		marker->SetMarkerColor(kRed);
+
+		// Redraw marker so that it will be on top.
+
+		fPads[pl]->cd();
+		marker->Draw();
+	      }
+	    }
+	    fCanvases.back()->Update();
+	  }
+
 	  // Make a KHitTrack and add it to the KGTrack.
 
 	  KHitTrack trh(trf, best_hit);
 	  trg.addTrack(trh);
+	  if(fPlane == gr.getPlane())
+	    has_pref_plane = true;
 
 	  // Decide if we want to kill the reference track.
 
@@ -442,7 +763,20 @@ bool trkf::KalmanFilterAlg::buildTrack(const KTrack& trk,
 
   // Done.  Return success if we added at least one measurement.
 
-  return trg.numHits() > 0;
+  bool ok = trg.numHits() > 0;
+
+  if(fGTrace && fCanvases.size() > 0) {
+    TText* t = 0;
+    if(ok)
+      t = fMessages->AddText("Exit buildTrack, status success");
+    else
+      t = fMessages->AddText("Exit buildTrack, status fail");
+    t->SetBit(kCanDelete);
+    fInfoPad->Modified();
+    fCanvases.back()->Update();
+  }
+
+  return ok;
 }
 
 /// Smooth track.
@@ -488,6 +822,13 @@ bool trkf::KalmanFilterAlg::smoothTrack(KGTrack& trg,
   // Default result failure.
 
   bool result = false;
+
+  //if(fGTrace && fCanvases.size() > 0) {
+  //  TText* t = fMessages->AddText("Enter smoothTrack");
+  //  t->SetBit(kCanDelete);
+  //  fInfoPad->Modified();
+  //  fCanvases.back()->Update();
+  // }
 
   // It is an error if the KGTrack is not valid.
 
@@ -696,7 +1037,7 @@ bool trkf::KalmanFilterAlg::smoothTrack(KGTrack& trg,
 	    // but may still be in the smoothed track.
 
 	    double chisq = hit.getChisq();
-	    if(chisq < fMaxIncChisq) {
+	    if(chisq < fMaxSmoothIncChisq) {
 	      tchisq += chisq;
 	      trf.setChisq(tchisq);
 
@@ -764,6 +1105,17 @@ bool trkf::KalmanFilterAlg::smoothTrack(KGTrack& trg,
 	<< "Track chisquare = " << fchisq << "\n";
   }
 
+  //if(fGTrace && fCanvases.size() > 0) {
+  //  TText* t = 0;
+  //  if(result)
+  //    t = fMessages->AddText("Exit smoothTrack, status success");
+  //  else
+  //    t = fMessages->AddText("Exit smoothTrack, status fail");
+  //  t->SetBit(kCanDelete);
+  //  fInfoPad->Modified();
+  //  fCanvases.back()->Update();
+  // }
+
   // Done.
 
   return result;
@@ -795,6 +1147,13 @@ bool trkf::KalmanFilterAlg::extendTrack(KGTrack& trg,
   // Default result failure.
 
   bool result = false;
+
+  if(fGTrace && fCanvases.size() > 0) {
+    TText* t = fMessages->AddText("Enter extendTrack");
+    t->SetBit(kCanDelete);
+    fInfoPad->Modified();
+    fCanvases.back()->Update();
+  }
 
   // Remember the original number of measurement.
 
@@ -877,6 +1236,86 @@ bool trkf::KalmanFilterAlg::extendTrack(KGTrack& trg,
       // Sort hit container using starting track.
 
       hits.sort(trf, true, prop, dir);
+
+      // Draw and add hits in hit->marker map that are not already there.
+
+      if(fGTrace && fCanvases.size() > 0) {
+
+	// Loop over sorted KHitGroups.
+	// Paint sorted hits black.
+
+	const std::list<KHitGroup>& groups = hits.getSorted();
+	for(auto const& gr : groups) {
+
+	  // Loop over hits in this group.
+
+	  const std::vector<std::shared_ptr<const KHitBase> >& phits = gr.getHits();
+	  for(auto const& phit : phits) {
+	    const KHitBase& hit = *phit;
+	    int pl = hit.getMeasPlane();
+	    if(pl >= 0 && pl < int(fPads.size())) {
+
+	      // Is this hit already in map?
+
+	      TMarker* marker = 0;
+	      auto marker_it = fMarkerMap.find(hit.getID());
+	      if(marker_it == fMarkerMap.end()) {
+		double z = 0.;
+		double x = 0.;
+		hit_position(hit, z, x);
+		marker = new TMarker(z, x, 20);
+		fMarkerMap[hit.getID()] = marker;
+		fPads[pl]->cd();
+		marker->SetBit(kCanDelete);   // Give away ownership.
+		marker->SetMarkerSize(0.5);
+		marker->Draw();
+	      }
+	      else
+		marker = marker_it->second;
+	      marker->SetMarkerColor(kBlack);
+	    }
+	  }
+	}
+
+	// Loop over unsorted KHitGroups.
+	// Paint unsorted hits blue.
+
+	const std::list<KHitGroup>& ugroups = hits.getUnsorted();
+	for(auto const& gr : ugroups) {
+
+	  // Loop over hits in this group.
+
+	  const std::vector<std::shared_ptr<const KHitBase> >& phits = gr.getHits();
+	  for(auto const& phit : phits) {
+	    const KHitBase& hit = *phit;
+	    int pl = hit.getMeasPlane();
+	    if(pl >= 0 && pl < int(fPads.size())) {
+
+	      // Is this hit already in map?
+
+	      TMarker* marker = 0;
+	      auto marker_it = fMarkerMap.find(hit.getID());
+	      if(marker_it == fMarkerMap.end()) {
+		double z = 0.;
+		double x = 0.;
+		hit_position(hit, z, x);
+		marker = new TMarker(z, x, 20);
+		fMarkerMap[hit.getID()] = marker;
+		fPads[pl]->cd();
+		marker->SetBit(kCanDelete);   // Give away ownership.
+		marker->SetMarkerSize(0.5);
+		marker->Draw();
+	      }
+	      else
+		marker = marker_it->second;
+	      marker->SetMarkerColor(kBlue);
+	    }
+	  }
+	}
+	fCanvases.back()->Update();
+      }
+
+      //std::cout << "extendTrack: marker map has " << fMarkerMap.size() << " entries." << std::endl;
 
       // Extend loop starts here.
 
@@ -961,6 +1400,17 @@ bool trkf::KalmanFilterAlg::extendTrack(KGTrack& trg,
 	      ihit != hits.end(); ++ihit) {
 	    const KHitBase& hit = **ihit;
 
+	    // Turn this hit blue.
+
+	    if(fGTrace && fCanvases.size() > 0) {
+	      auto marker_it = fMarkerMap.find(hit.getID());
+	      if(marker_it != fMarkerMap.end()) {
+		TMarker* marker = marker_it->second;
+		marker->SetMarkerColor(kBlue);
+	      }
+	      //fCanvases.back()->Update();
+	    }
+
 	    // Update predction using current track hypothesis and get
 	    // incremental chisquare.
 
@@ -981,6 +1431,8 @@ bool trkf::KalmanFilterAlg::extendTrack(KGTrack& trg,
 	      log << *best_hit;
 	    }
 	  }
+	  if(fGTrace && fCanvases.size() > 0)
+	    fCanvases.back()->Update();
 
 	  // If we found a best measurement, and if the incremental
 	  // chisquare passes the cut, add it to the track and update 
@@ -1020,6 +1472,25 @@ bool trkf::KalmanFilterAlg::extendTrack(KGTrack& trg,
 	      last_plane = -1;
 	    }
 	    if(nsame <= fMaxSamePlane) {
+
+	      // Turn best hit red.
+
+	      if(fGTrace && fCanvases.size() > 0) {
+		int pl = best_hit->getMeasPlane();
+		if(pl >= 0 && pl < int(fPads.size())) {
+		  auto marker_it = fMarkerMap.find(best_hit->getID());
+		  if(marker_it != fMarkerMap.end()) {
+		    TMarker* marker = marker_it->second;
+		    marker->SetMarkerColor(kRed);
+
+		    // Redraw marker so that it will be on top.
+
+		    fPads[pl]->cd();
+		    marker->Draw();
+		  }
+		}
+		fCanvases.back()->Update();
+	      }
 
 	      // Make a KHitTrack and add it to the KGTrack.
 
@@ -1089,6 +1560,18 @@ bool trkf::KalmanFilterAlg::extendTrack(KGTrack& trg,
   // Done.
 
   result = (trg.numHits() > nhits0);
+
+  if(fGTrace && fCanvases.size() > 0) {
+    TText* t = 0;
+    if(result)
+      t = fMessages->AddText("Exit extendTrack, status success");
+    else
+      t = fMessages->AddText("Exit extendTrack, status fail");
+    t->SetBit(kCanDelete);
+    fInfoPad->Modified();
+    fCanvases.back()->Update();
+  }
+
   return result;
 }
 
@@ -1649,6 +2132,15 @@ void trkf::KalmanFilterAlg::cleanTrack(KGTrack& trg) const
 
     int ntrack = trackmap.size();
     if(ntrack <= fMaxNoiseHits) {
+      for(auto const& trackmap_entry : trackmap) {
+	const KHitTrack& trh = trackmap_entry.second;
+	const KHitBase& hit = *(trh.getHit());
+	auto marker_it = fMarkerMap.find(hit.getID());
+	if(marker_it != fMarkerMap.end()) {
+	  TMarker* marker = marker_it->second;
+	  marker->SetMarkerColor(kGreen);
+	}
+      }
       trackmap.clear();
       done = true;
       break;
@@ -1673,6 +2165,11 @@ void trkf::KalmanFilterAlg::cleanTrack(KGTrack& trg) const
       double chisq2 = hit2a.getChisq();
       if((plane1 >= 0 && plane2 >= 0 && plane1 == plane2) ||
 	 chisq1 > fMaxEndChisq || chisq2 > fMaxEndChisq) {
+	auto marker_it = fMarkerMap.find(hit1a.getID());
+	if(marker_it != fMarkerMap.end()) {
+	  TMarker* marker = marker_it->second;
+	  marker->SetMarkerColor(kGreen);
+	}
 	trackmap.erase(trackmap.begin(), it);
 	done = false;
 	continue;
@@ -1694,6 +2191,11 @@ void trkf::KalmanFilterAlg::cleanTrack(KGTrack& trg) const
       if((plane1 >= 0 && plane2 >= 0 && plane1 == plane2) ||
 	 chisq1 > fMaxEndChisq || chisq2 > fMaxEndChisq) {
 	++it;
+	auto marker_it = fMarkerMap.find(hit1b.getID());
+	if(marker_it != fMarkerMap.end()) {
+	  TMarker* marker = marker_it->second;
+	  marker->SetMarkerColor(kGreen);
+	}
 	trackmap.erase(it, trackmap.end());
 	done = false;
 	continue;
@@ -1733,6 +2235,15 @@ void trkf::KalmanFilterAlg::cleanTrack(KGTrack& trg) const
 	    // Trim front.
 
 	    found_noise = true;
+	    for(auto jt = trackmap.begin(); jt != it; ++jt) {
+	      const KHitTrack& trh = jt->second;
+	      const KHitBase& hit = *(trh.getHit());
+	      auto marker_it = fMarkerMap.find(hit.getID());
+	      if(marker_it != fMarkerMap.end()) {
+		TMarker* marker = marker_it->second;
+		marker->SetMarkerColor(kGreen);
+	      }
+	    }
 	    trackmap.erase(trackmap.begin(), it);
 	    break;
 	  }
@@ -1741,6 +2252,15 @@ void trkf::KalmanFilterAlg::cleanTrack(KGTrack& trg) const
 	    // Trim back.
 
 	    found_noise = true;
+	    for(auto jt = it; jt != trackmap.end(); ++jt) {
+	      const KHitTrack& trh = jt->second;
+	      const KHitBase& hit = *(trh.getHit());
+	      auto marker_it = fMarkerMap.find(hit.getID());
+	      if(marker_it != fMarkerMap.end()) {
+		TMarker* marker = marker_it->second;
+		marker->SetMarkerColor(kGreen);
+	      }
+	    }
 	    trackmap.erase(it, trackmap.end());
 	    break;
 	  }
@@ -1753,4 +2273,6 @@ void trkf::KalmanFilterAlg::cleanTrack(KGTrack& trg) const
 
     done = !found_noise;
   }
+  if(fGTrace && fCanvases.size() > 0)
+    fCanvases.back()->Update();
 }
