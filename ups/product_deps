@@ -7,7 +7,7 @@ fcldir product_dir job
 #
 product         version
 larsim		v04_00_00
-nutools         v1_07_01
+#nutools         v1_07_03
 gcc		v4_9_1
 
 cetbuildtools	v4_05_00	-	only_for_build
@@ -15,11 +15,16 @@ end_product_list
 
   
 # e6  - with gcc 4.9.1 and -std=c++1y
-qualifier	larsim		nutools		gcc	notes
-e6:debug	e6:debug	debug:e6	-nq-
-e6:opt		e6:opt		e6:prof		-nq-
-e6:prof		e6:prof		e6:prof		-nq-
-e6:debug:noifdh e6:debug        debug:e6        -nq-
+#qualifier	larsim		nutools		gcc	notes
+#e6:debug	e6:debug	debug:e6	-nq-
+#e6:opt		e6:opt		e6:prof		-nq-
+#e6:prof		e6:prof		e6:prof		-nq-
+#e6:debug:noifdh e6:debug        debug:e6        -nq-
+qualifier	larsim		gcc	notes
+e6:debug	e6:debug	-nq-
+e6:opt		e6:opt		-nq-
+e6:prof		e6:prof		-nq-
+e6:debug:noifdh e6:debug        -nq-
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:
