@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 
 art_make( BASENAME_ONLY
           EXCLUDE FeatureVertexFinder_module.cc CornerFinder_module.cc
@@ -80,3 +83,4 @@ install_fhicl()
 install_source()
 
 
+ENDIF()

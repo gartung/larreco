@@ -1,2 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 install_headers()
 install_source()
+ENDIF()

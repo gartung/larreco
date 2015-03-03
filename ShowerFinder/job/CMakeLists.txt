@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 # Install fcl files in /job subdirectory.
 
 install_fhicl()
@@ -6,3 +9,4 @@ install_fhicl()
 
 FILE(GLOB fcl_files *.fcl)
 install_source( EXTRAS ${fcl_files} )
+ENDIF()

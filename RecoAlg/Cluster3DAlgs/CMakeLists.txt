@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 
 art_make( LIBRARY_NAME  Cluster3DAlgs
           LIB_LIBRARIES HarrisVertexFinder_module
@@ -34,3 +37,4 @@ art_make( LIBRARY_NAME  Cluster3DAlgs
 install_headers()
 install_fhicl()
 install_source()
+ENDIF()

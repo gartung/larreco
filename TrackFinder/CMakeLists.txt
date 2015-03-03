@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 
 include_directories ( $ENV{G4INCLUDE} )
 
@@ -110,3 +113,4 @@ install_fhicl()
 install_source()
 
 
+ENDIF()

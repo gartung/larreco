@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 art_make_library( LIBRARY_NAME RFFHitFitter
                              SOURCE RegionAboveThresholdFinder.cxx
 					   GaussianEliminationAlg.cxx
@@ -51,3 +54,4 @@ art_make( BASENAME_ONLY
 install_headers()
 install_fhicl()
 install_source()
+ENDIF()

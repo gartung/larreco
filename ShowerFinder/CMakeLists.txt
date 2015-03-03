@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 
 add_subdirectory(ShowerReco3D)
 add_subdirectory(job)
@@ -44,3 +47,4 @@ art_make( BASENAME_ONLY
 install_headers()
 install_fhicl()
 install_source()
+ENDIF()

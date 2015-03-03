@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 
 art_make( LIBRARY_NAME  RecoAlg
           LIB_LIBRARIES BackTracker_service
@@ -47,3 +50,4 @@ install_headers()
 install_fhicl()
 install_source()
 
+ENDIF()

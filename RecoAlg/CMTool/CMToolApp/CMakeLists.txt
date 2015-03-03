@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 
 art_make( LIBRARY_NAME  CMToolApp
           LIB_LIBRARIES
@@ -24,3 +27,4 @@ art_make( LIBRARY_NAME  CMToolApp
 install_headers()
 install_fhicl()
 install_source()
+ENDIF()

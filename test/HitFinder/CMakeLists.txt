@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 # ======================================================================
 #
 # Testing
@@ -12,3 +15,4 @@ cet_test(HitAnaAlg_test USE_BOOST_UNIT
 )
 
 #cet_test(standalone_test)
+ENDIF()
