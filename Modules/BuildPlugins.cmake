@@ -1,0 +1,96 @@
+# macros for building plugin libraries
+#
+# The plugin type is expected to be service, source, or module, but we
+# do not enforce this in order to allow for user- or experiment-defined
+# plugins.
+#
+# USAGE:
+#
+# simple_plugin( <name> <plugin type> [<basic_plugin options>]
+#                [[NOP] <library list>] )
+#
+# Options:
+#
+# NOP
+#
+#    Dummy option for the purpose of separating (say) multi-option
+#    arguments from non-option arguments.
+#
+# For other available options, please see
+# cetbuildtools/Modules/BasicPlugin.cmake
+# (https://cdcvs.fnal.gov/redmine/projects/cetbuildtools/repository/revisions/master/entry/Modules/BasicPlugin.cmake).
+########################################################################
+
+include(BasicPlugin)
+
+macro (_sp_debug_message)
+  string(TOUPPER ${CMAKE_BUILD_TYPE} BTYPE_UC)
+  if (BTYPE_UC STREQUAL "DEBUG")
+    message(STATUS "SIMPLE_PLUGIN: " ${ARGN})
+  endif()
+endmacro()
+
+# simple plugin libraries
+function(simple_plugin name type)
+  cmake_parse_arguments(SP "NOP" "" "SOURCE" ${ARGN})
+  if(NOT simple_plugin_liblist)
+    set(simple_plugin_liblist)
+  endif()
+  if(ART_FRAMEWORK_CORE)
+    # using art as a product
+    if("${type}" STREQUAL "service")
+      list(INSERT simple_plugin_liblist 0 ${ART_FRAMEWORK_SERVICES_REGISTRY} ${FHICLCPP} ${CETLIB})
+    elseif("${type}" STREQUAL "module" OR "${type}" STREQUAL "source")
+      list(INSERT simple_plugin_liblist 0
+	      ${ART_FRAMEWORK_CORE}
+	      ${ART_FRAMEWORK_PRINCIPAL}
+	      ${ART_PERSISTENCY_COMMON}
+	      ${ART_PERSISTENCY_PROVENANCE}
+	      ${ART_UTILITIES}
+        ${FHICLCPP}
+        ${CETLIB}
+	      ${ROOT_CORE}
+	      )
+    endif()
+  else()
+    # this block is used when building art
+    if("${type}" STREQUAL "service")
+      list(INSERT simple_plugin_liblist 0 art_Framework_Services_Registry ${FHICLCPP} ${CETLIB})
+    elseif("${type}" STREQUAL "module" OR "${type}" STREQUAL "source")
+      list(INSERT simple_plugin_liblist 0
+        art_Framework_Core
+        art_Framework_Principal
+        art_Persistency_Provenance
+        art_Utilities
+        ${FHICLCPP}
+        ${CETLIB}
+        ${ROOT_CORE}
+        )
+    endif()
+    if ("${type}" STREQUAL "source")
+      list(INSERT simple_plugin_liblist 0
+        art_Framework_IO_Sources
+        )
+    endif()
+  endif()
+  check_ups_version(cetbuildtools ${CETBUILDTOOLS_VERSION} v4_05_00 PRODUCT_MATCHES_VAR BP_HAS_SOURCE)
+  if(SP_SOURCE)
+    if (BP_HAS_SOURCE)
+      list(INSERT SP_SOURCE 0 SOURCE)
+    else()
+      message(FATAL_ERROR "SOURCE option specified, but not supported by cetbuildtools ${CETBUILDTOOLS_VERSION}")
+    endif()
+  endif()
+  check_ups_version(cetbuildtools ${CETBUILDTOOLS_VERSION} v4_06_00 PRODUCT_MATCHES_VAR BP_HAS_NOP)
+  if (BP_HAS_NOP AND NOT SP_NOP)
+    # Set it anyway so we have a good separator.
+    set(SP_NOP TRUE)
+  elseif(SP_NOP AND NOT BP_HAS_NOP)
+    # Not a problem, it's already done its job.
+    unset(SP_NOP)
+  endif()
+  if (SP_NOP)
+    set (NOP_ARG NOP)
+  endif()
+  basic_plugin(${name} ${type} ${NOP_ARG} ${simple_plugin_liblist} ${ARGN} ${SP_SOURCE})
+endfunction(simple_plugin name type)
