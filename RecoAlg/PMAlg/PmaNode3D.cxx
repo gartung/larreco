@@ -38,9 +38,10 @@ pma::Node3D::Node3D(const TVector3& p3d, unsigned int tpc, unsigned int cryo)
 
 	const auto& tpcGeo = fGeom->TPC(tpc, cryo);
 
-	fMinX = tpcGeo.MinX(); fMaxX = tpcGeo.MaxX();
-	fMinY = tpcGeo.MinY(); fMaxY = tpcGeo.MaxY();
-	fMinZ = tpcGeo.MinZ(); fMaxZ = tpcGeo.MaxZ();
+//    fMinX = tpcGeo.MinX(); fMaxX = tpcGeo.MaxX();
+    fMinX = -tpcGeo.MaxX(); fMaxX = 2.*tpcGeo.MaxX();
+	fMinY =  tpcGeo.MinY(); fMaxY =    tpcGeo.MaxY();
+	fMinZ =  tpcGeo.MinZ(); fMaxZ =    tpcGeo.MaxZ();
 
 	fWirePitch[0] = tpcGeo.Plane(geo::kU).WirePitch();
 	fWirePitch[1] = tpcGeo.Plane(geo::kV).WirePitch();

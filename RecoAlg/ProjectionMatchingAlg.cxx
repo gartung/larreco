@@ -63,11 +63,13 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 				TVector2 p2d = pma::GetProjectionToPlane(p, testView, tpc, cryo);
 
 				for (const auto & h : hits)
-					if (h->WireID().Plane == testView)
-				{
-					d2 = pma::Dist2(p2d, pma::WireDriftToCm(h->WireID().Wire, h->PeakTime(), testView, tpc, cryo));
-					if (d2 < max_d2) { nPassed++; break; }
-				}
+                {
+                    if (h->WireID().Plane == testView)
+                    {
+                        d2 = pma::Dist2(p2d, pma::WireDriftToCm(h->WireID().Wire, h->PeakTime(), testView, tpc, cryo));
+                        if (d2 < max_d2) { nPassed++; break; }
+                    }
+                }
 				nAll++;
 
 				p += dc; f = pma::GetSegmentProjVector(p, vThis, vNext);
