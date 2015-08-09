@@ -16,6 +16,7 @@ standard_cchitfinderalg:
   MaxXtraHits: 1    # max number of hidden hits in Region Above Threshold
   ChiSplit:  20.   # Max chi/DOF for splitting hits for signal rms error = 1
   ChiNorms: [ 1.0, 1.0, 1.0 ]  # chi/DOF normalization for each plane
+  CrudeHitWidth: -1 # specify crude hit width, -1 means just making one hit
   StudyHits:  false       # study hit fits on a selected (W,T) range on one event
   UWireRange:   [ 300, 350]  # Study mode: wire range in the U plane
   UTickRange: [ 5200, 5500]  # Study mode: tick range in the U plane

@@ -70,6 +70,7 @@ namespace hit {
     fChiNorms           = pset.get< std::vector< float > >("ChiNorms");
     fUseFastFit         = pset.get< bool        >("UseFastFit", false);
     fStudyHits          = pset.get< bool        >("StudyHits");
+    fCrudeHitWidth      = pset.get< int         >("CrudeHitWidth", -1);
     // The following variables are only used in StudyHits mode
     fUWireRange         = pset.get< std::vector< short >>("UWireRange");
     fUTickRange         = pset.get< std::vector< short >>("UTickRange");
@@ -219,7 +220,7 @@ namespace hit {
             if(fStudyHits) StudyHits(1, npt, ticks, signl, tstart);
             // just make a crude hit if too many bumps
             if(bumps.size() > fMaxBumps) {
-              MakeCrudeHit(npt, ticks, signl);
+              MakeCrudeHit(npt, ticks, signl, WireInfo);
               StoreHits(tstart, npt, WireInfo, adcsum);
               nabove = 0;
               continue;
@@ -253,7 +254,7 @@ namespace hit {
             } // nHitsFit < fMaxXtraHits
             if( !HitStored && npt < maxticks) {
               // failed all fitting. Make a crude hit
-              MakeCrudeHit(npt, ticks, signl);
+              MakeCrudeHit(npt, ticks, signl, WireInfo);
               StoreHits(tstart, npt, WireInfo, adcsum);
             }
             else if (nHitsFit > 0) FinalFitStats.AddMultiGaus(nHitsFit);
@@ -543,45 +544,73 @@ namespace hit {
 
 /////////////////////////////////////////
   void CCHitFinderAlg::MakeCrudeHit(unsigned short npt, 
-    float *ticks, float *signl)
+         float *ticks, float *signl, HitChannelInfo_t info)
   {
-    // make a single crude hit if fitting failed
-    float sumS = 0.;
-    float sumST = 0.;
-    for(unsigned short ii = 0; ii < npt; ++ii) {
-      sumS  += signl[ii];
-      sumST += signl[ii] * ticks[ii];
+    // make a single crude hit or a series of small hits if fitting failed 
+    unsigned int hitwidth = 0;
+    if (fCrudeHitWidth>0){//make a series of small hits
+      hitwidth = fCrudeHitWidth;
     }
-    float mean = sumST / sumS;
-    float rms = 0.;
-    for(unsigned short ii = 0; ii < npt; ++ii) {
-      float arg = ticks[ii] - mean;
-      rms += signl[ii] * arg * arg;
+    else if (fCrudeHitWidth<0){//make a single hit
+      hitwidth = npt;
     }
-    rms = std::sqrt(rms / sumS);
-    float amp = sumS / (Sqrt2Pi * rms);
+    else{//make a series of small hits
+      if (info.sigType == geo::kInduction){
+	hitwidth = unsigned(fMinSigInd*4);
+      }
+      else{
+	hitwidth = unsigned(fMinSigCol*4);
+      }
+    }
+    if (hitwidth<1) hitwidth = 1;
+
     par.clear();
-/*
-  if(prt) mf::LogVerbatim("CCHitFinder")<<"Crude hit Amp "<<(int)amp<<" mean "
-    <<(int)mean<<" rms "<<rms;
-*/
-    par.push_back(amp);
-    par.push_back(mean);
-    par.push_back(rms);
-    // need to do the errors better
     parerr.clear();
-    float amperr = npt;
-    float meanerr = std::sqrt(1/sumS);
-    float rmserr = 0.2 * rms;
-    parerr.push_back(amperr);
-    parerr.push_back(meanerr);
-    parerr.push_back(rmserr);
-/*
-  if(prt) mf::LogVerbatim("CCHitFinder")<<" errors Amp "<<amperr<<" mean "
+
+    unsigned int nhits = npt/hitwidth;
+    for (size_t ihit = 0; ihit<nhits; ++ihit){
+      float sumS = 0.;
+      float sumST = 0.;
+      unsigned i0 = ihit*hitwidth;
+      unsigned i1 = (ihit+1)*hitwidth;
+      if (ihit == nhits - 1) i1 = npt;
+      
+      for(unsigned int ii = i0; ii < i1; ++ii) {
+	sumS  += signl[ii];
+	sumST += signl[ii] * ticks[ii];
+      }
+      float mean = sumST / sumS;
+      float rms = 0.;
+      for(unsigned short ii = i0; ii < i1; ++ii) {
+	float arg = ticks[ii] - mean;
+	rms += signl[ii] * arg * arg;
+      }
+      rms = std::sqrt(rms / sumS);
+      if (rms<1) rms = 1;
+      float amp = sumS / (Sqrt2Pi * rms);
+      /*
+	if(prt) mf::LogVerbatim("CCHitFinder")<<"Crude hit Amp "<<(int)amp<<" mean "
+	<<(int)mean<<" rms "<<rms;
+      */
+      par.push_back(amp);
+      par.push_back(mean);
+      par.push_back(rms);
+      // need to do the errors better
+      float amperr = npt;
+      float meanerr = std::sqrt(1/sumS);
+      float rmserr = 0.2 * rms;
+      parerr.push_back(amperr);
+      parerr.push_back(meanerr);
+      parerr.push_back(rmserr);
+
+      /*
+	if(prt) mf::LogVerbatim("CCHitFinder")<<" errors Amp "<<amperr<<" mean "
     <<meanerr<<" rms "<<rmserr;
-*/
+      */
+    }
     chidof = 9999.;
     dof = -1;
+  
   } // MakeCrudeHit
 
 

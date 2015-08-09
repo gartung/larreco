@@ -123,6 +123,7 @@ namespace hit {
     unsigned short fMaxXtraHits; // max num of hits in Region Above Threshold
     float fChiSplit;      ///<Estimated noise error on the Signal
     float ChgNorm;     // Area norm for the wire we are working on
+    float fCrudeHitWidth; ///< <0: create one crude hit, 0: use fMinSigInd or fMinSigCol as crude hit width, >0: specify crude hit width
 
     std::vector<float> fChiNorms;
     std::vector<float> fTimeOffsets;
@@ -169,7 +170,7 @@ namespace hit {
     }; // HitChannelInfo_t
     
     // make a cruddy hit if fitting fails
-    void MakeCrudeHit(unsigned short npt, float *ticks, float *signl);
+    void MakeCrudeHit(unsigned short npt, float *ticks, float *signl, HitChannelInfo_t info);
     // store the hits
     void StoreHits(unsigned short TStart, unsigned short npt, 
       HitChannelInfo_t info, float adcsum
