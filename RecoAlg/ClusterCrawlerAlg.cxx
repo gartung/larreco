@@ -302,6 +302,8 @@ namespace cluster {
             if(fDebugPlane == (short)plane && (short)iwire == fDebugWire && fDebugHit > 0)
               prt = std::abs(hit.PeakTime() - fDebugHit) < 20;
             // Check for a hit signal on the next DS wire
+	    // Comment out the following to improve clustering of particle along the wire direction as suggested by Bruce. T. Yang Aug 9, 2015
+	    /*
             bool SigOK = ChkSignal(iwire + 1, hit.PeakTime() - 10,iwire + 1, hit.PeakTime() + 10);
             // Don't start a seed cluster if there is a hit signal DS. 
             // This is an indicator that we might be trying
@@ -311,6 +313,7 @@ namespace cluster {
               if(hit.Multiplicity() > 1) mf::LogVerbatim()<<"Seed hit has multiplicity "<<hit.Multiplicity();
             }
             if(SigOK && hit.Multiplicity() > 1) continue;
+	    */
             if((iwire - span + 1) < fFirstWire) continue;
             unsigned short jwire = iwire - span + 1;
             if(jwire > fLastWire) continue;
@@ -368,7 +371,7 @@ namespace cluster {
               } // std::abs(clpar[1]) > 5
               clChisq = 0;
               // now look for hits to add on the intervening wires
-              SigOK = false;
+              bool SigOK = false;
               bool HitOK = false;
               bool clok = true;
               for(unsigned short kwire = jwire+1; kwire < iwire; ++kwire) {
