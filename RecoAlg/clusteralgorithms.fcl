@@ -233,7 +233,7 @@ standard_smallclustalg:
 
 standard_clustermatchtq:
 {
-  KSCut: 0.9
+  KSCut: 0.5
   EnableU: true
   EnableV: true
   EnableZ: true
