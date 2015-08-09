@@ -48,6 +48,7 @@
 #include "RecoBase/Cluster.h"
 #include "RecoBase/Track.h"
 #include "RecoBase/SpacePoint.h"
+#include "RecoBase/Vertex.h"
 #include "Utilities/LArProperties.h"
 #include "Utilities/DetectorProperties.h"
 #include "Utilities/AssociationUtil.h"
@@ -212,7 +213,7 @@ namespace trkf {
     trkf::CosmicTrackerAlg   fCTAlg;
 
     std::string     fClusterModuleLabel; ///< label for input cluster collection
-    
+    std::string     fVertexModuleLabel;  ///< label for input vertex collection
     std::string     fSortDir;            ///< sort space points 
 
     bool            fStitchTracks;       ///< Stitch tracks from different TPCs
@@ -247,6 +248,7 @@ namespace trkf {
   void CosmicTracker::reconfigure(fhicl::ParameterSet const& pset)
   {
     fClusterModuleLabel     = pset.get< std::string >("ClusterModuleLabel");
+    fVertexModuleLabel      = pset.get< std::string >("VertexModuleLabel");
     fSortDir                = pset.get< std::string >("SortDirection","+z");
     fStitchTracks           = pset.get< bool   >("StitchTracks");
     fDisCut                 = pset.get< double >("DisCut");
@@ -297,7 +299,7 @@ namespace trkf {
       art::fill_ptr_vector(clusterlist, clusterListHandle);
 
     art::FindManyP<recob::Hit> fm(clusterListHandle, evt, fClusterModuleLabel);
-
+    art::FindManyP<recob::Vertex> fmv(clusterListHandle, evt, fVertexModuleLabel);
     // find matched clusters
     fClusterMatch.ClusterMatch(clusterlist,fm);
     std::vector<std::vector<unsigned int> > &matchedclusters = fClusterMatch.matchedclusters;
@@ -307,15 +309,22 @@ namespace trkf {
     for (size_t itrk = 0; itrk<matchedclusters.size(); ++itrk){//loop over tracks
 
       std::vector<art::Ptr<recob::Hit> > hitlist;
+      double vtx[3] = {-1e9, -1e9, -1e9};
       for (size_t iclu = 0; iclu<matchedclusters[itrk].size(); ++iclu){//loop over clusters
 
         std::vector< art::Ptr<recob::Hit> > hits = fm.at(matchedclusters[itrk][iclu]);
+	if (fmv.isValid()){
+	  std::vector< art::Ptr<recob::Vertex>> vertices = fmv.at(matchedclusters[itrk][iclu]);
+	  if (vertices.size()){
+	    vertices[0]->XYZ(vtx);
+	  }
+	}
 	for (size_t ihit = 0; ihit<hits.size(); ++ihit){
 	  hitlist.push_back(hits[ihit]);
 	}
       }
       //reconstruct space points and directions
-      fCTAlg.SPTReco(hitlist);
+      fCTAlg.SPTReco(hitlist, vtx);
       if (!fTrajOnly){
 	if (!fCTAlg.trkPos.size()) continue;
 	for (size_t i = 0; i<hitlist.size(); ++i){

@@ -32,7 +32,7 @@ namespace trkf
 
     void reconfigure(fhicl::ParameterSet const& pset);
 
-    void SPTReco(std::vector<art::Ptr<recob::Hit> >&fHits);
+    void SPTReco(std::vector<art::Ptr<recob::Hit> >&fHits, double *vtx);
 
     //trajectory position and direction returned by TrackTrajectoryAlg
     std::vector<TVector3> trajPos;

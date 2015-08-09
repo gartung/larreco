@@ -55,7 +55,7 @@ namespace trkf{
   }
   
   //---------------------------------------------------------------------
-  void CosmicTrackerAlg::SPTReco(std::vector<art::Ptr<recob::Hit> >&fHits){
+  void CosmicTrackerAlg::SPTReco(std::vector<art::Ptr<recob::Hit> >&fHits, double *vtx){
 
     trajPos.clear();
     trajDir.clear();
@@ -73,7 +73,28 @@ namespace trkf{
     else{
       throw cet::exception("CosmicTrackerAlg")<<"Unknown SPTAlg "<<fSPTAlg<<", needs to be 0 or 1"; 
     }
-
+    //modify trajectory points using vertex information
+    if (vtx[0]>-1e8&&vtx[1]>-1e8&&vtx[2]>-1e8){
+      TVector3 fvtx(vtx[0],vtx[1],vtx[2]);
+      TVector3 farpoint = trajPos[0];
+      if ((trajPos[0]-fvtx).Mag()<(trajPos.back()-fvtx).Mag()){
+	farpoint = trajPos.back();
+      }
+      auto ip = trajPos.begin();
+      auto id = trajDir.begin();
+      while (ip!=trajPos.end()){
+	if ((*ip-fvtx).Dot(farpoint-fvtx)<0){
+	  trajPos.erase(ip++);
+	  trajDir.erase(id++);
+	}
+	else{
+	  ++ip;
+	  ++id;
+	}
+      }
+      trajPos.push_back(fvtx);
+      trajDir.push_back(trajDir.back());
+    }
     if (!fTrajOnly&&trajPos.size()) MakeSPT(fHits);
     else{
       trkPos = trajPos;
