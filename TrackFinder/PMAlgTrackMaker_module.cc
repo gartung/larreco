@@ -345,8 +345,8 @@ recob::Track PMAlgTrackMaker::convertFrom(const pma::Track3D& src)
 	fSegAngMean = src.GetMeanAng();
 	fMcPdg = getMcPdg(src);
 
-	fPidTag = 0;             // 0 is track-like (long and/or very straight, well matching 2D hits)
-	if ((fLength < 80.0) &&  // 0x10000 is EM shower-like trajectory
+	fPidTag = 0;                 // 0 is track-like (long and/or very straight, well matching 2D hits); 0x10000 is EM shower-like trajectory
+	if ( // (fLength < 80.0) &&  // tag only short tracks as EM shower-like
 	    ((fHitsMse > 0.0001 * fLength) || (fSegAngMean < 3.0)))
 		fPidTag = 0x10000;
 
@@ -448,12 +448,18 @@ double PMAlgTrackMaker::validate(pma::Track3D& trk, unsigned int testView)
 	else return 1.0;
 
 	std::vector< art::Ptr<recob::Hit> >& hits = c_t_v_hits[trk.FrontCryo()][trk.FrontTPC()][testView];
-	if (hits.size() > 10) return fProjectionMatchingAlg.validate(trk, hits, testView);
+
+	// always validate (needed for disambiguation postponed to 3D step):
+	return fProjectionMatchingAlg.validate(trk, hits, testView);
+
+	// in case of usual disambig on hit level one may validate only if there are at least a few hits:
+/*	if (hits.size() > 10) return fProjectionMatchingAlg.validate(trk, hits, testView);
 	else
 	{
 		mf::LogWarning("PMAlgTrackMaker") << "   too few hits (" << hits.size() << ")";
 		return 1.0;
 	}
+*/
 }
 // ------------------------------------------------------
 
