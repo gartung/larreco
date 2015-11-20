@@ -1247,8 +1247,9 @@ bool pma::Track3D::AttachBackTo(pma::Node3D* vStart)
 
 	if (vtx->NextCount() || vtx->Prev())
 	{
+		//mf::LogError("pma::Track3D") << "Something is still using this vertex.";
 		std::cout << "Something is still using this vertex." << std::endl;
-		throw cet::exception("pma::Track3D") << "Something is still using disconnected vertex."; 
+		return false;
 	}
 	else delete vtx; // ok
 
@@ -1259,18 +1260,9 @@ bool pma::Track3D::AttachBackTo(pma::Node3D* vStart)
 
 pma::Track3D* pma::Track3D::GetRoot(void)
 {
-	pma::Track3D* trk = 0;
-
-	if (fNodes.size())
-	{
-		pma::Segment3D* seg = static_cast< pma::Segment3D* >(fNodes.front()->Prev());
-		if (seg) trk = seg->Parent()->GetRoot();
-
-		if (!trk) trk = this;
-	}
-	else mf::LogError("pma::Track3D") << "Broken track, no nodes.";
-
-	return trk;
+	pma::Segment3D* seg = static_cast< pma::Segment3D* >(fNodes.front()->Prev());
+	if (seg) return seg->Parent()->GetRoot();
+	else return this;
 }
 
 void pma::Track3D::GetBranches(std::vector< pma::Track3D const * >& branches) const

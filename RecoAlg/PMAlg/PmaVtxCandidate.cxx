@@ -38,13 +38,9 @@ bool pma::VtxCandidate::Has(const pma::VtxCandidate& other) const
 bool pma::VtxCandidate::IsAttached(pma::Track3D* trk) const
 {
 	pma::Track3D const * rootTrk = trk->GetRoot();
-	if (!rootTrk) throw cet::exception("pma::VtxCandidate") << "Broken track.";
-
 	for (size_t i = 0; i < fAssigned.size(); i++)
 	{
 		pma::Track3D const * rootAssn = fAssigned[i].first->GetRoot();
-		if (!rootAssn) throw cet::exception("pma::VtxCandidate") << "Broken track.";
-
 		if (rootTrk->IsAttachedTo(rootAssn)) return true;
 	}
 	return false;
@@ -716,10 +712,7 @@ bool pma::VtxCandidate::JoinTracks(
 		fMse = 0.0; fMse2D = 0.0;
 
 		pma::Segment3D* rootSeg = static_cast< pma::Segment3D* >(vtxCenter->Next(0));
-		pma::Track3D* rootTrk = rootSeg->Parent()->GetRoot();
-		if (!rootTrk) rootTrk = rootSeg->Parent();
-		double g = rootTrk->TuneFullTree();
-
+		double g = rootSeg->Parent()->GetRoot()->TuneFullTree();
 		if (g < 0.0) // for today: do nothing, but would be good to go back to starting point...
 		{
 /*			std::vector< pma::Track3D* > toRemove;
