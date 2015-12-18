@@ -286,6 +286,7 @@ void GausHitFinder::produce(art::Event& evt)
    
    // Channel Number
    raw::ChannelID_t channel = raw::InvalidChannelID;
+   std::cout<<"Test"<<std::endl;
    //##############################
    //### Looping over the wires ###
    //############################## 
