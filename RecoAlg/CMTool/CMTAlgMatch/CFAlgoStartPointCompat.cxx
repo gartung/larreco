@@ -2,6 +2,8 @@
 #define RECOTOOL_CFALGOSTARTPOINTCOMPAT_CXX
 
 #include "CFAlgoStartPointCompat.h"
+#include "Utilities/GeometryHelper.h"
+#include "Geometry/Geometry.h"
 #include <algorithm>
 
 namespace cmtool {
@@ -10,9 +12,8 @@ namespace cmtool {
   CFAlgoStartPointCompat::CFAlgoStartPointCompat() : CFloatAlgoBase()
   //-------------------------------------------------------
   {
-    ::util::GeometryUtilities geou;
-    _w2cm = geou.WireToCm();
-    _t2cm = geou.TimeToCm();
+    _w2cm = util::GeometryHelper::GetME()->WireToCm();
+    _t2cm = util::GeometryHelper::GetME()->TimeToCm();
     SetVerbose(false);
   }
 
@@ -24,7 +25,7 @@ namespace cmtool {
   }
 
   //----------------------------------------------------------------------------------------------
-  float CFAlgoStartPointCompat::Float(const std::vector<const cluster::ClusterParamsAlg*> &clusters)
+  float CFAlgoStartPointCompat::Float(const std::vector<const cluster::cluster_params*> &clusters)
   //----------------------------------------------------------------------------------------------
   {
 
@@ -44,46 +45,44 @@ namespace cmtool {
     //Find 3D start point from start point on first 2 planes:
     //For now convert start point wire in cm back to wire number
     //Round to integer (sometimes output is double...why???)
-    double startWirecm0 = clusters.at(0)->GetParams().start_point.w;
-    double startTimecm0 = clusters.at(0)->GetParams().start_point.t;
+    double startWirecm0 = clusters.at(0)->start_point.w;
+    double startTimecm0 = clusters.at(0)->start_point.t;
     int startWire0 = int( startWirecm0 / _w2cm );
-    unsigned int Pl0 = clusters.at(0)->GetParams().start_point.plane;
-    //int startChan1 = larutil::Geometry::GetME()->PlaneWireToChannel(Pl0, startWire0);
-    double startWirecm1 = clusters.at(1)->GetParams().start_point.w;
-    double startTimecm1 = clusters.at(1)->GetParams().start_point.t;
+    unsigned char Pl0 = clusters.at(0)->start_point.plane;
+    //int startChan1 = geo->PlaneWireToChannel(Pl0, startWire0);
+    double startWirecm1 = clusters.at(1)->start_point.w;
+    double startTimecm1 = clusters.at(1)->start_point.t;
     int startWire1 = int( startWirecm1 / _w2cm );
-    unsigned int Pl1 = clusters.at(1)->GetParams().start_point.plane;
-    //int startChan2 = larutil::Geometry::GetME()->PlaneWireToChannel(Pl1, startWire1);
-    double startWirecm2 = clusters.at(2)->GetParams().start_point.w;
-    double startTimecm2 = clusters.at(2)->GetParams().start_point.t;
+    unsigned char Pl1 = clusters.at(1)->start_point.plane;
+    //int startChan2 = geo->PlaneWireToChannel(Pl1, startWire1);
+    double startWirecm2 = clusters.at(2)->start_point.w;
+    double startTimecm2 = clusters.at(2)->start_point.t;
     int startWire2 = int( startWirecm2 / _w2cm );
-    unsigned int Pl2 = clusters.at(2)->GetParams().start_point.plane;
-    //int startChan3 = larutil::Geometry::GetME()->PlaneWireToChannel(Pl2, startWire2);
-    
-    unsigned int cryo=0;
-    unsigned int tpc =0;
+    unsigned char Pl2 = clusters.at(2)->start_point.plane;
+    //int startChan3 = geo->PlaneWireToChannel(Pl2, startWire2);
+
+    art::ServiceHandle<geo::Geometry> geo;
 
     //Get Intersections in pairs:
     //y and z indicate detector coordinate and numbers indicate planes
     //used to generate that intersection point
     double yS01, zS01, yS02, zS02, yS12, zS12;
 
-    art::ServiceHandle<geo::Geometry> geo;
     geo->IntersectionPoint( startWire0, startWire1,
-			    Pl0, Pl1,
-			    cryo, tpc,
-			    yS01, zS01);
-    
+						   Pl0, Pl1,
+               0,0,
+						   yS01, zS01);
+
     geo->IntersectionPoint( startWire0, startWire2,
-			    Pl0, Pl2,
-			    cryo, tpc,
-			    yS02, zS02);
-    
+						   Pl0, Pl2,
+               0,0,
+						   yS02, zS02);
+
     geo->IntersectionPoint( startWire1, startWire2,
-			    Pl1, Pl2,
-			    cryo, tpc,
-			    yS12, zS12);
-    
+						   Pl1, Pl2,
+               0,0,
+						   yS12, zS12);
+
     //assume X coordinate for these start-points is 0
     //i.e. only focus on projection onto wire-plane
     //then check if the start point reconstructe from
@@ -98,31 +97,28 @@ namespace cmtool {
     UInt_t WireStart1 = 0;
     UInt_t WireStart2 = 0;
     try { WireStart0 = geo->NearestWire( Start0, Pl0); }
-    //catch ( ::larutil::LArUtilException &e) {
-    catch ( ::cet::exception &e) {
+    catch ( std::exception &e) {
       std::cout << e.what() << std::endl;
       std::cout << "Exception caught!" << std::endl;
       WireStart0 = 9999;
-    }
+      }
     try { WireStart1 = geo->NearestWire( Start1, Pl1); }
-    //catch ( ::larutil::LArUtilException &e ) {
-    catch( ::cet::exception &e) {
+    catch ( std::exception &e ) {
       std::cout << e.what() << std::endl;
       std::cout << "Exception caught!" << std::endl;
       WireStart0 = 9999;
-    }
+      }
     try { WireStart2 = geo->NearestWire( Start2, Pl2); }
-    //catch ( ::larutil::LArUtilException &e) {
-    catch ( ::cet::exception &e) {
+    catch ( std::exception &e) {
       std::cout << e.what() << std::endl;
       std::cout << "Exception caught!" << std::endl;
       WireStart0 = 9999;
-    }
+      }
 
     //Now Get Hit-Range for Clusters
-    std::vector<util::PxHit> hits0 = clusters.at(0)->GetHitVector();
-    std::vector<util::PxHit> hits1 = clusters.at(1)->GetHitVector();
-    std::vector<util::PxHit> hits2 = clusters.at(2)->GetHitVector();
+    std::vector<Hit2D> hits0 = clusters.at(0)->hit_vector;
+    std::vector<Hit2D> hits1 = clusters.at(1)->hit_vector;
+    std::vector<Hit2D> hits2 = clusters.at(2)->hit_vector;
     //define variables for min/max time/wire of each cluster
     double minWire0 = 9999;
     double minWire1 = 9999;

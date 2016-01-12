@@ -1,36 +1,36 @@
 /**
- * \file CFAlgoTimeProf.h
+ * \file CFAlgoProhibitPlane.h
  *
- * \ingroup CMTool
+ * \ingroup CMTAlgMatch
  * 
- * \brief Class def header for a class CFAlgoTimeProf
+ * \brief Class def header for a class CFAlgoProhibitPlane
  *
- * @author ryan
+ * @author david_NAME
  */
 
-/** \addtogroup CMTool
+/** \addtogroup CMTAlgMatch
 
     @{*/
-#ifndef RECOTOOL_CFALGOTIMEPROF_H
-#define RECOTOOL_CFALGOTIMEPROF_H
+#ifndef CFALGOPROHIBITPLANE_HH
+#define CFALGOPROHIBITPLANE_HH
 
 #include "RecoAlg/CMTool/CMToolBase/CFloatAlgoBase.h"
 
 namespace cmtool {
   /**
-     \class CFAlgoTimeProf
+     \class CFAlgoProhibitPlane
      User implementation for CFloatAlgoBase class
      doxygen documentation!
   */
-  class CFAlgoTimeProf : public CFloatAlgoBase {
+  class CFAlgoProhibitPlane : public CFloatAlgoBase {
     
   public:
     
     /// Default constructor
-    CFAlgoTimeProf();
+    CFAlgoProhibitPlane();
     
     /// Default destructor
-    virtual ~CFAlgoTimeProf();
+    virtual ~CFAlgoProhibitPlane(){};
 
     //
     // Author should be aware of 3 functions at least: Float, Report, 
@@ -38,8 +38,16 @@ namespace cmtool {
     // part but commented out. All of these functions are virtual and defined
     // in the base class.
 
+    /**
+       Core function: given a set of CPANs, return a float which indicates 
+       the compatibility the cluster combination.
+    */
     virtual float Float(const std::vector<const cluster::cluster_params*> &clusters);
 
+    /**
+       Optional function: called after each iterative approach if a manager class is
+       run with verbosity level <= kPerIteration. Maybe useful for debugging.
+    */
     virtual void Report();
     
     /// Function to reset the algorithm instance, called together with manager's Reset()
@@ -48,7 +56,7 @@ namespace cmtool {
     /**
        Optional function: called at the beginning of 1st iteration. This is called per event.
      */
-    //virtual void EventBegin(const std::vector<cluster::ClusterParamsAlgNew> &clusters);
+    //virtual void EventBegin(const std::vector<cluster::ClusterParamsAlg> &clusters);
 
     /**
        Optional function: called at the end of event ... after the last merging iteration is over.
@@ -60,24 +68,18 @@ namespace cmtool {
        This provides all clusters' information in case the algorithm need them. Note this
        is called per iteration which may be more than once per event.
      */
-    //virtual void IterationBegin(const std::vector<cluster::ClusterParamsAlgNew> &clusters);
+    //virtual void IterationBegin(const std::vector<cluster::ClusterParamsAlg> &clusters);
 
     /**
        Optional function: called at the end of each iterative loop.
      */
     //virtual void IterationEnd();
 
-   private:
-	
-    float TProfCompare(std::vector<Hit2D> hita ,std::vector<Hit2D> hitb);	
+    void setPlaneRemoved(int pl) { _removePlane = pl; }
 
+  private:
 
-    /*
-(Form("sig_a"),Form("sig_a"),nts,0,nts);
-    TH1D* siginta(Form("sigint_a"),Form("sigint_a"),nts,0,nts);
-    TH1D* sigb(Form("sig_b"),Form("sig_b"),nts,0,nts);
-    TH1D* sigintb(Form("sigint_b"),Form("sigint_b"),nts,0,nts);
-    */	
+    unsigned int _removePlane;
 
   };
 }
