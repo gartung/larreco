@@ -16,7 +16,8 @@
 
 #include <iostream>
 #include <string>
-#include "ClusterParams.h"
+#include "RecoAlg/ClusterRecoUtil/ClusterParams.h"
+
 namespace larlitecluster {
 
 
