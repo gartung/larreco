@@ -4,6 +4,7 @@
 #include <climits>
 #include <limits>
 
+#include "SimpleTypesAndConstants/geo_types.h"
 
 #include "Utilities/PxUtils.h"
 typedef util::PxHit Hit2D;
@@ -47,7 +48,7 @@ public:
   /// Hold the list of hits for this particular cluster, for convenience
   std::vector< Hit2D > hit_vector;
   // The plane of this cluster, all hits are from this plane
-  // ::larlite::geo::PlaneID     plane_id;
+  ::geo::PlaneID     plane_id;
 
 
   // data about the cluster that this params was producer from,
