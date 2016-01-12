@@ -2,8 +2,8 @@
 #define FILLPOLYGON_CXX
 
 #include "FillPolygon.h"
-#include "CRUException.h"
-#include "LArUtil/GeometryHelper.h"
+#include "RecoAlg/ClusterRecoUtil/CRUException.h"
+#include "Utilities/GeometryHelper.h"
 #include <map>
 
 namespace larlitecluster {
@@ -11,7 +11,7 @@ namespace larlitecluster {
   void FillPolygon::do_params_fill(::cluster::cluster_params & cluster){
 
     // Geometry Utilities
-    auto geomHelper = ::larutil::GeometryHelper::GetME();
+    auto geomHelper = ::util::GeometryHelper::GetME();
 
     // get hit list
     auto const& hits = cluster.hit_vector;

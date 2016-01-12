@@ -2,8 +2,7 @@
 #define REFINESTARTPOINTS_CXX
 
 #include "RefineStartPoints.h"
-#include "LArUtil/GeometryUtilities.h"
-#include "LArUtil/GeometryHelper.h"
+#include "Utilities/GeometryHelper.h"
 
 namespace larlitecluster {
 
@@ -17,7 +16,7 @@ RefineStartPoints::RefineStartPoints()
 void RefineStartPoints::do_params_fill(::cluster::cluster_params & cluster) {
 
   // Geometry Helper
-  auto geomHelper = ::larutil::GeometryHelper::GetME();
+  auto geomHelper = ::util::GeometryHelper::GetME();
 
   // the idea is to take a start point (wire,time) and find
   // a possible better start point looking at neighboring hits
@@ -53,7 +52,7 @@ void RefineStartPoints::do_params_fill(::cluster::cluster_params & cluster) {
   if (_verbose) { std::cout << "Start : [" << start.w << ", " << start.t << "]" << std::endl; }
 
   // keep track of maximum distance from end point
-  double maxDist = kDOUBLE_MIN;
+  double maxDist = ::cluster::kDOUBLE_MIN;
 
   for (auto const& h : close_hits) {
 

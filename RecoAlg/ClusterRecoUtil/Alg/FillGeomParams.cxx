@@ -2,7 +2,7 @@
 #define FILLGEOMPARAMS_CXX
 
 #include "FillGeomParams.h"
-#include "LArUtil/GeometryHelper.h"
+#include "Utilities/GeometryHelper.h"
 // #include "ClusterRecoUtil/Base/CRUException.h"
 #include <map>
 
@@ -17,9 +17,9 @@ FillGeomParams::FillGeomParams() {
 
 void FillGeomParams::do_params_fill(::cluster::cluster_params & cluster) {
   // Geometry Utilities
-  auto geomHelper = ::larutil::GeometryHelper::GetME();
+  auto geomHelper = ::util::GeometryHelper::GetME();
 
-  larutil::PxPoint this_startPoint, this_endPoint;
+  ::util::PxPoint this_startPoint, this_endPoint;
 
   this_startPoint = cluster.start_point;
   this_endPoint   = cluster.end_point;
@@ -49,7 +49,7 @@ void FillGeomParams::do_params_fill(::cluster::cluster_params & cluster) {
     return;
   }
 
-  double percentage_HC = _percentage * cluster.N_Hits_HC / cluster.N_Hits;
+  // double percentage_HC = _percentage * cluster.N_Hits_HC / cluster.N_Hits;
   const double wgt = 1.0 / cluster.N_Hits;
 
   // Containers for the angle histograms

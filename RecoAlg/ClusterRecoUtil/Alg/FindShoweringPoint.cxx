@@ -2,8 +2,8 @@
 #define FINDSHOWERINGPOINT_CXX
 
 #include "FindShoweringPoint.h"
-#include "ClusterRecoUtil/Base/CRUException.h"
-#include "LArUtil/GeometryHelper.h"
+#include "RecoAlg/ClusterRecoUtil/CRUException.h"
+#include "Utilities/GeometryHelper.h"
 #include <map>
 #include "TPrincipal.h"
 
@@ -22,7 +22,7 @@ void FindShoweringPoint::do_params_fill(::cluster::cluster_params & cluster) {
   ///that aren't showers, or are too small.
 
   // Geometry Utilities
-  auto geomHelper = ::larutil::GeometryHelper::GetME();
+  auto geomHelper = ::util::GeometryHelper::GetME();
 
   // get hit list
   auto const& hits = cluster.hit_vector;

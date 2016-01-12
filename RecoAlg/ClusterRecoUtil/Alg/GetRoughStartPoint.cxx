@@ -2,8 +2,8 @@
 #define GETROUGHSTARTPOINT_CXX
 
 #include "GetRoughStartPoint.h"
-#include "ClusterRecoUtil/Base/CRUException.h"
-#include "LArUtil/GeometryHelper.h"
+#include "RecoAlg/ClusterRecoUtil/CRUException.h"
+#include "Utilities/GeometryHelper.h"
 #include <map>
 #include <iomanip>
 
@@ -20,7 +20,7 @@ GetRoughStartPoint::GetRoughStartPoint()
 void GetRoughStartPoint::do_params_fill(::cluster::cluster_params & cluster) {
 
   // Geometry Utilities
-  auto geomHelper = ::larutil::GeometryHelper::GetME();
+  auto geomHelper = ::util::GeometryHelper::GetME();
 
 
   // The idea:
@@ -133,7 +133,7 @@ void GetRoughStartPoint::do_params_fill(::cluster::cluster_params & cluster) {
   }
 
   // Figure out what the minimum average is:
-  float minAvg = kDOUBLE_MAX;
+  float minAvg = ::cluster::kDOUBLE_MAX;
   for (size_t n1 = 0; n1 < nEdges; n1++) {
     if (averageList[n1] < minAvg && interiorAngles[n1] < M_PI / 2.0) {
       minAvg = averageList[n1];
@@ -193,7 +193,7 @@ void GetRoughStartPoint::do_params_fill(::cluster::cluster_params & cluster) {
 double GetRoughStartPoint::GetAngle(const Point2D& h1, const Point2D& h2, const double& slope) {
 
   // Geometry Utilities
-  auto geomHelper = ::larutil::GeometryHelper::GetME();
+  auto geomHelper = ::util::GeometryHelper::GetME();
 
   // get slope between hits 1 and 2
   if ( (h2.w - h1.w) == 0) // vertical line

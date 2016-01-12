@@ -3,7 +3,7 @@
 
 #include "GetAverages.h"
 #include "TPrincipal.h"
-#include "ClusterRecoUtil/CRUException.h"
+#include "RecoAlg/ClusterRecoUtil/CRUException.h"
 #include <map>
 
 namespace larlitecluster {

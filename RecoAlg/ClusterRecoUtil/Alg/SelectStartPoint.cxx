@@ -2,8 +2,8 @@
 #define SELECTSTARTPOINT_CXX
 
 #include "SelectStartPoint.h"
-#include "CRUException.h"
-#include "LArUtil/GeometryHelper.h"
+#include "RecoAlg/ClusterRecoUtil/CRUException.h"
+#include "Utilities/GeometryHelper.h"
 #include <map>
 
 namespace larlitecluster {
@@ -54,7 +54,7 @@ void SelectStartPoint::do_params_fill(::cluster::cluster_params & cluster) {
     return;
   }
 
-  auto geoHelper = larutil::GeometryHelper::GetME();
+  auto geoHelper = ::util::GeometryHelper::GetME();
 
   // Need a place to store the list of scores:
   std::vector<float> chi2Score(starts.size(), 0);
