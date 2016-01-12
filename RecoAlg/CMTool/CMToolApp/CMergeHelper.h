@@ -37,13 +37,13 @@ namespace cmtool {
 
     void SetAnaFile(TFile* fout);
 
-    void Process(const std::vector<std::vector< ::util::PxHit> >& clusters);
+    void Process(const std::vector<std::vector< Hit2D> >& clusters);
 
     size_t size() const { return _mgr_v.size(); }
 
     const CMergeBookKeeper& GetResult() const { return _bk; }
 
-    const std::vector< ::cluster::ClusterParamsAlg>& GetClusters() const;
+    const std::vector< ::cluster::cluster_params>& GetClusters() const;
 
   protected:
 

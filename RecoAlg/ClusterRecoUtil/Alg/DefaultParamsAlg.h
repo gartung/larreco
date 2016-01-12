@@ -15,7 +15,7 @@
 #define DEFAULTPARAMSALG_H
 
 #include <iostream>
-#include "ClusterRecoUtil/Base/ClusterParamsAlg.h"
+#include "RecoAlg/ClusterRecoUtil/ClusterParamsAlgLarlite.h"
 #include "GetAverages.h"
 #include "FillPolygon.h"
 #include "GetRoughStartPoint.h"
@@ -24,7 +24,7 @@
 #include "FindShoweringPoint.h"
 #include "FillGeomParams.h"
 
-namespace cluster {
+namespace larlitecluster {
 
 
   /**

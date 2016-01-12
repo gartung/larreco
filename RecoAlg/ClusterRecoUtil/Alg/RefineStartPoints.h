@@ -16,9 +16,9 @@
 
 #include <iostream>
 #include <string>
-#include "ParamsAlgBase.h"
+#include "RecoAlg/ClusterRecoUtil/ParamsAlgBase.h"
 
-namespace cluster {
+namespace larlitecluster {
 
 
   /**
@@ -36,7 +36,7 @@ namespace cluster {
     /// Default destructor
     ~RefineStartPoints(){}
 
-    void do_params_fill(cluster_params &);
+    void do_params_fill(::cluster::cluster_params &);
 
     void SetMaxPerpDist(double d) { _max_d_perp = d; }
 

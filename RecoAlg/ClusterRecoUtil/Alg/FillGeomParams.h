@@ -15,9 +15,9 @@
 #define FILLGEOMPARAMS_H
 
 #include <iostream>
-#include "ParamsAlgBase.h"
+#include "RecoAlg/ClusterRecoUtil/ParamsAlgBase.h"
 
-namespace cluster {
+namespace larlitecluster {
 
   /**
      \class FillGeomParams
@@ -38,7 +38,7 @@ namespace cluster {
        Calculates the following variables:
 
       */
-    void do_params_fill(cluster_params &);
+    void do_params_fill(::cluster::cluster_params &);
 
   protected:
 

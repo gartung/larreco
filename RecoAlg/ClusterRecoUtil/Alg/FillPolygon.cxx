@@ -6,9 +6,9 @@
 #include "LArUtil/GeometryHelper.h"
 #include <map>
 
-namespace cluster {
+namespace larlitecluster {
 
-  void FillPolygon::do_params_fill(cluster_params & cluster){
+  void FillPolygon::do_params_fill(::cluster::cluster_params & cluster){
 
     // Geometry Utilities
     auto geomHelper = ::larutil::GeometryHelper::GetME();

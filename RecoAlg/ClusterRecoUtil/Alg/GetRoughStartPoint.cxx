@@ -7,7 +7,7 @@
 #include <map>
 #include <iomanip>
 
-namespace cluster {
+namespace larlitecluster {
 
 GetRoughStartPoint::GetRoughStartPoint()
 {
@@ -17,7 +17,7 @@ GetRoughStartPoint::GetRoughStartPoint()
 
 }
 
-void GetRoughStartPoint::do_params_fill(cluster_params & cluster) {
+void GetRoughStartPoint::do_params_fill(::cluster::cluster_params & cluster) {
 
   // Geometry Utilities
   auto geomHelper = ::larutil::GeometryHelper::GetME();

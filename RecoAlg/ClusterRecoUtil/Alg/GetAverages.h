@@ -15,9 +15,9 @@
 #define GETAVERAGES_H
 
 #include <iostream>
-#include "ParamsAlgBase.h"
+#include "RecoAlg/ClusterRecoUtil/ParamsAlgBase.h"
 
-namespace cluster {
+namespace larlitecluster {
 
   /**
      \class GetAverages
@@ -52,7 +52,7 @@ namespace cluster {
        slope_2d
        slope_2d_high_q
       */
-    void do_params_fill(cluster_params &);
+    void do_params_fill(::cluster::cluster_params &);
 
   };
 

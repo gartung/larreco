@@ -3,12 +3,12 @@
 
 #include "GetAverages.h"
 #include "TPrincipal.h"
-#include "ClusterRecoUtil/Base/CRUException.h"
+#include "ClusterRecoUtil/CRUException.h"
 #include <map>
 
-namespace cluster {
+namespace larlitecluster {
 
-  void GetAverages::do_params_fill(cluster_params & cluster){
+  void GetAverages::do_params_fill(::cluster::cluster_params & cluster){
 
     // Use principal component analysis for a lot of this
     // So, use root's built in class

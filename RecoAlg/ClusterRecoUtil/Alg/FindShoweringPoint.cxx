@@ -7,7 +7,7 @@
 #include <map>
 #include "TPrincipal.h"
 
-namespace cluster {
+namespace larlitecluster {
 
   FindShoweringPoint::FindShoweringPoint()
   {
@@ -16,7 +16,7 @@ namespace cluster {
     _minCosine = 0.7;
   }
 
-void FindShoweringPoint::do_params_fill(cluster_params & cluster) {
+void FindShoweringPoint::do_params_fill(::cluster::cluster_params & cluster) {
 
   ///\ToDo: Make sure we don't try too hard to find showering Start Points on clusters
   ///that aren't showers, or are too small.

@@ -15,9 +15,9 @@
 #define GETROUGHSTARTPOINT_H
 
 #include <iostream>
-#include "ParamsAlgBase.h"
+#include "RecoAlg/ClusterRecoUtil/ParamsAlgBase.h"
 
-namespace cluster {
+namespace larlitecluster {
 
   /**
      \class GetRoughStartPoint
@@ -34,7 +34,7 @@ namespace cluster {
     /// Default destructor
     ~GetRoughStartPoint(){}
 
-    void do_params_fill(cluster_params &);
+    void do_params_fill(::cluster::cluster_params &);
 
     /**
      * @brief Set Number of Hits to consider for angle calculation

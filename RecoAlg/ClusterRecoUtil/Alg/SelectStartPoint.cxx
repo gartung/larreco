@@ -6,9 +6,9 @@
 #include "LArUtil/GeometryHelper.h"
 #include <map>
 
-namespace cluster {
+namespace larlitecluster {
 
-void SelectStartPoint::do_params_fill(cluster_params & cluster) {
+void SelectStartPoint::do_params_fill(::cluster::cluster_params & cluster) {
 
   // Look at all the start point candidates and pick the one that is best
   // A start point candidate already is close to the min avgTan angle

@@ -15,9 +15,9 @@
 #define FINDSHOWERINGPOINT_H
 
 #include <iostream>
-#include "ParamsAlgBase.h"
+#include "RecoAlg/ClusterRecoUtil/ParamsAlgBase.h"
 
-namespace cluster {
+namespace larlitecluster {
 
   /**
      \class FindShoweringPoint
@@ -35,7 +35,7 @@ namespace cluster {
     ~FindShoweringPoint(){}
 
 
-    void do_params_fill(cluster_params &);
+    void do_params_fill(::cluster::cluster_params &);
 
     // set how far along the shower trunk we can go to search
     // for the showering point before stopping

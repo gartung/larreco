@@ -16,8 +16,9 @@
 
 #include <iostream>
 #include <string>
-#include "ClusterParams.h"
-namespace cluster {
+#include "RecoAlg/ClusterRecoUtil/ClusterParams.h"
+
+namespace larlitecluster {
 
 
   /**
@@ -41,7 +42,7 @@ namespace cluster {
      */
     std::string name(){return _name;}
 
-    virtual void do_params_fill(cluster_params &) = 0;
+    virtual void do_params_fill(::cluster::cluster_params &) = 0;
 
     void SetVerbose(bool on=true) { _verbose = on; }
 

@@ -5,7 +5,7 @@
 #include "LArUtil/GeometryUtilities.h"
 #include "LArUtil/GeometryHelper.h"
 
-namespace cluster {
+namespace larlitecluster {
 
 RefineStartPoints::RefineStartPoints()
 {
@@ -14,7 +14,7 @@ RefineStartPoints::RefineStartPoints()
 }
 
 
-void RefineStartPoints::do_params_fill(cluster_params & cluster) {
+void RefineStartPoints::do_params_fill(::cluster::cluster_params & cluster) {
 
   // Geometry Helper
   auto geomHelper = ::larutil::GeometryHelper::GetME();

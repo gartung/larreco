@@ -6,7 +6,7 @@
 
 
 
-namespace cluster {
+namespace larlitecluster {
 
 DefaultParamsAlg::DefaultParamsAlg() {
 

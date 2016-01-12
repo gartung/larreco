@@ -6,7 +6,7 @@
 // #include "ClusterRecoUtil/Base/CRUException.h"
 #include <map>
 
-namespace cluster {
+namespace larlitecluster {
 
 FillGeomParams::FillGeomParams() {
   _percentage = 0.9;
@@ -15,7 +15,7 @@ FillGeomParams::FillGeomParams() {
   _name       = "FillGeomParams";
 }
 
-void FillGeomParams::do_params_fill(cluster_params & cluster) {
+void FillGeomParams::do_params_fill(::cluster::cluster_params & cluster) {
   // Geometry Utilities
   auto geomHelper = ::larutil::GeometryHelper::GetME();
 

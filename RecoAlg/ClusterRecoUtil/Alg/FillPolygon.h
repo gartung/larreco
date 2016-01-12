@@ -15,9 +15,9 @@
 #define FILLPOLYGON_H
 
 #include <iostream>
-#include "ParamsAlgBase.h"
+#include "RecoAlg/ClusterRecoUtil/ParamsAlgBase.h"
 
-namespace cluster {
+namespace larlitecluster {
 
   /**
      \class FillPolygon
@@ -34,7 +34,7 @@ namespace cluster {
     /// Default destructor
     ~FillPolygon(){}
 
-    void do_params_fill(cluster_params &);
+    void do_params_fill(::cluster::cluster_params &);
 
     /**
      * @brief Set fraction of charge that needs to be enclosed by polygon
