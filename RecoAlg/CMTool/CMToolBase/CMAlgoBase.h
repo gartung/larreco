@@ -15,7 +15,7 @@
 #define RECOTOOL_CMALGOBASE_H
 
 #include <iostream>
-#include "RecoAlg/ClusterRecoUtil/ClusterParamsAlg.h"
+#include "RecoAlg/ClusterRecoUtil/ClusterParams.h"
 
 namespace cmtool {
 
@@ -41,7 +41,7 @@ namespace cmtool {
     /**
        Optional function: called at the beginning of 1st iteration. This is called per event.
      */
-    virtual void EventBegin(const std::vector<cluster::ClusterParamsAlg> &clusters)
+    virtual void EventBegin(const std::vector<::cluster::cluster_params> &clusters)
     { if(clusters.size()) return; }
 
     /**
@@ -55,7 +55,7 @@ namespace cmtool {
        This provides all clusters' information in case the algorithm need them. Note this
        is called per iteration which may be more than once per event.
      */
-    virtual void IterationBegin(const std::vector<cluster::ClusterParamsAlg> &clusters)
+    virtual void IterationBegin(const std::vector<::cluster::cluster_params> &clusters)
     { if(clusters.size()) return;}
 
     /**
