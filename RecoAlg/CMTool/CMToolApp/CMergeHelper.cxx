@@ -16,7 +16,7 @@ namespace cmtool {
     for(auto& mgr : _mgr_v) mgr.SetAnaFile(fout);
   }
 
-  void CMergeHelper::Process(const std::vector<std::vector< ::larutil::PxHit> >& clusters) 
+  void CMergeHelper::Process(const std::vector<std::vector< Hit2D> >& clusters) 
   {
     _bk = ::cmtool::CMergeBookKeeper(clusters.size());
 

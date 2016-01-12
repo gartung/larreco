@@ -16,6 +16,7 @@
 
 #include "RecoAlg/CMTool/CMToolBase/CPriorityAlgoBase.h"
 
+
 namespace cmtool {
   /**
      \class CPAlgoNHits
@@ -36,7 +37,7 @@ namespace cmtool {
        Core function: given the CPAN input, return a float which indicates 
        the user-defined priority for analysis.
     */
-    virtual float Priority(const ::cluster::ClusterParamsAlg &cluster);
+    virtual float Priority(const ::cluster::cluster_params &cluster);
 
     /// Setter for minimum # hits
     void SetMinHits(size_t n) { _min_hits = n; }

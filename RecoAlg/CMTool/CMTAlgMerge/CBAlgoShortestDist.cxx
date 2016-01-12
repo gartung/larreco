@@ -2,6 +2,7 @@
 #define RECOTOOL_CBALGOSHORTESTDIST_CXX
 
 #include "CBAlgoShortestDist.h"
+#include "Utilities/GeometryHelper.h"
 
 namespace cmtool {
 
@@ -18,10 +19,8 @@ namespace cmtool {
     if(_verbose or _debug)
       std::cout << "wire2cm: " << _wire_2_cm << " time2cm: " << _time_2_cm << std::endl;
 
-    ::util::GeometryUtilities geou;
-
-    _wire_2_cm = geou.WireToCm();
-    _time_2_cm = geou.TimeToCm();
+    _wire_2_cm = ::util::GeometryHelper::GetME()->WireToCm();
+    _time_2_cm = ::util::GeometryHelper::GetME()->TimeToCm();
 
     //shortest allowable length of a cluster (distance start->end point)
     //this is used in cases where the start/end points basically overlap
@@ -29,30 +28,42 @@ namespace cmtool {
 
   } //end constructor
 
-  bool CBAlgoShortestDist::Bool(const ::cluster::ClusterParamsAlg &cluster1,
-				const ::cluster::ClusterParamsAlg &cluster2)
+  bool CBAlgoShortestDist::Bool(const ::cluster::cluster_params &cluster1,
+                                const ::cluster::cluster_params &cluster2)
   {
     
     //if number of hits not large enough skip
-    if ( (_minHits > 0) and ((cluster1.GetNHits() < _minHits) or (cluster2.GetNHits() < _minHits)) ) {
+    if ( (_minHits > 0) and ((cluster1.hit_vector.size() < _minHits) or (cluster2.hit_vector.size() < _minHits)) ) {
       return false;
     }
 
-    double w_start1 = cluster1.GetParams().start_point.w;// * _wire_2_cm;
-    double t_start1 = cluster1.GetParams().start_point.t;// * _time_2_cm;
-    double w_end1   = cluster1.GetParams().end_point.w;//   * _wire_2_cm;
-    double t_end1   = cluster1.GetParams().end_point.t;//   * _time_2_cm;
+    double w_start1 = cluster1.start_point.w;// * _wire_2_cm;
+    double t_start1 = cluster1.start_point.t;// * _time_2_cm;
+    double w_end1   = cluster1.end_point.w;//   * _wire_2_cm;
+    double t_end1   = cluster1.end_point.t;//   * _time_2_cm;
 
-    double w_start2 = cluster2.GetParams().start_point.w;// * _wire_2_cm;
-    double t_start2 = cluster2.GetParams().start_point.t;// * _time_2_cm;
-    double w_end2   = cluster2.GetParams().end_point.w;//   * _wire_2_cm;
-    double t_end2   = cluster2.GetParams().end_point.t;//   * _time_2_cm;
+    double w_start2 = cluster2.start_point.w;// * _wire_2_cm;
+    double t_start2 = cluster2.start_point.t;// * _time_2_cm;
+    double w_end2   = cluster2.end_point.w;//   * _wire_2_cm;
+    double t_end2   = cluster2.end_point.t;//   * _time_2_cm;
 
     if (_debug){
-      std::cout << "Start point Cluster 1: (" << cluster1.GetParams().start_point.w << ", " << cluster1.GetParams().start_point.t << ")"  << std::endl;
-      std::cout << "End point Cluster 2: (" << cluster1.GetParams().end_point.w << ", " << cluster1.GetParams().end_point.t << ")"  << std::endl;
-      std::cout << "Start point Cluster 1: (" << cluster2.GetParams().start_point.w << ", " << cluster2.GetParams().start_point.t << ")"  << std::endl;
-      std::cout << "End point Cluster 2: (" << cluster2.GetParams().end_point.w << ", " << cluster2.GetParams().end_point.t << ")"  << std::endl;
+      std::cout << "Cluster 1: (" 
+                << cluster1.start_point.w << ", " 
+                << cluster1.start_point.t << ")"  
+                << "-> ("
+                << cluster1.end_point.w << ", " 
+                << cluster1.end_point.t << ")"
+                << " (plane " << cluster1.plane_id.Plane << ")"  
+                << std::endl;
+      std::cout << "Cluster 1: (" 
+                << cluster1.start_point.w << ", " 
+                << cluster1.start_point.t << ")"  
+                << "-> ("
+                << cluster1.end_point.w << ", " 
+                << cluster1.end_point.t << ")"  
+                << " (plane " << cluster2.plane_id.Plane << ")"  
+                << std::endl;
     }
     
     //First, pretend the first cluster is a 2D line segment, from its start point to end point
@@ -66,29 +77,29 @@ namespace cmtool {
     
     // Step 1: inspect (w_start1, t_start1) vs. line (w_start2, t_start2) => (w_end2, t_end2)
     double shortest_distance2 = ShortestDistanceSquared(w_start1, t_start1,
-							w_start2, t_start2, 
-							w_end2, t_end2);
+                                                        w_start2, t_start2, 
+                                                        w_end2, t_end2);
     
     // Step 2: inspect (w_end1, t_end1) vs. line (w_start2, t_start2) => (w_end2, t_end2)
     double shortest_distance2_tmp = ShortestDistanceSquared(w_end1, t_end1,
-							    w_start2, t_start2, 
-							    w_end2, t_end2);
+                                                            w_start2, t_start2, 
+                                                            w_end2, t_end2);
     
     shortest_distance2 = (shortest_distance2_tmp < shortest_distance2) ?
       shortest_distance2_tmp : shortest_distance2;
     
     // Step 3: inspect (w_start2, t_start2) vs. line (w_start1, t_start1) => (w_end1, t_end1)
     shortest_distance2_tmp = ShortestDistanceSquared(w_start2, t_start2,
-						     w_start1, t_start1, 
-						     w_end1, t_end1);
+                                                     w_start1, t_start1, 
+                                                     w_end1, t_end1);
 
     shortest_distance2 = (shortest_distance2_tmp < shortest_distance2) ? 
       shortest_distance2_tmp : shortest_distance2;
 
     // Step 4: inspect (w_end2, t_end2) vs. line (w_start1, t_start1) => (w_end1, t_end1)
     shortest_distance2_tmp = ShortestDistanceSquared(w_end2, t_end2,
-						     w_start1, t_start1, 
-						     w_end1, t_end1);
+                                                     w_start1, t_start1, 
+                                                     w_end1, t_end1);
     
     shortest_distance2 = (shortest_distance2_tmp < shortest_distance2) ? 
       shortest_distance2_tmp : shortest_distance2;
@@ -108,8 +119,8 @@ namespace cmtool {
   }//end Bool function
 
   double CBAlgoShortestDist::ShortestDistanceSquared(double point_x, double point_y, 
-						     double start_x, double start_y,
-						     double end_x,   double end_y  ) const {
+                                                     double start_x, double start_y,
+                                                     double end_x,   double end_y  ) const {
     
     //This code finds the shortest distance between a point and a line segment.    
     //code based off sample from 
@@ -127,7 +138,7 @@ namespace cmtool {
 
       std::cout << std::endl;
       std::cout << Form(" Provided very short line segment: (%g,%g) => (%g,%g)",
-			start_x,start_y,end_x,end_y) << std::endl;
+                        start_x,start_y,end_x,end_y) << std::endl;
       std::cout << " Likely this means one of two clusters have start & end point identical." << std::endl;
       std::cout << " Check the cluster output!" << std::endl;
       std::cout << std::endl;

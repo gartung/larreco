@@ -42,7 +42,7 @@ namespace cmtool {
       _in_clusters.push_back(::cluster::cluster_params());
 
       // Set the hits for this cluster params
-      if((*_in_clusters.rbegin()).SetHits(c) < _min_nhits) continue;
+      if((*_in_clusters.rbegin()).SetHits(c) < (int)_min_nhits) continue;
 
       // Use the params alg to fill the cluster_params
       _params_alg.FillParams(_in_clusters.back());

@@ -20,8 +20,8 @@
 
 #include "CPriorityAlgoBase.h"
 #include "TStopwatch.h"
-#include "ClusterRecoUtil/Alg/DefaultParamsAlg.h"
-#include "ClusterRecoUtil/Base/ClusterParams.h"
+#include "RecoAlg/ClusterRecoUtil/Alg/DefaultParamsAlg.h"
+#include "RecoAlg/ClusterRecoUtil/ClusterParams.h"
 
 namespace cmtool {
 
@@ -118,7 +118,7 @@ namespace cmtool {
     bool _time_report;
     
     /// Minimum number of hits: the limit set for cluster_params
-    unsigned int _min_nhits;
+    size_t _min_nhits;
 
     /// Debug mode switch
     CMMSGLevel_t _debug_mode;
@@ -127,7 +127,7 @@ namespace cmtool {
     std::vector<::cluster::cluster_params> _in_clusters;
 
     /// Cluster Params Filler:
-    ::cluster::DefaultParamsAlg _params_alg;
+    ::larlitecluster::DefaultParamsAlg _params_alg;
 
     /// Priority algorithm
     ::cmtool::CPriorityAlgoBase* _priority_algo;

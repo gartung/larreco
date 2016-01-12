@@ -38,13 +38,16 @@ namespace cmtool {
        Core function: given the ClusterParamsAlg input, return whether a cluster should be
        merged or not.
     */
-    virtual bool Bool(const ::cluster::ClusterParamsAlg &cluster1,
-		      const ::cluster::ClusterParamsAlg &cluster2);
+    virtual bool Bool(const ::cluster::cluster_params &cluster1,
+                      const ::cluster::cluster_params &cluster2);
+
 
     void SetDebug(bool debug) { _debug = debug; }
 
     //both clusters must have > this # of hits to be considered for merging
     void SetMinNumHits(size_t nhits) { _min_hits = nhits; }
+
+    void SetOverlapFraction(float);
 
     /// Method to re-configure the instance
     void reconfigure();
@@ -53,6 +56,9 @@ namespace cmtool {
     
     bool _debug;
     size_t _min_hits;
+    float _overlap_fraction;  // if used, the smaller cluster has to be
+                              // more than this percent contained with 
+                              // the larger cluster
   };
 }
 
