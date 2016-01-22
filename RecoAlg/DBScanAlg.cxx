@@ -262,6 +262,10 @@ cluster::DBScanAlg::DBScanAlg(fhicl::ParameterSet const& pset)
  this->reconfigure(pset); 
 }
 
+cluster::DBScanAlg::DBScanAlg()
+{
+}
+
 //----------------------------------------------------------
 cluster::DBScanAlg::~DBScanAlg()
 {

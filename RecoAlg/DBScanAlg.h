@@ -36,6 +36,7 @@ namespace cluster{
     
     
     DBScanAlg(fhicl::ParameterSet const& pset);
+    DBScanAlg();
     virtual ~DBScanAlg();
     
     void reconfigure(fhicl::ParameterSet const& p);
