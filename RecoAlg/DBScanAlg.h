@@ -40,6 +40,9 @@ namespace cluster{
     virtual ~DBScanAlg();
     
     void reconfigure(fhicl::ParameterSet const& p);
+    void InitScan(const std::vector<recob::Hit>& allhits, 
+		  std::set<uint32_t> badChannels,
+		  const std::vector<geo::WireID> & wireids = std::vector< geo::WireID>()); //wireids is optional
     void InitScan(const std::vector< art::Ptr<recob::Hit> >& allhits, 
 		  std::set<uint32_t> badChannels,
 		  const std::vector<geo::WireID> & wireids = std::vector< geo::WireID>()); //wireids is optional
