@@ -20,6 +20,9 @@ class TH1F;
 
 namespace recob { class Hit; }
 
+namespace geo{ class GeometryCore; }
+namespace util{ class DetectorProperties; class LArProperties; }
+
 // RStarTree related infrastructure
 //
 // Our core objects have a physical extent (I.e. there are not
@@ -40,9 +43,14 @@ namespace cluster{
     virtual ~DBScanAlg();
     
     void reconfigure(fhicl::ParameterSet const& p);
-    void InitScan(const std::vector<recob::Hit>& allhits, 
-		  std::set<uint32_t> badChannels,
-		  const std::vector<geo::WireID> & wireids = std::vector< geo::WireID>()); //wireids is optional
+    void InitScan(std::vector<recob::Hit>  const& allhits, 
+		  std::vector<size_t>      const& hit_indices_to_process,
+		  std::set<uint32_t>       const& badChannels,
+		  geo::GeometryCore        const& geom,
+		  util::LArProperties      const& larp,
+		  util::DetectorProperties const& detp,
+		  std::vector<geo::WireID> const& wireids = std::vector<geo::WireID>() ); //wireids is optional
+    
     void InitScan(const std::vector< art::Ptr<recob::Hit> >& allhits, 
 		  std::set<uint32_t> badChannels,
 		  const std::vector<geo::WireID> & wireids = std::vector< geo::WireID>()); //wireids is optional
@@ -73,6 +81,8 @@ namespace cluster{
     std::vector< dbsPoint > fRect;
     
   private:
+
+    void ClearAllDataMemberVectors();
     
     // eps radius
     // Two points are neighbors if the distance 

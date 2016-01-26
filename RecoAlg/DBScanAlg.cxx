@@ -22,8 +22,10 @@
 #include "art/Framework/Services/Optional/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "Geometry/GeometryCore.h"
 #include "Utilities/LArProperties.h"
 #include "Utilities/DetectorProperties.h"
+
 #include "RecoAlg/DBScanAlg.h"
 #include "RecoBase/Hit.h"
 #include "Geometry/PlaneGeo.h"
@@ -281,15 +283,8 @@ void cluster::DBScanAlg::reconfigure(fhicl::ParameterSet const& p)
   fDistanceMetric = p.get< int    >("Metric");
 }
 
-//----------------------------------------------------------
-void cluster::DBScanAlg::InitScan(const std::vector<recob::Hit>& allhits, 
-				  std::set<uint32_t>                   badChannels,
-				  const std::vector<geo::WireID> & wireids)
-{
-  if (wireids.size()&&wireids.size()!=allhits.size()){
-    throw cet::exception("DBScanAlg") << "allhits size = "<<allhits.size()<<" wireids size = "<<wireids.size()<<" do not match\n";
-  }
-  // clear all the data member vectors for the new set of hits
+void cluster::DBScanAlg::ClearAllDataMemberVectors(){
+
   fps.clear();
   fpointId_to_clusterId.clear();
   fnoise.clear();
@@ -299,30 +294,46 @@ void cluster::DBScanAlg::InitScan(const std::vector<recob::Hit>& allhits,
   fsim3.clear();
   fclusters.clear();
   fWirePitch.clear();
-
-  fBadChannels = badChannels;
+  
   fBadWireSum.clear();
 
   // Clear the RTree
   fRTree.Remove(RTree::AcceptAny(),RTree::RemoveLeaf());
   // and the bounds list
   fRect.clear();
+}
 
+
+//----------------------------------------------------------
+void cluster::DBScanAlg::InitScan(std::vector<recob::Hit>  const& allhits, 
+				  std::vector<size_t>      const& hit_indices_to_process,
+				  std::set<uint32_t>       const& badChannels,
+				  geo::GeometryCore        const& geom,
+				  util::LArProperties      const& larp,
+				  util::DetectorProperties const& detp,
+				  std::vector<geo::WireID> const& wireids)
+{
+  if (wireids.size()&&wireids.size()!=hit_indices_to_process.size()){
+    throw cet::exception("DBScanAlg") << "hit_indices_to_process size = "<<hit_indices_to_process.size()
+				      <<" wireids size = "<<wireids.size()<<" do not match\n";
+  }
+  // clear all the data member vectors for the new set of hits
+  ClearAllDataMemberVectors();
+  
+  fps.reserve(hit_indices_to_process.size());
+  fRect.reserve(hit_indices_to_process.size());
+  
   //------------------------------------------------------------------
   // Determine spacing between wires (different for each detector)
   ///get 2 first wires and find their spacing (wire_dist)
-
-  art::ServiceHandle<util::LArProperties> larp;
-  art::ServiceHandle<util::DetectorProperties> detp;
-  art::ServiceHandle<geo::Geometry> geom;
-
-  for(size_t p = 0; p < geom->Nplanes(); ++p)
-    fWirePitch.push_back(geom->WirePitch(0,1,p));
+  for(size_t p = 0; p < geom.Nplanes(); ++p)
+    fWirePitch.emplace_back(geom.WirePitch(0,1,p));
 
   
   // Collect the bad wire list into a useful form
+  fBadChannels = badChannels;
   if (fClusterMethod) { // Using the R*-tree
-    fBadWireSum.resize(geom->Nchannels());
+    fBadWireSum.resize(geom.Nchannels());
     unsigned int count=0;
     for (unsigned int i=0; i<fBadWireSum.size(); ++i) {
       count += fBadChannels.count(i);
@@ -333,28 +344,28 @@ void cluster::DBScanAlg::InitScan(const std::vector<recob::Hit>& allhits,
   // Collect the hits in a useful form,
   // and take note of the maximum time width
   fMaxWidth=0.0;
-  for (unsigned int j = 0; j < allhits.size(); ++j){
-    int dims = 3;//our point is defined by 3 elements:wire#,center of the hit, and the hit width
-    std::vector<double> p(dims);
-        
-    double tickToDist = larp->DriftVelocity(larp->Efield(),larp->Temperature());
-    tickToDist *= 1.e-3 * detp->SamplingRate(); // 1e-3 is conversion of 1/us to 1/ns
-    if (!wireids.size()) p[0] = (allhits[j].WireID().Wire)*fWirePitch[allhits[j].WireID().Plane];
-    else p[0] = (wireids[j].Wire)*fWirePitch[allhits[j].WireID().Plane];
-    p[1] = allhits[j].PeakTime()*tickToDist;
-    p[2] = 2.*allhits[j].RMS()*tickToDist;   //width of a hit in cm
+  const int dims = 3;//our point is defined by 3 elements:wire#,center of the hit, and the hit width
+  std::vector<double> p(dims);
+  const double tickToDist =
+    larp.DriftVelocity(larp.Efield(),larp.Temperature()) * 1.e-3 * detp.SamplingRate(); // 1e-3 is conversion of 1/us to 1/ns
+
+  size_t wid_counter=0;
+  for(auto const& ih : hit_indices_to_process){
+    if (!wireids.size()) p[0] = (allhits[ih].WireID().Wire)*fWirePitch[allhits[ih].WireID().Plane];
+    else p[0] = (wireids[wid_counter++].Wire)*fWirePitch[allhits[ih].WireID().Plane];
+    p[1] = allhits[ih].PeakTime()*tickToDist;
+    p[2] = 2.*allhits[ih].RMS()*tickToDist;   //width of a hit in cm
 
     // check on the maximum width condition
     if ( p[2] > fMaxWidth ) fMaxWidth = p[2];
     
-    fps.push_back(p);
+    fps.emplace_back(p);
 
     if (fClusterMethod) { // Using the R*-tree
       // Convert these same values into dbsPoints to feed into the R*-tree
-      dbsPoint pp(p[0], p[1], 0.0, p[2]/2.0); // note dividing by two
-      fRTree.Insert(j, pp.bounds());
-      // Keep a parallel list already made up. We could use fps instead, but...
-      fRect.push_back(pp);
+      // And keep a parallel list already made up. We could use fps instead, but...
+      fRect.emplace_back(p[0], p[1], 0.0, p[2]/2.0);
+      fRTree.Insert(ih, fRect.back().bounds());
     }
   }
 
