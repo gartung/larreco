@@ -94,13 +94,31 @@ void trkf::StitchAlg::FindHeadsAndTails( const art::Event& EvtArg, const std::st
 	const TVector3& end2Dir(track2.EndDirection());
 	std::string sHT2("NA"); // track2 (receptor track) H or T is tagged as matched
 
+         
+        //set x1 and x2 to the start and end points of second track
+        //calculate the four angles I defined
+        
+        bool libocheck(((start2-start1).Angle(end2-start1)<1.57) &&
+                       ((start2-end1).Angle(end2-end1)<1.57) &&
+                       ((start1-start2).Angle(end1-start2)<1.57) &&
+                       ((start1-end2).Angle(end1-end2)<1.57));
+        //redefine the bool type data c12 c21 c11 and c22
+        /*
+        bool c12((std::abs(start1Dir.Dot(end2Dir))>fCosAngTol) && ((start1-end2).Mag()<fSepTol));
+        bool c21((std::abs(end1Dir.Dot(start2Dir))>fCosAngTol) && ((start2-end1).Mag()<fSepTol));
+        bool c11((std::abs(start1Dir.Dot(start2Dir))>fCosAngTol) && ((start1-start2).Mag()<fSepTol));
+        bool c22((std::abs(end1Dir.Dot(end2Dir))>fCosAngTol) &&  ((end1-end2).Mag()<fSepTol));
+        */
+
+
 
 	bool c12((std::abs(start1Dir.Dot(end2Dir))>fCosAngTol) && ((start1-end2).Mag()<fSepTol));
 	bool c21((std::abs(end1Dir.Dot(start2Dir))>fCosAngTol) && ((start2-end1).Mag()<fSepTol));
 	bool c11((std::abs(start1Dir.Dot(start2Dir))>fCosAngTol) && ((start1-start2).Mag()<fSepTol));
 	bool c22((std::abs(end1Dir.Dot(end2Dir))>fCosAngTol) &&  ((end1-end2).Mag()<fSepTol));
 
-	if ( c12 || c21 || c11 || c22 )
+        if ( (libocheck && c12) || (libocheck && c21) || (libocheck&&c11) || (libocheck&&c22) )
+	//if ( c12 || c21 || c11 || c22 )
 	  {
 
 	    sHT2 = "NA";

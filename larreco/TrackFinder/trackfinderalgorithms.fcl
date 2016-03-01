@@ -57,7 +57,7 @@ standard_beziertrackeralgorithm.SeedFinder.LengthCut: 2
 standard_trackstitcheralg:
 {
   CosAngTolerance: 0.98
-  SpptSepTolerance: 30.0 # cm
+  SpptSepTolerance: 50.0 # cm
   CommonComponentStitch: true
 }
 
