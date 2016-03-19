@@ -99,8 +99,75 @@ void trkf::StitchAlg::FindHeadsAndTails( const art::Event& EvtArg, const std::st
 	bool c21((std::abs(end1Dir.Dot(start2Dir))>fCosAngTol) && ((start2-end1).Mag()<fSepTol));
 	bool c11((std::abs(start1Dir.Dot(start2Dir))>fCosAngTol) && ((start1-start2).Mag()<fSepTol));
 	bool c22((std::abs(end1Dir.Dot(end2Dir))>fCosAngTol) &&  ((end1-end2).Mag()<fSepTol));
+        //------------------------------------------------------------------------------
 
-	if ( c12 || c21 || c11 || c22 )
+        bool poscheck((start2.X()-start1.X())*(end2.X()-start1.X())>0 &&
+                      (start2.Y()-start1.Y())*(end2.Y()-start1.Y())>0 &&
+                      (start2.Z()-start1.Z())*(end2.Z()-start1.Z())>0 &&
+                      (start2.X()-end1.X())*(end2.X()-end1.X())>0 &&
+                      (start2.Y()-end1.Y())*(end2.Y()-end1.Y())>0 &&
+                      (start2.Z()-end1.Z())*(end2.Z()-end1.Z())>0 &&
+                      (start1.X()-start2.X())*(end1.X()-start2.X())>0 &&
+                      (start1.Y()-start2.Y())*(end1.Y()-start2.Y())>0 &&
+                      (start1.Z()-start2.Z())*(end1.Z()-start2.Z())>0 &&
+                      (start1.X()-end2.X())*(end1.X()-end2.X())>0 &&
+                      (start1.Y()-end2.Y())*(end1.Y()-end2.Y())>0 &&
+                      (start1.Z()-end2.Z())*(end1.Z()-end2.Z())>0 );
+                     
+
+        bool libocheck(((start2-start1).Angle(end2-start1)<1.57) &&
+                       ((start2-end1).Angle(end2-end1)<1.57) &&
+                       ((start1-start2).Angle(end1-start2)<1.57) &&
+                       ((start1-end2).Angle(end1-end2)<1.57));
+
+        bool s1s2min((start1-start2).Mag()<(start1-end2).Mag()&&
+                     (start1-start2).Mag()<(end1-start2).Mag()&& 
+                     (start1-start2).Mag()<(end1-end2).Mag());
+        bool s1e2min((start1-end2).Mag()<(start1-start2).Mag()&&
+                     (start1-end2).Mag()<(end1-start2).Mag()&& 
+                     (start1-end2).Mag()<(end1-end2).Mag());
+        bool e1s2min((end1-start2).Mag()<(start1-start2).Mag()&&
+                     (end1-start2).Mag()<(start1-end2).Mag()&& 
+                     (end1-start2).Mag()<(end1-end2).Mag());
+        bool e1e2min((end1-end2).Mag()<(start1-start2).Mag()&& 
+                     (end1-end2).Mag()<(start1-end2).Mag()&& 
+                     (end1-end2).Mag()<(end1-start2).Mag());
+
+
+        if(libocheck && poscheck && ((c12 && s1e2min) || (c21 && e1s2min) || (c11 && s1s2min) || (c22 && e1e2min))){
+       //if(libocheck && poscheck && (c12  || c21 || c11 || c22)){
+
+        std::cout<<"ii= "<<ii<<" jj=  "<<jj<<std::endl;
+        std::cout<<"start1:          "<<start1.X()<<" "<<start1.Y()<<" "<<start1.Z()<<std::endl;
+        std::cout<<"end1:            "<<end1.X()<<" "<<end1.Y()<<" "<<end1.Z()<<std::endl;
+        std::cout<<"start2:          "<<start2.X()<<" "<<start2.Y()<<" "<<start2.Z()<<std::endl;
+        std::cout<<"end2:            "<<end2.X()<<" "<<end2.Y()<<" "<<end2.Z()<<std::endl;
+
+        std::cout<<"libocheck "<<libocheck<<std::endl;
+        std::cout<<"poscheck "<<poscheck<<std::endl;
+        std::cout<<" c12 "<<c12<<"s1e2min "<<s1e2min<<std::endl;
+        std::cout<<" c21 "<<c21<<"e1s2min "<<e1s2min<<std::endl;
+        std::cout<<" c11 "<<c11<<"s1s2min "<<s1s2min<<std::endl;
+        std::cout<<" c12 "<<c22<<"e1e2min "<<e1e2min<<std::endl;
+        
+        std::cout<<(start2-start1).Dot(end2-start1)/((start2-start1).Mag()*(end2-start1).Mag())<<std::endl;
+        std::cout<<(start2-end1).Dot(end2-end1)/((start2-end1).Mag()*(end2-end1).Mag())<<std::endl;
+        std::cout<<(start1-start2).Dot(end1-start2)/((start1-start2).Mag()*(end1-start2).Mag())<<std::endl;
+        std::cout<<(start1-end2).Dot(end1-end2)/((start1-end2).Mag()*(end1-end2).Mag())<<std::endl;
+  
+        }
+
+
+
+
+
+
+
+        //--------------------------------------------------------------------------------
+
+
+	//if (libocheck && poscheck && ( c12 || c21 || c11 || c22 ))
+	if(libocheck && poscheck && ((c12 && s1e2min) || (c21 && e1s2min) || (c11 && s1s2min) || (c22 && e1e2min)))
 	  {
 
 	    sHT2 = "NA";
