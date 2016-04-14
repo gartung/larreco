@@ -376,5 +376,16 @@ standard_neutrinotrackingeff:
       FidVolCutY:               10
       FidVolCutZ:               10
 }
+standard_ndecaytrackingeff:
+{
+      module_type:      	"NDecayTrackingEff"
+      TrackModuleLabel: 	"pandora"
+      LeptonPDGcode:		-13
+      SaveMCTree:		false
+      FidVolCutX:               10
+      FidVolCutY:               10
+      FidVolCutZ:               10
+}
+
 
 END_PROLOG
