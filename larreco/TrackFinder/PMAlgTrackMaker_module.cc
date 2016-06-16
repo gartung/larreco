@@ -1449,6 +1449,7 @@ void PMAlgTrackMaker::produce(art::Event& evt)
            
             //PtrMaker Step 1:
             auto const make_trkptr = lar::PtrMaker<recob::Track>(evt, *this);
+            auto const make_t0ptr = lar::PtrMaker<anab::T0>(evt, *this);
            
 			for (fTrkIndex = 0; fTrkIndex < (int)result.size(); ++fTrkIndex)
 			{
@@ -1466,6 +1467,8 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 				if (fGeom->TPC(itpc, icryo).HasPlane(geo::kZ)) trk->CompleteMissingWires(geo::kZ);
 
 				tracks->push_back(convertFrom(*trk));
+                //PtrMaker Step 2:
+                auto const trkPtr = make_trkptr(tracks->size() - 1);
 
 				double xShift = trk->GetXShift();
 				if (xShift > 0.0)
@@ -1474,15 +1477,14 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 					double t0time = tisk2time * xShift / fDetProp->GetXTicksCoefficient(trk->FrontTPC(), trk->FrontCryo());
 
 					// TriggBits=3 means from 3d reco (0,1,2 mean something else)
-					t0s->push_back(anab::T0(t0time, 0, 3, tracks->back().ID()));
+                    t0s->push_back(anab::T0(t0time, 0, 3, tracks->back().ID()));
 					
-                    util::CreateAssn(*this, evt, *tracks, *t0s, *trk2t0, t0s->size() - 1, t0s->size());
+                   // util::CreateAssn(*this, evt, *tracks, *t0s, *trk2t0, t0s->size() - 1, t0s->size());
+                    auto const t0Ptr = make_t0ptr(t0s->size() - 1);
+                    trk2t0->addSingle(trkPtr,t0Ptr);
 				}
 
-                //PtrMaker Step 2:
-                auto const trkPtr = make_trkptr(tracks->size() - 1);
-               
-				// which idx from start, except disabled, really....
+               				// which idx from start, except disabled, really....
 				unsigned int hIdxs[trk->size()];
 				for (size_t h = 0, cnt = 0; h < trk->size(); h++)
 				{
