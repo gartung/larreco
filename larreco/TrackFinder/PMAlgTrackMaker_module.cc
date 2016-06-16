@@ -51,6 +51,7 @@
 #include "lardata/AnalysisBase/T0.h" 
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
+#include "lardata/Utilities/PtrMaker.h"
 
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
 #include "larreco/RecoAlg/PMAlgVertexing.h"
@@ -1445,6 +1446,10 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 			if (fAutoFlip_dQdx) result.flipTreesByDQdx(); // flip the tracks / trees to get best dQ/dx sequences
 
 			tracks->reserve(result.size());
+           
+            //PtrMaker Step 1:
+            auto const make_trkptr = lar::PtrMaker<recob::Track>(evt, *this);
+           
 			for (fTrkIndex = 0; fTrkIndex < (int)result.size(); ++fTrkIndex)
 			{
 				pma::Track3D* trk = result[fTrkIndex].Track();
@@ -1470,13 +1475,13 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 
 					// TriggBits=3 means from 3d reco (0,1,2 mean something else)
 					t0s->push_back(anab::T0(t0time, 0, 3, tracks->back().ID()));
-					util::CreateAssn(*this, evt, *tracks, *t0s, *trk2t0, t0s->size() - 1, t0s->size());
+					
+                    util::CreateAssn(*this, evt, *tracks, *t0s, *trk2t0, t0s->size() - 1, t0s->size());
 				}
 
-				size_t trkIdx = tracks->size() - 1; // stuff for assns:
-				art::ProductID trkId = getProductID< std::vector<recob::Track> >(evt);
-				art::Ptr<recob::Track> trkPtr(trkId, trkIdx, evt.productGetter(trkId));
-
+                //PtrMaker Step 2:
+                auto const trkPtr = make_trkptr(tracks->size() - 1);
+               
 				// which idx from start, except disabled, really....
 				unsigned int hIdxs[trk->size()];
 				for (size_t h = 0, cnt = 0; h < trk->size(); h++)
