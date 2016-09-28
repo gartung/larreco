@@ -20,8 +20,8 @@
 pma::Hit3D::Hit3D(void) :
 	fCryo(0), fTPC(0), fPlane(0), fWire(0),
 	fPeakTime(0), fAmpl(0), fArea(0),
-	fPoint3D(0, 0, 0),
-	fPoint2D(0, 0), fProjection2D(0, 0),
+	fPoint3D(),
+	fPoint2D(), fProjection2D(),
 	fSegFraction(0), fSigmaFactor(1),
 	fDx(0),
 	fEnabled(true), fOutlier(false),
@@ -31,8 +31,8 @@ pma::Hit3D::Hit3D(void) :
 
 pma::Hit3D::Hit3D(art::Ptr< recob::Hit > src) :
 	fHit(src),
-	fPoint3D(0, 0, 0),
-	fProjection2D(0, 0),
+	fPoint3D(),
+	fProjection2D(),
 	fSegFraction(0), fSigmaFactor(1),
 	fDx(0),
 	fEnabled(true), fOutlier(false),
@@ -48,13 +48,13 @@ pma::Hit3D::Hit3D(art::Ptr< recob::Hit > src) :
 	fAmpl = src->PeakAmplitude();
 	fArea = src->SummedADC();
 
-	fPoint2D = pma::WireDriftToCm(fWire, fPeakTime, fPlane, fTPC, fCryo);
+	fPoint2D = makePoint2D(pma::WireDriftToCm(fWire, fPeakTime, fPlane, fTPC, fCryo));
 }
 
 pma::Hit3D::Hit3D(unsigned int wire, unsigned int view, unsigned int tpc, unsigned int cryo,
 	float peaktime, float ampl, float area) :
-	fPoint3D(0, 0, 0),
-	fProjection2D(0, 0),
+	fPoint3D(),
+	fProjection2D(),
 	fSegFraction(0), fSigmaFactor(1),
 	fDx(0),
 	fEnabled(false), fOutlier(false),
@@ -70,7 +70,7 @@ pma::Hit3D::Hit3D(unsigned int wire, unsigned int view, unsigned int tpc, unsign
 	fAmpl = ampl;
 	fArea = area;
 
-	fPoint2D = pma::WireDriftToCm(fWire, fPeakTime, fPlane, fTPC, fCryo);
+	fPoint2D = makePoint2D(pma::WireDriftToCm(fWire, fPeakTime, fPlane, fTPC, fCryo));
 }
 
 pma::Hit3D::Hit3D(const pma::Hit3D& src) :
@@ -88,6 +88,6 @@ pma::Hit3D::Hit3D(const pma::Hit3D& src) :
 
 double pma::Hit3D::GetDist2ToProj(void) const
 {
-	return pma::Dist2(fPoint2D, fProjection2D);
+	return pma::Dist2(makeTVector2(fPoint2D), makeTVector2(fProjection2D));
 }
 

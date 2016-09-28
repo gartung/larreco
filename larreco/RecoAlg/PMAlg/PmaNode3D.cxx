@@ -26,14 +26,9 @@ pma::Node3D::Node3D(void) :
 	fMinX(0), fMaxX(0),
 	fMinY(0), fMaxY(0),
 	fMinZ(0), fMaxZ(0),
-	fPoint3D(0, 0, 0),
 	fIsVertex(false)
 {
 	fTPC = 0; fCryo = 0;
-
-	fProj2D[0].Set(0);
-	fProj2D[1].Set(0);
-	fProj2D[2].Set(0);
 }
 
 pma::Node3D::Node3D(const TVector3& p3d, unsigned int tpc, unsigned int cryo, bool vtx) :
@@ -108,17 +103,17 @@ bool pma::Node3D::LimitPoint3D(void)
 
 void pma::Node3D::UpdateProj2D(void)
 {
-	fProj2D[0].Set(
+	fProj2D[0].SetCoordinates(
 		fWirePitch[0] * fGeom->WireCoordinate(fPoint3D.Y(), fPoint3D.Z(), geo::kU, fTPC, fCryo),
 		fPoint3D.X()
 	);
 
-	fProj2D[1].Set(
+	fProj2D[1].SetCoordinates(
 		fWirePitch[1] * fGeom->WireCoordinate(fPoint3D.Y(), fPoint3D.Z(), geo::kV, fTPC, fCryo),
 		fPoint3D.X()
 	);
 	
-	fProj2D[2].Set(
+	fProj2D[2].SetCoordinates(
 		fWirePitch[2] * fGeom->WireCoordinate(fPoint3D.Y(), fPoint3D.Z(), geo::kZ, fTPC, fCryo),
 		fPoint3D.X()
 	);
@@ -126,7 +121,7 @@ void pma::Node3D::UpdateProj2D(void)
 
 bool pma::Node3D::SetPoint3D(const TVector3& p3d)
 {
-	fPoint3D = p3d;
+	fPoint3D = makePoint3D(p3d);
 
 	bool accepted = !LimitPoint3D();
 	UpdateProj2D();
@@ -136,12 +131,12 @@ bool pma::Node3D::SetPoint3D(const TVector3& p3d)
 
 double pma::Node3D::GetDistance2To(const TVector3& p3d) const
 {
-	return pma::Dist2(fPoint3D, p3d);
+	return pma::Dist2(makeTVector3(fPoint3D), p3d);
 }
 
 double pma::Node3D::GetDistance2To(const TVector2& p2d, unsigned int view) const
 {
-	return pma::Dist2(fProj2D[view], p2d);
+	return pma::Dist2(makeTVector2(fProj2D[view]), p2d);
 }
 
 void pma::Node3D::SetProjection(pma::Hit3D& h) const
@@ -161,8 +156,8 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 		gstart -= vtx->Projection2D(h.View2D()) - Projection2D(h.View2D());
 		if (!prev)
 		{
-			g3d = fPoint3D;
-			g3d -= vtx->Point3D() - fPoint3D;
+			g3d = makeTVector3(fPoint3D);
+			g3d -= vtx->Point3D() - makeTVector3(fPoint3D);
 		}
 	}
 	else
@@ -170,7 +165,7 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 		mf::LogError("pma::Node3D") << "Isolated vertex.";
 		TVector2 p(Projection2D(h.View2D()));
 		h.SetProjection(p, 0.0F);
-		h.SetPoint3D(fPoint3D);
+		h.SetPoint3D(makeTVector3(fPoint3D));
 		return;
 	}
 
@@ -203,19 +198,19 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 		// hit on the next segment side, sorting on the 1+cosine(next_seg, point)  /min.val. = 1/
 		else h.SetProjection(p, 2.0F + (float)cosineN);
 
-		h.SetPoint3D(fPoint3D);
+		h.SetPoint3D(makeTVector3(fPoint3D));
 	}
 	else
 	{
 		float b = (float)(v0Norm * cosine / v1Norm);
 		if (fFrozen) // limit 3D positions to outermose node if frozen
 		{
-			h.SetPoint3D(fPoint3D);
+			h.SetPoint3D(makeTVector3(fPoint3D));
 		}
 		else // or set 3D positions along the line of outermost segment
 		{
-			g3d -= fPoint3D;
-			h.SetPoint3D(fPoint3D + (g3d * b));
+			g3d -= makeTVector3(fPoint3D);
+			h.SetPoint3D(makeTVector3(fPoint3D) + (g3d * b));
 
 			p += (v1 * b);
 		}
@@ -239,8 +234,8 @@ double pma::Node3D::SegmentCos(void) const
 	{
 		pma::Node3D* vStop1 = static_cast< pma::Node3D* >(prev->Prev());
 		pma::Node3D* vStop2 = static_cast< pma::Node3D* >(next->Next());
-		TVector3 v1(vStop1->fPoint3D); v1 -= fPoint3D;
-		TVector3 v2(vStop2->fPoint3D); v2 -= fPoint3D;
+		TVector3 v1 = makeTVector3(vStop1->fPoint3D); v1 -= makeTVector3(fPoint3D);
+		TVector3 v2 = makeTVector3(vStop2->fPoint3D); v2 -= makeTVector3(fPoint3D);
 		double mag = sqrt(v1.Mag2() * v2.Mag2());
 		double cosine = 0.0;
 		if (mag != 0.0) cosine = v1 * v2 / mag;
@@ -502,7 +497,7 @@ double pma::Node3D::GetObjFunction(float penaltyValue, float endSegWeight) const
 double pma::Node3D::MakeGradient(float penaltyValue, float endSegWeight)
 {	
 	double l1 = 0.0, l2 = 0.0, minLength2 = 0.0;
-	TVector3 tmp(fPoint3D), gpoint(fPoint3D);
+	TVector3 tmp = makeTVector3(fPoint3D), gpoint = makeTVector3(fPoint3D);
 
 	pma::Segment3D* seg;
 	if (prev)
@@ -586,7 +581,7 @@ double pma::Node3D::StepWithGradient(float alfa, float tol, float penalty, float
 	unsigned int steps = 0;
 	double t, t1, t2, t3, g, g0, g1, g2, g3, p1, p2;
 	double eps = 6.0E-37, zero_tol = 1.0E-15;
-	TVector3 tmp(fPoint3D), gpoint(fPoint3D);
+	TVector3 tmp = makeTVector3(fPoint3D), gpoint = makeTVector3(fPoint3D);
 
 	g = MakeGradient(penalty, weight);
 	if (g < zero_tol) return 0.0;

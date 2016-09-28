@@ -12,6 +12,8 @@
 #ifndef PmaHit3D_h
 #define PmaHit3D_h
 
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
+
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "larcore/Geometry/Geometry.h"
@@ -44,13 +46,13 @@ public:
 
 	art::Ptr< recob::Hit > Hit2DPtr(void) const { return fHit; }
 
-	TVector3 const & Point3D(void) const { return fPoint3D; }
+	TVector3 /* const & */ Point3D(void) const { return makeTVector3(fPoint3D); }
 
-	void SetPoint3D(const TVector3& p3d) { fPoint3D = p3d; }
-	void SetPoint3D(double x, double y, double z) { fPoint3D.SetXYZ(x, y, z); }
+	void SetPoint3D(const TVector3& p3d) { SetPoint3D(p3d.X(), p3d.Y(), p3d.Z()); }
+	void SetPoint3D(double x, double y, double z) { fPoint3D.SetCoordinates(x, y, z); }
 
-	TVector2 const & Point2D(void) const { return fPoint2D; }
-	TVector2 const & Projection2D(void) const { return fProjection2D; }
+	TVector2 /* const & */ Point2D(void) const { return makeTVector2(fPoint2D); }
+	TVector2 /* const & */ Projection2D(void) const { return makeTVector2(fProjection2D); }
 
 	unsigned int Cryo(void) const { return fCryo; }
 	unsigned int TPC(void) const { return fTPC; }
@@ -71,11 +73,11 @@ public:
 	float GetSegFraction() const { return fSegFraction; }
 	void SetProjection(const TVector2& p, float b)
 	{
-		fProjection2D.Set(p); fSegFraction = b;
+		fProjection2D = makeVector2D(p); fSegFraction = b;
 	}
 	void SetProjection(double x, double y, float b)
 	{
-		fProjection2D.Set(x, y); fSegFraction = b;
+		fProjection2D.SetCoordinates(x, y); fSegFraction = b;
 	}
 
 	bool IsEnabled(void) const { return (fEnabled && !fOutlier); }
@@ -91,9 +93,9 @@ private:
 	unsigned int fCryo, fTPC, fPlane, fWire;
 	float fPeakTime, fAmpl, fArea;
 
-	TVector3 fPoint3D;       // hit position in 3D space
-	TVector2 fPoint2D;       // hit position in 2D wire view, scaled to [cm]
-	TVector2 fProjection2D;  // projection to polygonal line in 2D wire view, scaled to [cm]
+	Point3D_t fPoint3D;       // hit position in 3D space
+	Point2D_t fPoint2D;       // hit position in 2D wire view, scaled to [cm]
+	Vector2D_t fProjection2D;  // projection to polygonal line in 2D wire view, scaled to [cm]
 	float fSegFraction;      // segment fraction set by the projection
 	float fSigmaFactor;      // impact factor on the objective function
 

@@ -21,6 +21,8 @@
 #include "larreco/RecoAlg/PMAlg/PmaNode3D.h"
 #include "larreco/RecoAlg/PMAlg/PmaSegment3D.h"
 
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
+
 namespace pma
 {
 	class Track3D;
@@ -149,9 +151,9 @@ public:
 	std::vector<float> DriftsOfWireIntersection(unsigned int wire, unsigned int view) const;
 	size_t CompleteMissingWires(unsigned int view);
 
-	void AddRefPoint(const TVector3& p) { fAssignedPoints.push_back(new TVector3(p)); }
-	void AddRefPoint(double x, double y, double z) { fAssignedPoints.push_back(new TVector3(x, y, z)); }
-	bool HasRefPoint(TVector3* p) const;
+	void AddRefPoint(const TVector3& p) { AddRefPoint(p.X(), p.Y(), p.Z()); }
+	void AddRefPoint(double x, double y, double z) { fAssignedPoints.push_back(new Point3D_t(x, y, z)); }
+	bool HasRefPoint(Point3D_t const* p) const;
 
 	/// MSE of hits weighted with hit amplidudes and wire plane coefficients.
 	double GetMse(unsigned int view = geo::kUnknown) const;
@@ -285,7 +287,7 @@ private:
 	int index_of(const pma::Hit3D* hit) const;
 	std::vector< pma::Hit3D* > fHits;
 
-	std::vector< TVector3* > fAssignedPoints;
+	std::vector< Point3D_t* > fAssignedPoints;
 
 	pma::Element3D* GetNearestElement(const TVector2& p2d, unsigned int view, int tpc = -1,
 		bool skipFrontVtx = false, bool skipBackVtx = false) const;

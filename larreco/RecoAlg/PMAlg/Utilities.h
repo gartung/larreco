@@ -14,6 +14,8 @@
 
 #include "larcore/Geometry/Geometry.h"
 
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
+
 #include <functional>
 
 #include "TVector2.h"
@@ -95,6 +97,12 @@ public:
 		}
 		else return false;
 	}
+	
+	bool operator() (Point3D_t const* p1, Point3D_t const* p2)
+    {
+      TVector3 v1 = makeTVector3(*p1), v2 = makeTVector3(*p2);
+      return this->operator()(&v1, &v2);
+    }
 
 private:
 	TVector3 segStart, segStop;

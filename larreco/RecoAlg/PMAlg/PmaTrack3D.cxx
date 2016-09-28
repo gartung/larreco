@@ -68,7 +68,7 @@ pma::Track3D::Track3D(const Track3D& src) :
 	fNodes.reserve(src.fNodes.size());
 	for (auto const& node : src.fNodes) fNodes.push_back(new pma::Node3D(node->Point3D(), node->TPC(), node->Cryo(), node->IsVertex()));
 
-	for (auto const& point : src.fAssignedPoints) fAssignedPoints.push_back(new TVector3(*point));
+	for (auto const& point : src.fAssignedPoints) fAssignedPoints.push_back(new Point3D_t(*point));
 
 	RebuildSegments();
 	MakeProjection();
@@ -224,7 +224,7 @@ bool pma::Track3D::InitFromRefPoints(int tpc, int cryo)
 	TVector3 mean(0., 0., 0.), stdev(0., 0., 0.), p(0., 0., 0.);
 	for (size_t i = 0; i < fAssignedPoints.size(); i++)
 	{
-		p = *(fAssignedPoints[i]);
+		p = makeTVector3(*(fAssignedPoints[i]));
 		mean += p;
 		p.SetXYZ( p.X()*p.X(), p.Y()*p.Y(), p.Z()*p.Z() );
 		stdev += p;
@@ -252,7 +252,7 @@ bool pma::Track3D::InitFromRefPoints(int tpc, int cryo)
 	std::vector< TVector3 > data;
 	for (size_t i = 0; i < fAssignedPoints.size(); i++)
 	{
-		p = *(fAssignedPoints[i]);
+		p = makeTVector3(*(fAssignedPoints[i]));
 		p -= mean;
 		p *= iscale;
 		norm2 = p.Mag2();
@@ -285,7 +285,7 @@ bool pma::Track3D::InitFromRefPoints(int tpc, int cryo)
 	std::sort(fAssignedPoints.begin(), fAssignedPoints.end(), pma::bSegmentProjLess(v1, v2));
 	for (size_t i = 0; i < fAssignedPoints.size(); i++)
 	{
-		AddNode(*(fAssignedPoints[i]), tpc, cryo);
+		AddNode(makeTVector3(*(fAssignedPoints[i])), tpc, cryo);
 	}
 
 	RebuildSegments();
@@ -1577,7 +1577,7 @@ bool pma::Track3D::IsAttachedTo(pma::Track3D const * trk) const
 	return false;
 }
 
-bool pma::Track3D::HasRefPoint(TVector3* p) const
+bool pma::Track3D::HasRefPoint(pma::Point3D_t const* p) const
 {
 	for (auto point : fAssignedPoints)
 		if (point == p) return true;
@@ -2704,7 +2704,7 @@ void pma::Track3D::MakeProjection(void)
 
 	for (auto p : fAssignedPoints) // assign ref points to nodes/segments
 	{
-		pe = GetNearestElement(*p);
+		pe = GetNearestElement(makeTVector3(*p));
 		pe->AddPoint(p);
 	}
 

@@ -14,6 +14,8 @@
 
 #include "larreco/RecoAlg/PMAlg/PmaHit3D.h"
 
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
+
 #include "larcore/Geometry/Geometry.h"
 
 #include "TVector2.h"
@@ -67,9 +69,9 @@ public:
 	size_t NEnabledHits(unsigned int view = geo::kUnknown) const;
 	size_t NPrecalcEnabledHits(void) const { return fNThisHitsEnabledAll; }
 
-	TVector3 const & ReferencePoint(size_t index) const { return *(fAssignedPoints[index]); }
+	TVector3 /* const & */ ReferencePoint(size_t index) const { return makeTVector3(*(fAssignedPoints[index])); }
 	size_t NPoints(void) const { return fAssignedPoints.size(); }
-	void AddPoint(TVector3* p) { fAssignedPoints.push_back(p); }
+	void AddPoint(Point3D_t* p) { fAssignedPoints.push_back(p); }
 
 	/// Clear hits/points vectors of this element, optionally only
 	/// those which are owned by given track.
@@ -104,7 +106,7 @@ protected:
 
 	bool fFrozen;
 	std::vector< pma::Hit3D* > fAssignedHits;  // 2D hits
-	std::vector< TVector3* > fAssignedPoints;  // 3D peculiar points reconstructed elsewhere
+	std::vector< Point3D_t* > fAssignedPoints;  // 3D peculiar points reconstructed elsewhere
 	size_t fNThisHits[3];
 	size_t fNThisHitsEnabledAll;
 	size_t fNHits[3];

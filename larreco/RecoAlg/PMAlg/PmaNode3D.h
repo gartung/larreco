@@ -14,7 +14,9 @@
 #include "larreco/RecoAlg/PMAlg/PmaElement3D.h"
 #include "larreco/RecoAlg/PMAlg/SortedObjects.h"
 
-#include "larcore/Geometry/Geometry.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
+
+// ∂#include "larcore/Geometry/Geometry.h"
 
 #include "TVectorT.h"
 #include "TMatrixT.h"
@@ -31,13 +33,13 @@ public:
 	Node3D(const TVector3& p3d, unsigned int tpc, unsigned int cryo, bool vtx = false);
 	virtual ~Node3D(void) {}
 
-	TVector3 const & Point3D(void) const { return fPoint3D; }
+	TVector3 /* const & */ Point3D(void) const { return makeTVector3(fPoint3D); }
 
 	/// Returns true if the new position was accepted; returns false if the new position
 	/// was trimmed to fit insite TPC volume + fMargin.
 	bool SetPoint3D(const TVector3& p3d);
 
-	TVector2 const & Projection2D(unsigned int view) const { return fProj2D[view]; }
+	TVector2 /* const & */ Projection2D(unsigned int view) const { return makeTVector2(fProj2D[view]); }
 
 	double GetDistToWall(void) const;
 
@@ -67,7 +69,7 @@ public:
 	virtual double GetDistance2To(const TVector2& p2d, unsigned int view) const;
 
 	/// In case of a node it is simply 3D position of the node.
-	virtual TVector3 GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const { return fPoint3D; }
+	virtual TVector3 GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const { return makeTVector3(fPoint3D); }
 
 	/// Set hit 3D position and its 2D projection to the vertex.
 	virtual void SetProjection(pma::Hit3D& h) const;
@@ -119,8 +121,8 @@ private:
 	double fMinX, fMaxX, fMinY, fMaxY, fMinZ, fMaxZ; // TPC boundaries to limit the node position (+margin)
 	double fWirePitch[3];                            // TPC params to scale do [cm] domain
 
-	TVector3 fPoint3D;       // node position in 3D space in [cm]
-	TVector2 fProj2D[3];     // node projections to 2D views, scaled to [cm], updated on each change of 3D position
+	Point3D_t fPoint3D;       // node position in 3D space in [cm]
+	Point2D_t fProj2D[3];     // node projections to 2D views, scaled to [cm], updated on each change of 3D position
 
 	TVector3 fGradient;
 	bool fIsVertex;          // no penalty on segments angle if branching or kink detected
