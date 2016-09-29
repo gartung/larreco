@@ -142,7 +142,7 @@ double pma::Node3D::GetDistance2To(const TVector2& p2d, unsigned int view) const
 void pma::Node3D::SetProjection(pma::Hit3D& h) const
 {
 	TVector2 gstart;
-	TVector3 g3d;
+	Vector3D_t g3d; // displacement vector
 	if (prev)
 	{
 		pma::Node3D* vtx = static_cast< pma::Node3D* >(prev->Prev());
@@ -156,8 +156,8 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 		gstart -= vtx->Projection2D(h.View2D()) - Projection2D(h.View2D());
 		if (!prev)
 		{
-			g3d = makeTVector3(fPoint3D);
-			g3d -= vtx->Point3D() - makeTVector3(fPoint3D);
+			g3d = fPoint3D;
+			g3d -= (vtx->Point3D() - fPoint3D);
 		}
 	}
 	else
@@ -209,8 +209,8 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 		}
 		else // or set 3D positions along the line of outermost segment
 		{
-			g3d -= makeTVector3(fPoint3D);
-			h.SetPoint3D(makeTVector3(fPoint3D) + (g3d * b));
+			g3d -= Vector3D_t(fPoint3D); // needs to be a displacement vector
+			h.SetPoint3D(makeTVector3(fPoint3D + g3d * b));
 
 			p += (v1 * b);
 		}

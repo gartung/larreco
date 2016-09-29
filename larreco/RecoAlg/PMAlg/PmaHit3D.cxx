@@ -20,8 +20,6 @@
 pma::Hit3D::Hit3D(void) :
 	fCryo(0), fTPC(0), fPlane(0), fWire(0),
 	fPeakTime(0), fAmpl(0), fArea(0),
-	fPoint3D(),
-	fPoint2D(), fProjection2D(),
 	fSegFraction(0), fSigmaFactor(1),
 	fDx(0),
 	fEnabled(true), fOutlier(false),
@@ -31,8 +29,6 @@ pma::Hit3D::Hit3D(void) :
 
 pma::Hit3D::Hit3D(art::Ptr< recob::Hit > src) :
 	fHit(src),
-	fPoint3D(),
-	fProjection2D(),
 	fSegFraction(0), fSigmaFactor(1),
 	fDx(0),
 	fEnabled(true), fOutlier(false),
@@ -53,8 +49,6 @@ pma::Hit3D::Hit3D(art::Ptr< recob::Hit > src) :
 
 pma::Hit3D::Hit3D(unsigned int wire, unsigned int view, unsigned int tpc, unsigned int cryo,
 	float peaktime, float ampl, float area) :
-	fPoint3D(),
-	fProjection2D(),
 	fSegFraction(0), fSigmaFactor(1),
 	fDx(0),
 	fEnabled(false), fOutlier(false),

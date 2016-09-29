@@ -46,7 +46,8 @@ public:
 
 	art::Ptr< recob::Hit > Hit2DPtr(void) const { return fHit; }
 
-	TVector3 /* const & */ Point3D(void) const { return makeTVector3(fPoint3D); }
+/*	TVector3 Point3D(void) const { return makeTVector3(fPoint3D); } */
+	Point3D_t const & Point3D() const { return fPoint3D; }
 
 	void SetPoint3D(const TVector3& p3d) { SetPoint3D(p3d.X(), p3d.Y(), p3d.Z()); }
 	void SetPoint3D(double x, double y, double z) { fPoint3D.SetCoordinates(x, y, z); }

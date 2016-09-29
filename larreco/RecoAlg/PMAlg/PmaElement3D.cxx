@@ -269,7 +269,7 @@ double pma::Element3D::HitsRadius3D(unsigned int view) const
 	size_t nHits = 0;
 	for (auto h : fAssignedHits)
 		if (h->View2D() == view)
-			{ mean3D += h->Point3D(); nHits++; }
+			{ mean3D += makeTVector3(h->Point3D()); nHits++; }
 	if (!nHits) return 0.0;
 	mean3D *= (1.0 / nHits);
 
@@ -277,7 +277,7 @@ double pma::Element3D::HitsRadius3D(unsigned int view) const
 	for (auto h : fAssignedHits)
 		if (h->View2D() == view)
 		{
-			r2 = pma::Dist2(h->Point3D(), mean3D);
+			r2 = pma::Dist2(makeTVector3(h->Point3D()), mean3D);
 			if (r2 > maxR2) maxR2 = r2;
 		}
 	return sqrt(maxR2);

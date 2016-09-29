@@ -37,6 +37,7 @@
 
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
 // ROOT & C++
 #include <memory>
@@ -137,8 +138,8 @@ public:
 	/// Here one can implement some configurable margin if needed for real data imeprfections.
 	bool isContained(const pma::Track3D& trk, float margin = 0.0F) const
 	{
-		return (trk.FirstElement()->SameTPC(trk.front()->Point3D(), margin) &&
-			trk.LastElement()->SameTPC(trk.back()->Point3D(), margin));
+		return (trk.FirstElement()->SameTPC(makeTVector3(trk.front()->Point3D()), margin) &&
+			trk.LastElement()->SameTPC(makeTVector3(trk.back()->Point3D()), margin));
 	}
 
 	/// Build a track from two sets of hits from single TPC, hits should origin from at least two

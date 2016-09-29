@@ -33,7 +33,8 @@ public:
 	Node3D(const TVector3& p3d, unsigned int tpc, unsigned int cryo, bool vtx = false);
 	virtual ~Node3D(void) {}
 
-	TVector3 /* const & */ Point3D(void) const { return makeTVector3(fPoint3D); }
+	/* TVector3 const & Point3D(void) const { return makeTVector3(fPoint3D); } */
+	Point3D_t const & Point3D(void) const { return fPoint3D; }
 
 	/// Returns true if the new position was accepted; returns false if the new position
 	/// was trimmed to fit insite TPC volume + fMargin.

@@ -213,12 +213,12 @@ recob::Track ems::EMShower3D::ConvertFrom(pma::Track3D& src)
 
 	for (size_t i = 0; i < src.size(); i++)
 	{
-		xyz.push_back(src[i]->Point3D());
+		xyz.push_back(makeTVector3(src[i]->Point3D()));
 
 		if (i < src.size() - 1)
 		{
-			TVector3 dc(src[i + 1]->Point3D());
-			dc -= src[i]->Point3D();
+			TVector3 dc = makeTVector3(src[i + 1]->Point3D());
+			dc -= makeTVector3(src[i]->Point3D());
 			dc *= 1.0 / dc.Mag();
 			dircos.push_back(dc);
 		}
@@ -271,12 +271,12 @@ recob::Track ems::EMShower3D::ConvertFrom2(pma::Track3D& src)
 
 	for (size_t i = 0; i < src.size(); i++)
 	{
-		xyz.push_back(src[i]->Point3D());
+		xyz.push_back(makeTVector3(src[i]->Point3D()));
 
 		if (i < src.size() - 1)
 		{
-			TVector3 dc(src[i + 1]->Point3D());
-			dc -= src[i]->Point3D();
+			TVector3 dc = makeTVector3(src[i + 1]->Point3D());
+			dc -= makeTVector3(src[i]->Point3D());
 			dc *= 1.0 / dc.Mag();
 			dircos.push_back(dc);
 		}
@@ -517,8 +517,8 @@ void ems::EMShower3D::Reoptimize()
 		{
 			if (ta == tb) {tb++; continue;}
 	
-			TVector3 p1 = fSeltracks[ta].track->front()->Point3D();
-			TVector3 p2 = fSeltracks[tb].track->front()->Point3D();
+			TVector3 p1 = makeTVector3(fSeltracks[ta].track->front()->Point3D());
+			TVector3 p2 = makeTVector3(fSeltracks[tb].track->front()->Point3D());
 			float dist = std::sqrt(pma::Dist2(p1, p2));
 
 			if (dist < min_dist)
@@ -849,8 +849,8 @@ bool ems::EMShower3D::Validate(std::vector< ems::DirOfGamma* > input, size_t id1
 		std::vector< Hit2D* > hits2dcl = input[i]->GetHits2D();
 		for (size_t h = 0; h < hits2dcl.size(); ++h)
 		{
-			TVector2 pfront = pma::GetProjectionToPlane(track->front()->Point3D(), plane3, track->FrontTPC(), track->FrontCryo());
-			TVector2 pback  = pma::GetProjectionToPlane(track->back()->Point3D(), plane3, track->BackTPC(), track->BackCryo());
+			TVector2 pfront = pma::GetProjectionToPlane(makeTVector3(track->front()->Point3D()), plane3, track->FrontTPC(), track->FrontCryo());
+			TVector2 pback  = pma::GetProjectionToPlane(makeTVector3(track->back()->Point3D()), plane3, track->BackTPC(), track->BackCryo());
 			if ( (pma::Dist2(hits2dcl[h]->GetPointCm(), pfront) < 1.0F) && 
 				(pma::Dist2(hits2dcl[h]->GetPointCm(), pback) < 1.0F) )
 			{result = true; break;}

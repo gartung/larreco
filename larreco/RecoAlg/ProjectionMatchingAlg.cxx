@@ -86,14 +86,14 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 	double step = 0.3;
 	// then check how points-close-to-the-track-projection are distributed along the
 	// track, namely: are there track sections crossing empty spaces, except dead wires?
-	TVector3 p(trk.front()->Point3D());
+	TVector3 p = makeTVector3(trk.front()->Point3D());
 	for (size_t i = 0; i < trk.Nodes().size() - 1; ++i)
 	{
 		auto const & node = *(trk.Nodes()[i]);
 		tpc = node.TPC(); cryo = node.Cryo();
 
-		TVector3 vNext(trk.Nodes()[i + 1]->Point3D());
-		TVector3 vThis(node.Point3D());
+		TVector3 vNext = makeTVector3(trk.Nodes()[i + 1]->Point3D());
+		TVector3 vThis = makeTVector3(node.Point3D());
 
 		std::vector< TVector2 > const & points = all_close_points[std::pair< unsigned int, unsigned int >(tpc, cryo)];
 		if (trk.Nodes()[i + 1]->TPC() == (int)tpc) // skip segments between tpc's, look only at those contained in tpc
@@ -694,8 +694,8 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildSegment(
 
 	if (trk)
 	{
-		double dfront = pma::Dist2(trk->front()->Point3D(), point);
-		double dback = pma::Dist2(trk->back()->Point3D(), point);
+		double dfront = pma::Dist2(makeTVector3(trk->front()->Point3D()), point);
+		double dback = pma::Dist2(makeTVector3(trk->back()->Point3D()), point);
 		if (dfront > dback) trk->Flip();
 
 		trk->Nodes().front()->SetPoint3D(point);
@@ -716,8 +716,8 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildSegment(
 
 	if (trk)
 	{
-		double dfront = pma::Dist2(trk->front()->Point3D(), point);
-		double dback = pma::Dist2(trk->back()->Point3D(), point);
+		double dfront = pma::Dist2(makeTVector3(trk->front()->Point3D()), point);
+		double dback = pma::Dist2(makeTVector3(trk->back()->Point3D()), point);
 		if (dfront > dback) trk->Flip();
 
 		trk->Nodes().front()->SetPoint3D(point);
@@ -1102,7 +1102,7 @@ void pma::ProjectionMatchingAlg::mergeTracks(pma::Track3D& dst, pma::Track3D& sr
 			src.Nodes().front()->Point3D()) > 0.5 * lmean) ||
 	    (tpc != dst.BackTPC()) || (cryo != dst.BackCryo()))
 	{
-		dst.AddNode(src.Nodes().front()->Point3D(), tpc, cryo);
+		dst.AddNode(makeTVector3(src.Nodes().front()->Point3D()), tpc, cryo);
 		if (src.Nodes().front()->IsFrozen())
 			dst.Nodes().back()->SetFrozen(true);
 	}
@@ -1110,7 +1110,7 @@ void pma::ProjectionMatchingAlg::mergeTracks(pma::Track3D& dst, pma::Track3D& sr
 	{
 		pma::Node3D* node = src.Nodes()[n];
 
-		dst.AddNode(src.Nodes()[n]->Point3D(),
+		dst.AddNode(makeTVector3(src.Nodes()[n]->Point3D()),
 		            node->TPC(), node->Cryo());
 
 		if (node->IsFrozen())

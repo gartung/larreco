@@ -267,7 +267,7 @@ double pma::VtxCandidate::MaxAngle(double minLength) const
 			pma::Track3D* trk_i = fAssigned[i].first.Track();
 			pma::Node3D* vtx_i0 = trk_i->Nodes()[fAssigned[i].second];
 			pma::Node3D* vtx_i1 = trk_i->Nodes()[fAssigned[i].second + 1];
-			dir_i = vtx_i1->Point3D() - vtx_i0->Point3D();
+			dir_i = makeTVector3(vtx_i1->Point3D() - vtx_i0->Point3D());
 			dir_i *= 1.0 / dir_i.Mag();
 		}
 	}
@@ -279,7 +279,7 @@ double pma::VtxCandidate::MaxAngle(double minLength) const
 		pma::Track3D* trk_j = fAssigned[j].first.Track();
 		pma::Node3D* vtx_j0 = trk_j->Nodes()[fAssigned[j].second];
 		pma::Node3D* vtx_j1 = trk_j->Nodes()[fAssigned[j].second + 1];
-		TVector3 dir_j = vtx_j1->Point3D() - vtx_j0->Point3D();
+		TVector3 dir_j = makeTVector3(vtx_j1->Point3D() - vtx_j0->Point3D());
 		dir_j *= 1.0 / dir_j.Mag();
 		a = fabs(dir_i * dir_j);
 		if (a < min) min = a;
@@ -364,7 +364,7 @@ double pma::VtxCandidate::Compute(void)
 		{
 			pma::Node3D* vtx2 = static_cast< pma::Node3D* >(seg->Next(0));
 
-			std::pair<TVector3, TVector3> endpoints(vtx1->Point3D(), vtx2->Point3D());
+			std::pair<TVector3, TVector3> endpoints(makeTVector3(vtx1->Point3D()), makeTVector3(vtx2->Point3D()));
 			double dy = endpoints.first.Y() - endpoints.second.Y();
 			double fy_norm = asin(fabs(dy) / segLength) / (0.5 * TMath::Pi());
 			double w = 1.0 - pow(fy_norm - 1.0, 12);
@@ -394,7 +394,7 @@ double pma::VtxCandidate::Compute(void)
 		pma::Node3D* vprev = static_cast< pma::Node3D* >(segments[s]->Prev());
 		pma::Node3D* vnext = static_cast< pma::Node3D* >(segments[s]->Next(0));
 
-		pproj = pma::GetProjectionToSegment(result, vprev->Point3D(), vnext->Point3D());
+		pproj = pma::GetProjectionToSegment(result, makeTVector3(vprev->Point3D()), makeTVector3(vnext->Point3D()));
 
 		//dx = weights[s] * (result.X() - pproj.X());
 		//dy = result.Y() - pproj.Y();
@@ -483,8 +483,8 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 			else mf::LogError("pma::VtxCandidate") << "Root of the tree not found in tracks collection.";
 		}
 
-		TVector3 p0(trk->Nodes()[idx]->Point3D());
-		TVector3 p1(trk->Nodes()[idx + 1]->Point3D());
+		TVector3 p0 = makeTVector3(trk->Nodes()[idx]->Point3D());
+		TVector3 p1 = makeTVector3(trk->Nodes()[idx + 1]->Point3D());
 
 		int tpc0 = trk->Nodes()[idx]->TPC();
 		int tpc1 = trk->Nodes()[idx + 1]->TPC();
@@ -691,7 +691,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 		if (noLoops && (nOK > 1))
 		{
 			fAssigned.clear();
-			fCenter = vtxCenter->Point3D();
+			fCenter = makeTVector3(vtxCenter->Point3D());
 			fMse = 0.0; fMse2D = 0.0;
 
 			double g = rootTrk->TuneFullTree();

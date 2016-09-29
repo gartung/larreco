@@ -42,6 +42,8 @@ namespace pma
 
 	double Dist2(const TVector2& v1, const TVector2& v2);
 	double Dist2(const TVector3& v1, const TVector3& v2);
+	double Dist2(const Point2D_t& v1, const Point2D_t& v2);
+	double Dist2(const Point3D_t& v1, const Point3D_t& v2);
 	size_t GetHitsCount(const std::vector< pma::Hit3D* >& hits, unsigned int view);
 	double GetSummedADC(const std::vector< pma::Hit3D* >& hits, unsigned int view = geo::kUnknown);
 	double GetSummedAmpl(const std::vector< pma::Hit3D* >& hits, unsigned int view = geo::kUnknown);

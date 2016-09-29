@@ -66,7 +66,7 @@ pma::Track3D::Track3D(const Track3D& src) :
 	}
 
 	fNodes.reserve(src.fNodes.size());
-	for (auto const& node : src.fNodes) fNodes.push_back(new pma::Node3D(node->Point3D(), node->TPC(), node->Cryo(), node->IsVertex()));
+	for (auto const& node : src.fNodes) fNodes.push_back(new pma::Node3D(makeTVector3(node->Point3D()), node->TPC(), node->Cryo(), node->IsVertex()));
 
 	for (auto const& point : src.fAssignedPoints) fAssignedPoints.push_back(new Point3D_t(*point));
 
@@ -869,8 +869,8 @@ double pma::Track3D::GetRawdEdxSequence(
 		indexes.push_back(j);
 		hit = fHits[j];
 
-		p0 = hit->Point3D();
-		p1 = hit->Point3D();
+		p0 = makeTVector3(hit->Point3D());
+		p1 = makeTVector3(hit->Point3D());
 
 		c0.Set(hit->Wire(), hit->PeakTime());
 		c1.Set(hit->Wire(), hit->PeakTime());
@@ -896,7 +896,7 @@ double pma::Track3D::GetRawdEdxSequence(
 			}
 			indexes.push_back(j);
 
-			p1 = hit->Point3D();
+			p1 = makeTVector3(hit->Point3D());
 
 			c1.Set(hit->Wire(), hit->PeakTime());
 
@@ -1167,7 +1167,7 @@ bool pma::Track3D::AddNode(void)
 		unsigned int tpc = maxSeg->Hit(i0).TPC();
 		unsigned int cryo = maxSeg->Hit(i0).Cryo();
 
-		pma::Node3D* p = new pma::Node3D((maxSeg->Hit(i0).Point3D() + maxSeg->Hit(i1).Point3D()) * 0.5, tpc, cryo);
+		pma::Node3D* p = new pma::Node3D(makeTVector3(maxSeg->Hit(i0).Point3D() + Vector3D_t(maxSeg->Hit(i1).Point3D())) * 0.5, tpc, cryo);
 
 		//mf::LogVerbatim("pma::Track3D") << "add node x:" << p->Point3D().X()
 		//	<< " y:" << p->Point3D().Y() << " z:" << p->Point3D().Z();
@@ -1238,7 +1238,7 @@ pma::Track3D* pma::Track3D::Split(size_t idx)
 	}
 
 	n = fNodes.front();
-	t0->fNodes.push_back(new pma::Node3D(n->Point3D(), n->TPC(), n->Cryo()));
+	t0->fNodes.push_back(new pma::Node3D(makeTVector3(n->Point3D()), n->TPC(), n->Cryo()));
 	t0->RebuildSegments();
 	RebuildSegments();
 
@@ -2191,11 +2191,11 @@ bool pma::Track3D::ShiftEndsToHits(void)
 
 	if (!(fNodes.front()->Prev()))
 	{
-		el = GetNearestElement(front()->Point3D());
+		el = GetNearestElement(makeTVector3(front()->Point3D()));
 		vtx = dynamic_cast< pma::Node3D* >(el);
 		if (vtx)
 		{
-			if (vtx == fNodes.front()) fNodes.front()->SetPoint3D(front()->Point3D());
+			if (vtx == fNodes.front()) fNodes.front()->SetPoint3D(makeTVector3(front()->Point3D()));
 			else
 			{
 				mf::LogWarning("pma::Track3D") << "First hit is projected to inner node.";
@@ -2210,7 +2210,7 @@ bool pma::Track3D::ShiftEndsToHits(void)
 				if (seg->Prev() == fNodes.front())
 				{
 					double l0 = seg->Length();
-					fNodes.front()->SetPoint3D(front()->Point3D());
+					fNodes.front()->SetPoint3D(makeTVector3(front()->Point3D()));
 					if ((seg->Length() < 0.2 * l0) && (fNodes.size() > 2))
 					{
 						pma::Node3D* toRemove = fNodes[1];
@@ -2243,11 +2243,11 @@ bool pma::Track3D::ShiftEndsToHits(void)
 
 	if (!(fNodes.back()->NextCount()))
 	{
-		el = GetNearestElement(back()->Point3D());
+		el = GetNearestElement(makeTVector3(back()->Point3D()));
 		vtx = dynamic_cast< pma::Node3D* >(el);
 		if (vtx)
 		{
-			if (vtx == fNodes.back()) fNodes.back()->SetPoint3D(back()->Point3D());
+			if (vtx == fNodes.back()) fNodes.back()->SetPoint3D(makeTVector3(back()->Point3D()));
 			else
 			{
 				mf::LogWarning("pma::Track3D") << "First hit is projected to inner node.";
@@ -2262,7 +2262,7 @@ bool pma::Track3D::ShiftEndsToHits(void)
 				if (seg->Next() == fNodes.back())
 				{
 					double l0 = seg->Length();
-					fNodes.back()->SetPoint3D(back()->Point3D());
+					fNodes.back()->SetPoint3D(makeTVector3(back()->Point3D()));
 					if ((seg->Length() < 0.2 * l0) && (fNodes.size() > 2))
 					{
 						size_t idx = fNodes.size() - 2;

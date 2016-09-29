@@ -61,6 +61,9 @@ private:
 	static double GetDist2(const TVector3& psrc, const TVector3& p0, const TVector3& p1);
 	static double GetDist2(const TVector2& psrc, const TVector2& p0, const TVector2& p1);
 
+	static double GetDist2(const Point3D_t& psrc, const Point3D_t& p0, const Point3D_t& p1);
+	static double GetDist2(const Point2D_t& psrc, const Point2D_t& p0, const Point2D_t& p1);
+	
 };
 
 #endif

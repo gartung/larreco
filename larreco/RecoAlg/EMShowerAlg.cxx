@@ -459,15 +459,15 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(std::vector<ar
 
   for (unsigned int i = 0; i < pmatrack->size(); i++) {
 
-    xyz.push_back((*pmatrack)[i]->Point3D());
+    xyz.push_back(makeTVector3((*pmatrack)[i]->Point3D()));
 
     if (i < pmatrack->size()-1) {
       size_t j = i+1;
       double mag = 0.0;
       TVector3 dc(0., 0., 0.);
       while ((mag == 0.0) and (j < pmatrack->size())) {
-      	dc = (*pmatrack)[j]->Point3D();
-      	dc -= (*pmatrack)[i]->Point3D();
+      	dc = makeTVector3((*pmatrack)[j]->Point3D());
+      	dc -= makeTVector3((*pmatrack)[i]->Point3D());
       	mag = dc.Mag();
       	++j;
       }
@@ -1073,7 +1073,7 @@ recob::Shower shower::EMShowerAlg::MakeShower(art::PtrVector<recob::Hit> const& 
     bool has_shift = (xshift != 0.0);
     for (size_t i = 0; i<pmatrack->size(); ++i){
       if ((*pmatrack)[i]->IsEnabled()){
-	TVector3 p3d = (*pmatrack)[i]->Point3D();
+	TVector3 p3d = makeTVector3((*pmatrack)[i]->Point3D());
 	if (has_shift) p3d.SetX(p3d.X() + xshift);
 	//std::cout<<p3d.X()<<" "<<p3d.Y()<<" "<<p3d.Z()<<std::endl;
 	spts.push_back(p3d);
