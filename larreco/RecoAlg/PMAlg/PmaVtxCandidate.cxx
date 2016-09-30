@@ -106,7 +106,7 @@ bool pma::VtxCandidate::Add(const pma::TrkCandidate & trk)
 			mse = Compute();
 			if (mse < min_mse)
 			{
-				d = sqrt( seg->GetDistance2To(fCenter) );
+				d = sqrt( seg->GetDistance2To(makeTVector3(fCenter)) );
 				if (d < d_best)
 				{
 					min_mse = mse; n_best = n; d_best = d;
@@ -183,7 +183,7 @@ bool pma::VtxCandidate::Add(const pma::TrkCandidate & trk)
 		else
 		{
 			fAssigned.pop_back();
-			fCenter.SetXYZ(0., 0., 0.);
+			fCenter.SetCoordinates(0., 0., 0.);
 			fMse = 0; fMse2D = 0;
 			return false;
 		}
@@ -199,7 +199,7 @@ bool pma::VtxCandidate::Add(const pma::TrkCandidate & trk)
 			}
 		}
 		fAssigned.pop_back();
-		fCenter.SetXYZ(0., 0., 0.);
+		fCenter.SetCoordinates(0., 0., 0.);
 		fMse = 0; fMse2D = 0;
 		return false;
 	}
@@ -223,17 +223,17 @@ double pma::VtxCandidate::ComputeMse2D(void)
 		double m = 0.0;
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kU))
 		{
-			center2d = GetProjectionToPlane(fCenter, geo::kU, tpc, cryo);
+			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kU, tpc, cryo);
 			m += seg->GetDistance2To(center2d, geo::kU); k++;
 		}
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kV))
 		{
-			center2d = GetProjectionToPlane(fCenter, geo::kV, tpc, cryo);
+			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kV, tpc, cryo);
 			m += seg->GetDistance2To(center2d, geo::kV); k++;
 		}
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kZ))
 		{
-			center2d = GetProjectionToPlane(fCenter, geo::kZ, tpc, cryo);
+			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kZ, tpc, cryo);
 			m += seg->GetDistance2To(center2d, geo::kZ); k++;
 		}
 		mse += m / (double)k;
@@ -244,12 +244,12 @@ double pma::VtxCandidate::ComputeMse2D(void)
 
 double pma::VtxCandidate::Test(const VtxCandidate& other) const
 {
-	double dx = fCenter[0] - other.fCenter[0];
-	double dy = fCenter[1] - other.fCenter[1];
-	double dz = fCenter[2] - other.fCenter[2];
-	double dw = fErr[0] * other.fErr[0] * dx * dx
-		+ fErr[1] * other.fErr[1] * dy * dy
-		+ fErr[2] * other.fErr[2] * dz * dz;
+	double dx = fCenter.X() - other.fCenter.X();
+	double dy = fCenter.Y() - other.fCenter.Y();
+	double dz = fCenter.Z() - other.fCenter.Z();
+	double dw = fErr.X() * other.fErr.X() * dx * dx
+		+ fErr.Y() * other.fErr.Y() * dy * dy
+		+ fErr.Z() * other.fErr.Z() * dz * dz;
 	return sqrt(dw);
 }
 
@@ -376,7 +376,7 @@ double pma::VtxCandidate::Compute(void)
 		}
 	}
 
-	fCenter.SetXYZ(0., 0., 0.); fErr.SetXYZ(0., 0., 0.);
+	fCenter.SetCoordinates(0., 0., 0.); fErr.SetCoordinates(0., 0., 0.);
 
 	TVector3 result;
 	double resultMse = pma::SolveLeastSquares3D(lines, result);
@@ -400,23 +400,23 @@ double pma::VtxCandidate::Compute(void)
 		//dy = result.Y() - pproj.Y();
 		//dz = result.Z() - pproj.Z();
 
-		fErr[0] += weights[s] * weights[s];
-		fErr[1] += 1.0;
-		fErr[2] += 1.0;
+		fErr.SetX(fErr.X() + weights[s] * weights[s]);
+		fErr.SetY(fErr.Y() + 1.0);
+		fErr.SetZ(fErr.Z() + 1.0);
 
-		fCenter[0] += weights[s] * pproj.X();
-		fCenter[1] += pproj.Y();
-		fCenter[2] += pproj.Z();
+		fCenter.SetX(fCenter.X() + weights[s] * pproj.X());
+		fCenter.SetY(fCenter.Y() + pproj.Y());
+		fCenter.SetZ(fCenter.Z() + pproj.Z());
 		wsum += weights[s];
 	}
-	fCenter[0] /= wsum;
-	fCenter[1] /= segments.size();
-	fCenter[2] /= segments.size();
+	fCenter.SetX(fCenter.X() / wsum);
+	fCenter.SetY(fCenter.Y() / segments.size());
+	fCenter.SetZ(fCenter.Z() / segments.size());
 
 	fErr *= 1.0 / segments.size();
-	fErr[0] = sqrt(fErr[0]);
-	fErr[1] = sqrt(fErr[1]);
-	fErr[2] = sqrt(fErr[2]);
+	fErr.SetX(sqrt(fErr.X()));
+	fErr.SetY(sqrt(fErr.Y()));
+	fErr.SetZ(sqrt(fErr.Z()));
 
 	return resultMse;
 }
@@ -492,11 +492,11 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 		int cryo0 = trk->Nodes()[idx]->Cryo();
 		int cryo1 = trk->Nodes()[idx + 1]->Cryo();
 
-		double d0 = sqrt( pma::Dist2(p0, fCenter) );
-		double d1 = sqrt( pma::Dist2(p1, fCenter) );
+		double d0 = sqrt( pma::Dist2(p0, makeTVector3(fCenter)) );
+		double d1 = sqrt( pma::Dist2(p1, makeTVector3(fCenter)) );
 		double ds = sqrt( pma::Dist2(p0, p1) );
-		double f = pma::GetSegmentProjVector(fCenter, p0, p1);
-		TVector3 proj = pma::GetProjectionToSegment(fCenter, p0, p1);
+		double f = pma::GetSegmentProjVector(makeTVector3(fCenter), p0, p1);
+		TVector3 proj = pma::GetProjectionToSegment(makeTVector3(fCenter), p0, p1);
 
 		if ((idx == 0) && (f * ds <= kMinDistToNode))
 		{
@@ -504,7 +504,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 			{
 				mf::LogVerbatim("pma::VtxCandidate") << "  new at front";
 				vtxCenter = trk->Nodes().front();
-				vtxCenter->SetPoint3D(fCenter);
+				vtxCenter->SetPoint3D(makeTVector3(fCenter));
 				nOK++;
 			}
 			else
@@ -528,7 +528,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 					mf::LogVerbatim("pma::VtxCandidate") << "  new center at the endpoint";
 					vtxCenter = trk->Nodes().back();
 				}
-				vtxCenter->SetPoint3D(fCenter);
+				vtxCenter->SetPoint3D(makeTVector3(fCenter));
 				nOK++;
 			}
 			else
@@ -569,7 +569,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 					if (f < 0.5) { tpc = tpc0; cryo = cryo0; }
 					else { tpc = tpc1; cryo = cryo1; }
 
-					trk->InsertNode(fCenter, ++idx, tpc, cryo);
+					trk->InsertNode(makeTVector3(fCenter), ++idx, tpc, cryo);
 				}
 				else
 				{
@@ -625,7 +625,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 					if (f < 0.5) { tpc = tpc0; cryo = cryo0; }
 					else { tpc = tpc1; cryo = cryo1; }
 
-					trk->InsertNode(fCenter, ++idx, tpc, cryo);
+					trk->InsertNode(makeTVector3(fCenter), ++idx, tpc, cryo);
 				}
 				else
 				{

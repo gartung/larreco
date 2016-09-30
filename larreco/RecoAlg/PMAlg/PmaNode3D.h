@@ -125,7 +125,7 @@ private:
 	Point3D_t fPoint3D;       // node position in 3D space in [cm]
 	Point2D_t fProj2D[3];     // node projections to 2D views, scaled to [cm], updated on each change of 3D position
 
-	TVector3 fGradient;
+	Vector3D_t fGradient;
 	bool fIsVertex;          // no penalty on segments angle if branching or kink detected
 
 	static bool fGradFixed[3];

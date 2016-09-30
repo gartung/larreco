@@ -28,9 +28,7 @@ public:
 	VtxCandidate(double segMinLength = 0.5) :
 		tracksJoined(false),
 		fSegMinLength(segMinLength),
-		fMse(0.0), fMse2D(0.0),
-		fCenter(0., 0., 0.),
-		fErr(0., 0., 0.)
+		fMse(0.0), fMse2D(0.0)
 	{}
 
 	bool Has(pma::Track3D* trk) const;
@@ -60,7 +58,7 @@ public:
 
 	bool JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandidateColl & src);
 
-	const TVector3& Center(void) const { return fCenter; }
+	const TVector3 /* & */ Center(void) const { return makeTVector3(fCenter); }
 	double Mse(void) const { return fMse; }
 	double Mse2D(void) const { return fMse2D; }
 
@@ -79,7 +77,8 @@ private:
 	bool tracksJoined;
 	double fSegMinLength, fMse, fMse2D;
 	std::vector< std::pair< pma::TrkCandidate, size_t > > fAssigned;
-	TVector3 fCenter, fErr;
+	Point3D_t fCenter;
+	Vector3D_t fErr;
 };
 
 #endif
