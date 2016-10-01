@@ -91,7 +91,7 @@ TVector3 pma::Segment3D::GetProjection(const TVector2& p, unsigned int view) con
 	return result;
 }
 
-TVector3 pma::Segment3D::GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const
+pma::Vector3D_t pma::Segment3D::GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const
 {
 	pma::Node3D* vStart = static_cast< pma::Node3D* >(prev);
 	pma::Node3D* vStop = static_cast< pma::Node3D* >(next);
@@ -116,7 +116,7 @@ TVector3 pma::Segment3D::GetUnconstrainedProj3D(const TVector2& p2d, unsigned in
 		if (mag != 0.0) cosine = v0 * v1 / mag;
 		double b = v0Norm * cosine / v1Norm;
 
-		return makeTVector3(vStart->Point3D()) + (v3d * b);
+		return Vector3D_t(vStart->Point3D() + makeVector3D(v3d * b));
 	}
 	else // segment 2D projection is almost a point
 	{
@@ -126,7 +126,7 @@ TVector3 pma::Segment3D::GetUnconstrainedProj3D(const TVector2& p2d, unsigned in
 		v3d += makeTVector3(vStop->Point3D());
 		v3d *= 0.5;
 
-		return v3d;
+		return makeVector3D(v3d);
 	}
 }
 

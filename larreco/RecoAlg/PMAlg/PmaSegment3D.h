@@ -33,6 +33,8 @@ public:
 
 	/// Distance [cm] from the 2D point to the object's 2D projection in one of wire views.
 	virtual double GetDistance2To(const TVector2& p2d, unsigned int view) const;
+	virtual double GetDistance2To(const Point2D_t& p2d, unsigned int view) const
+	  { return GetDistance2To(makeTVector2(p2d), view); }
 
 	/// Get 3D direction cosines.
 	TVector3 GetDirection3D(void) const;
@@ -42,7 +44,7 @@ public:
 
 	/// Get 3D projection of a 2D point from the view, no limitations if it falls beyond
 	/// the segment endpoints.
-	virtual TVector3 GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const;
+	virtual Vector3D_t GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const;
 
 	/// Set hit 3D position and its 2D projection to the vertex.
 	virtual void SetProjection(pma::Hit3D& h) const;

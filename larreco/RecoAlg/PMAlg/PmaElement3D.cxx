@@ -210,7 +210,7 @@ double pma::Element3D::SumDist2(void) const
 			else */
 			hit_sum += OptFactor(hitView) *              // alpha_i
 				h->GetSigmaFactor() *                    // hit_amp / hit_max_amp
-				GetDistance2To(h->Point2D(), hitView);   // hit_to_fit_dist^2
+				GetDistance2To(makeTVector2(h->Point2D()), hitView);   // hit_to_fit_dist^2
 		}
 	}
 
@@ -250,7 +250,7 @@ double pma::Element3D::SumDist2(unsigned int view) const
 			{
 				hit_sum += OptFactor(hitView) *              // alpha_i
 					h->GetSigmaFactor() *                    // hit_amp / hit_max_amp
-					GetDistance2To(h->Point2D(), hitView);   // hit_to_fit_dist^2
+					GetDistance2To(makeTVector2(h->Point2D()), hitView);   // hit_to_fit_dist^2
 			}
 		}
 	}

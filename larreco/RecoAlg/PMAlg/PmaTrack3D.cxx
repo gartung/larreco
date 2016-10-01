@@ -1247,8 +1247,8 @@ pma::Track3D* pma::Track3D::Split(size_t idx)
 	{
 		pma::Hit3D* h3d = fHits[h];
 		unsigned int view = h3d->View2D(), tpc = h3d->TPC(), cryo = h3d->Cryo();
-		double dist2D_old = Dist2(h3d->Point2D(), view, tpc, cryo);
-		double dist2D_new = t0->Dist2(h3d->Point2D(), view, tpc, cryo);
+		double dist2D_old = Dist2(makeTVector2(h3d->Point2D()), view, tpc, cryo);
+		double dist2D_new = t0->Dist2(makeTVector2(h3d->Point2D()), view, tpc, cryo);
 
 		if ((dist2D_new < dist2D_old) && t0->HasTPC(tpc)) t0->push_back(release_at(h));
 		else if (!HasTPC(tpc) && t0->HasTPC(tpc)) t0->push_back(release_at(h));
@@ -1928,7 +1928,7 @@ void pma::Track3D::ReassignHitsInTree(pma::Track3D* trkRoot)
 		hit = fHits[i];
 		d0 = hit->GetDistToProj();
 
-		nearestTrk = GetNearestTrkInTree(hit->Point2D(), hit->View2D(), hit->TPC(), hit->Cryo(), dmin);
+		nearestTrk = GetNearestTrkInTree(makeTVector2(hit->Point2D()), hit->View2D(), hit->TPC(), hit->Cryo(), dmin);
 		if ((nearestTrk != this) && (dmin < 0.5 * d0))
 		{
 			nearestTrk->push_back(release_at(i));
@@ -2422,7 +2422,7 @@ bool pma::Track3D::GetUnconstrainedProj3D(art::Ptr<recob::Hit> hit, TVector3& p3
 	}
 	if (seg)
 	{
-		p3d = seg->GetUnconstrainedProj3D(p2d, view);
+		p3d = makeTVector3(seg->GetUnconstrainedProj3D(p2d, view));
 		dist2 = min_d2;
 		
 		pma::Node3D* prev = static_cast< pma::Node3D* >(seg->Prev());
@@ -2698,7 +2698,7 @@ void pma::Track3D::MakeProjection(void)
 
 	for (auto h : fHits) // assign hits to nodes/segments
 	{
-		pe = GetNearestElement(h->Point2D(), h->View2D(), h->TPC(), skipFrontVtx, skipBackVtx);
+		pe = GetNearestElement(makeTVector2(h->Point2D()), h->View2D(), h->TPC(), skipFrontVtx, skipBackVtx);
 		pe->AddHit(h);
 	}
 

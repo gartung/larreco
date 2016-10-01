@@ -44,7 +44,7 @@ public:
 	/// Distance [cm] from the 2D point to the object's 2D projection in one of wire views.
 	virtual double GetDistance2To(const TVector2& p2d, unsigned int view) const = 0;
 
-	virtual TVector3 GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const = 0;
+	virtual Vector3D_t GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const = 0;
 
 	virtual void SetProjection(pma::Hit3D& h) const = 0;
 
@@ -69,7 +69,7 @@ public:
 	size_t NEnabledHits(unsigned int view = geo::kUnknown) const;
 	size_t NPrecalcEnabledHits(void) const { return fNThisHitsEnabledAll; }
 
-	TVector3 /* const & */ ReferencePoint(size_t index) const { return makeTVector3(*(fAssignedPoints[index])); }
+	Point3D_t const & ReferencePoint(size_t index) const { return *(fAssignedPoints[index]); }
 	size_t NPoints(void) const { return fAssignedPoints.size(); }
 	void AddPoint(Point3D_t* p) { fAssignedPoints.push_back(p); }
 

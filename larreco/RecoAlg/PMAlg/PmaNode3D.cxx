@@ -169,7 +169,7 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 		return;
 	}
 
-	TVector2 v0(h.Point2D());
+	TVector2 v0 = makeTVector2(h.Point2D());
 	v0 -= Projection2D(h.View2D());
 
 	TVector2 v1(gstart);
