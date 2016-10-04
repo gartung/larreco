@@ -680,13 +680,13 @@ bool pma::PMAlgTracker::areCoLinear(pma::Track3D* trk1, pma::Track3D* trk2,
 		TVector3 endpoint1 = makeTVector3(trk1->back()->Point3D());
 		TVector3 trk2front0 = makeTVector3(trk2->Nodes()[0]->Point3D());
 		TVector3 trk2front1 = makeTVector3(trk2->Nodes()[1]->Point3D());
-		TVector3 proj1 = pma::GetProjectionToSegment(endpoint1, trk2front0, trk2front1);
+		TVector3 proj1 = makeTVector3(pma::GetProjectionToSegment(endpoint1, trk2front0, trk2front1));
 		double distProj1 = sqrt( pma::Dist2(endpoint1, proj1) );
 
 		TVector3 endpoint2 = makeTVector3(trk2->front()->Point3D());
 		TVector3 trk1back0 = makeTVector3(trk1->Nodes()[nodeEndIdx]->Point3D());
 		TVector3 trk1back1 = makeTVector3(trk1->Nodes()[nodeEndIdx - 1]->Point3D());
-		TVector3 proj2 = pma::GetProjectionToSegment(endpoint2, trk1back1, trk1back0);
+		TVector3 proj2 = makeTVector3(pma::GetProjectionToSegment(endpoint2, trk1back1, trk1back0));
 		double distProj2 = sqrt( pma::Dist2(endpoint2, proj2) );
 
 		TVector3 dir1 = makeTVector3(trk1->Segments().back()->GetDirection3D());
@@ -711,13 +711,13 @@ bool pma::PMAlgTracker::areCoLinear(pma::Track3D* trk1, pma::Track3D* trk2,
 				endpoint1.SetY(0.);
 				trk2front0.SetY(0.);
 				trk2front1.SetY(0.);
-				proj1 = pma::GetProjectionToSegment(endpoint1, trk2front0, trk2front1);
+				proj1 = makeTVector3(pma::GetProjectionToSegment(endpoint1, trk2front0, trk2front1));
 				distProj1 = sqrt( pma::Dist2(endpoint1, proj1) );
 
 				endpoint2.SetY(0.);
 				trk1back0.SetY(0.);
 				trk1back1.SetY(0.);
-				proj2 = pma::GetProjectionToSegment(endpoint2, trk1back1, trk1back0);
+				proj2 = makeTVector3(pma::GetProjectionToSegment(endpoint2, trk1back1, trk1back0));
 				distProj2 = sqrt( pma::Dist2(endpoint2, proj2) );
 			
 				double cosThrXZ = cos(0.5 * acos(cosThr));
@@ -904,10 +904,10 @@ bool pma::PMAlgTracker::areCoLinear(double& cos3d,
 	TVector3 s0 = b0 - f0, s1 = b1 - f1;
 	cos3d = s0 * s1 / (s0.Mag() * s1.Mag());
 
-	TVector3 proj0 = pma::GetProjectionToSegment(b0, f1, b1);
+	TVector3 proj0 = makeTVector3(pma::GetProjectionToSegment(b0, f1, b1));
 	double distProj0 = sqrt( pma::Dist2(b0, proj0) );
 
-	TVector3 proj1 = pma::GetProjectionToSegment(f1, f0, b0);
+	TVector3 proj1 = makeTVector3(pma::GetProjectionToSegment(f1, f0, b0));
 	double distProj1 = sqrt( pma::Dist2(f1, proj1) );
 
 	double d = sqrt( pma::Dist2(b0, f1) );

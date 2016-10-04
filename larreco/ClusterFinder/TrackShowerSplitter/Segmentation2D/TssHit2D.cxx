@@ -7,6 +7,7 @@
  */
 
 #include "TssHit2D.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 
 #include "larcore/Geometry/TPCGeo.h"
@@ -26,9 +27,9 @@ tss::Hit2D::Hit2D(const art::Ptr< recob::Hit > & src) :
 	fPlane = src->WireID().Plane;
 	fWire = src->WireID().Wire;
 
-	fPoint2D = pma::WireDriftToCm(
+	fPoint2D = makeTVector2(pma::WireDriftToCm(
 		fWire, src->PeakTime(), fPlane,
-		src->WireID().TPC, src->WireID().Cryostat);
+		src->WireID().TPC, src->WireID().Cryostat));
 }
 
 tss::Hit2D::Hit2D(const tss::Hit2D & src) :

@@ -442,9 +442,9 @@ std::vector< unsigned int > pma::Track3D::Cryos(void) const
 	return cryo_idxs;
 }
 
-std::pair< TVector2, TVector2 > pma::Track3D::WireDriftRange(unsigned int view, unsigned int tpc, unsigned int cryo) const
+std::pair< pma::Point2D_t, pma::Point2D_t > pma::Track3D::WireDriftRange(unsigned int view, unsigned int tpc, unsigned int cryo) const
 {
-	std::pair< TVector2, TVector2 > range(TVector2(0., 0.), TVector2(0., 0.));
+	std::pair< pma::Point2D_t, pma::Point2D_t > range;
 
 	size_t n0 = 0;
 	while ((n0 < fNodes.size()) && (fNodes[n0]->TPC() != (int)tpc)) n0++;
@@ -458,16 +458,16 @@ std::pair< TVector2, TVector2 > pma::Track3D::WireDriftRange(unsigned int view, 
 		if (n1 == fNodes.size()) n1--;
 
 		TVector2 p0 = makeTVector2(fNodes[n0]->Projection2D(view));
-		p0 = pma::CmToWireDrift(p0.X(), p0.Y(), view, tpc, cryo);
+		p0 = makeTVector2(pma::CmToWireDrift(p0.X(), p0.Y(), view, tpc, cryo));
 
 		TVector2 p1 = makeTVector2(fNodes[n1]->Projection2D(view));
-		p1 = pma::CmToWireDrift(p1.X(), p1.Y(), view, tpc, cryo);
+		p1 = makeTVector2(pma::CmToWireDrift(p1.X(), p1.Y(), view, tpc, cryo));
 
 		if (p0.X() > p1.X()) { double tmp = p0.X(); p0.Set(p1.X(), p0.Y()); p1.Set(tmp, p1.Y()); }
 		if (p0.Y() > p1.Y()) { double tmp = p0.Y(); p0.Set(p0.X(), p1.Y()); p1.Set(p1.X(), tmp); }
 
-		range.first = p0;
-		range.second = p1;
+		range.first = makePoint2D(p0);
+		range.second = makePoint2D(p1);
 	}
 	return range;
 }
@@ -645,7 +645,7 @@ double pma::Track3D::TestHitsMse(const std::vector< art::Ptr<recob::Hit> >& hits
 		unsigned int wire = h->WireID().Wire;
 		float drift = h->PeakTime();
 
-		mse += Dist2(pma::WireDriftToCm(wire, drift, view, tpc, cryo), view, tpc, cryo);
+		mse += Dist2(makeTVector2(pma::WireDriftToCm(wire, drift, view, tpc, cryo)), view, tpc, cryo);
 	}
 	if (normalized) return mse / hits.size();
 	else return mse;
@@ -941,12 +941,12 @@ std::vector<float> pma::Track3D::DriftsOfWireIntersection(unsigned int wire, uns
 		int tpc = fNodes[i]->TPC(), cryo = fNodes[i]->Cryo();
 		if ((tpc != fNodes[i + 1]->TPC()) || (cryo != fNodes[i + 1]->Cryo())) continue;
 
-		TVector2 p0 = pma::CmToWireDrift(
+		TVector2 p0 = makeTVector2(pma::CmToWireDrift(
 			fNodes[i]->Projection2D(view).X(), fNodes[i]->Projection2D(view).Y(),
-			view, fNodes[i]->TPC(), fNodes[i]->Cryo());
-		TVector2 p1 = pma::CmToWireDrift(
+			view, fNodes[i]->TPC(), fNodes[i]->Cryo()));
+		TVector2 p1 = makeTVector2(pma::CmToWireDrift(
 			fNodes[i + 1]->Projection2D(view).X(), fNodes[i + 1]->Projection2D(view).Y(),
-			view, fNodes[i + 1]->TPC(), fNodes[i + 1]->Cryo());
+			view, fNodes[i + 1]->TPC(), fNodes[i + 1]->Cryo()));
 
 		if ((p0.X() - wire) * (p1.X() - wire) <= 0.0)
 		{
@@ -2402,9 +2402,9 @@ pma::Element3D* pma::Track3D::GetNearestElement(const TVector3& p3d) const
 
 bool pma::Track3D::GetUnconstrainedProj3D(art::Ptr<recob::Hit> hit, TVector3& p3d, double& dist2) const
 {
-	TVector2 p2d = pma::WireDriftToCm(
+	TVector2 p2d = makeTVector2(pma::WireDriftToCm(
 		hit->WireID().Wire, hit->PeakTime(),
-		hit->WireID().Plane, hit->WireID().TPC, hit->WireID().Cryostat);
+		hit->WireID().Plane, hit->WireID().TPC, hit->WireID().Cryostat));
 
 	pma::Segment3D* seg = 0;
 	double d2, min_d2 = 1.0e100;

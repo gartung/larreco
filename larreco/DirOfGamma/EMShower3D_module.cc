@@ -849,8 +849,8 @@ bool ems::EMShower3D::Validate(std::vector< ems::DirOfGamma* > input, size_t id1
 		std::vector< Hit2D* > hits2dcl = input[i]->GetHits2D();
 		for (size_t h = 0; h < hits2dcl.size(); ++h)
 		{
-			TVector2 pfront = pma::GetProjectionToPlane(makeTVector3(track->front()->Point3D()), plane3, track->FrontTPC(), track->FrontCryo());
-			TVector2 pback  = pma::GetProjectionToPlane(makeTVector3(track->back()->Point3D()), plane3, track->BackTPC(), track->BackCryo());
+			TVector2 pfront = makeTVector2(pma::GetProjectionToPlane(makeTVector3(track->front()->Point3D()), plane3, track->FrontTPC(), track->FrontCryo()));
+			TVector2 pback  = makeTVector2(pma::GetProjectionToPlane(makeTVector3(track->back()->Point3D()), plane3, track->BackTPC(), track->BackCryo()));
 			if ( (pma::Dist2(hits2dcl[h]->GetPointCm(), pfront) < 1.0F) && 
 				(pma::Dist2(hits2dcl[h]->GetPointCm(), pback) < 1.0F) )
 			{result = true; break;}
@@ -918,7 +918,7 @@ bool ems::EMShower3D::GetCloseHits(
 				if (!Has(used, i))
 				{
 					art::Ptr<recob::Hit> hi = hits_in[i];
-					TVector2 hi_cm = pma::WireDriftToCm(hi->WireID().Wire, hi->PeakTime(), hi->WireID().Plane, hi->WireID().TPC, hi->WireID().Cryostat);
+					TVector2 hi_cm = makeTVector2(pma::WireDriftToCm(hi->WireID().Wire, hi->PeakTime(), hi->WireID().Plane, hi->WireID().TPC, hi->WireID().Cryostat));
 
 					bool accept = false;
 					//for (auto const& ho : hits_out)
@@ -927,7 +927,7 @@ bool ems::EMShower3D::GetCloseHits(
 						art::Ptr<recob::Hit> ho = hits_out[idx_o];
 
 						double d2 = pma::Dist2(
-							hi_cm, pma::WireDriftToCm(ho->WireID().Wire, ho->PeakTime(), ho->WireID().Plane, ho->WireID().TPC, ho->WireID().Cryostat));
+							hi_cm, makeTVector2(pma::WireDriftToCm(ho->WireID().Wire, ho->PeakTime(), ho->WireID().Plane, ho->WireID().TPC, ho->WireID().Cryostat)));
 						
 						if (hi->WireID().TPC == ho->WireID().TPC)
 						{

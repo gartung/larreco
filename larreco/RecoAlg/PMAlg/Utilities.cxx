@@ -137,24 +137,24 @@ double pma::GetSegmentProjVector(const TVector3& p, const TVector3& p0, const TV
 	return v0Norm * cosine / v1Norm;
 }
 
-TVector2 pma::GetProjectionToSegment(const TVector2& p, const TVector2& p0, const TVector2& p1)
+pma::Point2D_t pma::GetProjectionToSegment(const TVector2& p, const TVector2& p0, const TVector2& p1)
 {
 	TVector2 v1(p1); v1 -= p0;
 
 	double b = GetSegmentProjVector(p, p0, p1);
 	TVector2 r(p0);
 	r += (v1 * b);
-	return r;
+	return makePoint2D(r);
 }
 
-TVector3 pma::GetProjectionToSegment(const TVector3& p, const TVector3& p0, const TVector3& p1)
+pma::Point3D_t pma::GetProjectionToSegment(const TVector3& p, const TVector3& p0, const TVector3& p1)
 {
 	TVector3 v1(p1); v1 -= p0;
 
 	double b = GetSegmentProjVector(p, p0, p1);
 	TVector3 r(p0);
 	r += (v1 * b);
-	return r;
+	return makePoint3D(r);
 }
 
 double pma::SolveLeastSquares3D(const std::vector< std::pair<TVector3, TVector3> >& lines, TVector3& result)
@@ -250,7 +250,7 @@ double pma::SolveLeastSquares3D(const std::vector< std::pair<TVector3, TVector3>
 	double dx, dy, dz, mse = 0.0;
 	for (size_t v = 0; v < lines.size(); v++)
 	{
-		pproj = pma::GetProjectionToSegment(result, lines[v].first, lines[v].second);
+		pproj = makeTVector3(pma::GetProjectionToSegment(result, lines[v].first, lines[v].second));
 
 		dx = result.X() - pproj.X(); // dx, dy, dz and the result point can be weighted
 		dy = result.Y() - pproj.Y(); // here (linearly) by each line uncertainty
@@ -261,42 +261,42 @@ double pma::SolveLeastSquares3D(const std::vector< std::pair<TVector3, TVector3>
 	return mse / lines.size();
 }
 
-TVector2 pma::GetProjectionToPlane(const TVector3& p, unsigned int view, unsigned int tpc, unsigned int cryo)
+pma::Point2D_t pma::GetProjectionToPlane(const TVector3& p, unsigned int view, unsigned int tpc, unsigned int cryo)
 {
 	art::ServiceHandle<geo::Geometry> geom;
 
-	return TVector2(
+	return Point2D_t(
 		geom->TPC(tpc, cryo).Plane(view).WirePitch() * geom->WireCoordinate(p.Y(), p.Z(), view, tpc, cryo),
 		p.X()
 	);
 }
 
-TVector2 pma::GetVectorProjectionToPlane(const TVector3& v, unsigned int view, unsigned int tpc, unsigned int cryo)
+pma::Point2D_t pma::GetVectorProjectionToPlane(const TVector3& v, unsigned int view, unsigned int tpc, unsigned int cryo)
 {
 	TVector3 v0_3d(0., 0., 0.);
-	TVector2 v0_2d = GetProjectionToPlane(v0_3d, view, tpc, cryo);
-	TVector2 v1_2d = GetProjectionToPlane(v, view, tpc, cryo);
+	TVector2 v0_2d = makeTVector2(GetProjectionToPlane(v0_3d, view, tpc, cryo));
+	TVector2 v1_2d = makeTVector2(GetProjectionToPlane(v, view, tpc, cryo));
 
-	return v1_2d - v0_2d;
+	return makePoint2D(v1_2d - v0_2d);
 }
 
-TVector2 pma::WireDriftToCm(unsigned int wire, float drift, unsigned int view, unsigned int tpc, unsigned int cryo)
+pma::Point2D_t pma::WireDriftToCm(unsigned int wire, float drift, unsigned int view, unsigned int tpc, unsigned int cryo)
 {
 	art::ServiceHandle<geo::Geometry> geom;
 	const detinfo::DetectorProperties* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
-	return TVector2(
+	return Point2D_t(
 		geom->TPC(tpc, cryo).Plane(view).WirePitch() * wire,
 		detprop->ConvertTicksToX(drift, view, tpc, cryo)
 	);
 }
 
-TVector2 pma::CmToWireDrift(float xw, float yd, unsigned int view, unsigned int tpc, unsigned int cryo)
+pma::Point2D_t pma::CmToWireDrift(float xw, float yd, unsigned int view, unsigned int tpc, unsigned int cryo)
 {
 	art::ServiceHandle<geo::Geometry> geom;
 	const detinfo::DetectorProperties* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
-	return TVector2(
+	return pma::Point2D_t(
 		xw / geom->TPC(tpc, cryo).Plane(view).WirePitch(),
 		detprop->ConvertXToTicks(yd, view, tpc, cryo)
 	);

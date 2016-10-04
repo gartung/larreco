@@ -223,17 +223,17 @@ double pma::VtxCandidate::ComputeMse2D(void)
 		double m = 0.0;
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kU))
 		{
-			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kU, tpc, cryo);
+			center2d = makeTVector2(GetProjectionToPlane(makeTVector3(fCenter), geo::kU, tpc, cryo));
 			m += seg->GetDistance2To(center2d, geo::kU); k++;
 		}
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kV))
 		{
-			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kV, tpc, cryo);
+			center2d = makeTVector2(GetProjectionToPlane(makeTVector3(fCenter), geo::kV, tpc, cryo));
 			m += seg->GetDistance2To(center2d, geo::kV); k++;
 		}
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kZ))
 		{
-			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kZ, tpc, cryo);
+			center2d = makeTVector2(GetProjectionToPlane(makeTVector3(fCenter), geo::kZ, tpc, cryo));
 			m += seg->GetDistance2To(center2d, geo::kZ); k++;
 		}
 		mse += m / (double)k;
@@ -394,7 +394,7 @@ double pma::VtxCandidate::Compute(void)
 		pma::Node3D* vprev = static_cast< pma::Node3D* >(segments[s]->Prev());
 		pma::Node3D* vnext = static_cast< pma::Node3D* >(segments[s]->Next(0));
 
-		pproj = pma::GetProjectionToSegment(result, makeTVector3(vprev->Point3D()), makeTVector3(vnext->Point3D()));
+		pproj = makeTVector3(pma::GetProjectionToSegment(result, makeTVector3(vprev->Point3D()), makeTVector3(vnext->Point3D())));
 
 		//dx = weights[s] * (result.X() - pproj.X());
 		//dy = result.Y() - pproj.Y();
@@ -496,7 +496,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 		double d1 = sqrt( pma::Dist2(p1, makeTVector3(fCenter)) );
 		double ds = sqrt( pma::Dist2(p0, p1) );
 		double f = pma::GetSegmentProjVector(makeTVector3(fCenter), p0, p1);
-		TVector3 proj = pma::GetProjectionToSegment(makeTVector3(fCenter), p0, p1);
+		TVector3 proj = makeTVector3(pma::GetProjectionToSegment(makeTVector3(fCenter), p0, p1));
 
 		if ((idx == 0) && (f * ds <= kMinDistToNode))
 		{

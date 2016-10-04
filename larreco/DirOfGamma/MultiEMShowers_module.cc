@@ -31,6 +31,7 @@
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
 #include <memory>
 
@@ -664,7 +665,7 @@ double ems::MultiEMShowers::getMinDist(std::vector< art::Ptr<recob::Hit> > const
 {
 	double mindist = 9999;
 	// MC vertex projected to view
-	TVector2 proj = pma::GetProjectionToPlane(convmc, view, tpc, cryo);
+	TVector2 proj = makeTVector2(pma::GetProjectionToPlane(convmc, view, tpc, cryo));
 	
 	// loop over hits to find the closest to MC 2d vtx
 	for (size_t h = 0; h < v.size(); ++h)
@@ -672,7 +673,7 @@ double ems::MultiEMShowers::getMinDist(std::vector< art::Ptr<recob::Hit> > const
 		if ((v[h]->WireID().Plane == view) &&
 			(v[h]->WireID().TPC == tpc))
 		{
-			TVector2 hpoint = pma::WireDriftToCm(v[h]->WireID().Wire, v[h]->PeakTime(), view, tpc, cryo);
+			TVector2 hpoint = makeTVector2(pma::WireDriftToCm(v[h]->WireID().Wire, v[h]->PeakTime(), view, tpc, cryo));
 			
 			double dist = pma::Dist2(proj, hpoint);
 			if (dist < mindist) 

@@ -48,7 +48,7 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 
 	std::vector< unsigned int > trkTPCs = trk.TPCs();
 	std::vector< unsigned int > trkCryos = trk.Cryos();
-	std::map< std::pair< unsigned int, unsigned int >, std::pair< TVector2, TVector2 > > ranges;
+	std::map< std::pair< unsigned int, unsigned int >, std::pair< Point2D_t, Point2D_t > > ranges;
 	std::map< std::pair< unsigned int, unsigned int >, double > wirePitch;
 	for (auto c : trkCryos)
 		for (auto t : trkTPCs)
@@ -66,7 +66,7 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 		tpc = h->WireID().TPC;
 		cryo = h->WireID().Cryostat;
 		std::pair< unsigned int, unsigned int > tpc_cryo(tpc, cryo);
-		std::pair< TVector2, TVector2 > rect = ranges[tpc_cryo];
+		auto const& rect = ranges[tpc_cryo];
 
 		if ((h->WireID().Wire > rect.first.X() - 10) &&  // chceck only hits in the rectangle around
 		    (h->WireID().Wire < rect.second.X() + 10) && // the track projection, it is faster than
@@ -174,7 +174,7 @@ double pma::ProjectionMatchingAlg::validate(
 				for (const auto & h : hits)
 					if (h->WireID().Plane == testView)
 				{
-					d2 = pma::Dist2(p2d, pma::WireDriftToCm(h->WireID().Wire, h->PeakTime(), testView, tpc, cryo));
+					d2 = pma::Dist2(p2d, makeTVector2(pma::WireDriftToCm(h->WireID().Wire, h->PeakTime(), testView, tpc, cryo)));
 					if (d2 < max_d2) { nPassed++; break; }
 				}
 				nAll++;
@@ -414,7 +414,7 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildShowerSeg(
 
 		// filter our small groups of hits, far from main shower		
 		std::vector<art::Ptr<recob::Hit> > hitsfilter;
-		TVector2 proj_pr = pma::GetProjectionToPlane(vtxv3, view, tpc, cryo);
+		TVector2 proj_pr = makeTVector2(pma::GetProjectionToPlane(vtxv3, view, tpc, cryo));
 	
 		mf::LogWarning("ProjectionMatchinAlg") << "start filter out: ";
 		FilterOutSmallParts(2.0, hitsview, hitsfilter, proj_pr);
@@ -475,11 +475,11 @@ void pma::ProjectionMatchingAlg::FilterOutSmallParts(
 
 		for (size_t h = 0; h < close_hits.size(); ++h)
 		{
-			TVector2 hi_cm = pma::WireDriftToCm(close_hits[h]->WireID().Wire, 
+			TVector2 hi_cm = makeTVector2(pma::WireDriftToCm(close_hits[h]->WireID().Wire, 
 			close_hits[h]->PeakTime(), 
 			close_hits[h]->WireID().Plane, 
 			close_hits[h]->WireID().TPC, 
-			close_hits[h]->WireID().Cryostat);
+			close_hits[h]->WireID().Cryostat));
 
 			float dist2 = pma::Dist2(hi_cm, vtx2d);
 			if (dist2 < mindist2)

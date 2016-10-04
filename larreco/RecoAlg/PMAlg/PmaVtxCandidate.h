@@ -58,7 +58,7 @@ public:
 
 	bool JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandidateColl & src);
 
-	const TVector3 /* & */ Center(void) const { return makeTVector3(fCenter); }
+	const Point3D_t& Center(void) const { return fCenter; }
 	double Mse(void) const { return fMse; }
 	double Mse2D(void) const { return fMse2D; }
 

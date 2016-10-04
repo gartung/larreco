@@ -89,7 +89,7 @@ public:
 	/// Rectangular region of the track 2D projection in view/tpc/cryo; first in the returned
 	/// pair is (min_wire; min_drift), second is (max_wire; max_drift). Used for preselection
 	/// of neighbouring hits in the track validation functions.
-	std::pair< TVector2, TVector2 > WireDriftRange(unsigned int view, unsigned int tpc, unsigned int cryo) const;
+	std::pair< Point2D_t, Point2D_t > WireDriftRange(unsigned int view, unsigned int tpc, unsigned int cryo) const;
 
 	/// Invert the order of hits and vertices in the track.
 	void Flip(void);

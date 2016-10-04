@@ -44,7 +44,7 @@ pma::Hit3D::Hit3D(art::Ptr< recob::Hit > src) :
 	fAmpl = src->PeakAmplitude();
 	fArea = src->SummedADC();
 
-	fPoint2D = makePoint2D(pma::WireDriftToCm(fWire, fPeakTime, fPlane, fTPC, fCryo));
+	fPoint2D = pma::WireDriftToCm(fWire, fPeakTime, fPlane, fTPC, fCryo);
 }
 
 pma::Hit3D::Hit3D(unsigned int wire, unsigned int view, unsigned int tpc, unsigned int cryo,
@@ -64,7 +64,7 @@ pma::Hit3D::Hit3D(unsigned int wire, unsigned int view, unsigned int tpc, unsign
 	fAmpl = ampl;
 	fArea = area;
 
-	fPoint2D = makePoint2D(pma::WireDriftToCm(fWire, fPeakTime, fPlane, fTPC, fCryo));
+	fPoint2D = pma::WireDriftToCm(fWire, fPeakTime, fPlane, fTPC, fCryo);
 }
 
 pma::Hit3D::Hit3D(const pma::Hit3D& src) :
