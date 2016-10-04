@@ -689,8 +689,8 @@ bool pma::PMAlgTracker::areCoLinear(pma::Track3D* trk1, pma::Track3D* trk2,
 		TVector3 proj2 = pma::GetProjectionToSegment(endpoint2, trk1back1, trk1back0);
 		double distProj2 = sqrt( pma::Dist2(endpoint2, proj2) );
 
-		TVector3 dir1 = trk1->Segments().back()->GetDirection3D();
-		TVector3 dir2 = trk2->Segments().front()->GetDirection3D();
+		TVector3 dir1 = makeTVector3(trk1->Segments().back()->GetDirection3D());
+		TVector3 dir2 = makeTVector3(trk2->Segments().front()->GetDirection3D());
 
 		cos3d = dir1 * dir2;
 

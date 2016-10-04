@@ -37,10 +37,10 @@ public:
 	  { return GetDistance2To(makeTVector2(p2d), view); }
 
 	/// Get 3D direction cosines.
-	TVector3 GetDirection3D(void) const;
+	Vector3D_t GetDirection3D(void) const;
 
 	/// Get 3D projection of a 2D point from the view.
-	TVector3 GetProjection(const TVector2& p, unsigned int view) const;
+	Point3D_t GetProjection(const TVector2& p, unsigned int view) const;
 
 	/// Get 3D projection of a 2D point from the view, no limitations if it falls beyond
 	/// the segment endpoints.
