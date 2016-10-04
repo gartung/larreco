@@ -146,14 +146,14 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 	if (prev)
 	{
 		pma::Node3D* vtx = static_cast< pma::Node3D* >(prev->Prev());
-		gstart = vtx->Projection2D(h.View2D());
+		gstart = makeTVector2(vtx->Projection2D(h.View2D()));
 		if (!next) g3d = vtx->Point3D();
 	}
 	else if (next)
 	{
 		pma::Node3D* vtx = static_cast< pma::Node3D* >(next->Next());
-		gstart = Projection2D(h.View2D());
-		gstart -= vtx->Projection2D(h.View2D()) - Projection2D(h.View2D());
+		gstart = makeTVector2(Projection2D(h.View2D()));
+		gstart -= makeTVector2(vtx->Projection2D(h.View2D()) - Projection2D(h.View2D()));
 		if (!prev)
 		{
 			g3d = fPoint3D;
@@ -163,17 +163,17 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 	else
 	{
 		mf::LogError("pma::Node3D") << "Isolated vertex.";
-		TVector2 p(Projection2D(h.View2D()));
+		TVector2 p = makeTVector2(Projection2D(h.View2D()));
 		h.SetProjection(p, 0.0F);
 		h.SetPoint3D(makeTVector3(fPoint3D));
 		return;
 	}
 
 	TVector2 v0 = makeTVector2(h.Point2D());
-	v0 -= Projection2D(h.View2D());
+	v0 -= makeTVector2(Projection2D(h.View2D()));
 
 	TVector2 v1(gstart);
-	v1 -= Projection2D(h.View2D());
+	v1 -= makeTVector2(Projection2D(h.View2D()));
 
 	double v0Norm = v0.Mod();
 	double v1Norm = v1.Mod();
@@ -181,13 +181,13 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 	double cosine = 0.0;
 	if (mag != 0.0) cosine = v0 * v1 / mag;
 
-	TVector2 p(Projection2D(h.View2D()));
+	TVector2 p = makeTVector2(Projection2D(h.View2D()));
 
 	if (prev && next)
 	{
 		pma::Node3D* vNext = static_cast< pma::Node3D* >(next->Next());
-		TVector2 vN(vNext->Projection2D(h.View2D()));
-		vN -= Projection2D(h.View2D());
+		TVector2 vN = makeTVector2(vNext->Projection2D(h.View2D()));
+		vN -= makeTVector2(Projection2D(h.View2D()));
 
 		mag = v0Norm * vN.Mod();
 		double cosineN = 0.0;

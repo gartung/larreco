@@ -39,7 +39,7 @@ public:
 	/// was trimmed to fit insite TPC volume + fMargin.
 	bool SetPoint3D(const TVector3& p3d);
 
-	TVector2 /* const & */ Projection2D(unsigned int view) const { return makeTVector2(fProj2D[view]); }
+	Point2D_t const& Projection2D(unsigned int view) const { return fProj2D[view]; }
 
 	double GetDistToWall(void) const;
 

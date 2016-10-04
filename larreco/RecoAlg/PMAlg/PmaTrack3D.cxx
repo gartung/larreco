@@ -457,10 +457,10 @@ std::pair< TVector2, TVector2 > pma::Track3D::WireDriftRange(unsigned int view, 
 		if (n0 > 0) n0--;
 		if (n1 == fNodes.size()) n1--;
 
-		TVector2 p0 = fNodes[n0]->Projection2D(view);
+		TVector2 p0 = makeTVector2(fNodes[n0]->Projection2D(view));
 		p0 = pma::CmToWireDrift(p0.X(), p0.Y(), view, tpc, cryo);
 
-		TVector2 p1 = fNodes[n1]->Projection2D(view);
+		TVector2 p1 = makeTVector2(fNodes[n1]->Projection2D(view));
 		p1 = pma::CmToWireDrift(p1.X(), p1.Y(), view, tpc, cryo);
 
 		if (p0.X() > p1.X()) { double tmp = p0.X(); p0.Set(p1.X(), p0.Y()); p1.Set(tmp, p1.Y()); }
