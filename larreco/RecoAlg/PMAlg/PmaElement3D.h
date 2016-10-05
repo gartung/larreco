@@ -18,9 +18,6 @@
 
 #include "larcore/Geometry/Geometry.h"
 
-#include "TVector2.h"
-#include "TVector3.h"
-
 namespace pma
 {
 	class Element3D;
@@ -39,12 +36,12 @@ public:
 	int Cryo(void) const { return fCryo; }
 
 	/// Distance [cm] from the 3D point to the object 3D.
-	virtual double GetDistance2To(const TVector3& p3d) const = 0;
+	virtual double GetDistance2To(const Point3D_t& p3d) const = 0;
 
 	/// Distance [cm] from the 2D point to the object's 2D projection in one of wire views.
-	virtual double GetDistance2To(const TVector2& p2d, unsigned int view) const = 0;
+	virtual double GetDistance2To(const Point2D_t& p2d, unsigned int view) const = 0;
 
-	virtual Vector3D_t GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const = 0;
+	virtual Vector3D_t GetUnconstrainedProj3D(const Point2D_t& p2d, unsigned int view) const = 0;
 
 	virtual void SetProjection(pma::Hit3D& h) const = 0;
 

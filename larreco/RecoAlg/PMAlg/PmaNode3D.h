@@ -63,22 +63,20 @@ public:
 	std::vector< pma::Track3D* > GetBranches(void) const;
 
 	/// Distance [cm] from the 3D point to the point 3D.
-	virtual double GetDistance2To(const TVector3& p3d) const;
+	virtual double GetDistance2To(const Point3D_t& p3d) const override;
 
 	/// Distance [cm] from the 2D point to the object's 2D projection in one of wire views.
-	virtual double GetDistance2To(const TVector2& p2d, unsigned int view) const;
-	virtual double GetDistance2To(const Point2D_t& p2d, unsigned int view) const
-	  { return GetDistance2To(makeTVector2(p2d), view); }
+	virtual double GetDistance2To(const Point2D_t& p2d, unsigned int view) const override;
 
 	/// In case of a node it is simply 3D position of the node.
-	virtual Vector3D_t GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const { return Vector3D_t(fPoint3D); }
+	virtual Vector3D_t GetUnconstrainedProj3D(const Point2D_t& , unsigned int) const override { return Vector3D_t(fPoint3D); }
 
 	/// Set hit 3D position and its 2D projection to the vertex.
-	virtual void SetProjection(pma::Hit3D& h) const;
+	virtual void SetProjection(pma::Hit3D& h) const override;
 
 	/// Squared sum of half-lengths of connected 3D segments
 	/// (used in the vertex position optimization).
-	virtual double Length2(void) const;
+	virtual double Length2(void) const override;
 
 	/// Cosine of 3D angle between connected segments.
 	double SegmentCos(void) const;
@@ -97,7 +95,7 @@ public:
 	/// Only MSE is used in case of branching nodes.
 	void Optimize(float penaltyValue, float endSegWeight);
 
-	virtual void ClearAssigned(pma::Track3D* trk = 0);
+	virtual void ClearAssigned(pma::Track3D* trk = 0) override;
 
 	/// Set allowed node position margin around TPC.
 	static void SetMargin(double m) { if (m >= 0.0) fMargin = m; }

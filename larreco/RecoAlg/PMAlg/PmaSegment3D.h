@@ -29,12 +29,10 @@ public:
 	virtual ~Segment3D(void) {}
 
 	/// Distance [cm] from the 3D segment to the point 3D.
-	virtual double GetDistance2To(const TVector3& p3d) const;
+	virtual double GetDistance2To(const Point3D_t& p3d) const override;
 
 	/// Distance [cm] from the 2D point to the object's 2D projection in one of wire views.
-	virtual double GetDistance2To(const TVector2& p2d, unsigned int view) const;
-	virtual double GetDistance2To(const Point2D_t& p2d, unsigned int view) const
-	  { return GetDistance2To(makeTVector2(p2d), view); }
+	virtual double GetDistance2To(const Point2D_t& p2d, unsigned int view) const override;
 
 	/// Get 3D direction cosines.
 	Vector3D_t GetDirection3D(void) const;
@@ -44,14 +42,14 @@ public:
 
 	/// Get 3D projection of a 2D point from the view, no limitations if it falls beyond
 	/// the segment endpoints.
-	virtual Vector3D_t GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const;
+	virtual Vector3D_t GetUnconstrainedProj3D(const Point2D_t& p2d, unsigned int view) const override;
 
 	/// Set hit 3D position and its 2D projection to the vertex.
-	virtual void SetProjection(pma::Hit3D& h) const;
+	virtual void SetProjection(pma::Hit3D& h) const override;
 
 	/// Squared sum of half-lengths of connected 3D segments
 	/// (used in the vertex position optimization).
-	virtual double Length2(void) const;
+	virtual double Length2(void) const override;
 
 	pma::Track3D* Parent(void) const { return fParent; }
 
@@ -65,6 +63,7 @@ private:
 
 	static double GetDist2(const Point3D_t& psrc, const Point3D_t& p0, const Point3D_t& p1);
 	static double GetDist2(const Point2D_t& psrc, const Point2D_t& p0, const Point2D_t& p1);
+	static double GetDist2(const Vector2D_t& psrc, const Vector2D_t& p0, const Vector2D_t& p1);
 	
 };
 

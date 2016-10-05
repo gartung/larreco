@@ -21,18 +21,18 @@ pma::Segment3D::Segment3D(pma::Track3D* trk, pma::Node3D* vstart, pma::Node3D* v
 	if (vstart->Cryo() == vstop->Cryo()) fCryo = vstart->Cryo();
 }
 
-double pma::Segment3D::GetDistance2To(const TVector3& p3d) const
+double pma::Segment3D::GetDistance2To(const Point3D_t& p3d) const
 {
 	pma::Node3D* v0 = static_cast< pma::Node3D* >(prev);
 	pma::Node3D* v1 = static_cast< pma::Node3D* >(next);
-	return GetDist2(makePoint3D(p3d), v0->Point3D(), v1->Point3D());
+	return GetDist2(p3d, v0->Point3D(), v1->Point3D());
 }
 
-double pma::Segment3D::GetDistance2To(const TVector2& p2d, unsigned int view) const
+double pma::Segment3D::GetDistance2To(const Point2D_t& p2d, unsigned int view) const
 {
 	pma::Node3D* v0 = static_cast< pma::Node3D* >(prev);
 	pma::Node3D* v1 = static_cast< pma::Node3D* >(next);
-	return GetDist2(p2d, makeTVector2(v0->Projection2D(view)), makeTVector2(v1->Projection2D(view)));
+	return GetDist2(p2d, v0->Projection2D(view), v1->Projection2D(view));
 }
 
 pma::Vector3D_t pma::Segment3D::GetDirection3D(void) const
@@ -91,12 +91,12 @@ pma::Point3D_t pma::Segment3D::GetProjection(const TVector2& p, unsigned int vie
 	return makePoint3D(result);
 }
 
-pma::Vector3D_t pma::Segment3D::GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const
+pma::Vector3D_t pma::Segment3D::GetUnconstrainedProj3D(const Point2D_t& p2d, unsigned int view) const
 {
 	pma::Node3D* vStart = static_cast< pma::Node3D* >(prev);
 	pma::Node3D* vStop = static_cast< pma::Node3D* >(next);
 
-	TVector2 v0(p2d);
+	TVector2 v0 = makeTVector2(p2d);
 	v0 -= makeTVector2(vStart->Projection2D(view));
 
 	TVector2 v1 = makeTVector2(vStop->Projection2D(view));
@@ -297,5 +297,9 @@ double pma::Segment3D::GetDist2(const Point3D_t& psrc, const Point3D_t& p0, cons
 }
 
 double pma::Segment3D::GetDist2(const Point2D_t& psrc, const Point2D_t& p0, const Point2D_t& p1) {
+  return GetDist2(makeTVector2(psrc), makeTVector2(p0), makeTVector2(p1));
+}
+
+double pma::Segment3D::GetDist2(const Vector2D_t& psrc, const Vector2D_t& p0, const Vector2D_t& p1) {
   return GetDist2(makeTVector2(psrc), makeTVector2(p0), makeTVector2(p1));
 }

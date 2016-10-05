@@ -129,14 +129,14 @@ bool pma::Node3D::SetPoint3D(const TVector3& p3d)
 	return accepted;
 }
 
-double pma::Node3D::GetDistance2To(const TVector3& p3d) const
+double pma::Node3D::GetDistance2To(const Point3D_t& p3d) const
 {
-	return pma::Dist2(makeTVector3(fPoint3D), p3d);
+	return pma::Dist2(fPoint3D, p3d);
 }
 
-double pma::Node3D::GetDistance2To(const TVector2& p2d, unsigned int view) const
+double pma::Node3D::GetDistance2To(const Point2D_t& p2d, unsigned int view) const
 {
-	return pma::Dist2(makeTVector2(fProj2D[view]), p2d);
+	return pma::Dist2(fProj2D[view], p2d);
 }
 
 void pma::Node3D::SetProjection(pma::Hit3D& h) const

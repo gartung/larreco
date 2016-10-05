@@ -106,7 +106,7 @@ bool pma::VtxCandidate::Add(const pma::TrkCandidate & trk)
 			mse = Compute();
 			if (mse < min_mse)
 			{
-				d = sqrt( seg->GetDistance2To(makeTVector3(fCenter)) );
+				d = sqrt( seg->GetDistance2To(fCenter) );
 				if (d < d_best)
 				{
 					min_mse = mse; n_best = n; d_best = d;
@@ -210,7 +210,7 @@ double pma::VtxCandidate::ComputeMse2D(void)
 	art::ServiceHandle< geo::Geometry > geom;
 
 	double mse = 0.0;
-	TVector2 center2d;
+	Point2D_t center2d;
 	for (const auto & t : fAssigned)
 	{
 		pma::Track3D* trk = t.first.Track();
@@ -223,17 +223,17 @@ double pma::VtxCandidate::ComputeMse2D(void)
 		double m = 0.0;
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kU))
 		{
-			center2d = makeTVector2(GetProjectionToPlane(makeTVector3(fCenter), geo::kU, tpc, cryo));
+			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kU, tpc, cryo);
 			m += seg->GetDistance2To(center2d, geo::kU); k++;
 		}
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kV))
 		{
-			center2d = makeTVector2(GetProjectionToPlane(makeTVector3(fCenter), geo::kV, tpc, cryo));
+			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kV, tpc, cryo);
 			m += seg->GetDistance2To(center2d, geo::kV); k++;
 		}
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kZ))
 		{
-			center2d = makeTVector2(GetProjectionToPlane(makeTVector3(fCenter), geo::kZ, tpc, cryo));
+			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kZ, tpc, cryo);
 			m += seg->GetDistance2To(center2d, geo::kZ); k++;
 		}
 		mse += m / (double)k;

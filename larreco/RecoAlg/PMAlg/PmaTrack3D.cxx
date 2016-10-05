@@ -2305,20 +2305,20 @@ double pma::Track3D::Dist2(const TVector2& p2d, unsigned int view, unsigned int 
 	auto n0 = fNodes.front();
 	if ((n0->TPC() == t) && (n0->Cryo() == c))
 	{
-		dist = n0->GetDistance2To(p2d, view);
+		dist = n0->GetDistance2To(makePoint2D(p2d), view);
 		if (dist < min_dist) min_dist = dist;
 	}
 	auto n1 = fNodes.back();
 	if ((n1->TPC() == t) && (n1->Cryo() == c))
 	{
-		dist = n1->GetDistance2To(p2d, view);
+		dist = n1->GetDistance2To(makePoint2D(p2d), view);
 		if (dist < min_dist) min_dist = dist;
 	}
 
 	for (auto s : fSegments)
 		if ((s->TPC() == t) && (s->Cryo() == c))
 	{
-		dist = s->GetDistance2To(p2d, view);
+		dist = s->GetDistance2To(makePoint2D(p2d), view);
 		if (dist < min_dist) min_dist = dist;
 	}
 	return min_dist;
@@ -2326,10 +2326,10 @@ double pma::Track3D::Dist2(const TVector2& p2d, unsigned int view, unsigned int 
 
 double pma::Track3D::Dist2(const TVector3& p3d) const
 {
-	double dist, min_dist = fSegments.front()->GetDistance2To(p3d);
+	double dist, min_dist = fSegments.front()->GetDistance2To(makePoint3D(p3d));
 	for (size_t i = 1; i < fSegments.size(); i++)
 	{
-		dist = fSegments[i]->GetDistance2To(p3d);
+		dist = fSegments[i]->GetDistance2To(makePoint3D(p3d));
 		if (dist < min_dist) min_dist = dist;
 	}
 	return min_dist;
@@ -2355,7 +2355,7 @@ pma::Element3D* pma::Track3D::GetNearestElement(
 		//if ((tpc == -1) || (fNodes[i]->TPC() == tpc))
 		if (fNodes[i]->TPC() == tpc)
 	{
-		dist = fNodes[i]->GetDistance2To(p2d, view);
+		dist = fNodes[i]->GetDistance2To(makePoint2D(p2d), view);
 		if (dist < min_dist)
 		{
 			min_dist = dist; pe_min = fNodes[i];
@@ -2367,7 +2367,7 @@ pma::Element3D* pma::Track3D::GetNearestElement(
 	{
 		if (fSegments[i]->TPC() < 0) continue; // segment between TPC's
 
-		dist = fSegments[i]->GetDistance2To(p2d, view);
+		dist = fSegments[i]->GetDistance2To(makePoint2D(p2d), view);
 		if (dist < min_dist)
 		{
 			min_dist = dist; pe_min = fSegments[i];
@@ -2380,10 +2380,10 @@ pma::Element3D* pma::Track3D::GetNearestElement(
 pma::Element3D* pma::Track3D::GetNearestElement(const TVector3& p3d) const
 {
 	pma::Element3D* pe_min = fNodes.front();
-	double dist, min_dist = pe_min->GetDistance2To(p3d);
+	double dist, min_dist = pe_min->GetDistance2To(makePoint3D(p3d));
 	for (size_t i = 1; i < fNodes.size(); i++)
 	{
-		dist = fNodes[i]->GetDistance2To(p3d);
+		dist = fNodes[i]->GetDistance2To(makePoint3D(p3d));
 		if (dist < min_dist)
 		{
 			min_dist = dist; pe_min = fNodes[i];
@@ -2391,7 +2391,7 @@ pma::Element3D* pma::Track3D::GetNearestElement(const TVector3& p3d) const
 	}
 	for (size_t i = 0; i < fSegments.size(); i++)
 	{
-		dist = fSegments[i]->GetDistance2To(p3d);
+		dist = fSegments[i]->GetDistance2To(makePoint3D(p3d));
 		if (dist < min_dist)
 		{
 			min_dist = dist; pe_min = fSegments[i];
@@ -2402,9 +2402,9 @@ pma::Element3D* pma::Track3D::GetNearestElement(const TVector3& p3d) const
 
 bool pma::Track3D::GetUnconstrainedProj3D(art::Ptr<recob::Hit> hit, TVector3& p3d, double& dist2) const
 {
-	TVector2 p2d = makeTVector2(pma::WireDriftToCm(
+	Point2D_t p2d = pma::WireDriftToCm(
 		hit->WireID().Wire, hit->PeakTime(),
-		hit->WireID().Plane, hit->WireID().TPC, hit->WireID().Cryostat));
+		hit->WireID().Plane, hit->WireID().TPC, hit->WireID().Cryostat);
 
 	pma::Segment3D* seg = 0;
 	double d2, min_d2 = 1.0e100;

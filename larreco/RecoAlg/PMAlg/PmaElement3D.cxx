@@ -210,7 +210,7 @@ double pma::Element3D::SumDist2(void) const
 			else */
 			hit_sum += OptFactor(hitView) *              // alpha_i
 				h->GetSigmaFactor() *                    // hit_amp / hit_max_amp
-				GetDistance2To(makeTVector2(h->Point2D()), hitView);   // hit_to_fit_dist^2
+				GetDistance2To(h->Point2D(), hitView);   // hit_to_fit_dist^2
 		}
 	}
 
@@ -219,7 +219,7 @@ double pma::Element3D::SumDist2(void) const
 		double d, ref_sum = 0.0F;
 		for (auto p : fAssignedPoints)
 		{
-			d = sqrt( GetDistance2To(makeTVector3(*p)) ) - 0.5; // guide by ref points up to ~ 3D resolution
+			d = sqrt( GetDistance2To(*p) ) - 0.5; // guide by ref points up to ~ 3D resolution
 			if (d > 0.0) ref_sum += d * d;
 		}
 		if (fAssignedHits.size())
@@ -250,7 +250,7 @@ double pma::Element3D::SumDist2(unsigned int view) const
 			{
 				hit_sum += OptFactor(hitView) *              // alpha_i
 					h->GetSigmaFactor() *                    // hit_amp / hit_max_amp
-					GetDistance2To(makeTVector2(h->Point2D()), hitView);   // hit_to_fit_dist^2
+					GetDistance2To(h->Point2D(), hitView);   // hit_to_fit_dist^2
 			}
 		}
 	}
