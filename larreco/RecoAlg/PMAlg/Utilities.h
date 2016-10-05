@@ -26,9 +26,6 @@
 
 namespace pma
 {
-	typedef ROOT::Math::DisplacementVector2D< ROOT::Math::Cartesian2D<double> > Vector2D;
-	typedef ROOT::Math::DisplacementVector3D< ROOT::Math::Cartesian3D<double> > Vector3D;
-
 	typedef std::map< size_t, std::vector<double> > dedx_map;
 
 	class Hit3D;

@@ -141,15 +141,15 @@ void pma::Segment3D::SetProjection(pma::Hit3D& h) const
 	auto const & projStart = vStart->Projection2D(h.View2D());
 	auto const & projStop = vStop->Projection2D(h.View2D());
 
-	pma::Vector2D v0(
+	pma::Vector2D_t v0(
 		h.Point2D().X() - projStart.X(),
 		h.Point2D().Y() - projStart.Y());
 
-	pma::Vector2D v1(
+	pma::Vector2D_t v1(
 		projStop.X() - projStart.X(),
 		projStop.Y() - projStart.Y());
 
-	pma::Vector3D v3d(
+	pma::Vector3D_t v3d(
 		pointStop.X() - pointStart.X(),
 		pointStop.Y() - pointStart.Y(),
 		pointStop.Z() - pointStart.Z());
@@ -165,7 +165,7 @@ void pma::Segment3D::SetProjection(pma::Hit3D& h) const
 		if (mag != 0.0) cosine = v0.Dot(v1) / mag;
 		double b = v0Norm * cosine / v1Norm;
 
-		pma::Vector2D p(projStart.X(), projStart.Y());
+		pma::Vector2D_t p(projStart.X(), projStart.Y());
 		p += (v1 * b);
 		v3d *= b;
 
@@ -204,11 +204,11 @@ double pma::Segment3D::Length2(void) const
 
 double pma::Segment3D::GetDist2(const TVector3& psrc, const TVector3& p0, const TVector3& p1)
 {
-	pma::Vector3D v0(psrc.X() - p0.X(), psrc.Y() - p0.Y(), psrc.Z() - p0.Z());
-	pma::Vector3D v1(p1.X() - p0.X(), p1.Y() - p0.Y(), p1.Z() - p0.Z());
+	pma::Vector3D_t v0(psrc.X() - p0.X(), psrc.Y() - p0.Y(), psrc.Z() - p0.Z());
+	pma::Vector3D_t v1(p1.X() - p0.X(), p1.Y() - p0.Y(), p1.Z() - p0.Z());
 
-	pma::Vector3D v2(psrc.X() - p1.X(), psrc.Y() - p1.Y(), psrc.Z() - p1.Z());
-	pma::Vector3D v3(v1); v3 *= -1.0;
+	pma::Vector3D_t v2(psrc.X() - p1.X(), psrc.Y() - p1.Y(), psrc.Z() - p1.Z());
+	pma::Vector3D_t v3(v1); v3 *= -1.0;
 
 	double v0Norm2 = v0.Mag2();
 	double v1Norm2 = v1.Mag2();
@@ -249,11 +249,11 @@ double pma::Segment3D::GetDist2(const TVector3& psrc, const TVector3& p0, const 
 
 double pma::Segment3D::GetDist2(const TVector2& psrc, const TVector2& p0, const TVector2& p1)
 {
-	pma::Vector2D v0(psrc.X() - p0.X(), psrc.Y() - p0.Y());
-	pma::Vector2D v1(p1.X() - p0.X(), p1.Y() - p0.Y());
+	pma::Vector2D_t v0(psrc.X() - p0.X(), psrc.Y() - p0.Y());
+	pma::Vector2D_t v1(p1.X() - p0.X(), p1.Y() - p0.Y());
 
-	pma::Vector2D v2(psrc.X() - p1.X(), psrc.Y() - p1.Y());
-	pma::Vector2D v3(v1); v3 *= -1.0;
+	pma::Vector2D_t v2(psrc.X() - p1.X(), psrc.Y() - p1.Y());
+	pma::Vector2D_t v3(v1); v3 *= -1.0;
 
 	double v0Norm2 = v0.Mag2();
 	double v1Norm2 = v1.Mag2();

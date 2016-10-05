@@ -197,7 +197,7 @@ pma::PMAlgFitter::PMAlgFitter(const std::vector< art::Ptr<recob::Hit> > & allhit
 		{
 			double xyz[3];
 			vtxFromPfps.at(i).front()->XYZ(xyz);
-			fPfpVtx[i] = pma::Vector3D(xyz[0], xyz[1], xyz[2]);
+			fPfpVtx[i] = pma::Vector3D_t(xyz[0], xyz[1], xyz[2]);
 		}
 	}
 

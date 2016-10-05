@@ -378,7 +378,7 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildMultiTPCTrack(
 
 pma::Track3D* pma::ProjectionMatchingAlg::buildShowerSeg(
 		const std::vector< art::Ptr<recob::Hit> >& hits, 
-		const pma::Vector3D & vtx) const
+		const pma::Vector3D_t & vtx) const
 {
 	double vtxarray[3] {vtx.X(), vtx.Y(), vtx.Z()};
 

@@ -155,7 +155,7 @@ public:
 	/// Build a shower segment from sets of hits and attached to the provided vertex.
 	pma::Track3D* buildShowerSeg(
 		const std::vector< art::Ptr<recob::Hit> >& hits, 
-		const pma::Vector3D & vtx) const;
+		const pma::Vector3D_t & vtx) const;
 
 	/// Build a straight segment from two sets of hits (they should origin from two wire planes);
 	/// method is intendet for short tracks or shower initial parts, where only a few hits

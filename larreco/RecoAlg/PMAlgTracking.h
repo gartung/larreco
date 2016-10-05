@@ -128,7 +128,7 @@ private:
 
 	std::vector< std::vector< art::Ptr<recob::Hit> > > fCluHits;
 	std::map< int, std::vector< art::Ptr<recob::Cluster> > > fPfpClusters;
-	std::map< int, pma::Vector3D > fPfpVtx;
+	std::map< int, pma::Vector3D_t > fPfpVtx;
 	std::map< int, int > fPfpPdgCodes;
 
 	// ******************** fcl parameters ***********************
