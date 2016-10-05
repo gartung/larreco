@@ -105,6 +105,7 @@ namespace hit{
     // === Hit Information ===
     Int_t fnHits; 			// Number of Hits in the Event
     Int_t fWire[kMaxHits];		// Wire Number
+    Int_t fPlane[kMaxHits];		// Plane Number
     Float_t fStartTime[kMaxHits];	// Start Time
     Float_t fEndTime[kMaxHits];		// End Time
     Float_t fPeakTime[kMaxHits];	// Peak Time
@@ -178,6 +179,7 @@ namespace hit{
     // === Hit Info ===
     fHTree->Branch("nHits", &fnHits, "nHits/I");
     fHTree->Branch("Wire", &fWire, "Wire[nHits]/I");
+    fHTree->Branch("Plane", &fPlane, "Plane[nHits]/I");
     fHTree->Branch("StartTime", &fStartTime, "fStartTime[nHits]/F");
     fHTree->Branch("EndTime", &fEndTime, "fEndTime[nHits]/F");
     fHTree->Branch("PeakTime", &fPeakTime, "fPeakTime[nHits]/F");
@@ -302,6 +304,7 @@ namespace hit{
        art::Ptr<recob::Hit> hit(hitHandle, numHit);
        
        fWire[hitCount] 		= hit->WireID().Wire;
+       fPlane[hitCount]         = hit->WireID().Plane;
        fStartTime[hitCount]       = hit->PeakTimeMinusRMS();
        fEndTime[hitCount]         = hit->PeakTimePlusRMS();
        fPeakTime[hitCount]	= hit->PeakTime();
