@@ -20,9 +20,6 @@
 
 #include <functional>
 
-#include "TVector2.h"
-#include "TVector3.h"
-
 namespace pma
 {
 	class Hit3D;
@@ -48,10 +45,10 @@ public:
 
 	Point3D_t const & Point3D() const { return fPoint3D; }
 
-	void SetPoint3D(const TVector3& p3d) { SetPoint3D(p3d.X(), p3d.Y(), p3d.Z()); }
+	void SetPoint3D(const Point3D_t& p3d) { fPoint3D = p3d; }
 	void SetPoint3D(double x, double y, double z) { fPoint3D.SetCoordinates(x, y, z); }
 
-	Point2D_t /* const & */ Point2D(void) const { return fPoint2D; }
+	Point2D_t const & Point2D(void) const { return fPoint2D; }
 	Vector2D_t const & Projection2D(void) const { return fProjection2D; }
 
 	unsigned int Cryo(void) const { return fCryo; }
@@ -71,9 +68,9 @@ public:
 	double GetDist2ToProj(void) const;
 
 	float GetSegFraction() const { return fSegFraction; }
-	void SetProjection(const TVector2& p, float b)
+	void SetProjection(const Vector2D_t& p, float b)
 	{
-		fProjection2D = makeVector2D(p); fSegFraction = b;
+		fProjection2D = p; fSegFraction = b;
 	}
 	void SetProjection(double x, double y, float b)
 	{

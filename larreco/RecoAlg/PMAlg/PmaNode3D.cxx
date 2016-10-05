@@ -163,9 +163,9 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 	else
 	{
 		mf::LogError("pma::Node3D") << "Isolated vertex.";
-		TVector2 p = makeTVector2(Projection2D(h.View2D()));
+		Vector2D_t p = Vector2D_t(Projection2D(h.View2D()));
 		h.SetProjection(p, 0.0F);
-		h.SetPoint3D(makeTVector3(fPoint3D));
+		h.SetPoint3D(fPoint3D);
 		return;
 	}
 
@@ -194,27 +194,27 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 		if (mag != 0.0) cosineN = v0 * vN / mag;
 
 		// hit on the previous segment side, sorting on the -cosine(prev_seg, point)  /max.val. = 1/
-		if (cosineN <= cosine) h.SetProjection(p, -(float)cosine);
+		if (cosineN <= cosine) h.SetProjection(makeVector2D(p), -(float)cosine);
 		// hit on the next segment side, sorting on the 1+cosine(next_seg, point)  /min.val. = 1/
-		else h.SetProjection(p, 2.0F + (float)cosineN);
+		else h.SetProjection(makeVector2D(p), 2.0F + (float)cosineN);
 
-		h.SetPoint3D(makeTVector3(fPoint3D));
+		h.SetPoint3D(fPoint3D);
 	}
 	else
 	{
 		float b = (float)(v0Norm * cosine / v1Norm);
 		if (fFrozen) // limit 3D positions to outermose node if frozen
 		{
-			h.SetPoint3D(makeTVector3(fPoint3D));
+			h.SetPoint3D(fPoint3D);
 		}
 		else // or set 3D positions along the line of outermost segment
 		{
 			g3d -= Vector3D_t(fPoint3D); // needs to be a displacement vector
-			h.SetPoint3D(makeTVector3(fPoint3D + g3d * b));
+			h.SetPoint3D(fPoint3D + g3d * b);
 
 			p += (v1 * b);
 		}
-		h.SetProjection(p, -b);
+		h.SetProjection(makeVector2D(p), -b);
 	}
 }
 
