@@ -17,6 +17,7 @@
 
 #include "larreco/RecoAlg/PMAlg/PmaTrkCandidate.h"
 #include "larreco/RecoAlg/PMAlg/PmaVtxCandidate.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
 // ROOT & C++
 #include <memory>
@@ -78,12 +79,12 @@ public:
 	/// Input vertices that were actually associated to tracks are copied to the output
 	/// collection (use getVertices function).
 	size_t run(pma::TrkCandidateColl & trk_input,
-	           const std::vector< TVector3 >& vtx_input);
+	           const std::vector< Point3D_t >& vtx_input);
 
-	std::vector< std::pair< TVector3, std::vector< std::pair< size_t, bool > > > >
+	std::vector< std::pair< Point3D_t, std::vector< std::pair< size_t, bool > > > >
 		getVertices(const pma::TrkCandidateColl& tracks, bool onlyBranching = false) const;
 
-	std::vector< std::pair< TVector3, size_t > > getKinks(const pma::TrkCandidateColl& tracks) const;
+	std::vector< std::pair< Point3D_t, size_t > > getKinks(const pma::TrkCandidateColl& tracks) const;
 
 private:
 	bool has(const std::vector<size_t>& v, size_t idx) const

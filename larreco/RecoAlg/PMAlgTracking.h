@@ -54,11 +54,11 @@ public:
 
 	const pma::TrkCandidateColl & result(void) { return fResult; }
 
-	std::vector< std::pair< TVector3, std::vector< std::pair< size_t, bool > > > >
+	std::vector< std::pair< Point3D_t, std::vector< std::pair< size_t, bool > > > >
 	getVertices(bool onlyBranching = false) const
 	{ return fPMAlgVertexing.getVertices(fResult, onlyBranching); }
 
-	std::vector< std::pair< TVector3, size_t > > getKinks(void) const
+	std::vector< std::pair< Point3D_t, size_t > > getKinks(void) const
 	{ return fPMAlgVertexing.getKinks(fResult); }
 
 protected:
@@ -280,7 +280,7 @@ private:
 	void mergeCoLinear(pma::tpc_track_map& tracks);
 
 	bool areCoLinear(double& cos3d,
-		TVector3 f0, TVector3 b0, TVector3 f1, TVector3 b1,
+		Point3D_t const& f0, Point3D_t const& b0, Point3D_t const& f1, Point3D_t const& b1,
 		double distProjThr);
 	void matchCoLinearAnyT0(void);
 

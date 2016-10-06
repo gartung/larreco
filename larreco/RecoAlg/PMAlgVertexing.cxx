@@ -311,7 +311,7 @@ size_t pma::PMAlgVertexing::run(pma::TrkCandidateColl & trk_input)
 
 size_t pma::PMAlgVertexing::run(
 	pma::TrkCandidateColl& trk_input,
-	const std::vector< TVector3 >& vtx_input)
+	const std::vector< Point3D_t >& vtx_input)
 {
 	sortTracks(trk_input); // copy input and split by tag/size
 
@@ -572,10 +572,10 @@ void pma::PMAlgVertexing::findKinksOnTracks(pma::TrkCandidateColl& trk_input) co
 }
 // ------------------------------------------------------
 
-std::vector< std::pair< TVector3, std::vector< std::pair< size_t, bool > > > >
+std::vector< std::pair< pma::Point3D_t, std::vector< std::pair< size_t, bool > > > >
 pma::PMAlgVertexing::getVertices(const pma::TrkCandidateColl & tracks, bool onlyBranching) const
 {
-	std::vector< std::pair< TVector3, std::vector< std::pair< size_t, bool > > > > vsel;
+	std::vector< std::pair< Point3D_t, std::vector< std::pair< size_t, bool > > > > vsel;
 	std::vector< pma::Node3D const * > bnodes;
 
 	for (size_t t = 0; t < tracks.size(); ++t)
@@ -586,7 +586,7 @@ pma::PMAlgVertexing::getVertices(const pma::TrkCandidateColl & tracks, bool only
 		{
 			std::vector< std::pair< size_t, bool > > tidx;
 			tidx.emplace_back(std::pair< size_t, bool >(t, true));
-			vsel.emplace_back(std::pair< TVector3, std::vector< std::pair< size_t, bool > > >(makeTVector3(trk->front()->Point3D()), tidx));
+			vsel.emplace_back(std::pair< Point3D_t, std::vector< std::pair< size_t, bool > > >(trk->front()->Point3D(), tidx));
 		}
 
 		bool pri = true;
@@ -604,7 +604,7 @@ pma::PMAlgVertexing::getVertices(const pma::TrkCandidateColl & tracks, bool only
 			{
 				std::vector< std::pair< size_t, bool > > tidx;
 				tidx.emplace_back(std::pair< size_t, bool >(t, pri));
-				vsel.emplace_back(std::pair< TVector3, std::vector< std::pair< size_t, bool > > >(makeTVector3(node->Point3D()), tidx));
+				vsel.emplace_back(std::pair< Point3D_t, std::vector< std::pair< size_t, bool > > >(node->Point3D(), tidx));
 				bnodes.push_back(node);
 			}
 			pri = false;
@@ -615,10 +615,10 @@ pma::PMAlgVertexing::getVertices(const pma::TrkCandidateColl & tracks, bool only
 }
 // ------------------------------------------------------
 
-std::vector< std::pair< TVector3, size_t > >
+std::vector< std::pair< pma::Point3D_t, size_t > >
 pma::PMAlgVertexing::getKinks(const pma::TrkCandidateColl& tracks) const
 {
-	std::vector< std::pair< TVector3, size_t > > ksel;
+	std::vector< std::pair< Point3D_t, size_t > > ksel;
 	for (size_t t = 0; t < tracks.size(); ++t)
 	{
 		pma::Track3D const * trk = tracks[t].Track();
@@ -627,7 +627,7 @@ pma::PMAlgVertexing::getKinks(const pma::TrkCandidateColl& tracks) const
 			pma::Node3D const * node = trk->Nodes()[n];
 			if (!node->IsBranching() && node->IsVertex())
 			{
-				ksel.emplace_back(std::pair< TVector3, size_t >(makeTVector3(node->Point3D()), t));
+				ksel.emplace_back(std::pair< Point3D_t, size_t >(node->Point3D(), t));
 			}
 		}
 	}
