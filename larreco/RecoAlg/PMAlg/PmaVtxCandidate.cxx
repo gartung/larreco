@@ -394,7 +394,7 @@ double pma::VtxCandidate::Compute(void)
 		pma::Node3D* vprev = static_cast< pma::Node3D* >(segments[s]->Prev());
 		pma::Node3D* vnext = static_cast< pma::Node3D* >(segments[s]->Next(0));
 
-		pproj = makeTVector3(pma::GetProjectionToSegment(result, makeTVector3(vprev->Point3D()), makeTVector3(vnext->Point3D())));
+		pproj = makeTVector3(pma::GetProjectionToSegment(makePoint3D(result), vprev->Point3D(), vnext->Point3D()));
 
 		//dx = weights[s] * (result.X() - pproj.X());
 		//dy = result.Y() - pproj.Y();
@@ -483,8 +483,8 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 			else mf::LogError("pma::VtxCandidate") << "Root of the tree not found in tracks collection.";
 		}
 
-		TVector3 p0 = makeTVector3(trk->Nodes()[idx]->Point3D());
-		TVector3 p1 = makeTVector3(trk->Nodes()[idx + 1]->Point3D());
+		Point3D_t p0 = trk->Nodes()[idx]->Point3D();
+		Point3D_t p1 = trk->Nodes()[idx + 1]->Point3D();
 
 		int tpc0 = trk->Nodes()[idx]->TPC();
 		int tpc1 = trk->Nodes()[idx + 1]->TPC();
@@ -492,11 +492,11 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 		int cryo0 = trk->Nodes()[idx]->Cryo();
 		int cryo1 = trk->Nodes()[idx + 1]->Cryo();
 
-		double d0 = sqrt( pma::Dist2(p0, makeTVector3(fCenter)) );
-		double d1 = sqrt( pma::Dist2(p1, makeTVector3(fCenter)) );
+		double d0 = sqrt( pma::Dist2(p0, fCenter) );
+		double d1 = sqrt( pma::Dist2(p1, fCenter) );
 		double ds = sqrt( pma::Dist2(p0, p1) );
-		double f = pma::GetSegmentProjVector(makeTVector3(fCenter), p0, p1);
-		TVector3 proj = makeTVector3(pma::GetProjectionToSegment(makeTVector3(fCenter), p0, p1));
+		double f = pma::GetSegmentProjVector(fCenter, p0, p1);
+	//	Point3D_t proj = pma::GetProjectionToSegment(fCenter, p0, p1);
 
 		if ((idx == 0) && (f * ds <= kMinDistToNode))
 		{

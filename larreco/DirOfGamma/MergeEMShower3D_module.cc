@@ -139,7 +139,7 @@ double ems::ShowerInfo::Pointsto(ems::ShowerInfo const& s1) const
 
 	TVector3 isect, pm;
 	pma::SolveLeastSquares3D(lines, isect);
-	pm = makeTVector3(pma::GetProjectionToSegment(isect, this->fFront, this->fFront +  this->fDir)); 
+	pm = makeTVector3(pma::GetProjectionToSegment(makePoint3D(isect), makePoint3D(this->fFront), makePoint3D(this->fFront +  this->fDir))); 
 	double cosine1 = (pm - s1.fFront) * (1.0/(pm - s1.fFront).Mag()) * s1.fDir;
 	double th1 = 180.0F * (std::acos(cosine1)) / TMath::Pi();
 
@@ -656,8 +656,8 @@ std::vector< ems::ShowersCollection > ems::MergeEMShower3D::collectshowers(art::
 
 					TVector3 isect, pm;
 					pma::SolveLeastSquares3D(lines, isect);
-					pm = makeTVector3(pma::GetProjectionToSegment(isect,
-							gammawithconv[m].Front(), gammawithconv[m].Front() +  gammawithconv[m].Dir()));
+					pm = makeTVector3(pma::GetProjectionToSegment(makePoint3D(isect),
+							makePoint3D(gammawithconv[m].Front()), makePoint3D(gammawithconv[m].Front() +  gammawithconv[m].Dir())));
 
 					if (pma::Dist2(pov, gammawithconv[m].Front()) < pma::Dist2(pov, pm))
 					{

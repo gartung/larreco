@@ -109,10 +109,10 @@ double pma::GetHitsRadius2D(const std::vector< pma::Hit3D* >& hits, bool exact)
 	return sqrt(max_r2);
 }
 
-double pma::GetSegmentProjVector(const TVector2& p, const TVector2& p0, const TVector2& p1)
+double pma::GetSegmentProjVector(const Point2D_t& p, const Point2D_t& p0, const Point2D_t& p1)
 {
-	TVector2 v0(p); v0 -= p0;
-	TVector2 v1(p1); v1 -= p0;
+	TVector2 v0 = makeTVector2(p); v0 -= makeTVector2(p0);
+	TVector2 v1 = makeTVector2(p1); v1 -= makeTVector2(p0);
 
 	double v0Norm = v0.Mod();
 	double v1Norm = v1.Mod();
@@ -123,10 +123,10 @@ double pma::GetSegmentProjVector(const TVector2& p, const TVector2& p0, const TV
 	return v0Norm * cosine / v1Norm;
 }
 
-double pma::GetSegmentProjVector(const TVector3& p, const TVector3& p0, const TVector3& p1)
+double pma::GetSegmentProjVector(const Point3D_t& p, const Point3D_t& p0, const Point3D_t& p1)
 {
-	TVector3 v0(p); v0 -= p0;
-	TVector3 v1(p1); v1 -= p0;
+	TVector3 v0 = makeTVector3(p); v0 -= makeTVector3(p0);
+	TVector3 v1 = makeTVector3(p1); v1 -= makeTVector3(p0);
 
 	double v0Norm = v0.Mag();
 	double v1Norm = v1.Mag();
@@ -137,22 +137,22 @@ double pma::GetSegmentProjVector(const TVector3& p, const TVector3& p0, const TV
 	return v0Norm * cosine / v1Norm;
 }
 
-pma::Point2D_t pma::GetProjectionToSegment(const TVector2& p, const TVector2& p0, const TVector2& p1)
+pma::Point2D_t pma::GetProjectionToSegment(const Point2D_t& p, const Point2D_t& p0, const Point2D_t& p1)
 {
-	TVector2 v1(p1); v1 -= p0;
+	TVector2 v1 = makeTVector2(p1); v1 -= makeTVector2(p0);
 
 	double b = GetSegmentProjVector(p, p0, p1);
-	TVector2 r(p0);
+	TVector2 r = makeTVector2(p0);
 	r += (v1 * b);
 	return makePoint2D(r);
 }
 
-pma::Point3D_t pma::GetProjectionToSegment(const TVector3& p, const TVector3& p0, const TVector3& p1)
+pma::Point3D_t pma::GetProjectionToSegment(const Point3D_t& p, const Point3D_t& p0, const Point3D_t& p1)
 {
-	TVector3 v1(p1); v1 -= p0;
+	TVector3 v1 = makeTVector3(p1); v1 -= makeTVector3(p0);
 
 	double b = GetSegmentProjVector(p, p0, p1);
-	TVector3 r(p0);
+	TVector3 r = makeTVector3(p0);
 	r += (v1 * b);
 	return makePoint3D(r);
 }
@@ -250,7 +250,7 @@ double pma::SolveLeastSquares3D(const std::vector< std::pair<TVector3, TVector3>
 	double dx, dy, dz, mse = 0.0;
 	for (size_t v = 0; v < lines.size(); v++)
 	{
-		pproj = makeTVector3(pma::GetProjectionToSegment(result, lines[v].first, lines[v].second));
+		pproj = makeTVector3(pma::GetProjectionToSegment(makePoint3D(result), makePoint3D(lines[v].first), makePoint3D(lines[v].second)));
 
 		dx = result.X() - pproj.X(); // dx, dy, dz and the result point can be weighted
 		dy = result.Y() - pproj.Y(); // here (linearly) by each line uncertainty

@@ -86,24 +86,24 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 	double step = 0.3;
 	// then check how points-close-to-the-track-projection are distributed along the
 	// track, namely: are there track sections crossing empty spaces, except dead wires?
-	TVector3 p = makeTVector3(trk.front()->Point3D());
+	Point3D_t p = trk.front()->Point3D();
 	for (size_t i = 0; i < trk.Nodes().size() - 1; ++i)
 	{
 		auto const & node = *(trk.Nodes()[i]);
 		tpc = node.TPC(); cryo = node.Cryo();
 
-		TVector3 vNext = makeTVector3(trk.Nodes()[i + 1]->Point3D());
-		TVector3 vThis = makeTVector3(node.Point3D());
+		Point3D_t vNext = trk.Nodes()[i + 1]->Point3D();
+		Point3D_t vThis = node.Point3D();
 
 		std::vector< TVector2 > const & points = all_close_points[std::pair< unsigned int, unsigned int >(tpc, cryo)];
 		if (trk.Nodes()[i + 1]->TPC() == (int)tpc) // skip segments between tpc's, look only at those contained in tpc
 		{
-			TVector3 dc(vNext); dc -= vThis;
+			TVector3 dc = makeTVector3(vNext); dc -= makeTVector3(vThis);
 			dc *= step / dc.Mag();
 
 			double f = pma::GetSegmentProjVector(p, vThis, vNext);
 			double wirepitch = fGeom->TPC(tpc, cryo).Plane(testView).WirePitch();
-			while ((f < 1.0) && node.SameTPC(makePoint3D(p)))
+			while ((f < 1.0) && node.SameTPC(p))
 			{
 				Point2D_t p2d(fGeom->WireCoordinate(p.Y(), p.Z(), testView, tpc, cryo), p.X());
 				geo::WireID wireID(cryo, tpc, testView, (int)p2d.X());
@@ -127,7 +127,7 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 				  //	<< "crossing BAD CHANNEL (wire #" << (int)p2d.X() << ")" << std::endl;
 				}
 
-				p += dc; f = pma::GetSegmentProjVector(p, vThis, vNext);
+				p += makeVector3D(dc); f = pma::GetSegmentProjVector(p, vThis, vNext);
 			}
 		}
 		p = vNext;
@@ -153,13 +153,13 @@ double pma::ProjectionMatchingAlg::validate(
 	double d2, max_d2 = max_d * max_d;
 	unsigned int nAll = 0, nPassed = 0;
 
-	TVector3 p = makeTVector3(p0);
-	TVector3 dc = makeTVector3(p1); dc -= p;
+	Point3D_t p = p0;
+	TVector3 dc = makeTVector3(p1); dc -= makeTVector3(p);
 	dc *= step / dc.Mag();
 
 	auto const & channelStatus = art::ServiceHandle< lariov::ChannelStatusService >()->GetProvider();
 
-	double f = pma::GetSegmentProjVector(p, makeTVector3(p0), makeTVector3(p1));
+	double f = pma::GetSegmentProjVector(p, p0, p1);
 	double wirepitch = fGeom->TPC(tpc, cryo).Plane(testView).WirePitch();
 	while (f < 1.0)
 	{
@@ -183,7 +183,7 @@ double pma::ProjectionMatchingAlg::validate(
 			//	<< "crossing BAD CHANNEL (wire #" << (int)p2d.X() << ")" << std::endl;
 		}
 
-		p += dc; f = pma::GetSegmentProjVector(p, makeTVector3(p0), makeTVector3(p1));
+		p += makeVector3D(dc); f = pma::GetSegmentProjVector(p, p0, p1);
 	}
 
 	if (nAll > 3) // validate actually only if 2D projection in testView has some minimum length

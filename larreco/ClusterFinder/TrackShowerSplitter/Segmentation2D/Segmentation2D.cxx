@@ -115,7 +115,7 @@ tss::Cluster2D tss::Segmentation2D::buildSegment(tss::Cluster2D & inp, TVector2 
 	tss::Cluster2D candidates;
 	for (auto h : inp.hits())
 	{
-		TVector2 proj = makeTVector2(pma::GetProjectionToSegment(h->Point2D(), center, end));
+		TVector2 proj = makeTVector2(pma::GetProjectionToSegment(makePoint2D(h->Point2D()), makePoint2D(center), makePoint2D(end)));
 		if (pma::Dist2(h->Point2D(), proj) < max_d2)
 		{
 			TVector2 hDir = h->Point2D() - center;

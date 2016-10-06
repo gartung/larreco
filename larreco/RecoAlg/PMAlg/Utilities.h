@@ -48,10 +48,10 @@ namespace pma
 	double GetHitsRadius3D(const std::vector< pma::Hit3D* >& hits, bool exact = false);
 	double GetHitsRadius2D(const std::vector< pma::Hit3D* >& hits, bool exact = false);
 
-	double GetSegmentProjVector(const TVector2& p, const TVector2& p0, const TVector2& p1);
-	double GetSegmentProjVector(const TVector3& p, const TVector3& p0, const TVector3& p1);
-	Point2D_t GetProjectionToSegment(const TVector2& p, const TVector2& p0, const TVector2& p1);
-	Point3D_t GetProjectionToSegment(const TVector3& p, const TVector3& p0, const TVector3& p1);
+	double GetSegmentProjVector(const Point2D_t& p, const Point2D_t& p0, const Point2D_t& p1);
+	double GetSegmentProjVector(const Point3D_t& p, const Point3D_t& p0, const Point3D_t& p1);
+	Point2D_t GetProjectionToSegment(const Point2D_t& p, const Point2D_t& p0, const Point2D_t& p1);
+	Point3D_t GetProjectionToSegment(const Point3D_t& p, const Point3D_t& p0, const Point3D_t& p1);
 
 	double SolveLeastSquares3D(const std::vector< std::pair<TVector3, TVector3> >& lines, TVector3& result);
 
@@ -90,8 +90,8 @@ public:
 	{
 		if (p1 && p2)
 		{
-			double b1 = pma::GetSegmentProjVector(*p1, segStart, segStop);
-			double b2 = pma::GetSegmentProjVector(*p1, segStart, segStop);
+			double b1 = pma::GetSegmentProjVector(makePoint3D(*p1), makePoint3D(segStart), makePoint3D(segStop));
+			double b2 = pma::GetSegmentProjVector(makePoint3D(*p1), makePoint3D(segStart), makePoint3D(segStop));
 			return b1 < b2;
 		}
 		else return false;
