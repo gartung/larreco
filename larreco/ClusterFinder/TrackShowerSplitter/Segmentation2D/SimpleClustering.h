@@ -28,7 +28,7 @@ struct tss::bDistToPointLess :
 	
 	bool operator() (const tss::Hit2D* h1, const tss::Hit2D* h2)
 	{
-		if (h1 && h2) return pma::Dist2(h1->Point2D(), p0) < pma::Dist2(h2->Point2D(), p0);
+		if (h1 && h2) return pma::Dist2(makePoint2D(h1->Point2D()), makePoint2D(p0)) < pma::Dist2(makePoint2D(h2->Point2D()), makePoint2D(p0));
 		else return false;
 	}
 	
@@ -53,7 +53,7 @@ public:
 
 	double length2(void) const
 	{
-		if (size() > 1) return pma::Dist2(fHits.front()->Point2D(), fHits.back()->Point2D());
+		if (size() > 1) return pma::Dist2(makePoint2D(fHits.front()->Point2D()), makePoint2D(fHits.back()->Point2D()));
 		else return 0.0;
 	}
 

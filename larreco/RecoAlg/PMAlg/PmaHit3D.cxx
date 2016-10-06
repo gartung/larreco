@@ -82,6 +82,6 @@ pma::Hit3D::Hit3D(const pma::Hit3D& src) :
 
 double pma::Hit3D::GetDist2ToProj(void) const
 {
-	return pma::Dist2(makeTVector2(fPoint2D), makeTVector2(fProjection2D));
+	return pma::Dist2(fPoint2D, Point2D_t(fProjection2D));
 }
 

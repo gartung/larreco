@@ -282,7 +282,7 @@ bool pma::Track3D::InitFromRefPoints(int tpc, int cryo)
 	TVector3 v1(w), v2(w);
 	v1 *= scale; v1 += mean;
 	v2 *= -scale; v2 += mean;
-	std::sort(fAssignedPoints.begin(), fAssignedPoints.end(), pma::bSegmentProjLess(v1, v2));
+	std::sort(fAssignedPoints.begin(), fAssignedPoints.end(), pma::bSegmentProjLess(makePoint3D(v1), makePoint3D(v2)));
 	for (size_t i = 0; i < fAssignedPoints.size(); i++)
 	{
 		AddNode(*(fAssignedPoints[i]), tpc, cryo);

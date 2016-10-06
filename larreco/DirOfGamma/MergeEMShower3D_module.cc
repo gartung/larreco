@@ -43,6 +43,19 @@
 #include "TLorentzVector.h"
 #include "TMathBase.h"
 
+namespace pma {
+  inline double Dist2(const TVector2& v1, const TVector2& v2)
+  {
+    double dx = v1.X() - v2.X(), dy = v1.Y() - v2.Y();
+    return dx * dx + dy * dy;
+  }
+  inline double Dist2(const TVector3& v1, const TVector3& v2)
+  {
+    double dx = v1.X() - v2.X(), dy = v1.Y() - v2.Y(), dz = v1.Z() - v2.Z();
+    return dx * dx + dy * dy + dz * dz;
+  }
+} // namespace pma
+
 namespace ems
 {
 	class MergeEMShower3D;

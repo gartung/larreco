@@ -163,18 +163,18 @@ double pma::ProjectionMatchingAlg::validate(
 	double wirepitch = fGeom->TPC(tpc, cryo).Plane(testView).WirePitch();
 	while (f < 1.0)
 	{
-		TVector2 p2d(fGeom->WireCoordinate(p.Y(), p.Z(), testView, tpc, cryo), p.X());
+		Point2D_t p2d(fGeom->WireCoordinate(p.Y(), p.Z(), testView, tpc, cryo), p.X());
 		geo::WireID wireID(cryo, tpc, testView, (int)p2d.X());
 		if (fGeom->HasWire(wireID))
 		{
 			raw::ChannelID_t ch = fGeom->PlaneWireToChannel(wireID);
 			if (channelStatus.IsGood(ch))
 			{
-				p2d.Set(wirepitch * p2d.X(), p2d.Y());
+				p2d.SetCoordinates(wirepitch * p2d.X(), p2d.Y());
 				for (const auto & h : hits)
 					if (h->WireID().Plane == testView)
 				{
-					d2 = pma::Dist2(p2d, makeTVector2(pma::WireDriftToCm(h->WireID().Wire, h->PeakTime(), testView, tpc, cryo)));
+					d2 = pma::Dist2(p2d, pma::WireDriftToCm(h->WireID().Wire, h->PeakTime(), testView, tpc, cryo));
 					if (d2 < max_d2) { nPassed++; break; }
 				}
 				nAll++;
@@ -545,14 +545,14 @@ bool pma::ProjectionMatchingAlg::GetCloseHits(
 				if (!Has(used, i))
 				{
 					art::Ptr<recob::Hit> const & hi = hits_in[i];
-					TVector2 hi_cm(wirePitch * hi->WireID().Wire, driftPitch * hi->PeakTime());
+					pma::Point2D_t hi_cm(wirePitch * hi->WireID().Wire, driftPitch * hi->PeakTime());
 
 					bool accept = false;
 		
 					for (auto const & ho : hits_out)					
 					{
 
-						TVector2 ho_cm(wirePitch * ho->WireID().Wire, driftPitch * ho->PeakTime());
+						pma::Point2D_t ho_cm(wirePitch * ho->WireID().Wire, driftPitch * ho->PeakTime());
 						double d2 = pma::Dist2(hi_cm, ho_cm);
 						
 						if (d2 < r2d2) { accept = true; break; }

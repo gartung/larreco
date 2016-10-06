@@ -14,6 +14,15 @@
 
 #include "TMath.h"
 
+namespace pma {
+  inline double Dist2(const TVector2& v1, const TVector2& v2)
+  {
+    double dx = v1.X() - v2.X(), dy = v1.Y() - v2.Y();
+    return dx * dx + dy * dy;
+  }
+} // namespace pma
+
+
 //class Hit2D
 
 ems::Hit2D::Hit2D(art::Ptr< recob::Hit > src) :

@@ -18,12 +18,6 @@
 
 #include <functional>
 
-#include "TVector2.h"
-#include "TVector3.h"
-
-#include "Math/GenVector/DisplacementVector2D.h"
-#include "Math/GenVector/DisplacementVector3D.h"
-
 namespace pma
 {
 	typedef std::map< size_t, std::vector<double> > dedx_map;
@@ -37,8 +31,6 @@ namespace pma
 	struct bTrajectory3DDistLess;
 	struct bTrack3DLonger;
 
-	double Dist2(const TVector2& v1, const TVector2& v2);
-	double Dist2(const TVector3& v1, const TVector3& v2);
 	double Dist2(const Point2D_t& v1, const Point2D_t& v2);
 	double Dist2(const Point3D_t& v1, const Point3D_t& v2);
 	size_t GetHitsCount(const std::vector< pma::Hit3D* >& hits, unsigned int view);
@@ -81,39 +73,33 @@ struct pma::bTrack3DLonger :
 };
 
 class pma::bSegmentProjLess :
-	public std::binary_function<TVector3*, TVector3*, bool>
+	public std::binary_function<Point3D_t const*, Point3D_t const*, bool>
 {
 public:
-	bSegmentProjLess(const TVector3& s0, const TVector3& s1);
+	bSegmentProjLess(const Point3D_t& s0, const Point3D_t& s1);
 
-	bool operator() (TVector3* p1, TVector3* p2)
+	bool operator() (Point3D_t const* p1, Point3D_t const* p2) const
 	{
 		if (p1 && p2)
 		{
-			double b1 = pma::GetSegmentProjVector(makePoint3D(*p1), makePoint3D(segStart), makePoint3D(segStop));
-			double b2 = pma::GetSegmentProjVector(makePoint3D(*p1), makePoint3D(segStart), makePoint3D(segStop));
+			double b1 = pma::GetSegmentProjVector(*p1, segStart, segStop);
+			double b2 = pma::GetSegmentProjVector(*p1, segStart, segStop);
 			return b1 < b2;
 		}
 		else return false;
 	}
-	
-	bool operator() (Point3D_t const* p1, Point3D_t const* p2)
-    {
-      TVector3 v1 = makeTVector3(*p1), v2 = makeTVector3(*p2);
-      return this->operator()(&v1, &v2);
-    }
 
 private:
-	TVector3 segStart, segStop;
+	Point3D_t segStart, segStop;
 };
 
 class pma::bDistCenterLess2D :
-	public std::binary_function<TVector2, TVector2, bool>
+	public std::binary_function<Point2D_t const&, Point2D_t const&, bool>
 {
 public:
-	bDistCenterLess2D(const TVector2& c) : center(c) {}
+	bDistCenterLess2D(const Point2D_t& c) : center(c) {}
 
-	bool operator() (TVector2 p1, TVector2 p2)
+	bool operator() (Point2D_t const& p1, Point2D_t const& p2)
 	{
 		double b1 = pma::Dist2(p1, center);
 		double b2 = pma::Dist2(p2, center);
@@ -121,16 +107,16 @@ public:
 	}
 
 private:
-	TVector2 center;
+	Point2D_t center;
 };
 
 class pma::bDistCenterLess3D :
-	public std::binary_function<TVector3, TVector3, bool>
+	public std::binary_function<Point3D_t const&, Point3D_t const&, bool>
 {
 public:
-	bDistCenterLess3D(const TVector3& c) : center(c) {}
+	bDistCenterLess3D(const Point3D_t& c) : center(c) {}
 
-	bool operator() (TVector3 p1, TVector3 p2)
+	bool operator() (Point3D_t const& p1, Point3D_t const& p2)
 	{
 		double b1 = pma::Dist2(p1, center);
 		double b2 = pma::Dist2(p2, center);
@@ -138,8 +124,21 @@ public:
 	}
 
 private:
-	TVector3 center;
+	Point3D_t center;
 };
+
+
+inline double pma::Dist2(const Point2D_t& v1, const Point2D_t& v2)
+{
+	double dx = v1.X() - v2.X(), dy = v1.Y() - v2.Y();
+	return dx * dx + dy * dy;
+}
+
+inline double pma::Dist2(const Point3D_t& v1, const Point3D_t& v2)
+{
+	double dx = v1.X() - v2.X(), dy = v1.Y() - v2.Y(), dz = v1.Z() - v2.Z();
+	return dx * dx + dy * dy + dz * dz;
+}
 
 #endif
 

@@ -21,24 +21,6 @@
 #include "TVectorT.h"
 #include "TMatrixT.h"
 
-double pma::Dist2(const TVector2& v1, const TVector2& v2)
-{
-	double dx = v1.X() - v2.X(), dy = v1.Y() - v2.Y();
-	return dx * dx + dy * dy;
-}
-
-double pma::Dist2(const TVector3& v1, const TVector3& v2)
-{
-	double dx = v1.X() - v2.X(), dy = v1.Y() - v2.Y(), dz = v1.Z() - v2.Z();
-	return dx * dx + dy * dy + dz * dz;
-}
-
-double pma::Dist2(const Point2D_t& v1, const Point2D_t& v2)
-  { return pma::Dist2(makeTVector2(v1), makeTVector2(v2)); }
-
-double pma::Dist2(const Point3D_t& v1, const Point3D_t& v2)
-  { return pma::Dist2(makeTVector3(v1), makeTVector3(v2)); }
-
 size_t pma::GetHitsCount(const std::vector< pma::Hit3D* >& hits, unsigned int view)
 {
 	size_t n = 0;
@@ -78,10 +60,10 @@ double pma::GetHitsRadius3D(const std::vector< pma::Hit3D* >& hits, bool exact)
 	}
 	mean *= (1.0 / hits.size());
 
-	double r2, max_r2 = pma::Dist2(makeTVector3(hits.front()->Point3D()), mean);
+	double r2, max_r2 = pma::Dist2(hits.front()->Point3D(), makePoint3D(mean));
 	for (size_t i = 1; i < hits.size(); i++)
 	{
-		r2 = pma::Dist2(makeTVector3(hits[i]->Point3D()), mean);
+		r2 = pma::Dist2(hits[i]->Point3D(), makePoint3D(mean));
 		if (r2 > max_r2) max_r2 = r2;
 	}
 	return sqrt(max_r2);
@@ -100,10 +82,10 @@ double pma::GetHitsRadius2D(const std::vector< pma::Hit3D* >& hits, bool exact)
 	}
 	mean *= (1.0 / hits.size());
 
-	double r2, max_r2 = pma::Dist2(makeTVector2(hits.front()->Point2D()), mean);
+	double r2, max_r2 = pma::Dist2(hits.front()->Point2D(), makePoint2D(mean));
 	for (size_t i = 1; i < hits.size(); i++)
 	{
-		r2 = pma::Dist2(makeTVector2(hits[i]->Point2D()), mean);
+		r2 = pma::Dist2(hits[i]->Point2D(), makePoint2D(mean));
 		if (r2 > max_r2) max_r2 = r2;
 	}
 	return sqrt(max_r2);
@@ -320,14 +302,14 @@ bool pma::bTrack3DLonger::operator() (const pma::TrkCandidate & t1, const pma::T
 	pma::Track3D* trk2 = t2.Track();
 	if (trk1 && trk2)
 	{
-		double l1 = pma::Dist2(makeTVector3(trk1->front()->Point3D()), makeTVector3(trk1->back()->Point3D()));
-		double l2 = pma::Dist2(makeTVector3(trk2->front()->Point3D()), makeTVector3(trk2->back()->Point3D()));
+		double l1 = pma::Dist2(trk1->front()->Point3D(), trk1->back()->Point3D());
+		double l2 = pma::Dist2(trk2->front()->Point3D(), trk2->back()->Point3D());
 		return l1 > l2;
 	}
 	else return false;
 }
 
-pma::bSegmentProjLess::bSegmentProjLess(const TVector3& s0, const TVector3& s1) :
+pma::bSegmentProjLess::bSegmentProjLess(const Point3D_t& s0, const Point3D_t& s1) :
 	segStart(s0), segStop(s1)
 {
 	if (s0 == s1) mf::LogError("pma::bSegmentProjLess") << "Vectors equal!";

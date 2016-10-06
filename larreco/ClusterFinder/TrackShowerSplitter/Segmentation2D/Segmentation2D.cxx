@@ -12,6 +12,15 @@
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
+namespace pma {
+  inline double Dist2(const TVector2& v1, const TVector2& v2)
+  {
+    double dx = v1.X() - v2.X(), dy = v1.Y() - v2.Y();
+    return dx * dx + dy * dy;
+  }
+} // namespace pma
+
+
 void tss::Segmentation2D::reconfigure(const fhicl::ParameterSet& p)
 {
 	fRadiusMin = p.get< double >("RadiusMin");

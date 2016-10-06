@@ -10,6 +10,14 @@
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+namespace pma {
+  inline double Dist2(const TVector2& v1, const TVector2& v2)
+  {
+    double dx = v1.X() - v2.X(), dy = v1.Y() - v2.Y();
+    return dx * dx + dy * dy;
+  }
+} // namespace pma
+
 tss::Cluster2D::Cluster2D(const std::vector< const tss::Hit2D* > & hits) :
 	fDenseStart(false), fDenseEnd(false), fIsEM(false)
 {
@@ -46,10 +54,10 @@ const tss::Hit2D* tss::Cluster2D::closest(const TVector2 & p2d, size_t & idx) co
 	if (!fHits.size()) return 0;
 
 	const tss::Hit2D* hout = fHits.front();
-	double d, dmin = pma::Dist2(hout->Point2D(), p2d);
+	double d, dmin = pma::Dist2(makePoint2D(hout->Point2D()), makePoint2D(p2d));
 	for (size_t h = 1; h < fHits.size(); ++h)
 	{
-		d = pma::Dist2(fHits[h]->Point2D(), p2d);
+		d = pma::Dist2(makePoint2D(fHits[h]->Point2D()), makePoint2D(p2d));
 		if (d < dmin) { dmin = d; hout = fHits[h]; idx = h; }
 	}
 	return hout;
@@ -69,10 +77,10 @@ const tss::Hit2D* tss::Cluster2D::outermost(size_t & idx) const
 	mean *= 1.0 / fHits.size();
 
 	const tss::Hit2D* hout = fHits.front();
-	double d, dmax = pma::Dist2(hout->Point2D(), mean);
+	double d, dmax = pma::Dist2(makePoint2D(hout->Point2D()), makePoint2D(mean));
 	for (size_t h = 1; h < fHits.size(); ++h)
 	{
-		d = pma::Dist2(fHits[h]->Point2D(), mean);
+		d = pma::Dist2(makePoint2D(fHits[h]->Point2D()), makePoint2D(mean));
 		if (d > dmax) { dmax = d; hout = fHits[h]; idx = h; }
 	}
 	return hout;
@@ -127,10 +135,10 @@ double tss::Cluster2D::dist2(const TVector2 & p2d) const
 {
 	if (fHits.size())
 	{
-		double d2, min_d2 = pma::Dist2(fHits.front()->Point2D(), p2d);
+		double d2, min_d2 = pma::Dist2(makePoint2D(fHits.front()->Point2D()), makePoint2D(p2d));
 		for (size_t i = 1; i < fHits.size(); ++i)
 		{
-			d2 = pma::Dist2(fHits[i]->Point2D(), p2d);
+			d2 = pma::Dist2(makePoint2D(fHits[i]->Point2D()), makePoint2D(p2d));
 			if (d2 < min_d2) { min_d2 = d2; }
 		}
 		return min_d2;
@@ -144,10 +152,10 @@ double tss::Cluster2D::dist2(const TVector2 & p2d, size_t & hIdx) const
 	hIdx = 0;
 	if (fHits.size())
 	{
-		double d2, min_d2 = pma::Dist2(fHits.front()->Point2D(), p2d);
+		double d2, min_d2 = pma::Dist2(makePoint2D(fHits.front()->Point2D()), makePoint2D(p2d));
 		for (size_t i = 1; i < fHits.size(); ++i)
 		{
-			d2 = pma::Dist2(fHits[i]->Point2D(), p2d);
+			d2 = pma::Dist2(makePoint2D(fHits[i]->Point2D()), makePoint2D(p2d));
 			if (d2 < min_d2) { min_d2 = d2; hIdx = i; }
 		}
 		return min_d2;
