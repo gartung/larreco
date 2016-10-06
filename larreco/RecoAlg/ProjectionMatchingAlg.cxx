@@ -103,7 +103,7 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 
 			double f = pma::GetSegmentProjVector(p, vThis, vNext);
 			double wirepitch = fGeom->TPC(tpc, cryo).Plane(testView).WirePitch();
-			while ((f < 1.0) && node.SameTPC(p))
+			while ((f < 1.0) && node.SameTPC(makePoint3D(p)))
 			{
 				TVector2 p2d(fGeom->WireCoordinate(p.Y(), p.Z(), testView, tpc, cryo), p.X());
 				geo::WireID wireID(cryo, tpc, testView, (int)p2d.X());
@@ -698,7 +698,7 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildSegment(
 		double dback = pma::Dist2(makeTVector3(trk->back()->Point3D()), point);
 		if (dfront > dback) trk->Flip();
 
-		trk->Nodes().front()->SetPoint3D(point);
+		trk->Nodes().front()->SetPoint3D(makePoint3D(point));
 		trk->Nodes().front()->SetFrozen(true);
 		trk->Optimize(0, fFineTuningEps);
 
@@ -720,7 +720,7 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildSegment(
 		double dback = pma::Dist2(makeTVector3(trk->back()->Point3D()), point);
 		if (dfront > dback) trk->Flip();
 
-		trk->Nodes().front()->SetPoint3D(point);
+		trk->Nodes().front()->SetPoint3D(makePoint3D(point));
 		trk->Nodes().front()->SetFrozen(true);
 		trk->Optimize(0, fFineTuningEps);
 

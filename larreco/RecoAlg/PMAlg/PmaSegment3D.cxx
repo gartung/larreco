@@ -44,12 +44,12 @@ pma::Vector3D_t pma::Segment3D::GetDirection3D(void) const
 	return makeVector3D(dir);
 }
 
-pma::Point3D_t pma::Segment3D::GetProjection(const TVector2& p, unsigned int view) const
+pma::Point3D_t pma::Segment3D::GetProjection(const Point2D_t& p, unsigned int view) const
 {
 	pma::Node3D* vStart = static_cast< pma::Node3D* >(prev);
 	pma::Node3D* vStop = static_cast< pma::Node3D* >(next);
 
-	TVector2 v0(p);
+	TVector2 v0 = makeTVector2(p);
 	v0 -= makeTVector2(vStart->Projection2D(view));
 
 	TVector2 v1 = makeTVector2(vStop->Projection2D(view));

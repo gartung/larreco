@@ -504,7 +504,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 			{
 				mf::LogVerbatim("pma::VtxCandidate") << "  new at front";
 				vtxCenter = trk->Nodes().front();
-				vtxCenter->SetPoint3D(makeTVector3(fCenter));
+				vtxCenter->SetPoint3D(fCenter);
 				nOK++;
 			}
 			else
@@ -528,7 +528,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 					mf::LogVerbatim("pma::VtxCandidate") << "  new center at the endpoint";
 					vtxCenter = trk->Nodes().back();
 				}
-				vtxCenter->SetPoint3D(makeTVector3(fCenter));
+				vtxCenter->SetPoint3D(fCenter);
 				nOK++;
 			}
 			else

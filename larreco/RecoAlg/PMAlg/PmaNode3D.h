@@ -16,10 +16,7 @@
 
 #include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
-// ∂#include "larcore/Geometry/Geometry.h"
-
-#include "TVectorT.h"
-#include "TMatrixT.h"
+// #include "larcore/Geometry/Geometry.h"
 
 namespace pma
 {
@@ -30,21 +27,21 @@ class pma::Node3D : public pma::Element3D, public pma::SortedBranchBase
 {
 public:
 	Node3D(void);
-	Node3D(const TVector3& p3d, unsigned int tpc, unsigned int cryo, bool vtx = false);
+	Node3D(const Point3D_t& p3d, unsigned int tpc, unsigned int cryo, bool vtx = false);
 	virtual ~Node3D(void) {}
 
 	Point3D_t const & Point3D(void) const { return fPoint3D; }
 
 	/// Returns true if the new position was accepted; returns false if the new position
 	/// was trimmed to fit insite TPC volume + fMargin.
-	bool SetPoint3D(const TVector3& p3d);
+	bool SetPoint3D(const Point3D_t& p3d);
 
 	Point2D_t const& Projection2D(unsigned int view) const { return fProj2D[view]; }
 
 	double GetDistToWall(void) const;
 
 	/// Check if p3d is in the same TPC as the node.
-	bool SameTPC(const TVector3& p3d, float margin = 0.0F) const;
+	bool SameTPC(const Point3D_t& p3d, float margin = 0.0F) const;
 
 	/// Belongs to more than one track?
 	bool IsBranching(void) const;
