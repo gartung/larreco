@@ -118,7 +118,7 @@ public:
 
 	/// Calculate the fraction of the 3D segment that is closer than fTrkValidationDist2D
 	/// to any hit from hits in the testView of TPC/Cryo.
-	double validate(const TVector3& p0, const TVector3& p1,
+	double validate(const Point3D_t& p0, const Point3D_t& p1,
 		const std::vector< art::Ptr<recob::Hit> >& hits,
 		unsigned int testView, unsigned int tpc, unsigned int cryo) const;
 
@@ -171,13 +171,13 @@ public:
 	pma::Track3D* buildSegment(
 		const std::vector< art::Ptr<recob::Hit> >& hits_1,
 		const std::vector< art::Ptr<recob::Hit> >& hits_2,
-		const TVector3& point) const;
+		const Point3D_t& point) const;
 
 	/// Build a straight segment from set of hits (they should origin from two wire planes at least),
 	/// starting from a given point.
 	pma::Track3D* buildSegment(
 		const std::vector< art::Ptr<recob::Hit> >& hits,
-		const TVector3& point) const;
+		const Point3D_t& point) const;
 
 	/// Get rid of small groups of hits around cascades; used to calculate cascade starting direction
 	/// using the compact core cluster.
@@ -185,7 +185,7 @@ public:
 		double r2d,
 		const std::vector< art::Ptr<recob::Hit> >& hits_in,
 		std::vector< art::Ptr<recob::Hit> >& hits_out,
-		const TVector2& vtx2d) const;
+		const Point2D_t& vtx2d) const;
 
 	void RemoveNotEnabledHits(pma::Track3D& trk) const;
 
@@ -203,7 +203,7 @@ public:
 	void guideEndpoints(pma::Track3D& trk, pma::Track3D::ETrackEnd endpoint,
 		const std::map< unsigned int, std::vector< art::Ptr<recob::Hit> > >& hits) const;
 
-	std::vector< pma::Hit3D* > trimTrackToVolume(pma::Track3D& trk, TVector3 p0, TVector3 p1) const;
+	std::vector< pma::Hit3D* > trimTrackToVolume(pma::Track3D& trk, Point3D_t const& p0, Point3D_t const& p1) const;
 
 	/// Flip tracks to get second as a continuation of first; returns false if not
 	/// possible (tracks in reversed order).

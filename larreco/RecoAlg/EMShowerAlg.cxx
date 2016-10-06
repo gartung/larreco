@@ -9,6 +9,7 @@
 ////////////////////////////////////////////////////////////////////
 
 #include "larreco/RecoAlg/EMShowerAlg.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h" // makePoint3D()
 
 shower::EMShowerAlg::EMShowerAlg(fhicl::ParameterSet const& pset) : fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()),
 								    fShowerEnergyAlg(pset.get<fhicl::ParameterSet>("ShowerEnergyAlg")),
@@ -447,7 +448,7 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(std::vector<ar
   }
 
   TVector3 trackStart = Construct3DPoint(track1.at(0), track2.at(0));
-  pma::Track3D* pmatrack = fProjectionMatchingAlg.buildSegment(track1, track2, trackStart);
+  pma::Track3D* pmatrack = fProjectionMatchingAlg.buildSegment(track1, track2, makePoint3D(trackStart));
 
   if (!pmatrack) {
     mf::LogInfo("EMShowerAlg") << "Skipping this event because not enough hits in two views";

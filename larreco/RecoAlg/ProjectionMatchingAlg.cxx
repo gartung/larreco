@@ -144,7 +144,7 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 // ------------------------------------------------------
 
 double pma::ProjectionMatchingAlg::validate(
-	const TVector3& p0, const TVector3& p1,
+	const Point3D_t& p0, const Point3D_t& p1,
 	const std::vector< art::Ptr<recob::Hit> >& hits,
 	unsigned int testView, unsigned int tpc, unsigned int cryo) const
 {
@@ -153,13 +153,13 @@ double pma::ProjectionMatchingAlg::validate(
 	double d2, max_d2 = max_d * max_d;
 	unsigned int nAll = 0, nPassed = 0;
 
-	TVector3 p(p0);
-	TVector3 dc(p1); dc -= p;
+	TVector3 p = makeTVector3(p0);
+	TVector3 dc = makeTVector3(p1); dc -= p;
 	dc *= step / dc.Mag();
 
 	auto const & channelStatus = art::ServiceHandle< lariov::ChannelStatusService >()->GetProvider();
 
-	double f = pma::GetSegmentProjVector(p, p0, p1);
+	double f = pma::GetSegmentProjVector(p, makeTVector3(p0), makeTVector3(p1));
 	double wirepitch = fGeom->TPC(tpc, cryo).Plane(testView).WirePitch();
 	while (f < 1.0)
 	{
@@ -183,7 +183,7 @@ double pma::ProjectionMatchingAlg::validate(
 			//	<< "crossing BAD CHANNEL (wire #" << (int)p2d.X() << ")" << std::endl;
 		}
 
-		p += dc; f = pma::GetSegmentProjVector(p, p0, p1);
+		p += dc; f = pma::GetSegmentProjVector(p, makeTVector3(p0), makeTVector3(p1));
 	}
 
 	if (nAll > 3) // validate actually only if 2D projection in testView has some minimum length
@@ -414,7 +414,7 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildShowerSeg(
 
 		// filter our small groups of hits, far from main shower		
 		std::vector<art::Ptr<recob::Hit> > hitsfilter;
-		TVector2 proj_pr = makeTVector2(pma::GetProjectionToPlane(vtxv3, view, tpc, cryo));
+		Point2D_t proj_pr = pma::GetProjectionToPlane(vtxv3, view, tpc, cryo);
 	
 		mf::LogWarning("ProjectionMatchinAlg") << "start filter out: ";
 		FilterOutSmallParts(2.0, hitsview, hitsfilter, proj_pr);
@@ -437,7 +437,7 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildShowerSeg(
 	// hits are prepared, finally segment is built
 
 	pma::Track3D* trk = new pma::Track3D();
-	trk = buildSegment(hitstrk, vtxv3);
+	trk = buildSegment(hitstrk, makePoint3D(vtxv3));
 	
 	// make shorter segment to estimate direction more precise
 	ShortenSeg(*trk, tpcgeom);
@@ -458,7 +458,7 @@ void pma::ProjectionMatchingAlg::FilterOutSmallParts(
 		double r2d,
 		const std::vector< art::Ptr<recob::Hit> >& hits_in,
 		std::vector< art::Ptr<recob::Hit> >& hits_out,
-		const TVector2& vtx2d) const
+		const Point2D_t& vtx2d) const
 {
 	size_t min_size = hits_in.size() / 5;
 	if (min_size < 3) min_size = 3;
@@ -475,11 +475,11 @@ void pma::ProjectionMatchingAlg::FilterOutSmallParts(
 
 		for (size_t h = 0; h < close_hits.size(); ++h)
 		{
-			TVector2 hi_cm = makeTVector2(pma::WireDriftToCm(close_hits[h]->WireID().Wire, 
+			Point2D_t hi_cm = pma::WireDriftToCm(close_hits[h]->WireID().Wire, 
 			close_hits[h]->PeakTime(), 
 			close_hits[h]->WireID().Plane, 
 			close_hits[h]->WireID().TPC, 
-			close_hits[h]->WireID().Cryostat));
+			close_hits[h]->WireID().Cryostat);
 
 			float dist2 = pma::Dist2(hi_cm, vtx2d);
 			if (dist2 < mindist2)
@@ -688,17 +688,17 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildSegment(
 pma::Track3D* pma::ProjectionMatchingAlg::buildSegment(
 	const std::vector< art::Ptr<recob::Hit> >& hits_1,
 	const std::vector< art::Ptr<recob::Hit> >& hits_2,
-	const TVector3& point) const
+	const Point3D_t& point) const
 {
 	pma::Track3D* trk = buildSegment(hits_1, hits_2);
 
 	if (trk)
 	{
-		double dfront = pma::Dist2(makeTVector3(trk->front()->Point3D()), point);
-		double dback = pma::Dist2(makeTVector3(trk->back()->Point3D()), point);
+		double dfront = pma::Dist2(trk->front()->Point3D(), point);
+		double dback = pma::Dist2(trk->back()->Point3D(), point);
 		if (dfront > dback) trk->Flip();
 
-		trk->Nodes().front()->SetPoint3D(makePoint3D(point));
+		trk->Nodes().front()->SetPoint3D(point);
 		trk->Nodes().front()->SetFrozen(true);
 		trk->Optimize(0, fFineTuningEps);
 
@@ -710,17 +710,17 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildSegment(
 
 pma::Track3D* pma::ProjectionMatchingAlg::buildSegment(
 	const std::vector< art::Ptr<recob::Hit> >& hits,
-	const TVector3& point) const
+	const Point3D_t& point) const
 {
 	pma::Track3D* trk = buildSegment(hits);
 
 	if (trk)
 	{
-		double dfront = pma::Dist2(makeTVector3(trk->front()->Point3D()), point);
-		double dback = pma::Dist2(makeTVector3(trk->back()->Point3D()), point);
+		double dfront = pma::Dist2(trk->front()->Point3D(), point);
+		double dback = pma::Dist2(trk->back()->Point3D(), point);
 		if (dfront > dback) trk->Flip();
 
-		trk->Nodes().front()->SetPoint3D(makePoint3D(point));
+		trk->Nodes().front()->SetPoint3D(point);
 		trk->Nodes().front()->SetFrozen(true);
 		trk->Optimize(0, fFineTuningEps);
 
@@ -1054,7 +1054,7 @@ void pma::ProjectionMatchingAlg::guideEndpoints(
 // ------------------------------------------------------
 
 std::vector< pma::Hit3D* > pma::ProjectionMatchingAlg::trimTrackToVolume(
-	pma::Track3D& trk, TVector3 p0, TVector3 p1) const
+	pma::Track3D& trk, Point3D_t const& p0, Point3D_t const& p1) const
 {
 	std::vector< pma::Hit3D* > trimmedHits;
 
