@@ -133,13 +133,14 @@ double ems::ShowerInfo::Pointsto(ems::ShowerInfo const& s1) const
 	double cosine0 = (this->fFront - s1.fFront) * (1.0 / (this->fFront - s1.fFront).Mag()) * s1.fDir;
 	double th0 = 180.0F * (std::acos(cosine0)) / TMath::Pi();
 
-	std::vector< std::pair<TVector3, TVector3> > lines;
-	lines.push_back(std::pair<TVector3, TVector3>(this->fFront, this->fFront + this->fDir));
-	lines.push_back(std::pair<TVector3, TVector3>(s1.fFront, s1.fFront + s1.fDir));
+	std::vector< std::pair<pma::Point3D_t, pma::Point3D_t> > lines;
+	lines.push_back(std::pair<pma::Point3D_t, pma::Point3D_t>(makePoint3D(this->fFront), makePoint3D(this->fFront + this->fDir)));
+	lines.push_back(std::pair<pma::Point3D_t, pma::Point3D_t>(makePoint3D(s1.fFront), makePoint3D(s1.fFront + s1.fDir)));
 
-	TVector3 isect, pm;
+	pma::Point3D_t isect;
+	TVector3 pm;
 	pma::SolveLeastSquares3D(lines, isect);
-	pm = makeTVector3(pma::GetProjectionToSegment(makePoint3D(isect), makePoint3D(this->fFront), makePoint3D(this->fFront +  this->fDir))); 
+	pm = makeTVector3(pma::GetProjectionToSegment(isect, makePoint3D(this->fFront), makePoint3D(this->fFront +  this->fDir))); 
 	double cosine1 = (pm - s1.fFront) * (1.0/(pm - s1.fFront).Mag()) * s1.fDir;
 	double th1 = 180.0F * (std::acos(cosine1)) / TMath::Pi();
 
@@ -648,20 +649,21 @@ std::vector< ems::ShowersCollection > ems::MergeEMShower3D::collectshowers(art::
 						m_idx = m; a_min = a; 
 					}
 
-					std::vector< std::pair<TVector3, TVector3> > lines;
-					lines.push_back(std::pair<TVector3, TVector3>(
-							showers[is].GetFront(), showers[is].GetFront() + showers[is].GetDir()));
-					lines.push_back(std::pair<TVector3, TVector3>(
-							gammawithconv[m].Front(), gammawithconv[m].Front() +  gammawithconv[m].Dir()));
+					std::vector< std::pair<pma::Point3D_t, pma::Point3D_t> > lines;
+					lines.push_back(std::pair<pma::Point3D_t, pma::Point3D_t>(
+							makePoint3D(showers[is].GetFront()), makePoint3D(showers[is].GetFront() + showers[is].GetDir())));
+					lines.push_back(std::pair<pma::Point3D_t, pma::Point3D_t>(
+							makePoint3D(gammawithconv[m].Front()), makePoint3D(gammawithconv[m].Front() +  gammawithconv[m].Dir())));
 
-					TVector3 isect, pm;
+					pma::Point3D_t isect;
+					TVector3 pm;
 					pma::SolveLeastSquares3D(lines, isect);
-					pm = makeTVector3(pma::GetProjectionToSegment(makePoint3D(isect),
+					pm = makeTVector3(pma::GetProjectionToSegment(isect,
 							makePoint3D(gammawithconv[m].Front()), makePoint3D(gammawithconv[m].Front() +  gammawithconv[m].Dir())));
 
 					if (pma::Dist2(pov, gammawithconv[m].Front()) < pma::Dist2(pov, pm))
 					{
-						a = gammawithconv[m].Angle(isect);
+						a = gammawithconv[m].Angle(makeTVector3(isect));
 						if ((a < fNarrowConeAngle) && (a < a_min))
 						{
 							m_idx = m; a_min = a;

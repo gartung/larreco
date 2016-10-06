@@ -223,17 +223,17 @@ double pma::VtxCandidate::ComputeMse2D(void)
 		double m = 0.0;
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kU))
 		{
-			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kU, tpc, cryo);
+			center2d = GetProjectionToPlane(fCenter, geo::kU, tpc, cryo);
 			m += seg->GetDistance2To(center2d, geo::kU); k++;
 		}
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kV))
 		{
-			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kV, tpc, cryo);
+			center2d = GetProjectionToPlane(fCenter, geo::kV, tpc, cryo);
 			m += seg->GetDistance2To(center2d, geo::kV); k++;
 		}
 		if (geom->TPC(tpc, cryo).HasPlane(geo::kZ))
 		{
-			center2d = GetProjectionToPlane(makeTVector3(fCenter), geo::kZ, tpc, cryo);
+			center2d = GetProjectionToPlane(fCenter, geo::kZ, tpc, cryo);
 			m += seg->GetDistance2To(center2d, geo::kZ); k++;
 		}
 		mse += m / (double)k;
@@ -350,7 +350,7 @@ bool pma::VtxCandidate::MergeWith(const pma::VtxCandidate& other)
 double pma::VtxCandidate::Compute(void)
 {
 	std::vector< pma::Segment3D* > segments;
-	std::vector< std::pair<TVector3, TVector3> > lines;
+	std::vector< std::pair<Point3D_t, Point3D_t> > lines;
 	std::vector< double > weights;
 	for (const auto & v : fAssigned)
 	{
@@ -364,7 +364,7 @@ double pma::VtxCandidate::Compute(void)
 		{
 			pma::Node3D* vtx2 = static_cast< pma::Node3D* >(seg->Next(0));
 
-			std::pair<TVector3, TVector3> endpoints(makeTVector3(vtx1->Point3D()), makeTVector3(vtx2->Point3D()));
+			std::pair<Point3D_t, Point3D_t> endpoints(vtx1->Point3D(), vtx2->Point3D());
 			double dy = endpoints.first.Y() - endpoints.second.Y();
 			double fy_norm = asin(fabs(dy) / segLength) / (0.5 * TMath::Pi());
 			double w = 1.0 - pow(fy_norm - 1.0, 12);
@@ -378,7 +378,7 @@ double pma::VtxCandidate::Compute(void)
 
 	fCenter.SetCoordinates(0., 0., 0.); fErr.SetCoordinates(0., 0., 0.);
 
-	TVector3 result;
+	Point3D_t result;
 	double resultMse = pma::SolveLeastSquares3D(lines, result);
 	if (resultMse < 0.0)
 	{
@@ -394,7 +394,7 @@ double pma::VtxCandidate::Compute(void)
 		pma::Node3D* vprev = static_cast< pma::Node3D* >(segments[s]->Prev());
 		pma::Node3D* vnext = static_cast< pma::Node3D* >(segments[s]->Next(0));
 
-		pproj = makeTVector3(pma::GetProjectionToSegment(makePoint3D(result), vprev->Point3D(), vnext->Point3D()));
+		pproj = makeTVector3(pma::GetProjectionToSegment(result, vprev->Point3D(), vnext->Point3D()));
 
 		//dx = weights[s] * (result.X() - pproj.X());
 		//dy = result.Y() - pproj.Y();

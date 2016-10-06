@@ -849,8 +849,8 @@ bool ems::EMShower3D::Validate(std::vector< ems::DirOfGamma* > input, size_t id1
 		std::vector< Hit2D* > hits2dcl = input[i]->GetHits2D();
 		for (size_t h = 0; h < hits2dcl.size(); ++h)
 		{
-			TVector2 pfront = makeTVector2(pma::GetProjectionToPlane(makeTVector3(track->front()->Point3D()), plane3, track->FrontTPC(), track->FrontCryo()));
-			TVector2 pback  = makeTVector2(pma::GetProjectionToPlane(makeTVector3(track->back()->Point3D()), plane3, track->BackTPC(), track->BackCryo()));
+			TVector2 pfront = makeTVector2(pma::GetProjectionToPlane(track->front()->Point3D(), plane3, track->FrontTPC(), track->FrontCryo()));
+			TVector2 pback  = makeTVector2(pma::GetProjectionToPlane(track->back()->Point3D(), plane3, track->BackTPC(), track->BackCryo()));
 			if ( (pma::Dist2(hits2dcl[h]->GetPointCm(), pfront) < 1.0F) && 
 				(pma::Dist2(hits2dcl[h]->GetPointCm(), pback) < 1.0F) )
 			{result = true; break;}

@@ -423,7 +423,7 @@ void ems::MultiEMShowers::analyze(art::Event const & e)
 	fGdir1 = mc.GetDirgamma1();
 	fGdir2 = mc.GetDirgamma2();
 	fNgammas = mc.GetNgammas();
-	TVector3 pospi0 = mc.GetPospi0();
+	pma::Point3D_t pospi0 = makePoint3D(mc.GetPospi0());
 
 	double cosinemc = mc.GetCosine();
 	fMcth = 180.0F * (std::acos(cosinemc)) / TMath::Pi();
@@ -533,21 +533,21 @@ void ems::MultiEMShowers::analyze(art::Event const & e)
 			//if (countph == 2)
 			if (fNGroups == 2)
 			{
-				std::vector< std::pair<TVector3, TVector3> > lines;
+				std::vector< std::pair<pma::Point3D_t, pma::Point3D_t> > lines;
 				const recob::Shower& sh1 = (*shsListHandle)[0];
 				const recob::Shower& sh2 = (*shsListHandle)[1];
 
-				std::pair<TVector3, TVector3> frontback1(sh1.ShowerStart(), sh1.ShowerStart() + sh1.Direction());
-				std::pair<TVector3, TVector3> frontback2(sh2.ShowerStart(), sh2.ShowerStart() + sh2.Direction());
+				std::pair<pma::Point3D_t, pma::Point3D_t> frontback1(makePoint3D(sh1.ShowerStart()), makePoint3D(sh1.ShowerStart() + sh1.Direction()));
+				std::pair<pma::Point3D_t, pma::Point3D_t> frontback2(makePoint3D(sh2.ShowerStart()), makePoint3D(sh2.ShowerStart() + sh2.Direction()));
 				lines.push_back(frontback1); lines.push_back(frontback2);
 
-				TVector3 result;
+				pma::Point3D_t result;
 				pma::SolveLeastSquares3D(lines, result); // mse.
 
-				double dist1_0 = pma::Dist2(result, sh1.ShowerStart());
-				double dist2_0 = pma::Dist2(result, sh1.ShowerStart() + sh1.Direction());
-				double dist1_1 = pma::Dist2(result, sh2.ShowerStart());
-				double dist2_1 = pma::Dist2(result, sh2.ShowerStart() + sh2.Direction());
+				double dist1_0 = pma::Dist2(result, makePoint3D(sh1.ShowerStart()));
+				double dist2_0 = pma::Dist2(result, makePoint3D(sh1.ShowerStart() + sh1.Direction()));
+				double dist1_1 = pma::Dist2(result, makePoint3D(sh2.ShowerStart()));
+				double dist2_1 = pma::Dist2(result, makePoint3D(sh2.ShowerStart() + sh2.Direction()));
 				if ((dist1_0 > dist2_0) || (dist1_1 > dist2_1)) {}
 				else
 				{
@@ -665,7 +665,7 @@ double ems::MultiEMShowers::getMinDist(std::vector< art::Ptr<recob::Hit> > const
 {
 	double mindist = 9999;
 	// MC vertex projected to view
-	TVector2 proj = makeTVector2(pma::GetProjectionToPlane(convmc, view, tpc, cryo));
+	TVector2 proj = makeTVector2(pma::GetProjectionToPlane(makePoint3D(convmc), view, tpc, cryo));
 	
 	// loop over hits to find the closest to MC 2d vtx
 	for (size_t h = 0; h < v.size(); ++h)

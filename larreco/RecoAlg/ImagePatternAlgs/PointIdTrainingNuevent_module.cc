@@ -282,7 +282,7 @@ namespace nnet	 {
   TVector2 PointIdTrainingNuevent::GetProjVtx(TVector3 const & vtx3d, const size_t cryo, const size_t tpc, const size_t plane) const
   {
 
-	TVector2 vtx2d = makeTVector2(pma::GetProjectionToPlane(vtx3d, plane, tpc, cryo));
+	TVector2 vtx2d = makeTVector2(pma::GetProjectionToPlane(makePoint3D(vtx3d), plane, tpc, cryo));
 	TVector2 vtxwd = makeTVector2(pma::CmToWireDrift(vtx2d.X(), vtx2d.Y(), plane, tpc, cryo));
 	
 	return vtxwd;

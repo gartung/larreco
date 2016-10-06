@@ -53,10 +53,10 @@ namespace pma
 	Point2D_t GetProjectionToSegment(const Point2D_t& p, const Point2D_t& p0, const Point2D_t& p1);
 	Point3D_t GetProjectionToSegment(const Point3D_t& p, const Point3D_t& p0, const Point3D_t& p1);
 
-	double SolveLeastSquares3D(const std::vector< std::pair<TVector3, TVector3> >& lines, TVector3& result);
+	double SolveLeastSquares3D(const std::vector< std::pair<Point3D_t, Point3D_t> >& lines, Point3D_t& result);
 
-	Point2D_t GetProjectionToPlane(const TVector3& p, unsigned int view, unsigned int tpc, unsigned int cryo);
-	Point2D_t GetVectorProjectionToPlane(const TVector3& v, unsigned int view, unsigned int tpc, unsigned int cryo);
+	Point2D_t GetProjectionToPlane(const Point3D_t& p, unsigned int view, unsigned int tpc, unsigned int cryo);
+	Vector2D_t GetVectorProjectionToPlane(const Point3D_t& v, unsigned int view, unsigned int tpc, unsigned int cryo);
 	Point2D_t WireDriftToCm(unsigned int wire, float drift, unsigned int view, unsigned int tpc, unsigned int cryo);
 	Point2D_t CmToWireDrift(float xw, float yd, unsigned int view, unsigned int tpc, unsigned int cryo);
 }

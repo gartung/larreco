@@ -384,7 +384,7 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildShowerSeg(
 
 	if (!fGeom->HasTPC(fGeom->FindTPCAtPosition(vtxarray))) return 0;
 
-	TVector3 vtxv3(vtx.X(), vtx.Y(), vtx.Z());
+	Point3D_t vtxv3(vtx.X(), vtx.Y(), vtx.Z());
 	
 	const size_t tpc = fGeom->FindTPCAtPosition(vtxarray).TPC;
 	const size_t cryo = fGeom->FindCryostatAtPosition(vtxarray);
@@ -437,7 +437,7 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildShowerSeg(
 	// hits are prepared, finally segment is built
 
 	pma::Track3D* trk = new pma::Track3D();
-	trk = buildSegment(hitstrk, makePoint3D(vtxv3));
+	trk = buildSegment(hitstrk, vtxv3);
 	
 	// make shorter segment to estimate direction more precise
 	ShortenSeg(*trk, tpcgeom);

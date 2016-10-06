@@ -157,13 +157,13 @@ pma::Point3D_t pma::GetProjectionToSegment(const Point3D_t& p, const Point3D_t& 
 	return makePoint3D(r);
 }
 
-double pma::SolveLeastSquares3D(const std::vector< std::pair<TVector3, TVector3> >& lines, TVector3& result)
+double pma::SolveLeastSquares3D(const std::vector< std::pair<Point3D_t, Point3D_t> >& lines, Point3D_t& result)
 {
 	// RS: please, ask me if you need examples/explanation of formulas as they
 	// are not easy to derive from the code solely; I have Mathcad sources that
 	// were used to test the solving method, weighting, etc.
 
-	result.SetXYZ(0., 0., 0.);
+	result.SetCoordinates(0., 0., 0.);
 	if (lines.size() < 2)
 	{
 		mf::LogError("pma::SolveLeastSquares3D") << "Need min. two lines.";
@@ -174,8 +174,8 @@ double pma::SolveLeastSquares3D(const std::vector< std::pair<TVector3, TVector3>
 	std::vector< TVectorT<double> > U, P;
 	for (size_t v = 0; v < lines.size(); v++)
 	{
-		TVector3 point = lines[v].first;
-		TVector3 dir = lines[v].second;
+		TVector3 point = makeTVector3(lines[v].first);
+		TVector3 dir = makeTVector3(lines[v].second);
 		dir -= point; m = dir.Mag();
 		if (m > 0.0)
 		{
@@ -241,16 +241,16 @@ double pma::SolveLeastSquares3D(const std::vector< std::pair<TVector3, TVector3>
 	try { x = A.InvertFast() * y; }
 	catch (...)
 	{
-		result.SetXYZ(0., 0., 0.); return 1.0e12;
+		result.SetCoordinates(0., 0., 0.); return 1.0e12;
 	}
 
-	result.SetXYZ(x[0], x[1], x[2]);
+	result.SetCoordinates(x[0], x[1], x[2]);
 
-	TVector3 pproj;
+	Point3D_t pproj;
 	double dx, dy, dz, mse = 0.0;
 	for (size_t v = 0; v < lines.size(); v++)
 	{
-		pproj = makeTVector3(pma::GetProjectionToSegment(makePoint3D(result), makePoint3D(lines[v].first), makePoint3D(lines[v].second)));
+		pproj = pma::GetProjectionToSegment(result, lines[v].first, lines[v].second);
 
 		dx = result.X() - pproj.X(); // dx, dy, dz and the result point can be weighted
 		dy = result.Y() - pproj.Y(); // here (linearly) by each line uncertainty
@@ -261,7 +261,7 @@ double pma::SolveLeastSquares3D(const std::vector< std::pair<TVector3, TVector3>
 	return mse / lines.size();
 }
 
-pma::Point2D_t pma::GetProjectionToPlane(const TVector3& p, unsigned int view, unsigned int tpc, unsigned int cryo)
+pma::Point2D_t pma::GetProjectionToPlane(const Point3D_t& p, unsigned int view, unsigned int tpc, unsigned int cryo)
 {
 	art::ServiceHandle<geo::Geometry> geom;
 
@@ -271,13 +271,13 @@ pma::Point2D_t pma::GetProjectionToPlane(const TVector3& p, unsigned int view, u
 	);
 }
 
-pma::Point2D_t pma::GetVectorProjectionToPlane(const TVector3& v, unsigned int view, unsigned int tpc, unsigned int cryo)
+pma::Vector2D_t pma::GetVectorProjectionToPlane(const Point3D_t& v, unsigned int view, unsigned int tpc, unsigned int cryo)
 {
-	TVector3 v0_3d(0., 0., 0.);
-	TVector2 v0_2d = makeTVector2(GetProjectionToPlane(v0_3d, view, tpc, cryo));
-	TVector2 v1_2d = makeTVector2(GetProjectionToPlane(v, view, tpc, cryo));
+	Point3D_t v0_3d;
+	Point2D_t v0_2d = GetProjectionToPlane(v0_3d, view, tpc, cryo);
+	Point2D_t v1_2d = GetProjectionToPlane(v, view, tpc, cryo);
 
-	return makePoint2D(v1_2d - v0_2d);
+	return v1_2d - v0_2d;
 }
 
 pma::Point2D_t pma::WireDriftToCm(unsigned int wire, float drift, unsigned int view, unsigned int tpc, unsigned int cryo)
