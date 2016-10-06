@@ -57,8 +57,8 @@ public:
 	double Length(size_t step = 1) const { return Length(0, size() - 1, step); }
 	double Length(size_t start, size_t stop, size_t step = 1) const;
 
-	double Dist2(const TVector2& p2d, unsigned int view, unsigned int tpc, unsigned int cryo) const;
-	double Dist2(const TVector3& p3d) const;
+	double Dist2(const Point2D_t& p2d, unsigned int view, unsigned int tpc, unsigned int cryo) const;
+	double Dist2(const Point3D_t& p3d) const;
 
 	/// Add hits; does not update hit->node/seg assignments nor hit projection to track,
 	/// so MakeProjection() and SortHits() should be called as needed.
@@ -151,7 +151,7 @@ public:
 	std::vector<float> DriftsOfWireIntersection(unsigned int wire, unsigned int view) const;
 	size_t CompleteMissingWires(unsigned int view);
 
-	void AddRefPoint(const TVector3& p) { AddRefPoint(p.X(), p.Y(), p.Z()); }
+	void AddRefPoint(const Point3D_t& p) { AddRefPoint(p.X(), p.Y(), p.Z()); }
 	void AddRefPoint(double x, double y, double z) { fAssignedPoints.push_back(new Point3D_t(x, y, z)); }
 	bool HasRefPoint(Point3D_t const* p) const;
 
@@ -204,11 +204,11 @@ public:
 	pma::Node3D* LastElement(void) const { return fNodes.back(); }
 
 	void AddNode(pma::Node3D* node);
-	void AddNode(TVector3 const & p3d, unsigned int tpc, unsigned int cryo) { AddNode(new pma::Node3D(makePoint3D(p3d), tpc, cryo)); }
+	void AddNode(Point3D_t const & p3d, unsigned int tpc, unsigned int cryo) { AddNode(new pma::Node3D(p3d, tpc, cryo)); }
 	bool AddNode(void);
 
 	void InsertNode(
-		TVector3 const & p3d, size_t at_idx,
+		Point3D_t const & p3d, size_t at_idx,
 		unsigned int tpc, unsigned int cryo);
 	bool RemoveNode(size_t idx);
 
@@ -261,8 +261,8 @@ private:
 	bool InitFromRefPoints(int tpc, int cryo);
 	void InitFromMiddle(int tpc, int cryo);
 
-	pma::Track3D* GetNearestTrkInTree(const TVector3& p3d_cm, double& dist, bool skipFirst = false);
-	pma::Track3D* GetNearestTrkInTree(const TVector2& p2d_cm,
+	pma::Track3D* GetNearestTrkInTree(const Point3D_t& p3d_cm, double& dist, bool skipFirst = false);
+	pma::Track3D* GetNearestTrkInTree(const Point2D_t& p2d_cm,
 		unsigned int view, unsigned int tpc, unsigned int cryo,
 		double& dist, bool skipFirst = false);
 	void ReassignHitsInTree(pma::Track3D* plRoot = 0);
@@ -276,7 +276,7 @@ private:
 	/// in the same TPC as the hit, false otherwise. Calculates also distance^2 between
 	/// the hit and 2D projection of the track. NOTE: results are meaningful only if
 	/// the function returns true.
-	bool GetUnconstrainedProj3D(art::Ptr<recob::Hit> hit, TVector3& p3d, double& dist2) const;
+	bool GetUnconstrainedProj3D(art::Ptr<recob::Hit> hit, Point3D_t& p3d, double& dist2) const;
 
 	void RebuildSegments(void);
 	bool SwapVertices(size_t v0, size_t v1);
@@ -289,9 +289,9 @@ private:
 
 	std::vector< Point3D_t* > fAssignedPoints;
 
-	pma::Element3D* GetNearestElement(const TVector2& p2d, unsigned int view, int tpc = -1,
+	pma::Element3D* GetNearestElement(const Point2D_t& p2d, unsigned int view, int tpc = -1,
 		bool skipFrontVtx = false, bool skipBackVtx = false) const;
-	pma::Element3D* GetNearestElement(const TVector3& p3d) const;
+	pma::Element3D* GetNearestElement(const Point3D_t& p3d) const;
 	std::vector< pma::Node3D* > fNodes;
 	std::vector< pma::Segment3D* > fSegments;
 

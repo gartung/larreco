@@ -73,11 +73,11 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 		    (h->PeakTime() > rect.first.Y() - 100) &&    // calculation of trk.Dist2(p2d, testView)
 		    (h->PeakTime() < rect.second.Y() + 100))
 		{
-			TVector2 p2d(wirePitch[tpc_cryo] * h->WireID().Wire, fDetProp->ConvertTicksToX(h->PeakTime(), testView, tpc, cryo));
+			Point2D_t p2d(wirePitch[tpc_cryo] * h->WireID().Wire, fDetProp->ConvertTicksToX(h->PeakTime(), testView, tpc, cryo));
 
 			d2 = trk.Dist2(p2d, testView, tpc, cryo);
 
-			if (d2 < max_d2) all_close_points[tpc_cryo].push_back(p2d);
+			if (d2 < max_d2) all_close_points[tpc_cryo].push_back(makeTVector2(p2d));
 		}
 	}
 
@@ -105,7 +105,7 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 			double wirepitch = fGeom->TPC(tpc, cryo).Plane(testView).WirePitch();
 			while ((f < 1.0) && node.SameTPC(makePoint3D(p)))
 			{
-				TVector2 p2d(fGeom->WireCoordinate(p.Y(), p.Z(), testView, tpc, cryo), p.X());
+				Point2D_t p2d(fGeom->WireCoordinate(p.Y(), p.Z(), testView, tpc, cryo), p.X());
 				geo::WireID wireID(cryo, tpc, testView, (int)p2d.X());
 				if (fGeom->HasWire(wireID))
 				{
@@ -114,10 +114,10 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 				  {
 				        if (points.size())
 					{
-						p2d.Set(wirepitch * p2d.X(), p2d.Y());
+						p2d.SetCoordinates(wirepitch * p2d.X(), p2d.Y());
 						for (const auto & h : points)
 						{
-							d2 = pma::Dist2(p2d, h);
+							d2 = pma::Dist2(p2d, makePoint2D(h));
 							if (d2 < max_d2) { nPassed++; break; }
 						}
 					}
@@ -1102,7 +1102,7 @@ void pma::ProjectionMatchingAlg::mergeTracks(pma::Track3D& dst, pma::Track3D& sr
 			src.Nodes().front()->Point3D()) > 0.5 * lmean) ||
 	    (tpc != dst.BackTPC()) || (cryo != dst.BackCryo()))
 	{
-		dst.AddNode(makeTVector3(src.Nodes().front()->Point3D()), tpc, cryo);
+		dst.AddNode(src.Nodes().front()->Point3D(), tpc, cryo);
 		if (src.Nodes().front()->IsFrozen())
 			dst.Nodes().back()->SetFrozen(true);
 	}
@@ -1110,7 +1110,7 @@ void pma::ProjectionMatchingAlg::mergeTracks(pma::Track3D& dst, pma::Track3D& sr
 	{
 		pma::Node3D* node = src.Nodes()[n];
 
-		dst.AddNode(makeTVector3(src.Nodes()[n]->Point3D()),
+		dst.AddNode(src.Nodes()[n]->Point3D(),
 		            node->TPC(), node->Cryo());
 
 		if (node->IsFrozen())

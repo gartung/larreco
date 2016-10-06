@@ -569,7 +569,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 					if (f < 0.5) { tpc = tpc0; cryo = cryo0; }
 					else { tpc = tpc1; cryo = cryo1; }
 
-					trk->InsertNode(makeTVector3(fCenter), ++idx, tpc, cryo);
+					trk->InsertNode(fCenter, ++idx, tpc, cryo);
 				}
 				else
 				{
@@ -625,7 +625,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 					if (f < 0.5) { tpc = tpc0; cryo = cryo0; }
 					else { tpc = tpc1; cryo = cryo1; }
 
-					trk->InsertNode(makeTVector3(fCenter), ++idx, tpc, cryo);
+					trk->InsertNode(fCenter, ++idx, tpc, cryo);
 				}
 				else
 				{
