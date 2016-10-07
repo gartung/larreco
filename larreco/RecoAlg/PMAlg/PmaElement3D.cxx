@@ -12,6 +12,7 @@
 #include "larreco/RecoAlg/PMAlg/PmaElement3D.h"
 #include "larreco/RecoAlg/PMAlg/SortedObjects.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -265,19 +266,19 @@ double pma::Element3D::HitsRadius3D(unsigned int view) const
 		return 0.0F;
 	}
 
-	TVector3 mean3D(0, 0, 0);
-	size_t nHits = 0;
+	pma::PointAverage<Point3D_t> accumulator;
 	for (auto h : fAssignedHits)
 		if (h->View2D() == view)
-			{ mean3D += makeTVector3(h->Point3D()); nHits++; }
-	if (!nHits) return 0.0;
-	mean3D *= (1.0 / nHits);
+			{ accumulator.add(h->Point3D()); }
+	if (accumulator.n() == 0) return 0.0;
+	
+	Point3D_t const mean3D = accumulator.yield();
 
 	double r2, maxR2 = 0.0;
 	for (auto h : fAssignedHits)
 		if (h->View2D() == view)
 		{
-			r2 = pma::Dist2(h->Point3D(), makePoint3D(mean3D));
+			r2 = pma::Dist2(h->Point3D(), mean3D);
 			if (r2 > maxR2) maxR2 = r2;
 		}
 	return sqrt(maxR2);
