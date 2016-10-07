@@ -5,7 +5,7 @@ art_make(
 			larsim_Simulation lardataobj_Simulation
 			lardataobj_RawData
 			lardataobj_RecoBase
-			lardata_RecoObjects
+			lardata_RecoObjects larreco_Deprecated
 			lardata_Utilities
                         nusimdata_SimulationBase
                         ${LARRECO_LIB}

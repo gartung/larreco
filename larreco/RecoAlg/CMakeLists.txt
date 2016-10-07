@@ -7,9 +7,9 @@ art_make(
                         larevt_Filters
                         larcore_Geometry
                         larcore_Geometry_Geometry_service
-                        lardata_RecoObjects
+                        lardata_RecoObjects larreco_Deprecated
                         lardataobj_AnalysisBase
-			lardata_AnalysisAlg
+			larreco_Calorimetry larana_ParticleIdentification
                         lardata_Utilities
                         larreco_RecoAlg_ClusterRecoUtil
 			larreco_RecoAlg_CMTool_CMToolBase
