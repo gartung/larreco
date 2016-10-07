@@ -9,7 +9,7 @@ art_make(
 			    lardataobj_RecoBase
 			    larcore_Geometry
 			    larcore_Geometry_Geometry_service
-			    larreco_Calorimetry larana_ParticleIdentification
+			    larreco_Calorimetry
 			    lardataobj_AnalysisBase
 			    lardata_Utilities
 			    nutools_MagneticField_MagneticField_service
@@ -40,7 +40,7 @@ simple_plugin( Track3DKalman "module"
 			 lardataobj_RecoBase
 			 larcore_Geometry
 			 larcore_Geometry_Geometry_service
-			 larreco_Calorimetry larana_ParticleIdentification
+			 larreco_Calorimetry
 			 lardataobj_AnalysisBase
 			 lardata_Utilities
 			 larsim_RandomUtils_LArSeedService_service
@@ -70,7 +70,7 @@ simple_plugin( Track3DKalmanSPS "module"
 			 lardataobj_RecoBase
 			 larcore_Geometry
 			 larcore_Geometry_Geometry_service
-			 larreco_Calorimetry larana_ParticleIdentification
+			 larreco_Calorimetry
 			 lardataobj_AnalysisBase
 			 lardata_Utilities
 			 nutools_MagneticField_MagneticField_service

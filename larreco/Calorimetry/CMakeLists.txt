@@ -3,11 +3,18 @@ art_make(
 	  
 	  LIB_LIBRARIES	larevt_Filters
 		        lardataobj_RecoBase
-		        lardata_RecoBaseArt
+		        lardataobj_AnalysisBase
+			lardata_RecoBaseArt
 		        larcore_Geometry
 		        larcore_Geometry_Geometry_service
                         lardataobj_AnalysisBase
                         lardata_Utilities
+                        ${ART_FRAMEWORK_CORE}
+			${ART_FRAMEWORK_PRINCIPAL}
+			${ART_FRAMEWORK_SERVICES_REGISTRY}
+			art_Persistency_Common canvas_Persistency_Common
+			art_Utilities canvas_Utilities
+                        art_Persistency_Provenance canvas_Persistency_Provenance
                         ${MF_MESSAGELOGGER}
 		        ${MF_UTILITIES}
 		        ${FHICLCPP}
@@ -18,14 +25,13 @@ art_make(
           MODULE_LIBRARIES 
 	  		larreco_Calorimetry
                         larevt_Filters
-                        lardata_RecoObjects larreco_Deprecated
+                        lardata_RecoObjects
                         lardataobj_RecoBase
 		        lardata_RecoBaseArt
                         larcore_Geometry
                         larcore_Geometry_Geometry_service
                         larsim_Simulation lardataobj_Simulation
                         lardataobj_RawData
-                        larreco_Calorimetry larana_ParticleIdentification
                         lardataobj_AnalysisBase
                         lardata_Utilities
 		        larreco_RecoAlg
