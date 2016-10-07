@@ -14,7 +14,7 @@
 
 #include "larcore/Geometry/Geometry.h"
 
-#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
 #include <functional>
 

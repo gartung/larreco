@@ -11,6 +11,7 @@
 
 #include "larreco/RecoAlg/PMAlg/PmaTrkCandidate.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 

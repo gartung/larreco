@@ -10,6 +10,7 @@
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 #include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
 namespace pma {

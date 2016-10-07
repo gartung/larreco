@@ -7,6 +7,7 @@
  */
 
 #include "TssHit2D.h"
+#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 #include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 

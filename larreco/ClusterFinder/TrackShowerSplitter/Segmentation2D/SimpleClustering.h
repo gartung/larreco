@@ -11,6 +11,7 @@
 #define SimpleCustering_h
 
 #include "TssHit2D.h"
+#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 
 namespace tss

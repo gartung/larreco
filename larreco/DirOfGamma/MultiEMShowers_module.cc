@@ -31,6 +31,7 @@
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 #include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
 #include <memory>

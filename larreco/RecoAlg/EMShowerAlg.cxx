@@ -10,6 +10,7 @@
 
 #include "larreco/RecoAlg/EMShowerAlg.h"
 #include "larreco/RecoAlg/PMAlg/GeomDefs.h" // makePoint3D()
+#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 
 shower::EMShowerAlg::EMShowerAlg(fhicl::ParameterSet const& pset) : fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()),
 								    fShowerEnergyAlg(pset.get<fhicl::ParameterSet>("ShowerEnergyAlg")),

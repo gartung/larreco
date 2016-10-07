@@ -4,6 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
+#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 
 #include "larcore/CoreUtils/ServiceUtil.h" // lar::providerFrom<>()
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"

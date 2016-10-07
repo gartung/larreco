@@ -21,6 +21,7 @@
 
 #include "larreco/RecoAlg/ImagePatternAlgs/PointIdAlg/PointIdAlg.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 
 // Framework includes
 #include "canvas/Utilities/Exception.h"

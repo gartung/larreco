@@ -8,6 +8,8 @@
 
 #include "SimpleClustering.h"
 
+#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
+
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 namespace pma {
