@@ -200,7 +200,7 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 	else
 	{
 		float b = (float)(v0Norm * cosine / v1Norm);
-		if (fFrozen) // limit 3D positions to outermose node if frozen
+		if (fFrozen) // limit 3D positions to outermost node if frozen
 		{
 			h.SetPoint3D(fPoint3D);
 		}
@@ -229,14 +229,12 @@ double pma::Node3D::SegmentCos(void) const
 {
 	if (prev && next)
 	{
-		pma::Node3D* vStop1 = static_cast< pma::Node3D* >(prev->Prev());
-		pma::Node3D* vStop2 = static_cast< pma::Node3D* >(next->Next());
-		TVector3 v1 = makeTVector3(vStop1->fPoint3D); v1 -= makeTVector3(fPoint3D);
-		TVector3 v2 = makeTVector3(vStop2->fPoint3D); v2 -= makeTVector3(fPoint3D);
-		double mag = sqrt(v1.Mag2() * v2.Mag2());
-		double cosine = 0.0;
-		if (mag != 0.0) cosine = v1 * v2 / mag;
-		return cosine;
+		pma::Node3D const* vStop1 = static_cast< pma::Node3D const* >(prev->Prev());
+		pma::Node3D const* vStop2 = static_cast< pma::Node3D const* >(next->Next());
+		auto v1 = vStop1->fPoint3D - fPoint3D;
+		auto v2 = vStop2->fPoint3D - fPoint3D;
+		double const mag2 = v1.Mag2() * v2.Mag2();
+		return (mag2 != 0.0)? v1.Dot(v2) / std::sqrt(mag2): 0.0;
 	}
 	else
 	{
@@ -249,14 +247,12 @@ double pma::Node3D::SegmentCosWirePlane(void) const
 {
 	if (prev && next)
 	{
-		pma::Node3D* vStop1 = static_cast< pma::Node3D* >(prev->Prev());
-		pma::Node3D* vStop2 = static_cast< pma::Node3D* >(next->Next());
-		TVector2 v1(vStop1->fPoint3D.Y() - fPoint3D.Y(), vStop1->fPoint3D.Z() - fPoint3D.Z());
-		TVector2 v2(vStop2->fPoint3D.Y() - fPoint3D.Y(), vStop2->fPoint3D.Z() - fPoint3D.Z());
-		double mag = sqrt(v1.Mod2() * v2.Mod2());
-		double cosine = 0.0;
-		if (mag != 0.0) cosine = v1 * v2 / mag;
-		return cosine;
+		pma::Node3D const* vStop1 = static_cast< pma::Node3D const* >(prev->Prev());
+		pma::Node3D const* vStop2 = static_cast< pma::Node3D const* >(next->Next());
+		Vector2D_t v1(vStop1->fPoint3D.Y() - fPoint3D.Y(), vStop1->fPoint3D.Z() - fPoint3D.Z());
+		Vector2D_t v2(vStop2->fPoint3D.Y() - fPoint3D.Y(), vStop2->fPoint3D.Z() - fPoint3D.Z());
+		double const mag2 = v1.Mag2() * v2.Mag2();
+		return (mag2 != 0.0)? v1.Dot(v2) / std::sqrt(mag2): 0.0;
 	}
 	else
 	{
@@ -269,17 +265,14 @@ double pma::Node3D::SegmentCosTransverse(void) const
 {
 	if (prev && next)
 	{
-		pma::Node3D* vStop1 = static_cast< pma::Node3D* >(prev->Prev());
-		pma::Node3D* vStop2 = static_cast< pma::Node3D* >(next->Next());
-		TVector2 v1, v2;
-		v1.Set( vStop1->fPoint3D.X() - fPoint3D.X(),
-		        vStop1->fPoint3D.Z() - fPoint3D.Z());
-		v2.Set( vStop2->fPoint3D.X() - fPoint3D.X(),
-		        vStop2->fPoint3D.Z() - fPoint3D.Z());
-		double mag = sqrt(v1.Mod2() * v2.Mod2());
-		double cosine = 0.0;
-		if (mag != 0.0) cosine = v1 * v2 / mag;
-		return cosine;
+		pma::Node3D const* vStop1 = static_cast< pma::Node3D const* >(prev->Prev());
+		pma::Node3D const* vStop2 = static_cast< pma::Node3D const* >(next->Next());
+		Vector2D_t v1( vStop1->fPoint3D.X() - fPoint3D.X(),
+		               vStop1->fPoint3D.Z() - fPoint3D.Z()),
+		           v2( vStop2->fPoint3D.X() - fPoint3D.X(),
+		               vStop2->fPoint3D.Z() - fPoint3D.Z());
+		double const mag2 = v1.Mag2() * v2.Mag2();
+		return (mag2 != 0.0)? v1.Dot(v2) / std::sqrt(mag2): 0.0;
 	}
 	else
 	{
@@ -293,12 +286,12 @@ double pma::Node3D::EndPtCos2Transverse(void) const
 {
 	if (prev && next)
 	{
-		pma::Node3D* vStart = static_cast< pma::Node3D* >(prev->Prev());
-		pma::Node3D* vStop = static_cast< pma::Node3D* >(next->Next());
+		pma::Node3D const* vStart = static_cast< pma::Node3D const* >(prev->Prev());
+		pma::Node3D const* vStop = static_cast< pma::Node3D const* >(next->Next());
 
-		double dy = vStop->Point3D().X() - vStart->Point3D().X();
+		double dx = vStop->Point3D().X() - vStart->Point3D().X();
 		double dz = vStop->Point3D().Z() - vStart->Point3D().Z();
-		double len2 = dy * dy + dz * dz;
+		double len2 = dx * dx + dz * dz;
 		double cosine2 = 0.0;
 		if (len2 > 0.0) cosine2 = dz * dz / len2;
 		return cosine2;
