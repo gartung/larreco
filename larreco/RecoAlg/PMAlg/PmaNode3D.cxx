@@ -142,19 +142,19 @@ double pma::Node3D::GetDistance2To(const Point2D_t& p2d, unsigned int view) cons
 
 void pma::Node3D::SetProjection(pma::Hit3D& h) const
 {
-	TVector2 gstart;
+	Point2D_t gstart;
 	Vector3D_t g3d; // displacement vector
 	if (prev)
 	{
 		pma::Node3D* vtx = static_cast< pma::Node3D* >(prev->Prev());
-		gstart = makeTVector2(vtx->Projection2D(h.View2D()));
+		gstart = vtx->Projection2D(h.View2D());
 		if (!next) g3d = vtx->Point3D();
 	}
 	else if (next)
 	{
 		pma::Node3D* vtx = static_cast< pma::Node3D* >(next->Next());
-		gstart = makeTVector2(Projection2D(h.View2D()));
-		gstart -= makeTVector2(vtx->Projection2D(h.View2D()) - Projection2D(h.View2D()));
+		gstart = Projection2D(h.View2D());
+		gstart -= (vtx->Projection2D(h.View2D()) - Projection2D(h.View2D()));
 		if (!prev)
 		{
 			g3d = fPoint3D;
@@ -164,40 +164,36 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 	else
 	{
 		mf::LogError("pma::Node3D") << "Isolated vertex.";
-		Vector2D_t p = Vector2D_t(Projection2D(h.View2D()));
-		h.SetProjection(p, 0.0F);
+		h.SetProjection(Projection2D(h.View2D()), 0.0F);
 		h.SetPoint3D(fPoint3D);
 		return;
 	}
 
-	TVector2 v0 = makeTVector2(h.Point2D());
-	v0 -= makeTVector2(Projection2D(h.View2D()));
+	Vector2D_t v0 = h.Point2D() - Projection2D(h.View2D());
 
-	TVector2 v1(gstart);
-	v1 -= makeTVector2(Projection2D(h.View2D()));
+	Vector2D_t v1 = gstart - Projection2D(h.View2D());
 
-	double v0Norm = v0.Mod();
-	double v1Norm = v1.Mod();
+	double v0Norm = v0.R();
+	double v1Norm = v1.R();
 	double mag = v0Norm * v1Norm;
 	double cosine = 0.0;
-	if (mag != 0.0) cosine = v0 * v1 / mag;
+	if (mag != 0.0) cosine = v0.Dot(v1) / mag;
 
-	TVector2 p = makeTVector2(Projection2D(h.View2D()));
+	Point2D_t p = Projection2D(h.View2D());
 
 	if (prev && next)
 	{
 		pma::Node3D* vNext = static_cast< pma::Node3D* >(next->Next());
-		TVector2 vN = makeTVector2(vNext->Projection2D(h.View2D()));
-		vN -= makeTVector2(Projection2D(h.View2D()));
+		Vector2D_t vN = vNext->Projection2D(h.View2D()) - Projection2D(h.View2D());
 
-		mag = v0Norm * vN.Mod();
+		mag = v0Norm * vN.R();
 		double cosineN = 0.0;
-		if (mag != 0.0) cosineN = v0 * vN / mag;
+		if (mag != 0.0) cosineN = v0.Dot(vN) / mag;
 
 		// hit on the previous segment side, sorting on the -cosine(prev_seg, point)  /max.val. = 1/
-		if (cosineN <= cosine) h.SetProjection(makeVector2D(p), -(float)cosine);
+		if (cosineN <= cosine) h.SetProjection(p, -(float)cosine);
 		// hit on the next segment side, sorting on the 1+cosine(next_seg, point)  /min.val. = 1/
-		else h.SetProjection(makeVector2D(p), 2.0F + (float)cosineN);
+		else h.SetProjection(p, 2.0F + (float)cosineN);
 
 		h.SetPoint3D(fPoint3D);
 	}
@@ -215,7 +211,7 @@ void pma::Node3D::SetProjection(pma::Hit3D& h) const
 
 			p += (v1 * b);
 		}
-		h.SetProjection(makeVector2D(p), -b);
+		h.SetProjection(p, -b);
 	}
 }
 

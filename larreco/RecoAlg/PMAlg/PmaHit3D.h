@@ -49,7 +49,7 @@ public:
 	void SetPoint3D(double x, double y, double z) { fPoint3D.SetCoordinates(x, y, z); }
 
 	Point2D_t const & Point2D(void) const { return fPoint2D; }
-	Vector2D_t const & Projection2D(void) const { return fProjection2D; }
+	Point2D_t const & Projection2D(void) const { return fProjection2D; }
 
 	unsigned int Cryo(void) const { return fCryo; }
 	unsigned int TPC(void) const { return fTPC; }
@@ -68,7 +68,7 @@ public:
 	double GetDist2ToProj(void) const;
 
 	float GetSegFraction() const { return fSegFraction; }
-	void SetProjection(const Vector2D_t& p, float b)
+	void SetProjection(const Point2D_t& p, float b)
 	{
 		fProjection2D = p; fSegFraction = b;
 	}
@@ -92,7 +92,7 @@ private:
 
 	Point3D_t fPoint3D;       // hit position in 3D space
 	Point2D_t fPoint2D;       // hit position in 2D wire view, scaled to [cm]
-	Vector2D_t fProjection2D;  // projection to polygonal line in 2D wire view, scaled to [cm]
+	Point2D_t fProjection2D;  // projection to polygonal line in 2D wire view, scaled to [cm]
 	float fSegFraction;      // segment fraction set by the projection
 	float fSigmaFactor;      // impact factor on the objective function
 
