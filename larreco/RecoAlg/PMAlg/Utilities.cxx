@@ -52,17 +52,15 @@ double pma::GetHitsRadius3D(const std::vector< pma::Hit3D* >& hits, bool exact)
 
 	if (hits.size() == 0) return 0.0;
 
-	TVector3 mean(0, 0, 0);
-	for (size_t i = 0; i < hits.size(); i++)
-	{
-		mean += makeTVector3(hits[i]->Point3D());
-	}
-	mean *= (1.0 / hits.size());
+	PointAverage<Point3D_t> meanMaker;
+  for (auto const* hit: hits)
+		meanMaker.add(hit->Point3D());
+	Point3D_t mean = meanMaker.yield();
 
-	double r2, max_r2 = pma::Dist2(hits.front()->Point3D(), makePoint3D(mean));
+	double r2, max_r2 = pma::Dist2(hits.front()->Point3D(), mean);
 	for (size_t i = 1; i < hits.size(); i++)
 	{
-		r2 = pma::Dist2(hits[i]->Point3D(), makePoint3D(mean));
+		r2 = pma::Dist2(hits[i]->Point3D(), mean);
 		if (r2 > max_r2) max_r2 = r2;
 	}
 	return sqrt(max_r2);
@@ -74,17 +72,15 @@ double pma::GetHitsRadius2D(const std::vector< pma::Hit3D* >& hits, bool exact)
 
 	if (hits.size() == 0) return 0.0;
 
-	TVector2 mean(0, 0);
-	for (size_t i = 0; i < hits.size(); i++)
-	{
-		mean += makeTVector2(hits[i]->Point2D());
-	}
-	mean *= (1.0 / hits.size());
-
-	double r2, max_r2 = pma::Dist2(hits.front()->Point2D(), makePoint2D(mean));
+	PointAverage<Point2D_t> meanMaker;
+  for (auto const* hit: hits)
+		meanMaker.add(hit->Point2D());
+	Point2D_t mean = meanMaker.yield();
+	
+	double r2, max_r2 = pma::Dist2(hits.front()->Point2D(), mean);
 	for (size_t i = 1; i < hits.size(); i++)
 	{
-		r2 = pma::Dist2(hits[i]->Point2D(), makePoint2D(mean));
+		r2 = pma::Dist2(hits[i]->Point2D(), mean);
 		if (r2 > max_r2) max_r2 = r2;
 	}
 	return sqrt(max_r2);
@@ -92,50 +88,46 @@ double pma::GetHitsRadius2D(const std::vector< pma::Hit3D* >& hits, bool exact)
 
 double pma::GetSegmentProjVector(const Point2D_t& p, const Point2D_t& p0, const Point2D_t& p1)
 {
-	TVector2 v0 = makeTVector2(p); v0 -= makeTVector2(p0);
-	TVector2 v1 = makeTVector2(p1); v1 -= makeTVector2(p0);
+	Vector2D_t v0 = (p - p0);
+	Vector2D_t v1 = (p1 - p0);
 
-	double v0Norm = v0.Mod();
-	double v1Norm = v1.Mod();
+	double v0Norm = v0.R();
+	double v1Norm = v1.R();
 	double mag = v0Norm * v1Norm;
 	double cosine = 0.0;
-	if (mag != 0.0) cosine = v0 * v1 / mag;
+	if (mag != 0.0) cosine = v0.Dot(v1) / mag;
 
 	return v0Norm * cosine / v1Norm;
 }
 
 double pma::GetSegmentProjVector(const Point3D_t& p, const Point3D_t& p0, const Point3D_t& p1)
 {
-	TVector3 v0 = makeTVector3(p); v0 -= makeTVector3(p0);
-	TVector3 v1 = makeTVector3(p1); v1 -= makeTVector3(p0);
+	Vector3D_t v0 = (p - p0);
+	Vector3D_t v1 = (p1 - p0);
 
-	double v0Norm = v0.Mag();
-	double v1Norm = v1.Mag();
+	double v0Norm = v0.R();
+	double v1Norm = v1.R();
 	double mag = v0Norm * v1Norm;
 	double cosine = 0.0;
-	if (mag != 0.0) cosine = v0 * v1 / mag;
+	if (mag != 0.0) cosine = v0.Dot(v1) / mag;
 
 	return v0Norm * cosine / v1Norm;
 }
 
 pma::Point2D_t pma::GetProjectionToSegment(const Point2D_t& p, const Point2D_t& p0, const Point2D_t& p1)
 {
-	TVector2 v1 = makeTVector2(p1); v1 -= makeTVector2(p0);
+	Vector2D_t v1 = (p1 - p0);
 
 	double b = GetSegmentProjVector(p, p0, p1);
-	TVector2 r = makeTVector2(p0);
-	r += (v1 * b);
-	return makePoint2D(r);
+	return p0 + (v1 * b);
 }
 
 pma::Point3D_t pma::GetProjectionToSegment(const Point3D_t& p, const Point3D_t& p0, const Point3D_t& p1)
 {
-	TVector3 v1 = makeTVector3(p1); v1 -= makeTVector3(p0);
+	Vector3D_t v1 = (p1 - p0);
 
 	double b = GetSegmentProjVector(p, p0, p1);
-	TVector3 r = makeTVector3(p0);
-	r += (v1 * b);
-	return makePoint3D(r);
+	return p0 + (v1 * b);
 }
 
 double pma::SolveLeastSquares3D(const std::vector< std::pair<Point3D_t, Point3D_t> >& lines, Point3D_t& result)
@@ -151,16 +143,15 @@ double pma::SolveLeastSquares3D(const std::vector< std::pair<Point3D_t, Point3D_
 		return -1.0;
 	}
 
-	double m;
 	std::vector< TVectorT<double> > U, P;
 	for (size_t v = 0; v < lines.size(); v++)
 	{
-		TVector3 point = makeTVector3(lines[v].first);
-		TVector3 dir = makeTVector3(lines[v].second);
-		dir -= point; m = dir.Mag();
+		Point3D_t const& point = lines[v].first;
+		Vector3D_t dir = (lines[v].second - point);
+    double m = dir.R();
 		if (m > 0.0)
 		{
-			dir *= 1.0 / m;
+			dir /= m;
 
 			P.push_back(TVectorT<double>(3));
 			P.back()[0] = point.X(); P.back()[1] = point.Y(); P.back()[2] = point.Z();
