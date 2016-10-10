@@ -6,7 +6,7 @@
 #include "larreco/RecoAlg/PMAlgVertexing.h"
 
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
-#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -469,7 +469,7 @@ void pma::PMAlgVertexing::mergeBrokenTracks(pma::TrkCandidateColl & trk_input) c
 
 			trk2 = 0;
 			double c, maxc = 0.0;
-			TVector3 dir1 = makeTVector3(trk1->Segments().back()->GetDirection3D());
+			auto dir1 = trk1->Segments().back()->GetDirection3D();
 			node = trk1->Nodes().back();
 			for (size_t n = 0; n < node->NextCount(); n++)
 			{
@@ -477,7 +477,7 @@ void pma::PMAlgVertexing::mergeBrokenTracks(pma::TrkCandidateColl & trk_input) c
 				pma::Track3D* tst = seg->Parent();
 				if (tst != trk1) // should always be true: the last node of trk1 is tested
 				{
-					c = dir1 * makeTVector3(tst->Segments().front()->GetDirection3D());
+					c = dir1.Dot(tst->Segments().front()->GetDirection3D());
 					if (c > maxc) { maxc = c; trk2 = tst; }
 				}
 			}
