@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
-#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
 #include "larcore/CoreUtils/ServiceUtil.h" // lar::providerFrom<>()
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -59,7 +59,7 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 		}
 
 	unsigned int tpc, cryo;
-	std::map< std::pair< unsigned int, unsigned int >, std::vector< TVector2 > > all_close_points;
+	std::map< std::pair< unsigned int, unsigned int >, std::vector< Point2D_t > > all_close_points;
 
 	for (const auto h : hits)
 		if (h->WireID().Plane == testView)
@@ -78,7 +78,7 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 
 			d2 = trk.Dist2(p2d, testView, tpc, cryo);
 
-			if (d2 < max_d2) all_close_points[tpc_cryo].push_back(makeTVector2(p2d));
+			if (d2 < max_d2) all_close_points[tpc_cryo].push_back(p2d);
 		}
 	}
 
@@ -96,11 +96,10 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 		Point3D_t vNext = trk.Nodes()[i + 1]->Point3D();
 		Point3D_t vThis = node.Point3D();
 
-		std::vector< TVector2 > const & points = all_close_points[std::pair< unsigned int, unsigned int >(tpc, cryo)];
+		std::vector< Point2D_t > const & points = all_close_points[std::pair< unsigned int, unsigned int >(tpc, cryo)];
 		if (trk.Nodes()[i + 1]->TPC() == (int)tpc) // skip segments between tpc's, look only at those contained in tpc
 		{
-			TVector3 dc = makeTVector3(vNext); dc -= makeTVector3(vThis);
-			dc *= step / dc.Mag();
+			Vector3D_t const dc = (vNext - vThis).Unit() * step;
 
 			double f = pma::GetSegmentProjVector(p, vThis, vNext);
 			double wirepitch = fGeom->TPC(tpc, cryo).Plane(testView).WirePitch();
@@ -118,7 +117,7 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 						p2d.SetCoordinates(wirepitch * p2d.X(), p2d.Y());
 						for (const auto & h : points)
 						{
-							d2 = pma::Dist2(p2d, makePoint2D(h));
+							d2 = pma::Dist2(p2d, h);
 							if (d2 < max_d2) { nPassed++; break; }
 						}
 					}
@@ -128,7 +127,7 @@ double pma::ProjectionMatchingAlg::validate(const pma::Track3D& trk,
 				  //	<< "crossing BAD CHANNEL (wire #" << (int)p2d.X() << ")" << std::endl;
 				}
 
-				p += makeVector3D(dc); f = pma::GetSegmentProjVector(p, vThis, vNext);
+				p += dc; f = pma::GetSegmentProjVector(p, vThis, vNext);
 			}
 		}
 		p = vNext;
@@ -155,8 +154,7 @@ double pma::ProjectionMatchingAlg::validate(
 	unsigned int nAll = 0, nPassed = 0;
 
 	Point3D_t p = p0;
-	TVector3 dc = makeTVector3(p1); dc -= makeTVector3(p);
-	dc *= step / dc.Mag();
+	Vector3D_t const dc = (p1 - p).Unit() * step;
 
 	auto const & channelStatus = art::ServiceHandle< lariov::ChannelStatusService >()->GetProvider();
 
@@ -184,7 +182,7 @@ double pma::ProjectionMatchingAlg::validate(
 			//	<< "crossing BAD CHANNEL (wire #" << (int)p2d.X() << ")" << std::endl;
 		}
 
-		p += makeVector3D(dc); f = pma::GetSegmentProjVector(p, p0, p1);
+		p += dc; f = pma::GetSegmentProjVector(p, p0, p1);
 	}
 
 	if (nAll > 3) // validate actually only if 2D projection in testView has some minimum length
@@ -855,9 +853,9 @@ void pma::ProjectionMatchingAlg::guideEndpoints(
 		if ((segFront->Length() < 0.8) && (segFront1->Length() > 5.0))
 			segFront = segFront1;
 	}
-	TVector3 dirFront = makeTVector3(segFront->GetDirection3D());
-	TVector3 dirFrontXZ(dirFront.X(), 0., dirFront.Z());
-	dirFrontXZ *= 1.0 / dirFrontXZ.Mag();
+	Vector3D_t const& dirFront = segFront->GetDirection3D();
+	Vector3D_t dirFrontXZ(dirFront.X(), 0., dirFront.Z());
+	dirFrontXZ /= dirFrontXZ.R();
 
 	pma::Segment3D* segBack = trk.Segments().back();
 	if (trk.Segments().size() > 2)
@@ -866,9 +864,9 @@ void pma::ProjectionMatchingAlg::guideEndpoints(
 		if ((segBack->Length() < 0.8) && (segBack1->Length() > 5.0))
 			segBack = segBack1;
 	}
-	TVector3 dirBack = makeTVector3(segBack->GetDirection3D());
-	TVector3 dirBackXZ(dirBack.X(), 0., dirBack.Z());
-	dirBackXZ *= 1.0 / dirBackXZ.Mag();
+	Vector3D_t const& dirBack = segBack->GetDirection3D();
+	Vector3D_t dirBackXZ(dirBack.X(), 0., dirBack.Z());
+	dirBackXZ /= dirBackXZ.R();
 
 	if ((fabs(dirFrontXZ.Z()) < maxCosXZ) && (fabs(dirBackXZ.Z()) < maxCosXZ))
 	{
@@ -983,9 +981,9 @@ void pma::ProjectionMatchingAlg::guideEndpoints(
 	{
 		seg0 = seg1;
 	}
-	TVector3 dir0 = makeTVector3(seg0->GetDirection3D());
-	TVector3 dir0XZ(dir0.X(), 0., dir0.Z());
-	dir0XZ *= 1.0 / dir0XZ.Mag();
+	Vector3D_t const& dir0 = seg0->GetDirection3D();
+	Vector3D_t dir0XZ(dir0.X(), 0., dir0.Z());
+	dir0XZ /= dir0XZ.R();
 
 	if (fabs(dir0XZ.Z()) < maxCosXZ) { return; } // not parallel to wire planes => exit
 
