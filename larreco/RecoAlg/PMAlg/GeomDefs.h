@@ -498,6 +498,9 @@ namespace pma {
         count += 1;
       }
     
+    template <typename Other>
+    void add(Other const* v) { add(*v); }
+    
     value_type n() const { return count; }
     
     Vect&& yield()

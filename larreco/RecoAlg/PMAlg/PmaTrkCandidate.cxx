@@ -136,7 +136,7 @@ int pma::TrkCandidateColl::setTreeIds(void)
 }
 // ------------------------------------------------------
 
-void pma::TrkCandidateColl::flipTreesToCoordinate(size_t coordinate)
+void pma::TrkCandidateColl::flipTreesToCoordinate(CoordFunc_t coordFunc)
 {
 	std::map< int, std::vector< pma::Track3D* > > toFlip;
 	std::map< int, double > minVal;
@@ -147,12 +147,12 @@ void pma::TrkCandidateColl::flipTreesToCoordinate(size_t coordinate)
 		int tid = t.TreeId();
 		if (minVal.find(tid) == minVal.end()) minVal[tid] = 1.0e12;
 
-		TVector3 pFront = makeTVector3(t.Track()->front()->Point3D()); pFront.SetY(-pFront.Y());
-		TVector3 pBack = makeTVector3(t.Track()->back()->Point3D()); pBack.SetY(-pBack.Y());
+		Point3D_t pFront = t.Track()->front()->Point3D(); pFront.SetY(-pFront.Y());
+		Point3D_t pBack = t.Track()->back()->Point3D(); pBack.SetY(-pBack.Y());
 
 		bool pushed = false;
-		if (pFront[coordinate] < minVal[tid]) { minVal[tid] = pFront[coordinate]; toFlip[tid].push_back(t.Track()); pushed = true; }
-		if (pBack[coordinate] < minVal[tid]) { minVal[tid] = pBack[coordinate]; if (!pushed) toFlip[tid].push_back(t.Track()); }
+		if ((pFront.*coordFunc)() < minVal[tid]) { minVal[tid] = (pFront.*coordFunc)(); toFlip[tid].push_back(t.Track()); pushed = true; }
+		if ((pBack.*coordFunc)() < minVal[tid]) { minVal[tid] = (pBack.*coordFunc)(); if (!pushed) toFlip[tid].push_back(t.Track()); }
 	}
 
 	for (auto & tEntry : toFlip)
@@ -164,10 +164,10 @@ void pma::TrkCandidateColl::flipTreesToCoordinate(size_t coordinate)
 			pma::Track3D* trk = tEntry.second.back();
 			tEntry.second.pop_back();
 
-			TVector3 pFront = makeTVector3(trk->front()->Point3D()); pFront.SetY(-pFront.Y());
-			TVector3 pBack = makeTVector3(trk->back()->Point3D()); pBack.SetY(-pBack.Y());
+			Point3D_t pFront = trk->front()->Point3D(); pFront.SetY(-pFront.Y());
+			Point3D_t pBack = trk->back()->Point3D(); pBack.SetY(-pBack.Y());
 
-			if (pFront[coordinate] > pBack[coordinate])
+			if ((pFront.*coordFunc)() > (pBack.*coordFunc)())
 			{
 				if (trk->CanFlip()) { trk->Flip(); break; } // go to the next tree if managed to flip
 			}

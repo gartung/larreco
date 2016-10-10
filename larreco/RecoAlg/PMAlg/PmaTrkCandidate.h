@@ -28,6 +28,7 @@ namespace pma
 class pma::TrkCandidate
 {
 public:
+	
 	TrkCandidate(void);
 	TrkCandidate(pma::Track3D* trk, int key = -1, int tid = -1);
 
@@ -80,6 +81,9 @@ private:
 class pma::TrkCandidateColl
 {
 public:
+	/// Type of member function extracting a coordinate from a hit 3D point
+	using CoordFunc_t = decltype(&Point3D_t::X);
+	
 	size_t size(void) const { return fCandidates.size(); }
 	void resize(size_t n) { return fCandidates.resize(n); }
 	bool empty(void) const { return fCandidates.empty(); }
@@ -106,7 +110,7 @@ public:
 	void setTreeId(int id, size_t trkIdx, bool isRoot = true);
 	int setTreeIds(void);
 
-	void flipTreesToCoordinate(size_t coordinate);
+	void flipTreesToCoordinate(CoordFunc_t coordFunc);
 	void flipTreesByDQdx();
 
 	pma::Track3D* getTreeCopy(pma::TrkCandidateColl & dst, size_t trkIdx, bool isRoot = true);

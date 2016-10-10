@@ -1159,8 +1159,8 @@ int pma::PMAlgTracker::build(void)
 
 	//double dQdxFlipThr = 0.0;
 	//if (fFlipToBeam) dQdxFlipThr = 0.4;
-	if (fFlipToBeam) fResult.flipTreesToCoordinate(2);        // flip the tracks / trees to the beam direction (Z)
-	else if (fFlipDownward) fResult.flipTreesToCoordinate(1); // flip the tracks / trees to point downward (-Y)
+	if (fFlipToBeam) fResult.flipTreesToCoordinate(&Point3D_t::Z);        // flip the tracks / trees to the beam direction (Z)
+	else if (fFlipDownward) fResult.flipTreesToCoordinate(&Point3D_t::Y); // flip the tracks / trees to point downward (-Y)
 
 	if (fAutoFlip_dQdx) fResult.flipTreesByDQdx();            // flip the tracks / trees to get best dQ/dx sequences
 
