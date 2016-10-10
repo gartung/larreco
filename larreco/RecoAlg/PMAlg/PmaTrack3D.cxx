@@ -13,6 +13,7 @@
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/Utilities/StatCollector.h"
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -221,68 +222,58 @@ bool pma::Track3D::InitFromRefPoints(int tpc, int cryo)
 
 	ClearNodes();
 
-	TVector3 mean(0., 0., 0.), stdev(0., 0., 0.), p(0., 0., 0.);
+	std::array<lar::util::StatCollector<double>, 3> stats;
+	
 	for (size_t i = 0; i < fAssignedPoints.size(); i++)
 	{
-		p = makeTVector3(*(fAssignedPoints[i]));
-		mean += p;
-		p.SetXYZ( p.X()*p.X(), p.Y()*p.Y(), p.Z()*p.Z() );
-		stdev += p;
+		Point3D_t const& p = *(fAssignedPoints[i]);
+		stats[0].add(p.X());
+		stats[1].add(p.Y());
+		stats[2].add(p.Z());
 	}
-	stdev *= 1.0 / fAssignedPoints.size();
-	mean *= 1.0 / fAssignedPoints.size();
-	p = mean;
-	p.SetXYZ( p.X()*p.X(), p.Y()*p.Y(), p.Z()*p.Z() );
-	stdev -= p;
+	Point3D_t const mean(stats[0].Average(), stats[1].Average(), stats[2].Average());
+	Point3D_t const var(stats[0].Variance(), stats[1].Variance(), stats[2].Variance());
 
-	double sx = stdev.X(), sy = stdev.Y(), sz = stdev.Z();
-	if (sx >= 0.0) sx = sqrt(sx);
-	else sx = 0.0;
-	if (sy >= 0.0) sy = sqrt(sy);
-	else sy = 0.0;
-	if (sz >= 0.0) sz = sqrt(sz);
-	else sz = 0.0;
-	stdev.SetXYZ(sx, sy, sz);
+	Point3D_t const stdev(
+		(var.X() < 0.0)? 0.0: std::sqrt(var.X()),
+		(var.Y() < 0.0)? 0.0: std::sqrt(var.Y()),
+		(var.Z() < 0.0)? 0.0: std::sqrt(var.Z())
+		);
 
-	double scale = 2.0 * stdev.Mag();
+	double scale = 2.0 * stdev.R();
 	double iscale = 1.0 / scale;
 
 	size_t max_index = 0;
-	double norm2, max_norm2 = 0.0;
-	std::vector< TVector3 > data;
+	double max_norm2 = 0.0;
+	std::vector< Vector3D_t > data;
 	for (size_t i = 0; i < fAssignedPoints.size(); i++)
 	{
-		p = makeTVector3(*(fAssignedPoints[i]));
-		p -= mean;
-		p *= iscale;
-		norm2 = p.Mag2();
+		data.push_back((*(fAssignedPoints[i]) - mean) * iscale);
+		double const norm2 = data.back().Mag2(); // from the last point added
 		if (norm2 > max_norm2)
 		{
 			max_norm2 = norm2;
 			max_index = i;
 		}
-		data.push_back(p);
 	}
 
-	double y = 0.0, kappa = 1.0, prev_kappa, kchg = 1.0;
-	TVector3 w(data[max_index]);
+	double kappa = 1.0, kchg = 1.0;
+	Vector3D_t w(data[max_index]);
 
 	while (kchg > 0.0001)
 		for (size_t i = 0; i < data.size(); i++)
 		{
-			y = (data[i] * w);
+			double const y = data[i].Dot(w);
 			w += (y/kappa) * (data[i] - y*w);
 
-			prev_kappa = kappa;
+			double const prev_kappa = kappa;
 			kappa += y*y;
 			kchg = fabs((kappa - prev_kappa) / prev_kappa);
 		}
-	w *= 1.0 / w.Mag();
+	w /= w.R();
 
-	TVector3 v1(w), v2(w);
-	v1 *= scale; v1 += mean;
-	v2 *= -scale; v2 += mean;
-	std::sort(fAssignedPoints.begin(), fAssignedPoints.end(), pma::bSegmentProjLess(makePoint3D(v1), makePoint3D(v2)));
+	Point3D_t v1(mean + w * scale), v2(mean - w * scale);
+	std::sort(fAssignedPoints.begin(), fAssignedPoints.end(), pma::bSegmentProjLess(v1, v2));
 	for (size_t i = 0; i < fAssignedPoints.size(); i++)
 	{
 		AddNode(*(fAssignedPoints[i]), tpc, cryo);
