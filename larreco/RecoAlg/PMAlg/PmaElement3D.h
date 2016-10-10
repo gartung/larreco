@@ -41,7 +41,7 @@ public:
 	/// Distance [cm] from the 2D point to the object's 2D projection in one of wire views.
 	virtual double GetDistance2To(const Point2D_t& p2d, unsigned int view) const = 0;
 
-	virtual Vector3D_t GetUnconstrainedProj3D(const Point2D_t& p2d, unsigned int view) const = 0;
+	virtual Point3D_t GetUnconstrainedProj3D(const Point2D_t& p2d, unsigned int view) const = 0;
 
 	virtual void SetProjection(pma::Hit3D& h) const = 0;
 

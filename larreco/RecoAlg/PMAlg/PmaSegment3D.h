@@ -42,7 +42,7 @@ public:
 
 	/// Get 3D projection of a 2D point from the view, no limitations if it falls beyond
 	/// the segment endpoints.
-	virtual Vector3D_t GetUnconstrainedProj3D(const Point2D_t& p2d, unsigned int view) const override;
+	virtual Point3D_t GetUnconstrainedProj3D(const Point2D_t& p2d, unsigned int view) const override;
 
 	/// Set hit 3D position and its 2D projection to the vertex.
 	virtual void SetProjection(pma::Hit3D& h) const override;

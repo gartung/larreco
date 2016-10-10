@@ -38,40 +38,35 @@ double pma::Segment3D::GetDistance2To(const Point2D_t& p2d, unsigned int view) c
 
 pma::Vector3D_t pma::Segment3D::GetDirection3D(void) const
 {
-	pma::Node3D* v0 = static_cast< pma::Node3D* >(prev);
-	pma::Node3D* v1 = static_cast< pma::Node3D* >(next);
-	TVector3 dir = makeTVector3(v1->Point3D() - v0->Point3D());
-	dir *= 1.0 / dir.Mag();
-	return makeVector3D(dir);
+	pma::Node3D const* v0 = static_cast< pma::Node3D const* >(prev);
+	pma::Node3D const* v1 = static_cast< pma::Node3D const* >(next);
+	return (v1->Point3D() - v0->Point3D()).Unit();
 }
 
 pma::Point3D_t pma::Segment3D::GetProjection(const Point2D_t& p, unsigned int view) const
 {
-	pma::Node3D* vStart = static_cast< pma::Node3D* >(prev);
-	pma::Node3D* vStop = static_cast< pma::Node3D* >(next);
+	pma::Node3D const* vStart = static_cast< pma::Node3D const* >(prev);
+	pma::Node3D const* vStop = static_cast< pma::Node3D const* >(next);
 
-	TVector2 v0 = makeTVector2(p);
-	v0 -= makeTVector2(vStart->Projection2D(view));
+	Vector2D_t v0 = (p - vStart->Projection2D(view));
 
-	TVector2 v1 = makeTVector2(vStop->Projection2D(view));
-	v1 -= makeTVector2(vStart->Projection2D(view));
+	Vector2D_t v1 = (vStop->Projection2D(view) - vStart->Projection2D(view));
 	
-	TVector3 v3d = makeTVector3(vStop->Point3D());
-	v3d -= makeTVector3(vStart->Point3D());
+	Vector3D_t v3d = (vStop->Point3D() - vStart->Point3D());
 	
-	TVector3 v3dStart = makeTVector3(vStart->Point3D());
-	TVector3 v3dStop = makeTVector3(vStop->Point3D());
+	Point3D_t v3dStart = vStart->Point3D();
+	Point3D_t v3dStop = vStop->Point3D();
 
-	double v0Norm = v0.Mod();
-	double v1Norm = v1.Mod();
+	double v0Norm = v0.R();
+	double v1Norm = v1.R();
 
-	TVector3 result(0, 0, 0);
+	Point3D_t result;
 	double eps = 1.0E-6; // 0.01mm
 	if (v1Norm > eps)
 	{
 		double mag = v0Norm * v1Norm;
 		double cosine = 0.0;
-		if (mag != 0.0) cosine = v0 * v1 / mag;
+		if (mag != 0.0) cosine = v0.Dot(v1) / mag;
 		double b = v0Norm * cosine / v1Norm;
 
 		if (b < 1.0)
@@ -85,49 +80,40 @@ pma::Point3D_t pma::Segment3D::GetProjection(const Point2D_t& p, unsigned int vi
 	{
 		mf::LogWarning("pma::Segment3D") << "Short segment projection.";
 
-		result = v3dStart;
-		result += v3dStop;
-		result *= 0.5;
+		result = middlePoint(v3dStart, v3dStop);
 	}
-	return makePoint3D(result);
+	return result;
 }
 
-pma::Vector3D_t pma::Segment3D::GetUnconstrainedProj3D(const Point2D_t& p2d, unsigned int view) const
+pma::Point3D_t pma::Segment3D::GetUnconstrainedProj3D(const Point2D_t& p2d, unsigned int view) const
 {
-	pma::Node3D* vStart = static_cast< pma::Node3D* >(prev);
-	pma::Node3D* vStop = static_cast< pma::Node3D* >(next);
+	pma::Node3D const* vStart = static_cast< pma::Node3D const* >(prev);
+	pma::Node3D const* vStop = static_cast< pma::Node3D const* >(next);
 
-	TVector2 v0 = makeTVector2(p2d);
-	v0 -= makeTVector2(vStart->Projection2D(view));
+	Vector2D_t const v0 = (p2d - vStart->Projection2D(view));
 
-	TVector2 v1 = makeTVector2(vStop->Projection2D(view));
-	v1 -= makeTVector2(vStart->Projection2D(view));
+	Vector2D_t const v1 = (vStop->Projection2D(view) - vStart->Projection2D(view));
 
-	TVector3 v3d = makeTVector3(vStop->Point3D());
-	v3d -= makeTVector3(vStart->Point3D());
+	Vector3D_t const v3d = (vStop->Point3D() - vStart->Point3D());
 
-	double v0Norm = v0.Mod();
-	double v1Norm = v1.Mod();
+	double v0Norm = v0.R();
+	double v1Norm = v1.R();
 
 	double eps = 1.0E-6; // 0.01mm
 	if (v1Norm > eps)
 	{
 		double mag = v0Norm * v1Norm;
 		double cosine = 0.0;
-		if (mag != 0.0) cosine = v0 * v1 / mag;
+		if (mag != 0.0) cosine = v0.Dot(v1) / mag;
 		double b = v0Norm * cosine / v1Norm;
 
-		return Vector3D_t(vStart->Point3D() + makeVector3D(v3d * b));
+		return vStart->Point3D() + (v3d * b);
 	}
 	else // segment 2D projection is almost a point
 	{
 		mf::LogWarning("pma::Segment3D") << "Short segment projection." << std::endl;
 
-		v3d = makeTVector3(vStart->Point3D());
-		v3d += makeTVector3(vStop->Point3D());
-		v3d *= 0.5;
-
-		return makeVector3D(v3d);
+		return middlePoint(vStart->Point3D(), vStop->Point3D());
 	}
 }
 
@@ -136,27 +122,20 @@ void pma::Segment3D::SetProjection(pma::Hit3D& h) const
 	pma::Node3D* vStart = static_cast< pma::Node3D* >(prev);
 	pma::Node3D* vStop = static_cast< pma::Node3D* >(next);
 
-	auto /* const & */ pointStart = makeTVector3(vStart->Point3D());
-	auto /* const & */ pointStop = makeTVector3(vStop->Point3D());
+	auto const & pointStart = vStart->Point3D();
+	auto const & pointStop = vStop->Point3D();
 
 	auto const & projStart = vStart->Projection2D(h.View2D());
 	auto const & projStop = vStop->Projection2D(h.View2D());
 
-	pma::Vector2D_t v0(
-		h.Point2D().X() - projStart.X(),
-		h.Point2D().Y() - projStart.Y());
+	pma::Vector2D_t v0 = (h.Point2D() - projStart);
 
-	pma::Vector2D_t v1(
-		projStop.X() - projStart.X(),
-		projStop.Y() - projStart.Y());
+	pma::Vector2D_t v1 = (projStop - projStart);
 
-	pma::Vector3D_t v3d(
-		pointStop.X() - pointStart.X(),
-		pointStop.Y() - pointStart.Y(),
-		pointStop.Z() - pointStart.Z());
+	pma::Vector3D_t v3d = (pointStop - pointStart);
 
-	double v0Norm = sqrt(v0.Mag2());
-	double v1Norm = sqrt(v1.Mag2());
+	double v0Norm = v0.R();
+	double v1Norm = v1.R();
 
 	double eps = 1.0E-6; // 0.01mm
 	if (v1Norm > eps)
@@ -180,14 +159,9 @@ void pma::Segment3D::SetProjection(pma::Hit3D& h) const
 	{
 		mf::LogWarning("pma::Segment3D") << "Short segment projection.";
 
-		h.SetProjection(
-			0.5 * (projStart.X() + projStop.X()),
-			0.5 * (projStart.Y() + projStop.Y()), 0.0F);
+		h.SetProjection(middlePoint(projStart, projStop), 0.0F);
 
-		h.SetPoint3D(
-			0.5 * (pointStart.X() + pointStop.X()),
-			0.5 * (pointStart.Y() + pointStop.Y()),
-			0.5 * (pointStart.Z() + pointStop.Z()));
+		h.SetPoint3D(middlePoint(pointStart, pointStop));
 	}
 }
 

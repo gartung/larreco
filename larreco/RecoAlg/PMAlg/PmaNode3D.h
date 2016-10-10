@@ -66,7 +66,7 @@ public:
 	virtual double GetDistance2To(const Point2D_t& p2d, unsigned int view) const override;
 
 	/// In case of a node it is simply 3D position of the node.
-	virtual Vector3D_t GetUnconstrainedProj3D(const Point2D_t& , unsigned int) const override { return Vector3D_t(fPoint3D); }
+	virtual Point3D_t GetUnconstrainedProj3D(const Point2D_t& , unsigned int) const override { return fPoint3D; }
 
 	/// Set hit 3D position and its 2D projection to the vertex.
 	virtual void SetProjection(pma::Hit3D& h) const override;
