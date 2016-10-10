@@ -11,7 +11,6 @@
 
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
-#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/StatCollector.h"
 

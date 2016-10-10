@@ -10,7 +10,6 @@
 
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
-#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"

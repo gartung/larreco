@@ -10,7 +10,6 @@
 
 #include "larreco/RecoAlg/PMAlg/PmaSegment3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
-#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 

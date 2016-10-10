@@ -11,7 +11,6 @@
 
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrkCandidate.h"
-#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 

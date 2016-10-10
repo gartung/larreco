@@ -11,7 +11,6 @@
 
 #include "larreco/RecoAlg/PMAlg/PmaVtxCandidate.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
-#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
 
 #include "larcore/Geometry/Geometry.h"
 
