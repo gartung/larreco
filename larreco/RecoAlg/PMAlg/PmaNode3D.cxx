@@ -571,7 +571,7 @@ double pma::Node3D::StepWithGradient(float alfa, float tol, float penalty, float
 	unsigned int steps = 0;
 	double t, t1, t2, t3, g, g0, g1, g2, g3, p1, p2;
 	double eps = 6.0E-37, zero_tol = 1.0E-15;
-	TVector3 tmp = makeTVector3(fPoint3D), gpoint = makeTVector3(fPoint3D);
+	Point3D_t tmp = fPoint3D, gpoint = fPoint3D;
 
 	g = MakeGradient(penalty, weight);
 	if (g < zero_tol) return 0.0;
@@ -588,21 +588,20 @@ double pma::Node3D::StepWithGradient(float alfa, float tol, float penalty, float
 
 		alfa *= 1.25F;
 		t3 += alfa;
-		gpoint = tmp;
-		gpoint += (makeTVector3(fGradient) * t3);
-		if (!SetPoint3D(makePoint3D(gpoint))) // stepped out of allowed volume
+		gpoint = tmp + (fGradient * t3);
+		if (!SetPoint3D(gpoint)) // stepped out of allowed volume
 		{
 			//std::cout << "****  SetPoint trimmed 1 ****" << std::endl;
 			g3 = GetObjFunction(penalty, weight);
 			if (g3 < g2) return (g0 - g3) / g3;   // exit with the node at the border
-			else { SetPoint3D(makePoint3D(tmp)); return 0.0; } // exit with restored original position
+			else { SetPoint3D(tmp); return 0.0; } // exit with restored original position
 		}
 		
 		g3 = GetObjFunction(penalty, weight);
 		
 		if (g3 < zero_tol) return 0.0;
 
-		if (++steps > 1000) { SetPoint3D(makePoint3D(tmp)); return 0.0; }
+		if (++steps > 1000) { SetPoint3D(tmp); return 0.0; }
 
 	} while (g3 < g2);
 	//****************************//
@@ -620,29 +619,28 @@ double pma::Node3D::StepWithGradient(float alfa, float tol, float penalty, float
 			t2 = 0.05 * t3 + 0.95 * t2;
 
 			// break: starting point is at the minimum
-			//if (t2 == t1) { SetPoint3D(makePoint3D(tmp)); return 0.0F; }
+			//if (t2 == t1) { SetPoint3D(tmp); return 0.0F; }
 
 			// break: starting point is very close to the minimum
-			if (fabs(t2 - t1) < tol) { SetPoint3D(makePoint3D(tmp)); return 0.0; }
+			if (fabs(t2 - t1) < tol) { SetPoint3D(tmp); return 0.0; }
 
-			gpoint = tmp;
-			gpoint += (makeTVector3(fGradient) * t2);
-			if (!SetPoint3D(makePoint3D(gpoint))) // select the best point to exit
+			gpoint = tmp + (fGradient * t2);
+			if (!SetPoint3D(gpoint)) // select the best point to exit
 			{
 				//std::cout << "****  SetPoint trimmed 2 ****" << std::endl;
 				g2 = GetObjFunction(penalty, weight);
 				if (g2 < g0) return (g0 - g2) / g2;   // exit with the node at the border
 				else if (g1 < g0)
 				{
-					gpoint = tmp; gpoint += (makeTVector3(fGradient) * t1);
+					gpoint = tmp + (fGradient * t1);
 					return (g0 - g1) / g1;
 				}
 				else if (g3 < g0)
 				{
-					gpoint = tmp; gpoint += (makeTVector3(fGradient) * t3);
+					gpoint = tmp + (fGradient * t3);
 					return (g0 - g3) / g3;
 				}
-				else { SetPoint3D(makePoint3D(tmp)); return 0.0; }
+				else { SetPoint3D(tmp); return 0.0; }
 			}
 			g2 = GetObjFunction(penalty, weight);
 
@@ -669,24 +667,23 @@ double pma::Node3D::StepWithGradient(float alfa, float tol, float penalty, float
 		if ((t <= t1) || (t >= t3))
 			t = (t1 * g3 + t3 * g1) / (g1 + g3);
 
-		gpoint = tmp;
-		gpoint += (makeTVector3(fGradient) * t);
-		if (!SetPoint3D(makePoint3D(gpoint))) // select the best point to exit
+		gpoint = tmp + (fGradient * t);
+		if (!SetPoint3D(gpoint)) // select the best point to exit
 		{
 			//std::cout << "****  SetPoint trimmed 3 ****" << std::endl;
 			g = GetObjFunction(penalty, weight);
 			if ((g < g0) && (g < g1) && (g < g3)) return (g0 - g) / g;   // exit with the node at the border
 			else if ((g1 < g0) && (g1 < g3))
 			{
-				gpoint = tmp; gpoint += (makeTVector3(fGradient) * t1);
+				gpoint = tmp + (fGradient * t1);
 				return (g0 - g1) / g1;
 			}
 			else if (g3 < g0)
 			{
-				gpoint = tmp; gpoint += (makeTVector3(fGradient) * t3);
+				gpoint = tmp + (fGradient * t3);
 				return (g0 - g3) / g3;
 			}
-			else { SetPoint3D(makePoint3D(tmp)); return 0.0; }
+			else { SetPoint3D(tmp); return 0.0; }
 		}
 		
 		g = GetObjFunction(penalty, weight);
