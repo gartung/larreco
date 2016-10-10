@@ -136,7 +136,6 @@ bool pma::Track3D::InitFromHits(int tpc, int cryo, float initEndSegW)
 	fEndSegWeight = initEndSegW;
 
 	// endpoints for the first combination:
-	TVector3 v3d_1(0., 0., 0.), v3d_2(0., 0., 0.);
 	double x, y, z;
 
 	pma::Hit3D* hit0_a = front();
@@ -180,18 +179,18 @@ bool pma::Track3D::InitFromHits(int tpc, int cryo, float initEndSegW)
 			detprop->ConvertTicksToX(hit0_b->PeakTime(), hit0_b->View2D(), tpc, cryo));
 		geom->IntersectionPoint(hit0_a->Wire(), hit0_b->Wire(),
 			hit0_a->View2D(), hit0_b->View2D(), cryo, tpc, y, z);
-		v3d_1.SetXYZ(x, y, z);
+		Point3D_t v3d_1(x, y, z);
 
 		x = 0.5 * (
 			detprop->ConvertTicksToX(hit1_a->PeakTime(), hit1_a->View2D(), tpc, cryo) +
 			detprop->ConvertTicksToX(hit1_b->PeakTime(), hit1_b->View2D(), tpc, cryo));
 		geom->IntersectionPoint(hit1_a->Wire(), hit1_b->Wire(),
 			hit1_a->View2D(), hit1_b->View2D(), cryo, tpc, y, z);
-		v3d_2.SetXYZ(x, y, z);
+		Point3D_t v3d_2(x, y, z);
 
 		ClearNodes();
-		AddNode(makePoint3D(v3d_1), tpc, cryo);
-		AddNode(makePoint3D(v3d_2), tpc, cryo);
+		AddNode(v3d_1, tpc, cryo);
+		AddNode(v3d_2, tpc, cryo);
 
 		MakeProjection();
 		UpdateHitsRadius();
@@ -310,16 +309,16 @@ void pma::Track3D::InitFromMiddle(int tpc, int cryo)
 	double minY = tpcGeo.MinY(), maxY = tpcGeo.MaxY();
 	double minZ = tpcGeo.MinZ(), maxZ = tpcGeo.MaxZ();
 
-	TVector3 v3d_1(0.5 * (minX + maxX), 0.5 * (minY + maxY), 0.5 * (minZ + maxZ));
-	TVector3 v3d_2(v3d_1);
+	Point3D_t v3d_1(0.5 * (minX + maxX), 0.5 * (minY + maxY), 0.5 * (minZ + maxZ));
+	Point3D_t v3d_2(v3d_1);
 
-	TVector3 shift(5.0, 5.0, 5.0);
+	Vector3D_t shift(5.0, 5.0, 5.0);
 	v3d_1 += shift;
 	v3d_2 -= shift;
 
 	ClearNodes();
-	AddNode(makePoint3D(v3d_1), tpc, cryo);
-	AddNode(makePoint3D(v3d_2), tpc, cryo);
+	AddNode(v3d_1, tpc, cryo);
+	AddNode(v3d_2, tpc, cryo);
 
 	MakeProjection();
 	UpdateHitsRadius();
@@ -458,17 +457,17 @@ std::pair< pma::Point2D_t, pma::Point2D_t > pma::Track3D::WireDriftRange(unsigne
 		if (n0 > 0) n0--;
 		if (n1 == fNodes.size()) n1--;
 
-		TVector2 p0 = makeTVector2(fNodes[n0]->Projection2D(view));
-		p0 = makeTVector2(pma::CmToWireDrift(p0.X(), p0.Y(), view, tpc, cryo));
+		Point2D_t const& proj0 = fNodes[n0]->Projection2D(view);
+		Point2D_t p0 = pma::CmToWireDrift(proj0.X(), proj0.Y(), view, tpc, cryo);
 
-		TVector2 p1 = makeTVector2(fNodes[n1]->Projection2D(view));
-		p1 = makeTVector2(pma::CmToWireDrift(p1.X(), p1.Y(), view, tpc, cryo));
+		Point2D_t const& proj1 = fNodes[n1]->Projection2D(view);
+		Point2D_t p1 = pma::CmToWireDrift(proj1.X(), proj1.Y(), view, tpc, cryo);
 
-		if (p0.X() > p1.X()) { double tmp = p0.X(); p0.Set(p1.X(), p0.Y()); p1.Set(tmp, p1.Y()); }
-		if (p0.Y() > p1.Y()) { double tmp = p0.Y(); p0.Set(p0.X(), p1.Y()); p1.Set(p1.X(), tmp); }
+		if (p0.X() > p1.X()) { double tmp = p0.X(); p0.SetCoordinates(p1.X(), p0.Y()); p1.SetCoordinates(tmp, p1.Y()); }
+		if (p0.Y() > p1.Y()) { double tmp = p0.Y(); p0.SetCoordinates(p0.X(), p1.Y()); p1.SetCoordinates(p1.X(), tmp); }
 
-		range.first = makePoint2D(p0);
-		range.second = makePoint2D(p1);
+		range.first = p0;
+		range.second = p1;
 	}
 	return range;
 }
@@ -942,12 +941,12 @@ std::vector<float> pma::Track3D::DriftsOfWireIntersection(unsigned int wire, uns
 		int tpc = fNodes[i]->TPC(), cryo = fNodes[i]->Cryo();
 		if ((tpc != fNodes[i + 1]->TPC()) || (cryo != fNodes[i + 1]->Cryo())) continue;
 
-		TVector2 p0 = makeTVector2(pma::CmToWireDrift(
+		Point2D_t const p0 = pma::CmToWireDrift(
 			fNodes[i]->Projection2D(view).X(), fNodes[i]->Projection2D(view).Y(),
-			view, fNodes[i]->TPC(), fNodes[i]->Cryo()));
-		TVector2 p1 = makeTVector2(pma::CmToWireDrift(
+			view, fNodes[i]->TPC(), fNodes[i]->Cryo());
+		Point2D_t const p1 = pma::CmToWireDrift(
 			fNodes[i + 1]->Projection2D(view).X(), fNodes[i + 1]->Projection2D(view).Y(),
-			view, fNodes[i + 1]->TPC(), fNodes[i + 1]->Cryo()));
+			view, fNodes[i + 1]->TPC(), fNodes[i + 1]->Cryo());
 
 		if ((p0.X() - wire) * (p1.X() - wire) <= 0.0)
 		{
@@ -962,7 +961,7 @@ std::vector<float> pma::Track3D::DriftsOfWireIntersection(unsigned int wire, uns
 size_t pma::Track3D::CompleteMissingWires(unsigned int view)
 {
 	int dPrev, dw, w, wx, wPrev, i = NextHit(-1, view);
-	//TVector2 projPoint;
+	//Point2D_t projPoint;
 
 	pma::Hit3D* hitPrev = 0;
 	pma::Hit3D* hit = 0;
