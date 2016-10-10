@@ -6,7 +6,7 @@
 #include "larreco/RecoAlg/PMAlgTracking.h"
 
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
-#include "larreco/RecoAlg/PMAlg/LegacyGeomDefs.h"
+#include "larreco/RecoAlg/PMAlg/GeomDefs.h"
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -43,34 +43,32 @@ recob::Track pma::convertFrom(const pma::Track3D& src, unsigned int tidx)
 		src.GetRawdEdxSequence(src_dQdx[geo::kZ], geo::kZ);
 	}
 
-	TVector3 p3d;
 	double xshift = src.GetXShift();
 	bool has_shift = (xshift != 0.0);
 	for (size_t i = 0; i < src.size(); i++)
 		if (src[i]->IsEnabled())
 	{
-		p3d = makeTVector3(src[i]->Point3D());
+		Point3D_t p3d = src[i]->Point3D();
 		if (has_shift) p3d.SetX(p3d.X() + xshift);
-		xyz.push_back(p3d);
+		xyz.emplace_back(p3d.X(), p3d.Y(), p3d.Z());
 
 		if (i < src.size() - 1)
 		{
 			size_t j = i + 1;
 			double mag = 0.0;
-			TVector3 dc(0., 0., 0.);
+			Vector3D_t dc;
 
 			while ((mag == 0.0) && (j < src.size()))
 			{
-				dc = makeTVector3(src[j]->Point3D());
-				dc -= makeTVector3(src[i]->Point3D());
-				mag = dc.Mag();
+				dc = (src[j]->Point3D() - src[i]->Point3D());
+				mag = dc.R();
 				j++;
 			}
 
-			if (mag > 0.0) dc *= 1.0 / mag;
+			if (mag > 0.0) dc /= mag;
 			else if (!dircos.empty()) dc = dircos.back();
 
-			dircos.push_back(dc);
+			dircos.emplace_back(dc.X(), dc.Y(), dc.Z());
 		}
 		else dircos.push_back(dircos.back());
 
@@ -690,10 +688,10 @@ bool pma::PMAlgTracker::areCoLinear(pma::Track3D* trk1, pma::Track3D* trk2,
 		Point3D_t proj2 = pma::GetProjectionToSegment(endpoint2, trk1back1, trk1back0);
 		double distProj2 = sqrt( pma::Dist2(endpoint2, proj2) );
 
-		TVector3 dir1 = makeTVector3(trk1->Segments().back()->GetDirection3D());
-		TVector3 dir2 = makeTVector3(trk2->Segments().front()->GetDirection3D());
+		Vector3D_t const& dir1 = trk1->Segments().back()->GetDirection3D();
+		Vector3D_t const& dir2 = trk2->Segments().front()->GetDirection3D();
 
-		cos3d = dir1 * dir2;
+		cos3d = dir1.Dot(dir2);
 
 		if ((cos3d > cosThr) && (distProj1 < distProjThr) && (distProj2 < distProjThr))
 			return true;
@@ -701,11 +699,9 @@ bool pma::PMAlgTracker::areCoLinear(pma::Track3D* trk1, pma::Track3D* trk2,
 		{
 			const double maxCosXZ = 0.996195; // 5 deg
 
-			TVector3 dir1_xz(dir1.X(), 0., dir1.Z());
-			dir1_xz *= 1.0 / dir1_xz.Mag();
+			auto dir1_xz = Vector3D_t(dir1.X(), 0., dir1.Z()).Unit();
 
-			TVector3 dir2_xz(dir2.X(), 0., dir2.Z());
-			dir2_xz *= 1.0 / dir2_xz.Mag();
+			auto dir2_xz = Vector3D_t(dir2.X(), 0., dir2.Z()).Unit();
 
 			if ((fabs(dir1_xz.Z()) > maxCosXZ) && (fabs(dir2_xz.Z()) > maxCosXZ))
 			{
@@ -723,7 +719,7 @@ bool pma::PMAlgTracker::areCoLinear(pma::Track3D* trk1, pma::Track3D* trk2,
 			
 				double cosThrXZ = cos(0.5 * acos(cosThr));
 				double distProjThrXZ = 0.5 * distProjThr;
-				double cosXZ = dir1_xz * dir2_xz;
+				double cosXZ = dir1_xz.Dot(dir2_xz);
 				if ((cosXZ > cosThrXZ) && (distProj1 < distProjThrXZ) && (distProj2 < distProjThrXZ))
 					return true;
 			}
@@ -902,8 +898,8 @@ bool pma::PMAlgTracker::areCoLinear(double& cos3d,
 		Point3D_t const& f0, Point3D_t const& b0, Point3D_t const& f1, Point3D_t const& b1,
 		double distProjThr)
 {
-	TVector3 s0 = makeTVector3(b0 - f0), s1 = makeTVector3(b1 - f1);
-	cos3d = s0 * s1 / (s0.Mag() * s1.Mag());
+	Vector3D_t s0 = (b0 - f0), s1 = (b1 - f1);
+	cos3d = s0.Dot(s1) / (s0.R() * s1.R());
 
 	Point3D_t proj0 = pma::GetProjectionToSegment(b0, f1, b1);
 	double distProj0 = sqrt( pma::Dist2(b0, proj0) );
@@ -982,12 +978,12 @@ void pma::PMAlgTracker::matchCoLinearAnyT0(void)
 				if (fabs(dxFront1) < fabs(dxFront2)) dxFront2 = -dxFront1;
 				else dxFront1 = -dxFront2;
 
-				f0 = makeTVector3(trk1->Nodes()[1]->Point3D()); f0.SetX(f0.X() - dxFront1);
-				b0 = makeTVector3(trk1->Nodes()[0]->Point3D()); b0.SetX(b0.X() - dxFront1);
-				f1 = makeTVector3(trk2->Nodes()[0]->Point3D()); f1.SetX(f1.X() - dxFront2);
-				b1 = makeTVector3(trk2->Nodes()[1]->Point3D()); b1.SetX(b1.X() - dxFront2);
+				Point3D_t f0 = trk1->Nodes()[1]->Point3D(); f0.SetX(f0.X() - dxFront1);
+				Point3D_t b0 = trk1->Nodes()[0]->Point3D(); b0.SetX(b0.X() - dxFront1);
+				Point3D_t f1 = trk2->Nodes()[0]->Point3D(); f1.SetX(f1.X() - dxFront2);
+				Point3D_t b1 = trk2->Nodes()[1]->Point3D(); b1.SetX(b1.X() - dxFront2);
 				 
-				if (areCoLinear(c, makePoint3D(f0), makePoint3D(b0), makePoint3D(f1), makePoint3D(b1), distProjThr) && (c > cmax))
+				if (areCoLinear(c, f0, b0, f1, b1, distProjThr) && (c > cmax))
 				{
 					cmax = c; reverse = false; flip1 = true; flip2 = false;
 					//best_idx = t;
@@ -1001,12 +997,12 @@ void pma::PMAlgTracker::matchCoLinearAnyT0(void)
 				if (fabs(dxFront1) < fabs(dxBack2)) dxBack2 = -dxFront1;
 				else dxFront1 = -dxBack2;
 
-				f0 = makeTVector3(trk1->Nodes()[1]->Point3D()); f0.SetX(f0.X() - dxFront1);
-				b0 = makeTVector3(trk1->Nodes()[0]->Point3D()); b0.SetX(b0.X() - dxFront1);
-				f1 = makeTVector3(trk2->Nodes()[trk2->Nodes().size() - 1]->Point3D()); f1.SetX(f1.X() - dxBack2);
-				b1 = makeTVector3(trk2->Nodes()[trk2->Nodes().size() - 2]->Point3D()); b1.SetX(b1.X() - dxBack2);
+				Point3D_t f0 = trk1->Nodes()[1]->Point3D(); f0.SetX(f0.X() - dxFront1);
+				Point3D_t b0 = trk1->Nodes()[0]->Point3D(); b0.SetX(b0.X() - dxFront1);
+				Point3D_t f1 = trk2->Nodes()[trk2->Nodes().size() - 1]->Point3D(); f1.SetX(f1.X() - dxBack2);
+				Point3D_t b1 = trk2->Nodes()[trk2->Nodes().size() - 2]->Point3D(); b1.SetX(b1.X() - dxBack2);
 				
-				if (areCoLinear(c, makePoint3D(f0), makePoint3D(b0), makePoint3D(f1), makePoint3D(b1), distProjThr) && (c > cmax))
+				if (areCoLinear(c, f0, b0, f1, b1, distProjThr) && (c > cmax))
 				{
 					cmax = c; reverse = true; flip1 = false; flip2 = false;
 					//best_idx = t;
@@ -1020,12 +1016,12 @@ void pma::PMAlgTracker::matchCoLinearAnyT0(void)
 				if (fabs(dxBack1) < fabs(dxFront2)) dxFront2 = -dxBack1;
 				else dxBack1 = -dxFront2;
 
-				f0 = makeTVector3(trk1->Nodes()[trk1->Nodes().size() - 2]->Point3D()); f0.SetX(f0.X() - dxBack1);
-				b0 = makeTVector3(trk1->Nodes()[trk1->Nodes().size() - 1]->Point3D()); b0.SetX(b0.X() - dxBack1);
-				f1 = makeTVector3(trk2->Nodes()[0]->Point3D()); f1.SetX(f1.X() - dxFront2);
-				b1 = makeTVector3(trk2->Nodes()[1]->Point3D()); b1.SetX(b1.X() - dxFront2);
+				Point3D_t f0 = trk1->Nodes()[trk1->Nodes().size() - 2]->Point3D(); f0.SetX(f0.X() - dxBack1);
+				Point3D_t b0 = trk1->Nodes()[trk1->Nodes().size() - 1]->Point3D(); b0.SetX(b0.X() - dxBack1);
+				Point3D_t f1 = trk2->Nodes()[0]->Point3D(); f1.SetX(f1.X() - dxFront2);
+				Point3D_t b1 = trk2->Nodes()[1]->Point3D(); b1.SetX(b1.X() - dxFront2);
 				
-				if (areCoLinear(c, makePoint3D(f0), makePoint3D(b0), makePoint3D(f1), makePoint3D(b1), distProjThr) && (c > cmax))
+				if (areCoLinear(c, f0, b0, f1, b1, distProjThr) && (c > cmax))
 				{
 					cmax = c; reverse = false; flip1 = false; flip2 = false;
 					//best_idx = t;
@@ -1039,12 +1035,12 @@ void pma::PMAlgTracker::matchCoLinearAnyT0(void)
 				if (fabs(dxBack1) < fabs(dxBack2)) dxBack2 = -dxBack1;
 				else dxBack1 = -dxBack2;
 
-				f0 = makeTVector3(trk1->Nodes()[trk1->Nodes().size() - 2]->Point3D()); f0.SetX(f0.X() - dxBack1);
-				b0 = makeTVector3(trk1->Nodes()[trk1->Nodes().size() - 1]->Point3D()); b0.SetX(b0.X() - dxBack1);
-				f1 = makeTVector3(trk2->Nodes()[trk2->Nodes().size() - 1]->Point3D()); f1.SetX(f1.X() - dxBack2);
-				b1 = makeTVector3(trk2->Nodes()[trk2->Nodes().size() - 2]->Point3D()); b1.SetX(b1.X() - dxBack2);
+				Point3D_t f0 = trk1->Nodes()[trk1->Nodes().size() - 2]->Point3D(); f0.SetX(f0.X() - dxBack1);
+				Point3D_t b0 = trk1->Nodes()[trk1->Nodes().size() - 1]->Point3D(); b0.SetX(b0.X() - dxBack1);
+				Point3D_t f1 = trk2->Nodes()[trk2->Nodes().size() - 1]->Point3D(); f1.SetX(f1.X() - dxBack2);
+				Point3D_t b1 = trk2->Nodes()[trk2->Nodes().size() - 2]->Point3D(); b1.SetX(b1.X() - dxBack2);
 				
-				if (areCoLinear(c, makePoint3D(f0), makePoint3D(b0), makePoint3D(f1), makePoint3D(b1), distProjThr) && (c > cmax))
+				if (areCoLinear(c, f0, b0, f1, b1, distProjThr) && (c > cmax))
 				{
 					cmax = c; reverse = false; flip1 = false; flip2 = true;
 					//best_idx = t;
