@@ -256,7 +256,7 @@ double pma::VtxCandidate::Test(const VtxCandidate& other) const
 
 double pma::VtxCandidate::MaxAngle(double minLength) const
 {
-	TVector3 dir_i;
+	Vector3D_t dir_i;
 	size_t max_l_idx = 0;
 	double l, max_l = 0.0;
 	for (size_t i = 0; i < fAssigned.size() - 1; i++)
@@ -268,8 +268,7 @@ double pma::VtxCandidate::MaxAngle(double minLength) const
 			pma::Track3D* trk_i = fAssigned[i].first.Track();
 			pma::Node3D* vtx_i0 = trk_i->Nodes()[fAssigned[i].second];
 			pma::Node3D* vtx_i1 = trk_i->Nodes()[fAssigned[i].second + 1];
-			dir_i = makeTVector3(vtx_i1->Point3D() - vtx_i0->Point3D());
-			dir_i *= 1.0 / dir_i.Mag();
+			dir_i = (vtx_i1->Point3D() - vtx_i0->Point3D()).Unit();
 		}
 	}
 
@@ -280,9 +279,8 @@ double pma::VtxCandidate::MaxAngle(double minLength) const
 		pma::Track3D* trk_j = fAssigned[j].first.Track();
 		pma::Node3D* vtx_j0 = trk_j->Nodes()[fAssigned[j].second];
 		pma::Node3D* vtx_j1 = trk_j->Nodes()[fAssigned[j].second + 1];
-		TVector3 dir_j = makeTVector3(vtx_j1->Point3D() - vtx_j0->Point3D());
-		dir_j *= 1.0 / dir_j.Mag();
-		a = fabs(dir_i * dir_j);
+		Vector3D_t dir_j = (vtx_j1->Point3D() - vtx_j0->Point3D()).Unit();
+		a = fabs(dir_i.Dot(dir_j));
 		if (a < min) min = a;
 	}
 
@@ -387,7 +385,6 @@ double pma::VtxCandidate::Compute(void)
 		return 1.0E+6;
 	}
 
-	TVector3 pproj;
 	//double dx, dy, dz
 	double wsum = 0.0;
 	for (size_t s = 0; s < segments.size(); s++)
@@ -395,7 +392,7 @@ double pma::VtxCandidate::Compute(void)
 		pma::Node3D* vprev = static_cast< pma::Node3D* >(segments[s]->Prev());
 		pma::Node3D* vnext = static_cast< pma::Node3D* >(segments[s]->Next(0));
 
-		pproj = makeTVector3(pma::GetProjectionToSegment(result, vprev->Point3D(), vnext->Point3D()));
+		auto const pproj = pma::GetProjectionToSegment(result, vprev->Point3D(), vnext->Point3D());
 
 		//dx = weights[s] * (result.X() - pproj.X());
 		//dy = result.Y() - pproj.Y();
@@ -692,7 +689,7 @@ bool pma::VtxCandidate::JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandi
 		if (noLoops && (nOK > 1))
 		{
 			fAssigned.clear();
-			fCenter = makeTVector3(vtxCenter->Point3D());
+			fCenter = vtxCenter->Point3D();
 			fMse = 0.0; fMse2D = 0.0;
 
 			double g = rootTrk->TuneFullTree();
