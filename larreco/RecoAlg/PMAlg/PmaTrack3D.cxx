@@ -860,20 +860,14 @@ double pma::Track3D::GetRawdEdxSequence(
 	size_t jmax = PrevHit(size(), view, inclDisabled);
 
 	std::vector< size_t > indexes;
-	TVector3 p0(0., 0., 0.), p1(0., 0., 0.);
-	TVector2 c0(0., 0.), c1(0., 0.);
 	while (j <= jmax)
 	{
 		indexes.clear(); // prepare to collect hit indexes used for this dE/dx entry
 
 		indexes.push_back(j);
 		hit = fHits[j];
-
-		p0 = makeTVector3(hit->Point3D());
-		p1 = makeTVector3(hit->Point3D());
-
-		c0.Set(hit->Wire(), hit->PeakTime());
-		c1.Set(hit->Wire(), hit->PeakTime());
+		
+		auto const* otherHit = hit;
 
 		dEq = hit->SummedADC(); // [now it is ADC sum]
 
@@ -896,10 +890,8 @@ double pma::Track3D::GetRawdEdxSequence(
 			}
 			indexes.push_back(j);
 
-			p1 = makeTVector3(hit->Point3D());
-
-			c1.Set(hit->Wire(), hit->PeakTime());
-
+			otherHit = hit;
+			
 			dq = hit->SummedADC();
 
 			dEq += dq;
@@ -910,8 +902,11 @@ double pma::Track3D::GetRawdEdxSequence(
 			dR += rv;
 			m++;
 		}
-		p0 += p1; p0 *= 0.5;
-		c0 += c1; c0 *= 0.5;
+		Point3D_t p0 = middlePoint(hit->Point3D(), otherHit->Point3D());
+		Point2D_t c0 = middlePoint(
+		  Point2D_t(hit->Wire(), hit->PeakTime()),
+		  Point2D_t(otherHit->Wire(), otherHit->PeakTime())
+		  );
 
 		double range = Length(0, j);
 
