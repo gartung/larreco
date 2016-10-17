@@ -36,12 +36,12 @@ dune35tdata_showerenergy:
 {
   # Last updated M Wallbank, 10/4/16
   # Only calculated for the collection plane
-  UGradient:   5.88161e-3
-  UIntercept: -1.36686
-  VGradient:   5.88161e-3
-  VIntercept: -1.36686
-  ZGradient:   5.88161e-3
-  ZIntercept: -1.36686
+  UGradient:   4.93791e-3
+  UIntercept: -0.612451
+  VGradient:   4.93791e-3
+  VIntercept: -0.612451
+  ZGradient:   4.93791e-3
+  ZIntercept: -0.612451
   # M Wallbank 8/10/16
   # UGradient:   5.53072e-3
   # UIntercept: -33.6764

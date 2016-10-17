@@ -117,9 +117,11 @@ public:
   std::vector<std::vector<int> > FindShowers(std::map<int,std::vector<int> > const& trackToClusters);
 
   /// Makes a recob::Shower object given the hits in the shower and the initial track-like part
+  /// T0 correction is in ns
   recob::Shower MakeShower(art::PtrVector<recob::Hit> const& hits,
 			   std::unique_ptr<recob::Track> const& initialTrack,
-			   std::map<int,std::vector<art::Ptr<recob::Hit> > > const& initialTrackHits);
+			   std::map<int,std::vector<art::Ptr<recob::Hit> > > const& initialTrackHits,
+			   double t0 = 0);
 
   /// <Tingjun to document>
   recob::Shower MakeShower(art::PtrVector<recob::Hit> const& hits,
@@ -152,7 +154,8 @@ private:
   TVector3 Construct3DPoint(art::Ptr<recob::Hit> const& hit1, art::Ptr<recob::Hit> const& hit2);
 
   /// Finds dE/dx for the track given a set of hits
-  double FinddEdx(std::vector<art::Ptr<recob::Hit> > const& trackHits, std::unique_ptr<recob::Track> const& track);
+  /// T0 corrected is in ns
+  double FinddEdx(std::vector<art::Ptr<recob::Hit> > const& trackHits, std::unique_ptr<recob::Track> const& track, double t0 = 0);
 
   /// Orders hits along the best fit line through the charge-weighted centre of the hits.
   /// Orders along the line perpendicular to the least squares line if perpendicular is set to true.

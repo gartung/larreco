@@ -48,6 +48,7 @@ standard_emshower:
  HitsModuleLabel:    "linecluster"
  ClusterModuleLabel: "blurredcluster"
  TrackModuleLabel:   "pmtrack"
+ OpFlashModuleLabel: "opflash"
  EMShowerAlg:        @local::standard_emshoweralg
 }
 

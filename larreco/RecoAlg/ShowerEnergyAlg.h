@@ -33,7 +33,8 @@ class shower::ShowerEnergyAlg {
   ShowerEnergyAlg(fhicl::ParameterSet const& pset);
 
   /// Finds the total energy deposited by the shower in this view
-  double ShowerEnergy(std::vector<art::Ptr<recob::Hit> > const& hits, int plane);
+  /// Performs T0 correction is T0 is supplied (in ns)
+  double ShowerEnergy(std::vector<art::Ptr<recob::Hit> > const& hits, int plane, double t0 = 0);
 
  private:
 

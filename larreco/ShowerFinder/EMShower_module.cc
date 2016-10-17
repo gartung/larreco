@@ -38,6 +38,7 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/Shower.h"
+#include "lardataobj/RecoBase/OpFlash.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/EMShowerAlg.h"
 
@@ -65,7 +66,7 @@ public:
 
 private:
 
-  std::string fHitsModuleLabel, fClusterModuleLabel, fTrackModuleLabel, fPFParticleModuleLabel;
+  std::string fHitsModuleLabel, fClusterModuleLabel, fTrackModuleLabel, fOpFlashModuleLabel, fPFParticleModuleLabel;
   EMShowerAlg fEMShowerAlg;
   bool fSaveNonCompleteShowers;
   bool fFindBadPlanes;
@@ -93,6 +94,7 @@ void shower::EMShower::reconfigure(fhicl::ParameterSet const& p) {
   fHitsModuleLabel        = p.get<std::string>("HitsModuleLabel");
   fClusterModuleLabel     = p.get<std::string>("ClusterModuleLabel");
   fTrackModuleLabel       = p.get<std::string>("TrackModuleLabel");
+  fOpFlashModuleLabel     = p.get<std::string>("OpFlashModuleLabel");
   fPFParticleModuleLabel  = p.get<std::string>("PFParticleModuleLabel","");
   fFindBadPlanes          = p.get<bool>       ("FindBadPlanes","true");
   fSaveNonCompleteShowers = p.get<bool>       ("SaveNonCompleteShowers","true");
@@ -131,6 +133,12 @@ void shower::EMShower::produce(art::Event& evt) {
   if (evt.getByLabel(fClusterModuleLabel,clusterHandle))
     art::fill_ptr_vector(clusters, clusterHandle);
 
+  // Flashes
+  art::Handle<std::vector<recob::OpFlash> > opFlashHandle;
+  std::vector<art::Ptr<recob::OpFlash> > flashes;
+  if (evt.getByLabel(fOpFlashModuleLabel, opFlashHandle))
+    art::fill_ptr_vector(flashes, opFlashHandle);
+
   // PFParticles
   art::Handle<std::vector<recob::PFParticle> > pfpHandle;
   std::vector<art::Ptr<recob::PFParticle> > pfps;
@@ -142,6 +150,15 @@ void shower::EMShower::produce(art::Event& evt) {
   art::FindManyP<recob::Track> fmt(hitHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::SpacePoint> fmsp(trackHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Cluster> fmc(hitHandle, evt, fHitsModuleLabel);
+
+  // Find T0
+  double t0 = 0.;
+  if (flashes.size() == 1)
+    t0 = flashes.at(0)->Time() * 1e3 /*ns*/;
+  else if (flashes.size() > 1)
+    std::cout << "There is more than one flash in this event!" << std::endl;
+  if (fDebug > 0)
+    std::cout << "T0 is " << t0 << std::endl;
 
   // Make showers
   std::vector<std::vector<int> > newShowers;
@@ -264,7 +281,7 @@ void shower::EMShower::produce(art::Event& evt) {
       fEMShowerAlg.FindInitialTrack(showerHits, initialTrack, initialTrackHits, fPlane);
 
       // Make shower object and associations
-      recob::Shower shower = fEMShowerAlg.MakeShower(showerHits, initialTrack, initialTrackHits);
+      recob::Shower shower = fEMShowerAlg.MakeShower(showerHits, initialTrack, initialTrackHits, t0);
       shower.set_id(showerNum);
       if ( fSaveNonCompleteShowers or (!fSaveNonCompleteShowers and shower.ShowerStart() != TVector3(0,0,0)) ) {
 	showers->push_back(shower);

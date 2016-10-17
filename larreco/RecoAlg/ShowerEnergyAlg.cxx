@@ -19,13 +19,16 @@ shower::ShowerEnergyAlg::ShowerEnergyAlg(fhicl::ParameterSet const& pset)
   fZIntercept = pset.get<double>("ZIntercept");
 }
 
-double shower::ShowerEnergyAlg::ShowerEnergy(std::vector<art::Ptr<recob::Hit> > const& hits, int plane) {
+double shower::ShowerEnergyAlg::ShowerEnergy(std::vector<art::Ptr<recob::Hit> > const& hits, int plane, double t0) {
 
   double totalCharge = 0, totalEnergy = 0;
+  double time = 0;
 
-  for (art::PtrVector<recob::Hit>::const_iterator hit = hits.begin(); hit != hits.end(); ++hit){
-    if (int((*hit)->WireID().Plane)!=plane) continue;
-    totalCharge += ( (*hit)->Integral() * TMath::Exp( (detprop->SamplingRate() * (*hit)->PeakTime()) / (detprop->ElectronLifetime()*1e3) ) );
+  for (art::PtrVector<recob::Hit>::const_iterator hit = hits.begin(); hit != hits.end(); ++hit) {
+    if (int((*hit)->WireID().Plane) != plane)
+      continue;
+    time = (*hit)->PeakTime() * detprop->SamplingRate() * 1e-3 /*us*/ - t0 * 1e-3 /*us*/;
+    totalCharge += (*hit)->Integral() * TMath::Exp(time/detprop->ElectronLifetime());
   }
 
   switch (plane) {

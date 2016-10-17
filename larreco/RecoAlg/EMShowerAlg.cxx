@@ -536,7 +536,7 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(std::vector<ar
 
 }
 
-double shower::EMShowerAlg::FinddEdx(std::vector<art::Ptr<recob::Hit> > const& trackHits, std::unique_ptr<recob::Track> const& track) {
+double shower::EMShowerAlg::FinddEdx(std::vector<art::Ptr<recob::Hit> > const& trackHits, std::unique_ptr<recob::Track> const& track, double t0) {
 
   double totalCharge = 0, totalDistance = 0, avHitTime = 0;
   unsigned int nHits = 0;
@@ -544,22 +544,23 @@ double shower::EMShowerAlg::FinddEdx(std::vector<art::Ptr<recob::Hit> > const& t
   if (!track)
     return -999;
 
-  // size_t trajectory_point = 0;
-  // double wirePitch   = fGeom->WirePitch(trackHits.at(0)->View(), 1, 0);
-  // double angleToVert = fGeom->WireAngleToVertical(trackHits.at(0)->View(), 1, 0) - 0.5*::util::pi<>();
-  // const TVector3& dir = track->DirectionAtPoint(trajectory_point);
-  // //(sin(angleToVert),cos(angleToVert)) is the direction perpendicular to wire
-  // double cosgamma = std::abs(std::sin(angleToVert)*dir.Y() +
-  // 			     std::cos(angleToVert)*dir.Z());
+  // temporary hack until I can work out how to do proper t0 correction...
+  size_t trajectory_point = 0;
+  double wirePitch   = fGeom->WirePitch(trackHits.at(0)->View(), trackHits.at(0)->WireID().TPC, trackHits.at(0)->WireID().Cryostat);
+  double angleToVert = fGeom->WireAngleToVertical(trackHits.at(0)->View(), trackHits.at(0)->WireID().TPC, trackHits.at(0)->WireID().Cryostat) - 0.5*::util::pi<>();
+  const TVector3& dir = track->DirectionAtPoint(trajectory_point);
+  //(sin(angleToVert),cos(angleToVert)) is the direction perpendicular to wire
+  double cosgamma = std::abs(std::sin(angleToVert)*dir.Y() +
+  			     std::cos(angleToVert)*dir.Z());
 
-  // if(cosgamma < 1.e-5)
-  //   throw cet::exception("Track") << "cosgamma is basically 0, that can't be right\n";
-  // double pitch =  wirePitch/cosgamma;
-
-  // Get the pitch
   double pitch = 0;
-  try { pitch = lar::util::TrackPitchInView(*track, trackHits.at(0)->View()); }
-  catch(...) { pitch = 0; }
+  if (cosgamma > 1.e-5)
+    pitch = wirePitch/cosgamma;
+
+  // // Get the pitch
+  // double pitch = 0;
+  // try { pitch = lar::util::TrackPitchInView(*track, trackHits.at(0)->View()); }
+  // catch(...) { pitch = 0; }
 
   // Deal with large pitches
   if (pitch > fdEdxTrackLength) {
@@ -579,7 +580,7 @@ double shower::EMShowerAlg::FinddEdx(std::vector<art::Ptr<recob::Hit> > const& t
   avHitTime /= (double)nHits;
 
   double dQdx = totalCharge / totalDistance;
-  double dEdx = fCalorimetryAlg.dEdx_AREA(dQdx, avHitTime, trackHits.at(0)->WireID().Plane);
+  double dEdx = fCalorimetryAlg.dEdx_AREA(dQdx, avHitTime, trackHits.at(0)->WireID().Plane, t0);
 
   return dEdx;
 
@@ -965,7 +966,8 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::MakeInitialTrack(std::map<int
 
 recob::Shower shower::EMShowerAlg::MakeShower(art::PtrVector<recob::Hit> const& hits,
 					      std::unique_ptr<recob::Track> const& initialTrack,
-					      std::map<int,std::vector<art::Ptr<recob::Hit> > > const& initialHitsMap) {
+					      std::map<int,std::vector<art::Ptr<recob::Hit> > > const& initialHitsMap,
+					      double t0) {
 
   //return recob::Shower();
 
@@ -983,8 +985,8 @@ recob::Shower shower::EMShowerAlg::MakeShower(art::PtrVector<recob::Hit> const& 
 
     // If there's hits on this plane...
     if (planeHitsMap.count(plane)) {
-      dEdx.push_back(FinddEdx(initialHitsMap.at(plane), initialTrack));
-      totalEnergy.push_back(fShowerEnergyAlg.ShowerEnergy(planeHitsMap.at(plane), plane));
+      dEdx.push_back(FinddEdx(initialHitsMap.at(plane), initialTrack, t0));
+      totalEnergy.push_back(fShowerEnergyAlg.ShowerEnergy(planeHitsMap.at(plane), plane, t0));
       if (planeHitsMap.at(plane).size() > highestNumberOfHits and initialHitsMap.count(plane)) {
 	bestPlane = plane;
 	highestNumberOfHits = planeHitsMap.at(plane).size();
