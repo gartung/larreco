@@ -20,6 +20,7 @@
 #include "art/Framework/Services/Optional/TFileService.h" 
 #include "art/Framework/Services/Optional/TFileDirectory.h" 
 #include "canvas/Persistency/Common/FindManyP.h"
+#include "canvas/Persistency/Common/FindOneP.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // larsoft
@@ -77,17 +78,17 @@ public:
   EMShowerAlg(fhicl::ParameterSet const& pset);
 
   /// Map associated tracks and clusters together given their associated hits
-  void AssociateClustersAndTracks(std::vector<art::Ptr<recob::Cluster> > const& clusters,
-				  art::FindManyP<recob::Hit> const& fmh,
-				  art::FindManyP<recob::Track> const& fmt,
+  void AssociateClustersAndTracks(const std::vector<art::Ptr<recob::Cluster> >& clusters,
+				  const art::FindManyP<recob::Hit>& fmh,
+				  const std::unique_ptr<art::FindManyP<recob::Track> >& fmt,
 				  std::map<int,std::vector<int> >& clusterToTracks,
 				  std::map<int,std::vector<int> >& trackToClusters);
 
   /// Map associated tracks and clusters together given their associated hits, whilst ignoring certain clusters
-  void AssociateClustersAndTracks(std::vector<art::Ptr<recob::Cluster> > const& clusters,
-				  art::FindManyP<recob::Hit> const& fmh,
-				  art::FindManyP<recob::Track> const& fmt,
-				  std::vector<int> const& clustersToIgnore,
+  void AssociateClustersAndTracks(const std::vector<art::Ptr<recob::Cluster> >& clusters,
+				  const art::FindManyP<recob::Hit>& fmh,
+				  const std::unique_ptr<art::FindManyP<recob::Track> >& fmt,
+				  const std::vector<int>& clustersToIgnore,
 				  std::map<int,std::vector<int> >& clusterToTracks,
 				  std::map<int,std::vector<int> >& trackToClusters);
 

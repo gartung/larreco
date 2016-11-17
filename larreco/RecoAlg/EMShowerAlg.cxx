@@ -40,23 +40,23 @@ shower::EMShowerAlg::EMShowerAlg(fhicl::ParameterSet const& pset) : fDetProp(lar
 
 }
 
-void shower::EMShowerAlg::AssociateClustersAndTracks(std::vector<art::Ptr<recob::Cluster> > const& clusters,
-						     art::FindManyP<recob::Hit> const& fmh,
-						     art::FindManyP<recob::Track> const& fmt,
+void shower::EMShowerAlg::AssociateClustersAndTracks(const std::vector<art::Ptr<recob::Cluster> >& clusters,
+						     const art::FindManyP<recob::Hit>& fmhc,
+						     const std::unique_ptr<art::FindManyP<recob::Track> >& fmth,
 						     std::map<int,std::vector<int> >& clusterToTracks,
 						     std::map<int,std::vector<int> >& trackToClusters) {
 
   std::vector<int> clustersToIgnore = {-999};
-  this->AssociateClustersAndTracks(clusters, fmh, fmt, clustersToIgnore, clusterToTracks, trackToClusters);
+  this->AssociateClustersAndTracks(clusters, fmhc, fmth, clustersToIgnore, clusterToTracks, trackToClusters);
 
   return;
 
 }
 
-void shower::EMShowerAlg::AssociateClustersAndTracks(std::vector<art::Ptr<recob::Cluster> > const& clusters,
-						     art::FindManyP<recob::Hit> const& fmh,
-						     art::FindManyP<recob::Track> const& fmt,
-						     std::vector<int> const& clustersToIgnore,
+void shower::EMShowerAlg::AssociateClustersAndTracks(const std::vector<art::Ptr<recob::Cluster> >& clusters,
+						     const art::FindManyP<recob::Hit>& fmhc,
+						     const std::unique_ptr<art::FindManyP<recob::Track> >& fmth,
+						     const std::vector<int>& clustersToIgnore,
 						     std::map<int,std::vector<int> >& clusterToTracks,
 						     std::map<int,std::vector<int> >& trackToClusters) {
 
@@ -64,13 +64,13 @@ void shower::EMShowerAlg::AssociateClustersAndTracks(std::vector<art::Ptr<recob:
   for (std::vector<art::Ptr<recob::Cluster> >::const_iterator clusterIt = clusters.begin(); clusterIt != clusters.end(); ++clusterIt) {
 
     // Get the hits in this cluster
-    std::vector<art::Ptr<recob::Hit> > clusterHits = fmh.at(clusterIt->key());
+    std::vector<art::Ptr<recob::Hit> > clusterHits = fmhc.at(clusterIt->key());
 
     // Look at all these hits and find the associated tracks
     for (std::vector<art::Ptr<recob::Hit> >::iterator clusterHitIt = clusterHits.begin(); clusterHitIt != clusterHits.end(); ++clusterHitIt) {
 
       // Get the tracks associated with this hit
-      std::vector<art::Ptr<recob::Track> > clusterHitTracks = fmt.at(clusterHitIt->key());
+      std::vector<art::Ptr<recob::Track> > clusterHitTracks = fmth->at(clusterHitIt->key());
       if (clusterHitTracks.size() > 1) { std::cout << "More than one track associated with this hit!" << std::endl; continue; }
       if (clusterHitTracks.size() < 1) continue;
       if (clusterHitTracks.at(0)->Length() < fMinTrackLength) {

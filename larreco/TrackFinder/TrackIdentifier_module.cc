@@ -66,6 +66,7 @@ public:
 private:
 
   std::string fHitsModuleLabel, fTrackModuleLabel;
+  std::string fTrackInstanceLabel, fShowerInstanceLabel;
 
   TrackShowerSepAlg fTrackShowerSepAlg;
 
@@ -75,28 +76,31 @@ DEFINE_ART_MODULE(shower::TrackIdentifier)
 
 shower::TrackIdentifier::TrackIdentifier(const fhicl::ParameterSet& pset) : fTrackShowerSepAlg(pset.get<fhicl::ParameterSet>("TrackShowerSepAlg")) {
   this->reconfigure(pset);
-  produces<std::vector<recob::Track> >();
-  produces<std::vector<recob::Hit> >();
-  produces<art::Assns<recob::Track, recob::Hit> >();
-  produces<art::Assns<recob::Track, recob::Cluster> >();
-  produces<art::Assns<recob::Track, recob::SpacePoint> >();
-  produces<art::Assns<recob::Track, recob::Vertex> >();
+  produces<std::vector<recob::Track> >();//fTrackInstanceLabel);
+  produces<std::vector<recob::Hit> >(fShowerInstanceLabel);
+  produces<art::Assns<recob::Hit, recob::Track> >(fShowerInstanceLabel);
+  produces<art::Assns<recob::Track, recob::Hit> >();//TrackInstanceLabel);
+  produces<art::Assns<recob::Track, recob::Vertex> >();//TrackInstanceLabel);
+  produces<art::Assns<recob::Track, recob::SpacePoint> >();//TrackInstanceLabel);
 }
 
 void shower::TrackIdentifier::reconfigure(const fhicl::ParameterSet& pset) {
-  fHitsModuleLabel  = pset.get<std::string>("HitsModuleLabel");
-  fTrackModuleLabel = pset.get<std::string>("TrackModuleLabel");
+  fHitsModuleLabel     = pset.get<std::string>("HitsModuleLabel");
+  fTrackModuleLabel    = pset.get<std::string>("TrackModuleLabel");
+  fTrackInstanceLabel  = pset.get<std::string>("TrackInstanceLabel","track");
+  fShowerInstanceLabel = pset.get<std::string>("ShowerInstanceLabel","shower");
 }
 
 void shower::TrackIdentifier::produce(art::Event& evt) {
 
   // Output data products
+  // Currently making all associations which PMTrack does itself, except for PFParticles and track meta data
   std::unique_ptr<std::vector<recob::Track> > outTracks(new std::vector<recob::Track>);
   std::unique_ptr<std::vector<recob::Hit> > outHits(new std::vector<recob::Hit>);
-  std::unique_ptr<art::Assns<recob::Track, recob::Hit> > hitAssns(new art::Assns<recob::Track, recob::Hit>);
-  std::unique_ptr<art::Assns<recob::Track, recob::Cluster> > clusterAssns(new art::Assns<recob::Track, recob::Cluster>);
-  std::unique_ptr<art::Assns<recob::Track, recob::SpacePoint> > spacePointAssns(new art::Assns<recob::Track, recob::SpacePoint>);
+  std::unique_ptr<art::Assns<recob::Hit, recob::Track> > hitTrackAssns(new art::Assns<recob::Hit, recob::Track>);
+  std::unique_ptr<art::Assns<recob::Track, recob::Hit> > trackHitAssns(new art::Assns<recob::Track, recob::Hit>);
   std::unique_ptr<art::Assns<recob::Track, recob::Vertex> > vertexAssns(new art::Assns<recob::Track, recob::Vertex>);
+  std::unique_ptr<art::Assns<recob::Track, recob::SpacePoint> > spacePointAssns(new art::Assns<recob::Track, recob::SpacePoint>);
 
   // Input data products
   std::vector<art::Ptr<recob::Hit> > hits;
@@ -118,7 +122,6 @@ void shower::TrackIdentifier::produce(art::Event& evt) {
   art::FindManyP<recob::Track>      fmth(hitHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::SpacePoint> fmspt(trackHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Track>      fmtsp(spacePointHandle, evt, fTrackModuleLabel);
-  art::FindManyP<recob::Cluster>    fmct(trackHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Vertex>     fmvt(trackHandle, evt, fTrackModuleLabel);
 
   // Run track shower separation
@@ -132,23 +135,31 @@ void shower::TrackIdentifier::produce(art::Event& evt) {
   for (std::vector<art::Ptr<recob::Track> >::const_iterator trackIt = trackTracks.begin(); trackIt != trackTracks.end(); ++trackIt) {
     outTracks->push_back(*(*trackIt));
     std::vector<art::Ptr<recob::Hit> > trackHits = fmht.at(trackIt->key());
-    std::vector<art::Ptr<recob::Cluster> > trackClusters = fmct.at(trackIt->key());
     std::vector<art::Ptr<recob::SpacePoint> > trackSpacePoints = fmspt.at(trackIt->key());
     std::vector<art::Ptr<recob::Vertex> > trackVertices = fmvt.at(trackIt->key());
-    util::CreateAssn(*this, evt, *(outTracks.get()), trackHits,        *(hitAssns.get()));
-    util::CreateAssn(*this, evt, *(outTracks.get()), trackClusters,    *(clusterAssns.get()));
+    util::CreateAssn(*this, evt, *(outTracks.get()), trackHits,        *(trackHitAssns.get()));
     util::CreateAssn(*this, evt, *(outTracks.get()), trackSpacePoints, *(spacePointAssns.get()));
     util::CreateAssn(*this, evt, *(outTracks.get()), trackVertices,    *(vertexAssns.get()));
   }
-  for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = showerHits.begin(); hitIt != showerHits.end(); ++hitIt)
-    outHits->push_back(*(*hitIt));
 
-  evt.put(std::move(outTracks));
-  evt.put(std::move(outHits));
-  evt.put(std::move(hitAssns));
-  evt.put(std::move(clusterAssns));
-  evt.put(std::move(spacePointAssns));
-  evt.put(std::move(vertexAssns));
+  // Shower
+  auto showerHitID = getProductID<std::vector<recob::Hit> >(evt, fShowerInstanceLabel);
+  auto const* showerHitGetter = evt.productGetter(showerHitID);
+  for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = showerHits.begin(); hitIt != showerHits.end(); ++hitIt) {
+    outHits->push_back(*(*hitIt));
+    const std::vector<art::Ptr<recob::Track> > hitTracks = fmth.at(hitIt->key());
+    for (std::vector<art::Ptr<recob::Track> >::const_iterator trackIt = hitTracks.begin(); trackIt != hitTracks.end(); ++trackIt) {
+      art::Ptr<recob::Hit> hitPtr(showerHitID, std::distance(showerHits.begin(), hitIt), showerHitGetter);
+      hitTrackAssns->addSingle(hitPtr, *trackIt);
+    }
+  }
+
+  evt.put(std::move(outTracks));//, fTrackInstanceLabel);
+  evt.put(std::move(outHits), fShowerInstanceLabel);
+  evt.put(std::move(hitTrackAssns), fShowerInstanceLabel);
+  evt.put(std::move(trackHitAssns));//, fTrackInstanceLabel);
+  evt.put(std::move(spacePointAssns));//, fTrackInstanceLabel);
+  evt.put(std::move(vertexAssns));//, fTrackInstanceLabel);
 
   return;
 
