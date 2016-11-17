@@ -575,8 +575,8 @@ void ClusteringValidation::ClusteringValidation::endJob() {
   file->Close();
   delete file;
 
-  if (clusterAnalysis.find("blurredclusteringdc") != clusterAnalysis.end())
-    clusterAnalysis.at("blurredclusteringdc")->WriteFile();
+  if (clusterAnalysis.find("blurredclusterdc") != clusterAnalysis.end())
+    clusterAnalysis.at("blurredclusterdc")->WriteFile();
 
 }
 

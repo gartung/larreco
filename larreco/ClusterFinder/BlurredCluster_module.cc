@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       BlurredClustering
+// Class:       BlurredCluster
 // Module Type: producer
-// File:        BlurredClustering_module.cc
+// File:        BlurredCluster_module.cc
 // Author:      Mike Wallbank (m.wallbank@sheffield.ac.uk), May 2015
 //
 // Reconstructs showers by blurring the hit map image to introduce fake
@@ -38,7 +38,7 @@
 #include "larreco/ClusterFinder/ClusterCreator.h"
 #include "larreco/RecoAlg/ClusterRecoUtil/StandardClusterParamsAlg.h"
 #include "larreco/RecoAlg/ClusterParamsImportWrapper.h"
-#include "larreco/RecoAlg/BlurredClusteringAlg.h"
+#include "larreco/RecoAlg/BlurredClusterAlg.h"
 #include "larreco/RecoAlg/MergeClusterAlg.h"
 #include "larreco/RecoAlg/TrackShowerSepAlg.h"
 
@@ -48,14 +48,14 @@
 #include <map>
 
 namespace cluster {
-  class BlurredClustering;
+  class BlurredCluster;
 }
 
-class cluster::BlurredClustering: public art::EDProducer {
+class cluster::BlurredCluster: public art::EDProducer {
 public:
 
-  explicit BlurredClustering(fhicl::ParameterSet const& pset);
-  virtual ~BlurredClustering();
+  explicit BlurredCluster(fhicl::ParameterSet const& pset);
+  virtual ~BlurredCluster();
 
   void produce(art::Event &evt);
   void reconfigure(fhicl::ParameterSet const &p);
@@ -67,7 +67,7 @@ private:
   bool fCreateDebugPDF, fMergeClusters, fGlobalTPCRecon, fShowerReconOnly;
 
   // Create instances of algorithm classes to perform the clustering
-  cluster::BlurredClusteringAlg fBlurredClusteringAlg;
+  cluster::BlurredClusterAlg fBlurredClusterAlg;
   cluster::MergeClusterAlg fMergeClusterAlg;
   shower::TrackShowerSepAlg fTrackShowerSepAlg;
 
@@ -77,17 +77,17 @@ private:
 
 };
 
-cluster::BlurredClustering::BlurredClustering(fhicl::ParameterSet const &pset) : fBlurredClusteringAlg(pset.get<fhicl::ParameterSet>("BlurredClusterAlg")),
-                                                                                 fMergeClusterAlg(pset.get<fhicl::ParameterSet>("MergeClusterAlg")),
-										 fTrackShowerSepAlg(pset.get<fhicl::ParameterSet>("TrackShowerSepAlg")) {
+cluster::BlurredCluster::BlurredCluster(fhicl::ParameterSet const &pset) : fBlurredClusterAlg(pset.get<fhicl::ParameterSet>("BlurredClusterAlg")),
+									   fMergeClusterAlg(pset.get<fhicl::ParameterSet>("MergeClusterAlg")),
+									   fTrackShowerSepAlg(pset.get<fhicl::ParameterSet>("TrackShowerSepAlg")) {
   this->reconfigure(pset);
   produces<std::vector<recob::Cluster> >();
   produces<art::Assns<recob::Cluster,recob::Hit> >();
 }
 
-cluster::BlurredClustering::~BlurredClustering() { }
+cluster::BlurredCluster::~BlurredCluster() { }
 
-void cluster::BlurredClustering::reconfigure(fhicl::ParameterSet const& p) {
+void cluster::BlurredCluster::reconfigure(fhicl::ParameterSet const& p) {
   fHitsModuleLabel       = p.get<std::string>("HitsModuleLabel");
   fTrackModuleLabel      = p.get<std::string>("TrackModuleLabel");
   fVertexModuleLabel     = p.get<std::string>("VertexModuleLabel");
@@ -96,12 +96,12 @@ void cluster::BlurredClustering::reconfigure(fhicl::ParameterSet const& p) {
   fMergeClusters         = p.get<bool>       ("MergeClusters");
   fGlobalTPCRecon        = p.get<bool>       ("GlobalTPCRecon");
   fShowerReconOnly       = p.get<bool>       ("ShowerReconOnly");
-  fBlurredClusteringAlg.reconfigure(p.get<fhicl::ParameterSet>("BlurredClusterAlg"));
+  fBlurredClusterAlg.reconfigure(p.get<fhicl::ParameterSet>("BlurredClusterAlg"));
   fMergeClusterAlg.reconfigure(p.get<fhicl::ParameterSet>("MergeClusterAlg"));
   fTrackShowerSepAlg.reconfigure(p.get<fhicl::ParameterSet>("TrackShowerSepAlg"));
 }
 
-void cluster::BlurredClustering::produce(art::Event &evt) {
+void cluster::BlurredCluster::produce(art::Event &evt) {
 
   fEvent  = evt.event();
   fRun    = evt.run();
@@ -109,7 +109,7 @@ void cluster::BlurredClustering::produce(art::Event &evt) {
 
   // Create debug pdf to illustrate the blurring process
   if (fCreateDebugPDF)
-    fBlurredClusteringAlg.CreateDebugPDF(fRun, fSubrun, fEvent);
+    fBlurredClusterAlg.CreateDebugPDF(fRun, fSubrun, fEvent);
 
   // Output containers -- collection of clusters and associations
   clusters.reset(new std::vector<recob::Cluster>);
@@ -211,20 +211,20 @@ void cluster::BlurredClustering::produce(art::Event &evt) {
     std::vector<art::PtrVector<recob::Hit> > finalClusters;
 
     // Implement the algorithm
-    if (planeIt->second.size() >= fBlurredClusteringAlg.GetMinSize()) {
+    if (planeIt->second.size() >= fBlurredClusterAlg.GetMinSize()) {
 
       // Convert hit map to TH2 histogram and blur it
-      std::vector<std::vector<double> > image = fBlurredClusteringAlg.ConvertRecobHitsToVector(planeIt->second);
-      std::vector<std::vector<double> > blurred = fBlurredClusteringAlg.GaussianBlur(image);
+      std::vector<std::vector<double> > image = fBlurredClusterAlg.ConvertRecobHitsToVector(planeIt->second);
+      std::vector<std::vector<double> > blurred = fBlurredClusterAlg.GaussianBlur(image);
 
        // Find clusters in histogram
       std::vector<std::vector<int> > allClusterBins; // Vector of clusters (clusters are vectors of hits)
-      int numClusters = fBlurredClusteringAlg.FindClusters(blurred, allClusterBins);
+      int numClusters = fBlurredClusterAlg.FindClusters(blurred, allClusterBins);
       mf::LogVerbatim("Blurred Clustering") << "Found " << numClusters << " clusters" << std::endl;
 
       // Create output clusters from the vector of clusters made in FindClusters
       std::vector<art::PtrVector<recob::Hit> > planeClusters;
-      fBlurredClusteringAlg.ConvertBinsToClusters(image, allClusterBins, planeClusters);
+      fBlurredClusterAlg.ConvertBinsToClusters(image, allClusterBins, planeClusters);
 
       // Use the cluster merging algorithm
       if (fMergeClusters) {
@@ -237,20 +237,20 @@ void cluster::BlurredClustering::produce(art::Event &evt) {
       if (fCreateDebugPDF) {
 	std::stringstream name;
 	name << "blurred_image";
-	TH2F* imageHist = fBlurredClusteringAlg.MakeHistogram(image, TString(name.str()));
+	TH2F* imageHist = fBlurredClusterAlg.MakeHistogram(image, TString(name.str()));
 	name << "_convolved";
-	TH2F* blurredHist = fBlurredClusteringAlg.MakeHistogram(blurred, TString(name.str()));
-      	fBlurredClusteringAlg.SaveImage(imageHist, 1, planeIt->first.second, planeIt->first.first);
-      	fBlurredClusteringAlg.SaveImage(blurredHist, 2, planeIt->first.second, planeIt->first.first);
-      	fBlurredClusteringAlg.SaveImage(blurredHist, allClusterBins, 3, planeIt->first.second, planeIt->first.first);
-      	fBlurredClusteringAlg.SaveImage(imageHist, finalClusters, 4, planeIt->first.second, planeIt->first.first);
+	TH2F* blurredHist = fBlurredClusterAlg.MakeHistogram(blurred, TString(name.str()));
+      	fBlurredClusterAlg.SaveImage(imageHist, 1, planeIt->first.second, planeIt->first.first);
+      	fBlurredClusterAlg.SaveImage(blurredHist, 2, planeIt->first.second, planeIt->first.first);
+      	fBlurredClusterAlg.SaveImage(blurredHist, allClusterBins, 3, planeIt->first.second, planeIt->first.first);
+      	fBlurredClusterAlg.SaveImage(imageHist, finalClusters, 4, planeIt->first.second, planeIt->first.first);
 	imageHist->Delete();
 	blurredHist->Delete();
       }
 
     } // End min hits check
 
-    //fBlurredClusteringAlg.fHitMap.clear();
+    //fBlurredClusterAlg.fHitMap.clear();
 
     // Make the output cluster objects
     for (std::vector<art::PtrVector<recob::Hit> >::iterator clusIt = finalClusters.begin(); clusIt != finalClusters.end(); ++clusIt) {
@@ -259,8 +259,8 @@ void cluster::BlurredClustering::produce(art::Event &evt) {
       if (clusterHits.size() > 0) {
 
 	// Get the start and end wires of the cluster
-	unsigned int startWire = fBlurredClusteringAlg.GlobalWire(clusterHits.front()->WireID());
-	unsigned int endWire = fBlurredClusteringAlg.GlobalWire(clusterHits.back()->WireID());
+	unsigned int startWire = fBlurredClusterAlg.GlobalWire(clusterHits.front()->WireID());
+	unsigned int endWire = fBlurredClusterAlg.GlobalWire(clusterHits.back()->WireID());
 
 	// Put cluster hits in the algorithm
 	ClusterParamAlgo.ImportHits(clusterHits);
@@ -300,4 +300,4 @@ void cluster::BlurredClustering::produce(art::Event &evt) {
     
 }
 
-DEFINE_ART_MODULE(cluster::BlurredClustering)
+DEFINE_ART_MODULE(cluster::BlurredCluster)

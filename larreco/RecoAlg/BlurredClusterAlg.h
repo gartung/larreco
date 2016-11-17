@@ -9,8 +9,8 @@
 // M Wallbank (m.wallbank@sheffield.ac.uk), May 2015
 ////////////////////////////////////////////////////////////////////
 
-#ifndef BlurredClustering_h
-#define BlurredClustering_h
+#ifndef BlurredCluster_h
+#define BlurredCluster_h
 
 // Framework includes
 #include "canvas/Persistency/Common/FindManyP.h"
@@ -63,14 +63,14 @@
 
 
 namespace cluster {
-  class BlurredClusteringAlg;
+  class BlurredClusterAlg;
 }
 
-class cluster::BlurredClusteringAlg {
+class cluster::BlurredClusterAlg {
 public:
 
-  BlurredClusteringAlg(fhicl::ParameterSet const& pset);
-  virtual ~BlurredClusteringAlg();
+  BlurredClusterAlg(fhicl::ParameterSet const& pset);
+  virtual ~BlurredClusterAlg();
 
   void reconfigure(fhicl::ParameterSet const&p);
 

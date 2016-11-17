@@ -131,6 +131,14 @@ standard_trackcheater:
  G4ModuleLabel:       "largeant"
 }
 
+standard_trackidentifier:
+{
+ module_type:       "TrackIdentifier"
+ TrackShowerSepAlg: @local::standard_trackshowersepalg
+ HitsModuleLabel:   "linecluster"
+ TrackModuleLabel:  "pmtrack"
+}
+
 standard_trackkalmancheater:
 {
   module_type:        "TrackKalmanCheater"

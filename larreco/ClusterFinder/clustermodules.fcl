@@ -11,18 +11,18 @@ standard_trajcluster:
 
 standard_blurredcluster:
 {
- module_type:              "BlurredClustering"
- CreateDebugPDF:           false
- MergeClusters:            false
- GlobalTPCRecon:           true
- ShowerReconOnly:          false
- HitsModuleLabel:          "gaushit"
- TrackModuleLabel:         "pmtrack"
- VertexModuleLabel:        "linecluster"
- PFParticleModuleLabel:    "pandora"
- BlurredClusterAlg:        @local::standard_blurredclusteralg
- MergeClusterAlg:          @local::standard_mergeclusteralg
- TrackShowerSeparationAlg: @local::standard_trackshowerseparationalg
+ module_type:           "BlurredCluster"
+ CreateDebugPDF:        false
+ MergeClusters:         false
+ GlobalTPCRecon:        true
+ ShowerReconOnly:       false
+ HitsModuleLabel:       "gaushit"
+ TrackModuleLabel:      "pmtrack"
+ VertexModuleLabel:     "linecluster"
+ PFParticleModuleLabel: "pandora"
+ BlurredClusterAlg:     @local::standard_blurredclusteralg
+ MergeClusterAlg:       @local::standard_mergeclusteralg
+ TrackShowerSepAlg:     @local::standard_trackshowersepalg
 }
 
 standard_clusterpca:
@@ -100,7 +100,7 @@ standard_clusteringvalidation:
  module_type:        "ClusteringValidation"
  MinHitsInPlane:     0
  HitsModuleLabel:    "dcheat"
- ClusterModuleLabel: [ "dbcluster", "blurredclustering" ]
+ ClusterModuleLabel: [ "dbcluster", "blurredcluster" ]
 }
 
 standard_dbclusterana:

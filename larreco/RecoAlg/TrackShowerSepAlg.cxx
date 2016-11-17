@@ -22,7 +22,7 @@ void shower::TrackShowerSepAlg::reconfigure(fhicl::ParameterSet const& pset) {
   fCylinderCut    = pset.get<double>("CylinderCut");
   fShowerConeCut  = pset.get<double>("ShowerConeCut");
 
-  fDebug = pset.get<int>("Debug");
+  fDebug = pset.get<int>("Debug",0);
 }
 
 void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,

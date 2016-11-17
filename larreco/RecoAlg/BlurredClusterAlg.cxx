@@ -9,9 +9,9 @@
 // M Wallbank (m.wallbank@sheffield.ac.uk), May 2015
 ////////////////////////////////////////////////////////////////////
 
-#include "larreco/RecoAlg/BlurredClusteringAlg.h"
+#include "larreco/RecoAlg/BlurredClusterAlg.h"
 
-cluster::BlurredClusteringAlg::BlurredClusteringAlg(fhicl::ParameterSet const& pset) {
+cluster::BlurredClusterAlg::BlurredClusterAlg(fhicl::ParameterSet const& pset) {
 
   this->reconfigure(pset);
   this->MakeKernels();
@@ -22,7 +22,7 @@ cluster::BlurredClusteringAlg::BlurredClusteringAlg(fhicl::ParameterSet const& p
 
 }
 
-cluster::BlurredClusteringAlg::~BlurredClusteringAlg() {
+cluster::BlurredClusterAlg::~BlurredClusterAlg() {
   if (fDebugCanvas) {
     std::string closeName = fDebugPDFName;
     closeName.append("]");
@@ -31,7 +31,7 @@ cluster::BlurredClusteringAlg::~BlurredClusteringAlg() {
   }
 }
 
-void cluster::BlurredClusteringAlg::reconfigure(fhicl::ParameterSet const& p) {
+void cluster::BlurredClusterAlg::reconfigure(fhicl::ParameterSet const& p) {
   fBlurWire            = p.get<int>   ("BlurWire");
   fBlurTick            = p.get<int>   ("BlurTick");
   fSigmaWire           = p.get<double>("SigmaWire");
@@ -54,7 +54,7 @@ void cluster::BlurredClusteringAlg::reconfigure(fhicl::ParameterSet const& p) {
   fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
 }
 
-void cluster::BlurredClusteringAlg::CreateDebugPDF(int run, int subrun, int event) {
+void cluster::BlurredClusterAlg::CreateDebugPDF(int run, int subrun, int event) {
 
   if (!fDebugCanvas) {
 
@@ -95,7 +95,7 @@ void cluster::BlurredClusteringAlg::CreateDebugPDF(int run, int subrun, int even
 
 }
 
-art::PtrVector<recob::Hit> cluster::BlurredClusteringAlg::ConvertBinsToRecobHits(std::vector<std::vector<double> > const& image, std::vector<int> const& bins) {
+art::PtrVector<recob::Hit> cluster::BlurredClusterAlg::ConvertBinsToRecobHits(std::vector<std::vector<double> > const& image, std::vector<int> const& bins) {
 
   // Create the vector of hits to output
   art::PtrVector<recob::Hit> hits;
@@ -115,7 +115,7 @@ art::PtrVector<recob::Hit> cluster::BlurredClusteringAlg::ConvertBinsToRecobHits
   return hits;
 }
 
-art::Ptr<recob::Hit> cluster::BlurredClusteringAlg::ConvertBinToRecobHit(std::vector<std::vector<double> > const& image, int bin) {
+art::Ptr<recob::Hit> cluster::BlurredClusterAlg::ConvertBinToRecobHit(std::vector<std::vector<double> > const& image, int bin) {
 
   int wire = bin % image.size();
   int tick = bin / image.size();
@@ -124,9 +124,9 @@ art::Ptr<recob::Hit> cluster::BlurredClusteringAlg::ConvertBinToRecobHit(std::ve
 
 }
 
-void cluster::BlurredClusteringAlg::ConvertBinsToClusters(std::vector<std::vector<double> > const& image,
-							  std::vector<std::vector<int> > const& allClusterBins,
-							  std::vector<art::PtrVector<recob::Hit> >& clusters) {
+void cluster::BlurredClusterAlg::ConvertBinsToClusters(std::vector<std::vector<double> > const& image,
+						       std::vector<std::vector<int> > const& allClusterBins,
+						       std::vector<art::PtrVector<recob::Hit> >& clusters) {
 
   // Loop through the clusters (each a vector of bins)
   for (std::vector<std::vector<int> >::const_iterator clustIt = allClusterBins.begin(); clustIt != allClusterBins.end(); clustIt++) {
@@ -135,11 +135,11 @@ void cluster::BlurredClusteringAlg::ConvertBinsToClusters(std::vector<std::vecto
     // Convert the clusters (vectors of bins) to hits in a vector of recob::Hits
     art::PtrVector<recob::Hit> clusHits = ConvertBinsToRecobHits(image, bins);
 
-    mf::LogInfo("BlurredClustering") << "Cluster made from " << bins.size() << " bins, of which " << clusHits.size() << " were real hits";
+    mf::LogInfo("BlurredCluster") << "Cluster made from " << bins.size() << " bins, of which " << clusHits.size() << " were real hits";
 
     // Make sure the clusters are above the minimum cluster size
     if (clusHits.size() < fMinSize) {
-      mf::LogVerbatim("BlurredClustering") << "Cluster of size " << clusHits.size() << " not saved since it is smaller than the minimum cluster size, set to " << fMinSize;
+      mf::LogVerbatim("BlurredCluster") << "Cluster of size " << clusHits.size() << " not saved since it is smaller than the minimum cluster size, set to " << fMinSize;
       continue;
     }
 
@@ -151,7 +151,7 @@ void cluster::BlurredClusteringAlg::ConvertBinsToClusters(std::vector<std::vecto
 
 }
 
-std::vector<std::vector<double> > cluster::BlurredClusteringAlg::ConvertRecobHitsToVector(std::vector<art::Ptr<recob::Hit> > const& hits) {
+std::vector<std::vector<double> > cluster::BlurredClusterAlg::ConvertRecobHitsToVector(std::vector<art::Ptr<recob::Hit> > const& hits) {
 
   // Define the size of this particular plane -- dynamically to avoid huge histograms
   int lowerTick = fDetProp->ReadOutWindowSize(), upperTick = 0, lowerWire = fGeom->MaxWires(), upperWire = 0;
@@ -203,13 +203,13 @@ std::vector<std::vector<double> > cluster::BlurredClusteringAlg::ConvertRecobHit
 
 }
 
-int cluster::BlurredClusteringAlg::ConvertWireTickToBin(std::vector<std::vector<double> > const& image, int xbin, int ybin) {
+int cluster::BlurredClusterAlg::ConvertWireTickToBin(std::vector<std::vector<double> > const& image, int xbin, int ybin) {
 
   return (ybin * image.size()) + xbin;
 
 }
 
-double cluster::BlurredClusteringAlg::ConvertBinToCharge(std::vector<std::vector<double> > const& image, int bin) {
+double cluster::BlurredClusterAlg::ConvertBinToCharge(std::vector<std::vector<double> > const& image, int bin) {
 
   int x = bin % image.size();
   int y = bin / image.size();
@@ -218,7 +218,7 @@ double cluster::BlurredClusteringAlg::ConvertBinToCharge(std::vector<std::vector
 
 }
 
-std::pair<int,int> cluster::BlurredClusteringAlg::DeadWireCount(int wire_bin, int width) {
+std::pair<int,int> cluster::BlurredClusterAlg::DeadWireCount(int wire_bin, int width) {
 
   std::pair<int,int> deadWires = std::make_pair<int,int>(0,0);
 
@@ -238,7 +238,7 @@ std::pair<int,int> cluster::BlurredClusteringAlg::DeadWireCount(int wire_bin, in
 
 }
 
-void cluster::BlurredClusteringAlg::FindBlurringParameters(int& blur_wire, int& blur_tick, int& sigma_wire, int& sigma_tick) {
+void cluster::BlurredClusterAlg::FindBlurringParameters(int& blur_wire, int& blur_tick, int& sigma_wire, int& sigma_tick) {
 
   // Calculate least squares slope
   int x, y;
@@ -279,7 +279,7 @@ void cluster::BlurredClusteringAlg::FindBlurringParameters(int& blur_wire, int& 
 
 }
 
-int cluster::BlurredClusteringAlg::FindClusters(std::vector<std::vector<double> > const& blurred, std::vector<std::vector<int> >& allcluster) {
+int cluster::BlurredClusterAlg::FindClusters(std::vector<std::vector<double> > const& blurred, std::vector<std::vector<int> >& allcluster) {
 
   // Vectors to hold cluster information
   std::vector<int> cluster;
@@ -477,7 +477,7 @@ int cluster::BlurredClusteringAlg::FindClusters(std::vector<std::vector<double> 
 
 }
 
-int cluster::BlurredClusteringAlg::GlobalWire(geo::WireID const& wireID) {
+int cluster::BlurredClusterAlg::GlobalWire(geo::WireID const& wireID) {
 
   double wireCentre[3];
   fGeom->WireIDToWireGeo(wireID).GetCenter(wireCentre);
@@ -513,7 +513,7 @@ int cluster::BlurredClusteringAlg::GlobalWire(geo::WireID const& wireID) {
 
 }
 
-std::vector<std::vector<double> > cluster::BlurredClusteringAlg::GaussianBlur(std::vector<std::vector<double> > const& image) {
+std::vector<std::vector<double> > cluster::BlurredClusterAlg::GaussianBlur(std::vector<std::vector<double> > const& image) {
 
   if (fSigmaWire == 0 and fSigmaTick == 0)
     return image;
@@ -597,7 +597,7 @@ std::vector<std::vector<double> > cluster::BlurredClusteringAlg::GaussianBlur(st
 
 }
 
-double cluster::BlurredClusteringAlg::GetTimeOfBin(std::vector<std::vector<double> > const& image, int bin) {
+double cluster::BlurredClusterAlg::GetTimeOfBin(std::vector<std::vector<double> > const& image, int bin) {
 
   double time = -10000;
 
@@ -609,7 +609,7 @@ double cluster::BlurredClusteringAlg::GetTimeOfBin(std::vector<std::vector<doubl
 
 }
 
-void cluster::BlurredClusteringAlg::MakeKernels() {
+void cluster::BlurredClusterAlg::MakeKernels() {
 
   // Kernel size is the largest possible given the hit width rescaling
   fAllKernels.clear();
@@ -647,7 +647,7 @@ void cluster::BlurredClusteringAlg::MakeKernels() {
 
 }
 
-TH2F* cluster::BlurredClusteringAlg::MakeHistogram(std::vector<std::vector<double> > const& image, TString name) {
+TH2F* cluster::BlurredClusterAlg::MakeHistogram(std::vector<std::vector<double> > const& image, TString name) {
 
   TH2F* hist = new TH2F(name,name,fUpperWire-fLowerWire,fLowerWire-0.5,fUpperWire-0.5,fUpperTick-fLowerTick,fLowerTick-0.5,fUpperTick-0.5);
   hist->Clear();
@@ -667,7 +667,7 @@ TH2F* cluster::BlurredClusteringAlg::MakeHistogram(std::vector<std::vector<doubl
 
 }
 
-unsigned int cluster::BlurredClusteringAlg::NumNeighbours(int nbinsx, std::vector<bool> const& used, int bin) {
+unsigned int cluster::BlurredClusterAlg::NumNeighbours(int nbinsx, std::vector<bool> const& used, int bin) {
 
   unsigned int neighbours = 0;
 
@@ -689,7 +689,7 @@ unsigned int cluster::BlurredClusteringAlg::NumNeighbours(int nbinsx, std::vecto
   return neighbours;
 }
 
-bool cluster::BlurredClusteringAlg::PassesTimeCut(std::vector<double> const& times, double time) {
+bool cluster::BlurredClusterAlg::PassesTimeCut(std::vector<double> const& times, double time) {
 
   for (std::vector<double>::const_iterator timeIt = times.begin(); timeIt != times.end(); timeIt++) {
     if (std::abs(time - *timeIt) < fTimeThreshold) return true;
@@ -698,7 +698,7 @@ bool cluster::BlurredClusteringAlg::PassesTimeCut(std::vector<double> const& tim
   return false;
 }
 
-void cluster::BlurredClusteringAlg::SaveImage(TH2F* image, std::vector<art::PtrVector<recob::Hit> > const& allClusters, int pad, int tpc, int plane) {
+void cluster::BlurredClusterAlg::SaveImage(TH2F* image, std::vector<art::PtrVector<recob::Hit> > const& allClusters, int pad, int tpc, int plane) {
 
   // Make a vector of clusters
   std::vector<std::vector<int> > allClusterBins;
@@ -728,12 +728,12 @@ void cluster::BlurredClusteringAlg::SaveImage(TH2F* image, std::vector<art::PtrV
   SaveImage(image, allClusterBins, pad, tpc, plane);
 }
 
-void cluster::BlurredClusteringAlg::SaveImage(TH2F* image, int pad, int tpc, int plane) {
+void cluster::BlurredClusterAlg::SaveImage(TH2F* image, int pad, int tpc, int plane) {
   std::vector<std::vector<int> > allClusterBins;
   SaveImage(image, allClusterBins, pad, tpc, plane);
 }
 
-void cluster::BlurredClusteringAlg::SaveImage(TH2F* image, std::vector<std::vector<int> > const& allClusterBins, int pad, int tpc, int plane) {
+void cluster::BlurredClusterAlg::SaveImage(TH2F* image, std::vector<std::vector<int> > const& allClusterBins, int pad, int tpc, int plane) {
 
   fDebugCanvas->cd(pad);
   std::string stage;
