@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////
-// Class: TrackShowerSeparationAlg
-// File:  TrackShowerSeparationAlg.h
+// Class: TrackShowerSepAlg
+// File:  TrackShowerSepAlg.h
 // Author: Mike Wallbank (m.wallbank@sheffield.ac.uk), November 2015
 //
 // Track/shower separation class.
@@ -9,8 +9,8 @@
 // To be run after track reconstruction, before shower reconstruction.
 ////////////////////////////////////////////////////////////////////////
 
-#ifndef TrackShowerSeparationAlg_hxx
-#define TrackShowerSeparationAlg_hxx
+#ifndef TrackShowerSepAlg_hxx
+#define TrackShowerSepAlg_hxx
 
 // Framework
 #include "fhiclcpp/ParameterSet.h"
@@ -40,7 +40,7 @@
 #include "TCanvas.h"
 
 namespace shower {
-  class TrackShowerSeparationAlg;
+  class TrackShowerSepAlg;
   class ReconTrack;
 }
 
@@ -166,22 +166,30 @@ class shower::ReconTrack {
 
 };
 
-class shower::TrackShowerSeparationAlg {
+class shower::TrackShowerSepAlg {
  public:
 
-  TrackShowerSeparationAlg(fhicl::ParameterSet const& pset);
+  TrackShowerSepAlg(fhicl::ParameterSet const& pset);
 
   /// Read in configurable parameters from provided parameter set
   void reconfigure(fhicl::ParameterSet const& pset);
 
-  std::vector<art::Ptr<recob::Hit> > SelectShowerHits(int event,
-						      const std::vector<art::Ptr<recob::Hit> >& hits,
-						      const std::vector<art::Ptr<recob::Track> >& tracks,
-						      const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
-						      const art::FindManyP<recob::Hit>& fmht,
-						      const art::FindManyP<recob::Track>& fmth,
-						      const art::FindManyP<recob::SpacePoint>& fmspt,
-						      const art::FindManyP<recob::Track>& fmtsp);
+  /// Run the tracks shower separation over the given hits
+  /// Uses tracks and space points (and their associations) to assist
+  void RunTrackShowerSep(int event,
+			 const std::vector<art::Ptr<recob::Hit> >& hits,
+			 const std::vector<art::Ptr<recob::Track> >& tracks,
+			 const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
+			 const art::FindManyP<recob::Hit>& fmht,
+			 const art::FindManyP<recob::Track>& fmth,
+			 const art::FindManyP<recob::SpacePoint>& fmspt,
+			 const art::FindManyP<recob::Track>& fmtsp);
+
+  /// Returns track-like tracks
+  std::vector<art::Ptr<recob::Track> > TrackTracks();
+
+  /// Returns shower-like hits
+  std::vector<art::Ptr<recob::Hit> > ShowerHits();
 
  private:
 
@@ -206,6 +214,13 @@ class shower::TrackShowerSeparationAlg {
 
   ///
   double SpacePointsRMS(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints);
+
+  // All the information about all reconstructed tracks
+  std::map<int,std::unique_ptr<ReconTrack> > fReconTracks;
+
+  // Output data products
+  std::vector<art::Ptr<recob::Hit> > fShowerHits;
+  std::vector<art::Ptr<recob::Track> > fTrackTracks;
 
   // Parameters
   int fDebug;

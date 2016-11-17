@@ -40,7 +40,7 @@
 #include "larreco/RecoAlg/ClusterParamsImportWrapper.h"
 #include "larreco/RecoAlg/BlurredClusteringAlg.h"
 #include "larreco/RecoAlg/MergeClusterAlg.h"
-#include "larreco/RecoAlg/TrackShowerSeparationAlg.h"
+#include "larreco/RecoAlg/TrackShowerSepAlg.h"
 
 // ROOT & C++ includes
 #include <string>
@@ -69,7 +69,7 @@ private:
   // Create instances of algorithm classes to perform the clustering
   cluster::BlurredClusteringAlg fBlurredClusteringAlg;
   cluster::MergeClusterAlg fMergeClusterAlg;
-  shower::TrackShowerSeparationAlg fTrackShowerSeparationAlg;
+  shower::TrackShowerSepAlg fTrackShowerSepAlg;
 
   // Output containers to place in event
   std::unique_ptr<std::vector<recob::Cluster> > clusters;
@@ -79,7 +79,7 @@ private:
 
 cluster::BlurredClustering::BlurredClustering(fhicl::ParameterSet const &pset) : fBlurredClusteringAlg(pset.get<fhicl::ParameterSet>("BlurredClusterAlg")),
                                                                                  fMergeClusterAlg(pset.get<fhicl::ParameterSet>("MergeClusterAlg")),
-										 fTrackShowerSeparationAlg(pset.get<fhicl::ParameterSet>("TrackShowerSeparationAlg")) {
+										 fTrackShowerSepAlg(pset.get<fhicl::ParameterSet>("TrackShowerSepAlg")) {
   this->reconfigure(pset);
   produces<std::vector<recob::Cluster> >();
   produces<art::Assns<recob::Cluster,recob::Hit> >();
@@ -98,7 +98,7 @@ void cluster::BlurredClustering::reconfigure(fhicl::ParameterSet const& p) {
   fShowerReconOnly       = p.get<bool>       ("ShowerReconOnly");
   fBlurredClusteringAlg.reconfigure(p.get<fhicl::ParameterSet>("BlurredClusterAlg"));
   fMergeClusterAlg.reconfigure(p.get<fhicl::ParameterSet>("MergeClusterAlg"));
-  fTrackShowerSeparationAlg.reconfigure(p.get<fhicl::ParameterSet>("TrackShowerSeparationAlg"));
+  fTrackShowerSepAlg.reconfigure(p.get<fhicl::ParameterSet>("TrackShowerSepAlg"));
 }
 
 void cluster::BlurredClustering::produce(art::Event &evt) {
@@ -162,22 +162,25 @@ void cluster::BlurredClustering::produce(art::Event &evt) {
       art::FindManyP<recob::Track> fmth(hitCollection, evt, fTrackModuleLabel);
       art::FindManyP<recob::SpacePoint> fmspt(trackCollection, evt, fTrackModuleLabel);
       art::FindManyP<recob::Track> fmtsp(spacePointCollection, evt, fTrackModuleLabel);
-      hitsToCluster = fTrackShowerSeparationAlg.SelectShowerHits(evt.event(), hits, tracks, spacePoints, fmht, fmth, fmspt, fmtsp);
+      fTrackShowerSepAlg.RunTrackShowerSep(evt.event(), hits, tracks, spacePoints, fmht, fmth, fmspt, fmtsp);
+      hitsToCluster = fTrackShowerSepAlg.ShowerHits();
     }
+    else
+      hitsToCluster = hits;
 
     // // Remove hits from tracks before performing any clustering
     // if (pfParticleCollection.isValid() and clusterCollection.isValid()) {
     //   mf::LogInfo("BlurredCluster") << "Removing track-like hits before clustering: will use information from PFParticles." << std::endl;
     //   art::FindManyP<recob::Cluster> fmcpfp(pfParticleCollection, evt, fPFParticleModuleLabel);
     //   art::FindManyP<recob::Hit> fmhpfp(clusterCollection, evt, fPFParticleModuleLabel);
-    //   hitsToCluster = fTrackShowerSeparationAlg.RemoveTrackHits(hits, pfParticles, fmcpfp, fmhpfp);
+    //   hitsToCluster = fTrackShowerSepAlg.RemoveTrackHits(hits, pfParticles, fmcpfp, fmhpfp);
     // }
     // else if (trackCollection.isValid() and trackCollection.isValid() and spacePointCollection.isValid()) {
     //   mf::LogInfo("BlurredCluster") << "Removing track-like hits before clustering: no PFParticle information available so will use tracks and vertices." << std::endl;
     //   art::FindManyP<recob::Track> fmth(hitCollection, evt, fTrackModuleLabel);
     //   art::FindManyP<recob::Track> fmtsp(spacePointCollection, evt, fTrackModuleLabel);
     //   art::FindManyP<recob::Hit> fmh(trackCollection, evt, fTrackModuleLabel);
-    //   hitsToCluster = fTrackShowerSeparationAlg.RemoveTrackHits(hits, tracks, spacePoints, vertices, fmth, fmtsp, fmh, evt.event(), evt.run());
+    //   hitsToCluster = fTrackShowerSepAlg.RemoveTrackHits(hits, tracks, spacePoints, vertices, fmth, fmtsp, fmh, evt.event(), evt.run());
     // }
     // else
     //   throw art::Exception(art::errors::Configuration) << "Error: configuration is set to remove track-like hits before clustering but no prior reconstruction is provided... "

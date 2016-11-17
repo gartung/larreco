@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////
-// Class: TrackShowerSeparationAlg
-// File:  TrackShowerSeparationAlg.cxx
+// Class: TrackShowerSepAlg
+// File:  TrackShowerSepAlg.cxx
 // Author: Mike Wallbank (m.wallbank@sheffield.ac.uk), November 2015
 //
 // Track/shower separation class.
@@ -9,13 +9,13 @@
 // To be run after track reconstruction, before shower reconstruction.
 ////////////////////////////////////////////////////////////////////////
 
-#include "larreco/RecoAlg/TrackShowerSeparationAlg.h"
+#include "larreco/RecoAlg/TrackShowerSepAlg.h"
 
-shower::TrackShowerSeparationAlg::TrackShowerSeparationAlg(fhicl::ParameterSet const& pset) {
+shower::TrackShowerSepAlg::TrackShowerSepAlg(fhicl::ParameterSet const& pset) {
   this->reconfigure(pset);
 }
 
-void shower::TrackShowerSeparationAlg::reconfigure(fhicl::ParameterSet const& pset) {
+void shower::TrackShowerSepAlg::reconfigure(fhicl::ParameterSet const& pset) {
   fConeAngle      = pset.get<double>("ConeAngle");
   fCylinderRadius = pset.get<double>("CylinderRadius");
   fTrackVertexCut = pset.get<double>("TrackVertexCut");
@@ -25,14 +25,14 @@ void shower::TrackShowerSeparationAlg::reconfigure(fhicl::ParameterSet const& ps
   fDebug = pset.get<int>("Debug");
 }
 
-std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowerHits(int event,
-										      const std::vector<art::Ptr<recob::Hit> >& hits,
-										      const std::vector<art::Ptr<recob::Track> >& tracks,
-										      const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
-										      const art::FindManyP<recob::Hit>& fmht,
-										      const art::FindManyP<recob::Track>& fmth,
-										      const art::FindManyP<recob::SpacePoint>& fmspt,
-										      const art::FindManyP<recob::Track>& fmtsp) {
+void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
+						  const std::vector<art::Ptr<recob::Hit> >& hits,
+						  const std::vector<art::Ptr<recob::Track> >& tracks,
+						  const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
+						  const art::FindManyP<recob::Hit>& fmht,
+						  const art::FindManyP<recob::Track>& fmth,
+						  const art::FindManyP<recob::SpacePoint>& fmspt,
+						  const art::FindManyP<recob::Track>& fmtsp) {
 
   // Ok, here we are again
   // Playing the game in which no one wins, but everyone loses
@@ -55,7 +55,10 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
   //  {=========}{==============================}
   // shower track          shower cone
 
-  std::map<int,std::unique_ptr<ReconTrack> > reconTracks;
+  fReconTracks.clear();
+  fShowerHits.clear();
+  fTrackTracks.clear();
+
   for (std::vector<art::Ptr<recob::Track> >::const_iterator trackIt = tracks.begin(); trackIt != tracks.end(); ++trackIt) {
     std::unique_ptr<ReconTrack> track = std::make_unique<ReconTrack>(trackIt->key());
     track->SetVertex((*trackIt)->Vertex());
@@ -70,7 +73,7 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
     // if (trackIt->key() == 5)
     //   for (unsigned int i = 0; i < (*trackIt)->NumberTrajectoryPoints(); ++i)
     // 	std::cout << "Traj point " << i << " has position (" << (*trackIt)->LocationAtPoint(i).X() << ", " << (*trackIt)->LocationAtPoint(i).Y() << ", " << (*trackIt)->LocationAtPoint(i).Z() << ")" << std::endl;
-    reconTracks[trackIt->key()] = std::move(track);
+    fReconTracks[trackIt->key()] = std::move(track);
   }
 
   // std::vector<int> showerLikeTracks, trackLikeTracks;
@@ -78,7 +81,7 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
 
   // Consider the space point cylinder situation
   double avCylinderSpacePoints = 0;
-  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
+  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt) {
     // Get the 3D properties of the track
     TVector3 point = trackIt->second->Vertex();
     TVector3 direction = trackIt->second->Direction();
@@ -112,29 +115,29 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
     }
     avCylinderSpacePoints += trackIt->second->CylinderSpacePointRatio();
   }
-  avCylinderSpacePoints /= (double)reconTracks.size();
+  avCylinderSpacePoints /= (double)fReconTracks.size();
 
   if (fDebug > 1) {
     std::cout << std::endl << "Cylinder space point ratios:" << std::endl;
-    for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt)
+    for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt)
       std::cout << "  Track " << trackIt->first << " has cylinder space point ratio " << trackIt->second->CylinderSpacePointRatio() << " (event average " << avCylinderSpacePoints << ")" << std::endl;
   }
 
   // Identify tracks
   if (fDebug > 0)
     std::cout << std::endl << "Identifying tracks:" << std::endl;
-  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt)
+  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt)
     if (trackIt->second->CylinderSpacePointRatio() / avCylinderSpacePoints < fCylinderCut) {
       if (fDebug > 0)
 	std::cout << "  Making track " << trackIt->first << " a track (Type I)" << std::endl;
       trackIt->second->MakeTrack();
     }
 
-  // for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
+  // for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt) {
   //   if (!trackIt->second->IsTrack())
   //     continue;
   //   std::cout << "Track " << trackIt->first << " (tagged as track) is this close to other tracks:" << std::endl;
-  //   for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator otherTrackIt = reconTracks.begin(); otherTrackIt != reconTracks.end(); ++otherTrackIt) {
+  //   for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator otherTrackIt = fReconTracks.begin(); otherTrackIt != fReconTracks.end(); ++otherTrackIt) {
   //     if (trackIt->first == otherTrackIt->first)
   // 	continue;
   //     std::cout << "  Other track " << otherTrackIt->first << " from track " << trackIt->first << " vertex: " << (otherTrackIt->second->Vertex()-trackIt->second->Vertex()).Mag() << " (vertex) and " << (otherTrackIt->second->End()-trackIt->second->Vertex()).Mag() << " (end); end: " << (otherTrackIt->second->Vertex()-trackIt->second->End()).Mag() << " (vertex) and " << (otherTrackIt->second->End()-trackIt->second->End()).Mag() << " (end)" << std::endl;
@@ -142,10 +145,10 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
   // }
 
   // Identify further tracks
-  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
+  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt) {
     if (trackIt->second->IsTrack())
       continue;
-    for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator otherTrackIt = reconTracks.begin(); otherTrackIt != reconTracks.end(); ++otherTrackIt) {
+    for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator otherTrackIt = fReconTracks.begin(); otherTrackIt != fReconTracks.end(); ++otherTrackIt) {
       if (trackIt->first == otherTrackIt->first or !otherTrackIt->second->IsTrack())
   	continue;
       if ((trackIt->second->Vertex() - otherTrackIt->second->Vertex()).Mag() < fTrackVertexCut or
@@ -167,7 +170,7 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
     bool showerSpacePoint = true;
     const std::vector<art::Ptr<recob::Track> > spacePointTracks = fmtsp.at(spacePointIt->key());
     for (std::vector<art::Ptr<recob::Track> >::const_iterator trackIt = spacePointTracks.begin(); trackIt != spacePointTracks.end(); ++trackIt)
-      if (reconTracks[trackIt->key()]->IsTrack())
+      if (fReconTracks[trackIt->key()]->IsTrack())
 	showerSpacePoint = false;
     if (showerSpacePoint)
       showerSpacePoints.push_back(*spacePointIt);
@@ -176,7 +179,7 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
   // Identify tracks which slipped through and shower tracks
   // For the moment, until the track tagging gets better at least, don't try to identify tracks from this
   double avConeSize = 0;
-  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
+  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt) {
     for (std::vector<art::Ptr<recob::SpacePoint> >::const_iterator spacePointIt = showerSpacePoints.begin(); spacePointIt != showerSpacePoints.end(); ++spacePointIt) {
       bool associatedSpacePoint = false;
       const std::vector<art::Ptr<recob::Track> > spTracks = fmtsp.at(spacePointIt->key());
@@ -196,10 +199,10 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
     }
     avConeSize += trackIt->second->ConeSize();
   }
-  avConeSize /= (double)reconTracks.size();
+  avConeSize /= (double)fReconTracks.size();
   if (fDebug > 0)
     std::cout << std::endl << "Identifying showers:" << std::endl;
-  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
+  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt) {
     // if (trackIt->second->ForwardSpacePoints() == 0)
     //   trackIt->second->MakeTrack();
     // double distanceFromAverage = (trackIt->second->ConeSize() - avConeSize) / TMath::Abs(avConeSize);
@@ -223,11 +226,11 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
 
   // Look for shower cones
   std::cout << std::endl << "  Shower cones:" << std::endl;
-  for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
+  for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt) {
     if (trackIt->second->IsShower()) {
       if (fDebug > 1)
 	std::cout << "    Track " << trackIt->first << std::endl;
-      for (std::map<int,std::unique_ptr<ReconTrack> >::iterator otherTrackIt = reconTracks.begin(); otherTrackIt != reconTracks.end(); ++otherTrackIt) {
+      for (std::map<int,std::unique_ptr<ReconTrack> >::iterator otherTrackIt = fReconTracks.begin(); otherTrackIt != fReconTracks.end(); ++otherTrackIt) {
 	if (trackIt->first == otherTrackIt->first or !otherTrackIt->second->IsUndetermined())
 	  continue;
         if ((otherTrackIt->second->Vertex()-trackIt->second->Vertex()).Angle(trackIt->second->Direction()) < fConeAngle * TMath::Pi() / 180 or
@@ -242,7 +245,7 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
   }
 
   // Look at remaining undetermined tracks
-  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
+  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt) {
     if (trackIt->second->IsUndetermined()) {
       // std::cout << "Remaining undetermined track " << trackIt->first << std::endl;
       // std::cout << "Length is " << trackIt->second->Length() << " and rms of space points is " << SpacePointsRMS(trackIt->second->SpacePoints()) << std::endl;
@@ -252,32 +255,34 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::SelectShowe
 
   std::cout << std::endl << "Event " << event << " track shower separation:" << std::endl;
   std::cout << "Shower initial tracks are:" << std::endl;
-  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt)
+  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt)
     if (trackIt->second->IsShowerTrack())
       std::cout << "  " << trackIt->first << std::endl;
 
   std::cout << "Track tracks are:" << std::endl;
-  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt)
+  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt)
     if (trackIt->second->IsTrack())
       std::cout << "  " << trackIt->first << std::endl;
 
-  // Shower hits -- select all hits which aren't associated with a determined track
-  std::vector<art::Ptr<recob::Hit> > showerHits;
+  // Select all hits which aren't associated with a determined track
   for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt) {
     bool showerHit = true;
     const std::vector<art::Ptr<recob::Track> > hitTracks = fmth.at(hitIt->key());
     for (std::vector<art::Ptr<recob::Track> >::const_iterator hitTrackIt = hitTracks.begin(); hitTrackIt != hitTracks.end(); ++hitTrackIt)
-      if (reconTracks[hitTrackIt->key()]->IsTrack())
+      if (fReconTracks[hitTrackIt->key()]->IsTrack())
 	showerHit = false;
     if (showerHit)
-      showerHits.push_back(*hitIt);
+      fShowerHits.push_back(*hitIt);
   }
 
-  return showerHits;
+  // Select all tracks which were determined to be tracks
+  for (std::vector<art::Ptr<recob::Track> >::const_iterator trackIt = tracks.begin(); trackIt != tracks.end(); ++trackIt)
+    if (fReconTracks[trackIt->key()]->IsTrack())
+      fTrackTracks.push_back(*trackIt);
 
 }
 
-std::vector<int> shower::TrackShowerSeparationAlg::InitialTrackLikeSegment(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks) {
+std::vector<int> shower::TrackShowerSepAlg::InitialTrackLikeSegment(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks) {
 
   // Consider the cones for each track
   for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
@@ -343,7 +348,7 @@ std::vector<int> shower::TrackShowerSeparationAlg::InitialTrackLikeSegment(std::
 
 }
 
-TVector3 shower::TrackShowerSeparationAlg::Gradient(const std::vector<TVector3>& points, const std::unique_ptr<TVector3>& dir) {
+TVector3 shower::TrackShowerSepAlg::Gradient(const std::vector<TVector3>& points, const std::unique_ptr<TVector3>& dir) {
 
   int nhits = 0;
   double sumx=0., sumy=0., sumz=0., sumx2=0., sumy2=0., sumxy=0., sumxz=0., sumyz=0.;
@@ -375,7 +380,7 @@ TVector3 shower::TrackShowerSeparationAlg::Gradient(const std::vector<TVector3>&
 
 }
 
-TVector3 shower::TrackShowerSeparationAlg::Gradient(const art::Ptr<recob::Track>& track) {
+TVector3 shower::TrackShowerSepAlg::Gradient(const art::Ptr<recob::Track>& track) {
 
   std::vector<TVector3> points;
   std::unique_ptr<TVector3> dir;
@@ -388,7 +393,7 @@ TVector3 shower::TrackShowerSeparationAlg::Gradient(const art::Ptr<recob::Track>
 
 }
 
-TVector3 shower::TrackShowerSeparationAlg::Gradient(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints) {
+TVector3 shower::TrackShowerSepAlg::Gradient(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints) {
 
   std::vector<TVector3> points;
   std::unique_ptr<TVector3> dir;
@@ -400,16 +405,16 @@ TVector3 shower::TrackShowerSeparationAlg::Gradient(const std::vector<art::Ptr<r
 
 }
 
-TVector3 shower::TrackShowerSeparationAlg::ProjPoint(const TVector3& point, const TVector3& direction, const TVector3& origin) {
+TVector3 shower::TrackShowerSepAlg::ProjPoint(const TVector3& point, const TVector3& direction, const TVector3& origin) {
   return (point-origin).Dot(direction) * direction + origin;
 }
 
-TVector3 shower::TrackShowerSeparationAlg::SpacePointPos(const art::Ptr<recob::SpacePoint>& spacePoint) {
+TVector3 shower::TrackShowerSepAlg::SpacePointPos(const art::Ptr<recob::SpacePoint>& spacePoint) {
   const double* xyz = spacePoint->XYZ();
   return TVector3(xyz[0], xyz[1], xyz[2]);
 }
 
-double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints) {
+double shower::TrackShowerSepAlg::SpacePointsRMS(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints) {
 
   TVector3 point = SpacePointPos(spacePoints.at(0));
   TVector3 direction = Gradient(spacePoints);
@@ -427,6 +432,24 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 
 }
 
+std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSepAlg::ShowerHits() {
+
+  if (fReconTracks.size() == 0)
+    std::cout << "Warning! (TrackShowerSepAlg): no shower hits found. (Did you RunTrackShowerSep first?)" << std::endl;
+
+  return fShowerHits;
+
+}
+
+std::vector<art::Ptr<recob::Track> > shower::TrackShowerSepAlg::TrackTracks() {
+
+  if (fReconTracks.size() == 0)
+    std::cout << "Warning! (TrackShowerSepAlg): no track tracks found. (Did you RunTrackShowerSep first?)" << std::endl;
+
+  return fTrackTracks;
+
+}
+
 
 
 
@@ -434,7 +457,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 // // --------------------------- OLD (late 2015) -------------------------------
 
 
-// shower::TrackShowerSeparationAlg::TrackShowerSeparationAlg(fhicl::ParameterSet const& pset) {
+// shower::TrackShowerSepAlg::TrackShowerSepAlg(fhicl::ParameterSet const& pset) {
 //   this->reconfigure(pset);
 //   // tree
 //   // ftree = tfs->make<TTree>("tree","tree");
@@ -449,7 +472,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 //   // ftree->Branch("AvDistance",&AvDistance);
 // }
 
-// void shower::TrackShowerSeparationAlg::reconfigure(fhicl::ParameterSet const& pset) {
+// void shower::TrackShowerSepAlg::reconfigure(fhicl::ParameterSet const& pset) {
 //   fConeAngle = pset.get<double>("ConeAngle");
 
 //   // fAngleCut           = pset.get<double>("AngleCut");
@@ -459,7 +482,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 //   // fAvTrackHitDistance = pset.get<double>("AvTrackHitDistance");
 // }
 
-// void shower::TrackShowerSeparationAlg::IdentifyTracksFromEventCentre(const std::vector<art::Ptr<recob::Track> >& tracks,
+// void shower::TrackShowerSepAlg::IdentifyTracksFromEventCentre(const std::vector<art::Ptr<recob::Track> >& tracks,
 // 								     const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
 // 								     const art::FindManyP<recob::Track>& fmtsp) {
 
@@ -507,7 +530,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 
 // }
 
-// void shower::TrackShowerSeparationAlg::IdentifyTracksNearTracks(const std::vector<art::Ptr<recob::Track> >& tracks) {
+// void shower::TrackShowerSepAlg::IdentifyTracksNearTracks(const std::vector<art::Ptr<recob::Track> >& tracks) {
 
 //   std::vector<art::Ptr<recob::Track> > identifiedTracks;
 
@@ -560,7 +583,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 
 // }
 
-// void shower::TrackShowerSeparationAlg::IdentifyTracksNearVertex(const art::Ptr<recob::Vertex>& vertex,
+// void shower::TrackShowerSepAlg::IdentifyTracksNearVertex(const art::Ptr<recob::Vertex>& vertex,
 // 								const std::vector<art::Ptr<recob::Track> >& tracks,
 // 								const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
 // 								const art::FindManyP<recob::Track>& fmtsp) {
@@ -604,7 +627,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 
 // }
 
-// bool shower::TrackShowerSeparationAlg::IdentifyShowerLikeTrack(const TVector3& end,
+// bool shower::TrackShowerSepAlg::IdentifyShowerLikeTrack(const TVector3& end,
 // 							       const TVector3& direction,
 // 							       const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints) {
 
@@ -623,7 +646,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 
 // }
 
-// std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::FillHitsToCluster(const std::vector<art::Ptr<recob::Hit> >& initialHits,
+// std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSepAlg::FillHitsToCluster(const std::vector<art::Ptr<recob::Hit> >& initialHits,
 // 										       const art::FindManyP<recob::Track>& fmt) {
 
 //   // Container to fill with shower-like hits
@@ -640,7 +663,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 
 // }
 
-// int shower::TrackShowerSeparationAlg::FindTrackID(const art::Ptr<recob::Hit>& hit) {
+// int shower::TrackShowerSepAlg::FindTrackID(const art::Ptr<recob::Hit>& hit) {
 //   double particleEnergy = 0;
 //   int likelyTrackID = 0;
 //   std::vector<sim::TrackIDE> trackIDs = backtracker->HitToTrackID(hit);
@@ -653,7 +676,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 //   return likelyTrackID;
 // }
 
-// int shower::TrackShowerSeparationAlg::FindTrueTrack(const std::vector<art::Ptr<recob::Hit> >& trackHits) {
+// int shower::TrackShowerSepAlg::FindTrueTrack(const std::vector<art::Ptr<recob::Hit> >& trackHits) {
 //   std::map<int,double> trackMap;
 //   for (std::vector<art::Ptr<recob::Hit> >::const_iterator trackHitIt = trackHits.begin(); trackHitIt != trackHits.end(); ++trackHitIt) {
 //     art::Ptr<recob::Hit> hit = *trackHitIt;
@@ -671,7 +694,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 //   return clusterTrack;
 // }
 
-// std::vector<art::Ptr<recob::SpacePoint> > shower::TrackShowerSeparationAlg::GetSurroundingSpacePoints(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
+// std::vector<art::Ptr<recob::SpacePoint> > shower::TrackShowerSepAlg::GetSurroundingSpacePoints(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
 // 												      const art::FindManyP<recob::Track>& fmt,
 // 												      unsigned int trackID) {
 
@@ -695,7 +718,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 
 // }
 
-// std::vector<art::Ptr<recob::SpacePoint> > shower::TrackShowerSeparationAlg::GetSpacePointsInCone(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
+// std::vector<art::Ptr<recob::SpacePoint> > shower::TrackShowerSepAlg::GetSpacePointsInCone(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
 // 												 const TVector3& trackEnd,
 // 												 const TVector3& trackDirection) {
 
@@ -725,7 +748,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 
 // }
 
-// std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::RemoveTrackHits(const std::vector<art::Ptr<recob::Hit> >& initialHits,
+// std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSepAlg::RemoveTrackHits(const std::vector<art::Ptr<recob::Hit> >& initialHits,
 // 										     const std::vector<art::Ptr<recob::Track> >& tracks,
 // 										     const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
 // 										     const std::vector<art::Ptr<recob::Vertex> >& vertices,
@@ -778,7 +801,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 
 // }
 
-// std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSeparationAlg::RemoveTrackHits(const std::vector<art::Ptr<recob::Hit> >& hits,
+// std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSepAlg::RemoveTrackHits(const std::vector<art::Ptr<recob::Hit> >& hits,
 // 										     const std::vector<art::Ptr<recob::PFParticle> > pfParticles,
 // 										     const art::FindManyP<recob::Cluster>& fmc,
 // 										     const art::FindManyP<recob::Hit>& fmh) {
@@ -804,7 +827,7 @@ double shower::TrackShowerSeparationAlg::SpacePointsRMS(const std::vector<art::P
 
 // }
 
-// double shower::TrackShowerSeparationAlg::SpacePointSpread(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints) {
+// double shower::TrackShowerSepAlg::SpacePointSpread(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints) {
 
 //   /// Finds the spread of a set of space points about their central axis
 
