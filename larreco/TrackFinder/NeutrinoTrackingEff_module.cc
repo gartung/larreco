@@ -69,6 +69,7 @@ public:
     void processEff(const art::Event& evt, bool &isFiducial);
     void truthMatcher( std::vector<art::Ptr<recob::Hit>> all_hits, std::vector<art::Ptr<recob::Hit>> track_hits, const simb::MCParticle *&MCparticle, double &Efrac, double &Ecomplet);
     double truthLength( const simb::MCParticle *MCparticle );
+    int truthNhits( const simb::MCParticle *MCparticle );
     bool insideFV(double vertex[4]);
     void doEfficiencies();
 
@@ -111,6 +112,18 @@ private:
     TH1D *h_theta_num;
     TH1D *h_Pproton_den;
     TH1D *h_Pproton_num;
+    TH1D *h_Pallprotons_den;
+    TH1D *h_Pallprotons_num;
+    //~^~^~^~^~^~^~^~^~^~^~^~^~^~^~
+    TH1D *h_Nhits_proton_den;
+    TH1D *h_Nhits_proton_num;
+    TH1D *h_len_proton_den;
+    TH1D *h_len_proton_num;
+    TH1D *h_Nhits_allprotons_den;
+    TH1D *h_Nhits_allprotons_num;
+    TH1D *h_len_allprotons_den;
+    TH1D *h_len_allprotons_num;
+    //~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~
     TH1D *h_Ppion_plus_den; 
     TH1D *h_Ppion_plus_num; 
     TH1D *h_Ppion_minus_den; 
@@ -142,8 +155,15 @@ private:
     TEfficiency* h_Eff_Pmu = 0;
     TEfficiency* h_Eff_theta = 0;
     TEfficiency* h_Eff_Pproton = 0;
+    TEfficiency* h_Eff_Pallprotons = 0;
     TEfficiency* h_Eff_Ppion_plus = 0;
     TEfficiency* h_Eff_Ppion_minus = 0;
+    //~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~
+    TEfficiency* h_Eff_Proton_Nhits =0;
+    TEfficiency* h_Eff_Proton_len =0;
+    TEfficiency* h_Eff_AllProtons_Nhits = 0;
+    TEfficiency* h_Eff_AllProtons_len = 0;
+    //~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^
 
     TEfficiency* h_Eff_Lmuon = 0;
     TEfficiency* h_Eff_Lproton = 0;
@@ -265,7 +285,8 @@ void NeutrinoTrackingEff::beginJob(){
   double E_bins[21] ={0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4,4.5,5.0,5.5,6.0,7.0,8.0,10.0,12.0,14.0,17.0,20.0,25.0};
   double theta_bin[44]= { 0.,1.,2.,3.,4.,5.,6.,7.,8.,9.,10.,11.,12.,13.,14.,15.,16.,17.,18.,19.,20.,22.,24.,26.,28.,30.,32.,34.,36.,38.,40.,42.,44.,46.,48.,50.,55.,60.,65.,70.,75.,80.,85.,90.};
   double Pbins[18] ={0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.4,1.6,1.8,2.0,2.5,3.0};
-  
+  //double Hit_bins[31]={-0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5,11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5, 19.5, 20.5,21.5, 22.5, 23.5, 24.5, 25.5, 26.5, 27.5, 28.5, 29.5};
+
   for (int i = 0; i<21; ++i) E_bins[i] *= fMaxNeutrinoE/25.;
   for (int i = 0; i<18; ++i) Pbins[i] *= fMaxLeptonP/3.0;
 
@@ -277,6 +298,22 @@ void NeutrinoTrackingEff::beginJob(){
   h_theta_num = tfs->make<TH1D>("h_theta_num","Theta; Theta w.r.t beam direction (Degrees); Tracking Efficiency",43,theta_bin);
   h_Pproton_den = tfs->make<TH1D>("h_Pproton_den","Protons; Proton Momentum (GeV); Tracking Efficiency", 17, Pbins);
   h_Pproton_num = tfs->make<TH1D>("h_Pproton_num","Protons; Proton Momentum (GeV); Tracking Efficiency", 17, Pbins);
+ //~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^
+  h_Nhits_proton_den =tfs->make<TH1D>("h_Nhits_proton_den", "Protons; Number of hits; Tracking Efficiency", 50, 0, 50);
+  h_Nhits_proton_num =tfs->make<TH1D>("h_Nhits_proton_num", "Protons; Number of hits; Tracking Efficiency", 50, 0, 50);
+  h_len_proton_den =tfs->make<TH1D>("h_len_proton_den", "Track Length; Tracking Efficiency", 30, 0, 30);
+  h_len_proton_num =tfs->make<TH1D>("h_len_proton_num", "Track Length; Tracking Efficiency", 30, 0, 30);
+ //~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^
+ //ALL PROTONS
+  h_Pallprotons_den = tfs->make<TH1D>("h_Pallprotons_den", "All Protons; Proton Momentum (GeV); Tracking Efficiency", 17, Pbins);
+  h_Pallprotons_num = tfs->make<TH1D>("h_Pallprotons_num", "All Protons; Proton Momentum (GeV); Tracking Efficiency", 17, Pbins);
+  h_Nhits_allprotons_den = tfs->make<TH1D>("h_Nhits_allprotons_den", "All Protons; Number of hits; Tracking Efficiency", 50, 0, 50);
+  h_Nhits_allprotons_num = tfs->make<TH1D>("h_Nhits_allprotons_num", "All Protons; Number of hits; Tracking Efficiency", 50, 0, 50);
+  h_len_allprotons_den =tfs->make<TH1D>("h_len_allprotons_den", "Track Length; Tracking Efficiency", 30, 0, 30);
+  h_len_allprotons_num =tfs->make<TH1D>("h_len_allprotons_num", "Track Length; Tracking Efficiency", 30, 0, 30);
+ 
+
+ 
   h_Ppion_plus_den = tfs->make<TH1D>("h_Ppion_plus_den", "Pions Plus; Pion Momentum (GeV);  Tracking Efficiency", 17, Pbins);
   h_Ppion_plus_num = tfs->make<TH1D>("h_Ppion_plus_num", "Pions Plus; Pion Momentum (GeV);  Tracking Efficiency", 17, Pbins);
   h_Ppion_minus_den = tfs->make<TH1D>("h_Ppion_minus_den", "Pions Minus; Pion Momentum (GeV);  Tracking Efficiency", 17, Pbins);
@@ -289,6 +326,14 @@ void NeutrinoTrackingEff::beginJob(){
   h_theta_num->Sumw2();
   h_Pproton_den->Sumw2();
   h_Pproton_num->Sumw2();
+  h_Pallprotons_den->Sumw2();
+  h_Pallprotons_num->Sumw2();
+  //~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~
+  h_Nhits_proton_den->Sumw2();
+  h_Nhits_proton_num->Sumw2();
+  h_len_proton_den->Sumw2();
+  h_len_proton_num->Sumw2();
+  //~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^
   h_Ppion_plus_den->Sumw2();
   h_Ppion_plus_num->Sumw2();
   h_Ppion_minus_den->Sumw2();
@@ -418,6 +463,7 @@ void NeutrinoTrackingEff::processEff( const art::Event& event, bool &isFiducial)
   
     simb::MCParticle *MClepton = NULL; 
     simb::MCParticle *MCproton = NULL;
+    std::vector<simb::MCParticle> *MCallprotons = new std::vector<simb::MCParticle>();
     simb::MCParticle *MCpion_plus = NULL;
     simb::MCParticle *MCpion_minus = NULL;
     simb::MCParticle *MCkaon = NULL;
@@ -440,6 +486,7 @@ void NeutrinoTrackingEff::processEff( const art::Event& event, bool &isFiducial)
        if( particle->Mother() == 0 ){   //save primary particle i.e. from the neutrino interaction
          //save leading pion and proton
          if( particle->PdgCode() == 2212 ){
+           MCallprotons->push_back(*particle);
            if(particle->Momentum().E() > tmp_leadingProtonE){
              tmp_leadingProtonE = particle->Momentum().E();
              MC_leading_protonID = particle->TrackId();          
@@ -526,6 +573,7 @@ void NeutrinoTrackingEff::processEff( const art::Event& event, bool &isFiducial)
     theta_mu *= (180.0/3.14159);
     double truth_lengthLepton = truthLength(MClepton); 
     double proton_length = truthLength(MCproton);
+    int proton_Nhits= truthNhits(MCproton);  ;
     double pion_plus_length = truthLength(MCpion_plus);
     double pion_minus_length = truthLength(MCpion_minus);
     double kaonLength = truthLength(MCkaon);
@@ -542,6 +590,22 @@ void NeutrinoTrackingEff::processEff( const art::Event& event, bool &isFiducial)
        if( MCproton ){
          h_Pproton_den->Fill(MC_leading_ProtonP);
          h_proton_length->Fill(proton_length);
+         h_len_proton_den->Fill(proton_length);
+         h_Nhits_proton_den->Fill(proton_Nhits);
+       }
+       if(MCallprotons->size() > 0)
+       {
+         for (unsigned int i = 0; i < MCallprotons->size(); i++)
+         {
+           simb::MCParticle tmp_proton = MCallprotons->at(i);
+           double proton_px = tmp_proton.Momentum().Px();
+           double proton_py = tmp_proton.Momentum().Py();
+           double proton_pz = tmp_proton.Momentum().Pz();
+           double proton_p = sqrt(proton_px*proton_px + proton_py*proton_py + proton_pz*proton_pz);
+           h_Pallprotons_den->Fill(proton_p);
+           h_Nhits_allprotons_den->Fill(truthNhits(&tmp_proton));
+           h_len_allprotons_den->Fill(truthLength(&tmp_proton));
+         }
        }
        if( MCpion_plus ){
          h_Ppion_plus_den->Fill( MC_leading_PionPlusP);
@@ -618,6 +682,7 @@ void NeutrinoTrackingEff::processEff( const art::Event& event, bool &isFiducial)
     double trackLength_michel =0.0;
     const simb::MCParticle *MClepton_reco = NULL; 
     const simb::MCParticle *MCproton_reco = NULL;
+    std::vector<simb::MCParticle> *MCallprotons_reco = new std::vector<simb::MCParticle>(); 
     const simb::MCParticle *MCpion_plus_reco = NULL;
     const simb::MCParticle *MCpion_minus_reco = NULL;
     const simb::MCParticle *MCkaon_reco = NULL;
@@ -647,14 +712,19 @@ void NeutrinoTrackingEff::processEff( const art::Event& event, bool &isFiducial)
            MClepton_reco = particle;
          }
        }
-       else if( (particle->PdgCode() == 2212) && (particle->TrackId() == MC_leading_protonID) ){
-         //save the best track ... based on completeness if there is more than one track 
-         if( tmpEcomplet > Ecomplet_proton ){
-           Ecomplet_proton = tmpEcomplet;
-           Efrac_proton = tmpEfrac;
-           trackLength_proton = track->Length();
-           MCproton_reco = particle;
+       else if(particle->PdgCode() == 2212)
+       {
+         if (particle->TrackId() == MC_leading_protonID)
+         {
+           //save the best track ... based on completeness if there is more than one track 
+           if( tmpEcomplet > Ecomplet_proton ){
+             Ecomplet_proton = tmpEcomplet;
+             Efrac_proton = tmpEfrac;
+             trackLength_proton = track->Length();
+             MCproton_reco = particle;
+           }
          }
+         MCallprotons_reco->push_back(*particle);
        }
        else if( (particle->PdgCode() == 211) && (particle->TrackId() == MC_leading_PionPlusID) ){
          //save the best track ... based on completeness if there is more than one track 
@@ -715,11 +785,30 @@ void NeutrinoTrackingEff::processEff( const art::Event& event, bool &isFiducial)
     }
     if( MCproton_reco && MCproton ){
       if( MC_isCC && (fNeutrinoPDGcode == MC_incoming_PDG) && (MC_incoming_P[3] <= fMaxNeutrinoE) ){
-        h_Pproton_num->Fill(MC_leading_ProtonP);     
+        h_Pproton_num->Fill(MC_leading_ProtonP);
+        h_len_proton_num->Fill(proton_length);
+        h_Nhits_proton_num->Fill(proton_Nhits);     
         h_Efrac_proton->Fill(Efrac_proton);
         h_Ecomplet_proton->Fill(Ecomplet_proton);
         h_trackRes_proton->Fill(Reco_LengthResProton);       
 	h_protonwtrk_length->Fill(proton_length);
+      }
+    }
+    if ((MCallprotons_reco->size() > 0) && (MCallprotons->size() > 0))
+    {
+      if( MC_isCC && (fNeutrinoPDGcode == MC_incoming_PDG) && (MC_incoming_P[3] <= fMaxNeutrinoE) )
+      {
+        for (unsigned int i = 0; i < MCallprotons_reco->size(); i++)
+        {
+          simb::MCParticle tmp_proton = MCallprotons_reco->at(i);
+          double proton_px = tmp_proton.Momentum().Px();
+          double proton_py = tmp_proton.Momentum().Py();
+          double proton_pz = tmp_proton.Momentum().Pz();
+          double proton_p = sqrt(proton_px*proton_px + proton_py*proton_py + proton_pz*proton_pz);
+          h_Pallprotons_num->Fill(proton_p);
+          h_Nhits_allprotons_num->Fill(truthNhits(&tmp_proton));
+          h_len_allprotons_num->Fill(truthLength(&tmp_proton));
+        }
       }
     }
     if( MCpion_plus_reco && MCpion_plus ){
@@ -844,6 +933,12 @@ void NeutrinoTrackingEff::truthMatcher( std::vector<art::Ptr<recob::Hit>> all_hi
     Ecomplet = partial_E/totenergy;
 }
 //========================================================================
+int NeutrinoTrackingEff::truthNhits( const simb::MCParticle *MCparticle ){
+  if( !MCparticle ) return -999;
+  int numberofhits = MCparticle->NumberTrajectoryPoints();
+  return numberofhits;
+}
+//========================================================================
 double NeutrinoTrackingEff::truthLength( const simb::MCParticle *MCparticle ){
    //calculate the truth length considering only the part that is inside the TPC
    //Base on a peace of code from dune/TrackingAna/TrackingEfficiency_module.cc
@@ -921,6 +1016,44 @@ void NeutrinoTrackingEff::doEfficiencies(){
      grEff_Pproton->Write("grEff_Pproton");
      h_Eff_Pproton->Write("h_Eff_Pproton");
    }
+   //~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^
+   if(TEfficiency::CheckConsistency(*h_len_proton_num,*h_len_proton_den)){
+     h_Eff_Proton_len = tfs->make<TEfficiency>(*h_len_proton_num,*h_len_proton_den);
+     TGraphAsymmErrors *grEff_len_proton = h_Eff_Proton_len->CreateGraph();
+     grEff_len_proton->Write("grEff_len_proton");
+     h_Eff_Proton_len->Write("h_Eff_len_proton");
+   }
+   if(TEfficiency::CheckConsistency(*h_Nhits_proton_num,*h_Nhits_proton_den)){
+     h_Eff_Proton_Nhits = tfs->make<TEfficiency>(*h_Nhits_proton_num,*h_Nhits_proton_den);
+     TGraphAsymmErrors *grEff_Nhits_proton = h_Eff_Proton_Nhits->CreateGraph();
+     grEff_Nhits_proton->Write("grEff_Nhits_proton");
+     h_Eff_Proton_Nhits->Write("h_Eff_Nhits_proton");
+   }
+   //ALL PROTONS
+    if(TEfficiency::CheckConsistency(*h_Pallprotons_num,*h_Pallprotons_den))
+   {
+     h_Eff_Pallprotons = tfs->make<TEfficiency>(*h_Pallprotons_num,*h_Pallprotons_den);
+     TGraphAsymmErrors *grEff_Pallprotons = h_Eff_Pallprotons->CreateGraph();
+     grEff_Pallprotons->Write("grEff_Pallprotons");
+     h_Eff_Pallprotons->Write("h_Eff_Pallprotons");
+   }
+   if(TEfficiency::CheckConsistency(*h_len_allprotons_num,*h_len_allprotons_den)){
+     h_Eff_AllProtons_len = tfs->make<TEfficiency>(*h_len_allprotons_num,*h_len_allprotons_den);
+     TGraphAsymmErrors *grEff_len_allprotons = h_Eff_AllProtons_len->CreateGraph();
+     grEff_len_allprotons->Write("grEff_len_allprotons");
+     h_Eff_AllProtons_len->Write("h_Eff_len_allprotons");
+   }
+   if(TEfficiency::CheckConsistency(*h_Nhits_allprotons_num,*h_Nhits_allprotons_den)){
+     h_Eff_AllProtons_Nhits = tfs->make<TEfficiency>(*h_Nhits_allprotons_num,*h_Nhits_allprotons_den);
+     TGraphAsymmErrors *grEff_Nhits_allprotons = h_Eff_AllProtons_Nhits->CreateGraph();
+     grEff_Nhits_allprotons->Write("grEff_Nhits_allprotons");
+     h_Eff_AllProtons_Nhits->Write("h_Eff_Nhits_allprotons");
+   }
+ 
+  
+
+
+   //~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^
    if(TEfficiency::CheckConsistency(*h_Ppion_plus_num,*h_Ppion_plus_den)){
      h_Eff_Ppion_plus = tfs->make<TEfficiency>(*h_Ppion_plus_num,*h_Ppion_plus_den);
      TGraphAsymmErrors *grEff_Ppion_plus = h_Eff_Ppion_plus->CreateGraph();
