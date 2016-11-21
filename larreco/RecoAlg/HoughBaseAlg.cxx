@@ -37,16 +37,16 @@
 #include "messagefacility/MessageLogger/MessageLogger.h" 
 #include "art/Framework/Principal/Event.h" 
 #include "art/Framework/Principal/Handle.h" 
-#include "art/Framework/Core/FindManyP.h"
+#include "canvas/Persistency/Common/FindManyP.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
-#include "art/Persistency/Common/Ptr.h" 
-#include "art/Persistency/Common/PtrVector.h" 
+#include "canvas/Persistency/Common/Ptr.h" 
+#include "canvas/Persistency/Common/PtrVector.h" 
 
 
 // larsoft libraries
 #include "larcore/CoreUtils/ServiceUtil.h" // lar::providerFrom<>()
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Cluster.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
@@ -266,16 +266,13 @@ size_t cluster::HoughBaseAlg::Transform(
   unsigned int wireMax = 0;
   unsigned int cs=hits[0]->WireID().Cryostat;
   unsigned int t=hits[0]->WireID().TPC;
-  unsigned int p=hits[0]->WireID().Plane;   
+  geo::WireID const& wireid = hits[0]->WireID();
 
 
   //mf::LogInfo("HoughBaseAlg") << "nClusters is: " << *nClusters;
 
 
-  //size_t cinctr = 0;
-  //geo::View_t    view = geom->Cryostat(cs).TPC(t).Plane(p).View();
-  //  geo::SigType_t sigt = geom->SignalType(channel);
-  geo::SigType_t sigt = geom->Cryostat(cs).TPC(t).Plane(p).SignalType();
+  geo::SigType_t sigt = geom->SignalType(wireid);
   std::vector<int> skip;  
   
   std::vector<double> wire_pitch(geom->Nplanes(t, cs), 0.);
@@ -1009,7 +1006,7 @@ std::array<int, 3> cluster::HoughTransform::DoAddPointReturnMax
 //this method saves a BMP image of the Hough Accumulator, which can be viewed with gimp
 void cluster::HoughBaseAlg::HLSSaveBMPFile(const char *fileName, unsigned char *pix, int dx, int dy)
 {
-  ofstream bmpFile(fileName, std::ios::binary);
+  std::ofstream bmpFile(fileName, std::ios::binary);
   bmpFile.write("B", 1);
   bmpFile.write("M", 1);
   int bitsOffset = 54 +256*4; 
@@ -1490,9 +1487,9 @@ size_t cluster::HoughBaseAlg::FastTransform(const std::vector<art::Ptr<recob::Cl
   unsigned int cs=hit.at(0)->WireID().Cryostat;
   unsigned int t=hit.at(0)->WireID().TPC;
   unsigned int p=hit.at(0)->WireID().Plane;   
+  geo::WireID const& wireid = hit.at(0)->WireID();
   
-  //	geo::View_t    view = geom->Cryostat(cs).TPC(t).Plane(p).View();
-  geo::SigType_t sigt = geom->Cryostat(cs).TPC(t).Plane(p).SignalType();   
+  geo::SigType_t sigt = geom->SignalType(wireid);
   
   // if(fPerCluster){
   //   if((*clusterIter)->View() == view) hit = fmh.at(cinctr);

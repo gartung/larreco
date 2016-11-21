@@ -7,7 +7,7 @@
 #include "iostream"
 #include "vector"
 #include "TMath.h"
-#include "lardata/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Track.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
 #include "TAxis.h"
@@ -16,8 +16,8 @@
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 #include "fhiclcpp/ParameterSet.h" 
-#include "art/Persistency/Common/Ptr.h" 
-#include "art/Persistency/Common/PtrVector.h" 
+#include "canvas/Persistency/Common/Ptr.h" 
+#include "canvas/Persistency/Common/PtrVector.h" 
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "Minuit2/MnUserParameterState.h"
@@ -29,7 +29,7 @@
 #include "Minuit2/FCNBase.h" 
 #include "Math/Minimizer.h"
 #include "Math/Factory.h"
-#include "larreco/RecoAlg/RootMathFunctor.h"
+#include "larcore/CoreUtils/quiet_Math_Functor.h"
 #include "TMatrixDSym.h"
 #include "TMatrixDSymEigen.h"
 #include "TVector3.h"
@@ -94,11 +94,11 @@ namespace trkf{
     
     TrackMomentumCalculator();
     
-    virtual ~TrackMomentumCalculator() {}
+    virtual ~TrackMomentumCalculator();
     
     double GetTrackMomentum(double trkrange, int pdg);
     
-    TPolyLine3D *gr_xyz; TGraph *gr_xy; TGraph *gr_yz; TGraph *gr_xz; 
+    TPolyLine3D *gr_xyz=0; TGraph *gr_xy=0; TGraph *gr_yz=0; TGraph *gr_xz=0; 
     
     Int_t GetTracks( const std::vector<Float_t> &xxx, const std::vector<Float_t> &yyy, const std::vector<Float_t> &zzz );
         
@@ -114,7 +114,7 @@ namespace trkf{
     
     void GetDeltaThetaRMS( Double_t &mean, Double_t &rms, Double_t &rmse, Double_t thick );
     
-    TGraphErrors *gr_meas;
+    TGraphErrors *gr_meas = 0;
 
     TGraph *KEvsR;
     

@@ -14,16 +14,16 @@
 // ########################
 // ### LArSoft Includes ###
 // ########################
-#include "lardata/RecoBase/EndPoint2D.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Cluster.h"
-#include "lardata/RecoBase/Vertex.h"
+#include "lardataobj/RecoBase/EndPoint2D.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Vertex.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
-#include "larsim/Simulation/sim.h"
+#include "lardataobj/Simulation/sim.h"
 #include "larsim/Simulation/SimListUtils.h"
 #include "larsim/MCCheater/BackTracker.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -51,8 +51,8 @@
 #include "art/Framework/Principal/Event.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Persistency/Common/Ptr.h"
-#include "art/Persistency/Common/PtrVector.h"
+#include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Services/Optional/TFileDirectory.h"
@@ -403,7 +403,7 @@ void FeatureVertexFinderAna::analyze(const art::Event& evt)
   // ##############################
   // ### Looping over geo::PlaneIDs ###
   // ##############################
-  for(auto pid : geom->PlaneIDs()){
+  for(auto const& pid : geom->IteratePlaneIDs()){
     // ############################################################################
     // ### Calculating the nearest wire the vertex corresponds to in each plane ###
     // ############################################################################
@@ -477,7 +477,7 @@ void FeatureVertexFinderAna::analyze(const art::Event& evt)
    	// ##############################
    	// ### Looping over geo::PlaneIDs ###
    	// ##############################
-	  for(auto pid : geom->PlaneIDs() ){
+	  for(auto const& pid : geom->IteratePlaneIDs() ){
 	    for(size_t ww = 0; ww<vert2d.size(); ++ww){
 	      //std::cout<<"plane = "<<plane<<std::endl;
 	      //std::cout<<"vert2d[ww]->WireID().Plane = "<<vert2d[ww]->WireID().Plane<<std::endl;

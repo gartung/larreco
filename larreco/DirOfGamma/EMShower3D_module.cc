@@ -11,7 +11,7 @@
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
-#include "art/Utilities/InputTag.h"
+#include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
 #include "art/Framework/Services/Optional/TFileService.h" 
@@ -21,11 +21,11 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Cluster.h"
-#include "lardata/RecoBase/Vertex.h"
-#include "lardata/RecoBase/Track.h"
-#include "lardata/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Vertex.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
 
 #include "larsim/MCCheater/BackTracker.h"
 
@@ -36,7 +36,7 @@
 #include <memory>
 
 #include "larreco/DirOfGamma/DirOfGamma.h"
-#include "lardata/AnalysisAlg/CalorimetryAlg.h"
+#include "larreco/Calorimetry/CalorimetryAlg.h"
 
 // ROOT includes
 #include "TLorentzVector.h"
@@ -159,7 +159,7 @@ void ems::EMShower3D::beginJob()
 void ems::EMShower3D::reconfigure(fhicl::ParameterSet const & p)
 {
 	fCluModuleLabel = p.get< std::string >("ClustersModuleLabel");
-  	fProjectionMatchingAlg.reconfigure(p.get< fhicl::ParameterSet >("ProjectionMatchingAlg"));
+  	//fProjectionMatchingAlg.reconfigure(p.get< fhicl::ParameterSet >("ProjectionMatchingAlg")); // use constructor-time config only
 	fTrk3DModuleLabel = p.get< std::string >("Trk3DModuleLabel");
 	
   return;

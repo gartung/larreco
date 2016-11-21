@@ -1,0 +1,76 @@
+#include "pointidalg.fcl"
+
+BEGIN_PROLOG
+
+standard_pointidtrainingdata:
+{
+    module_type:     "PointIdTrainingData"
+
+    SelectedTPC:     []
+	SelectedView:    []
+    OutTextFilePath: "."
+    Crop:            true
+
+    TrainingDataAlg:  @local::standard_trainingdataalg
+}
+
+standard_pointidtrainingnuevent:
+{
+    module_type:     "PointIdTrainingNuevent"
+
+	SelectedView:    []
+    OutTextFilePath: "."
+
+    GenModuleLabel:  "generator"
+    FidVolCut:	      20.0
+
+    TrainingDataAlg:  @local::standard_trainingdataalg
+}
+
+standard_pointidefftest:
+{
+	module_type:            "PointIdEffTest"
+
+    WireLabel:              "caldata"
+    SimModuleLabel:         "largeant"	
+   	HitsModuleLabel:        "linecluster"
+   	ClusterModuleLabel:     "linecluster"
+
+    PointIdAlg:             @local::standard_pointidalg
+
+    Threshold:              0.5
+    View:                   2
+
+    SaveHitsFile:           false
+}
+
+standard_emtrackclusterid:
+{
+	module_type:            "EmTrackClusterId"
+
+    WireLabel:              "caldata"     # tag of deconvoluted ADC on wires (recob::Wire)
+    HitModuleLabel:         "linecluster" # tag of hits made to create clusters, unclustered leftovers to be EM/track tagged
+    ClusterModuleLabel:     "linecluster" # tag of clusters which are to be EM/track tagged
+
+    PointIdAlg:             @local::standard_pointidalg
+
+    Threshold:              0.5 # tag cluster as EM-like if net output accumulated over hits > threshold
+    Views:                  []  # tag clusters in selected views only, or in all views if empty list
+}
+
+standard_particledecayid:
+{
+	module_type:            "ParticleDecayId"
+
+    WireLabel:              "caldata"     # tag of deconvoluted ADC on wires (recob::Wire)
+    TrackModuleLabel:       "pmtrack"     # tag of tracks where decay points should be tagged
+
+    PointIdAlg:             @local::standard_pointidalg
+
+    RoiThreshold:           0.8   # search for decay points where the net output > ROI threshold
+    PointThreshold:         0.998 # tag decay point if it is detected in at least two planes with net outputs product > POINT threshold
+    SkipView:               -1    # use all views to find decays if -1, or skip the view with provided index and use only the two other views
+}
+
+END_PROLOG
+

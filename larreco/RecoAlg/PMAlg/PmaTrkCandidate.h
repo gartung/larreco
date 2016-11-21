@@ -16,6 +16,11 @@
 
 namespace pma
 {
+	// these types to be replaced with use of feature proposed in redmine #12602
+	typedef std::map< unsigned int, std::vector< art::Ptr<recob::Hit> > > view_hitmap;
+	typedef std::map< unsigned int, view_hitmap > tpc_view_hitmap;
+	typedef std::map< unsigned int, tpc_view_hitmap > cryo_tpc_view_hitmap;
+
 	class TrkCandidate;
 	class TrkCandidateColl;
 }
@@ -95,6 +100,8 @@ public:
 	std::vector< TrkCandidate > const & tracks(void) const { return fCandidates; }
 	std::vector< TrkCandidate > & tracks(void) { return fCandidates; }
 
+    std::vector< TrkCandidate > const & parents(void) const { return fParents; }
+
 	int getCandidateIndex(pma::Track3D const * candidate) const;
 	void setParentDaughterConnections(void);
 
@@ -108,6 +115,7 @@ public:
 
 private:
 	std::vector< TrkCandidate > fCandidates;
+	std::vector< TrkCandidate > fParents;
 };
 
 #endif

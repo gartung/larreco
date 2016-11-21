@@ -7,25 +7,26 @@
 // LArSoft includes
 #include "lardata/Utilities/GeometryUtilities.h"
 
-#include "larsim/Simulation/SimChannel.h"
+#include "lardataobj/Simulation/SimChannel.h"
 #include "larsim/Simulation/LArG4Parameters.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Cluster.h"
-#include "lardata/RecoBase/Track.h"
-#include "lardata/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/PlaneGeo.h"
-#include "SimulationBase/MCParticle.h"
-#include "SimulationBase/MCTruth.h"
-#include "SimulationBase/MCNeutrino.h"
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCNeutrino.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 // #include "MCCheater/BackTracker.h"
-#include "lardata/RawData/raw.h"
-#include "lardata/RawData/RawDigit.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Wire.h"
-#include "lardata/AnalysisBase/ParticleID.h"
-#include "lardata/AnalysisBase/Calorimetry.h"
+#include "lardataobj/RawData/raw.h"
+#include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/AnalysisBase/ParticleID.h"
+#include "lardataobj/AnalysisBase/Calorimetry.h"
+#include "lardataobj/RawData/TriggerData.h"
 
 // Framework includes
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -34,9 +35,9 @@
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Core/ModuleMacros.h"
-#include "art/Framework/Core/FindOneP.h"
-#include "art/Framework/Core/FindMany.h"
-#include "art/Persistency/Common/PtrVector.h"
+#include "canvas/Persistency/Common/FindOneP.h"
+#include "canvas/Persistency/Common/FindMany.h"
+#include "canvas/Persistency/Common/PtrVector.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "fhiclcpp/ParameterSet.h"
 
@@ -53,6 +54,7 @@
 #include "TUnixSystem.h"
 #include "TDatabasePDG.h"
 #include "TObjArray.h"
+#include "TTimeStamp.h"
 
 // C++ Includes
 #include <map>
@@ -132,7 +134,11 @@ private:
     int fEvent;
     int fRun;
     int fSubRun;
-
+    double fEventTime;
+    unsigned int fTriggernumber;      //trigger counter
+    double fTriggertime;        //trigger time w.r.t. electronics clock T0
+    double fBeamgatetime;       //beamgate time w.r.t. electronics clock T0
+    unsigned int fTriggerbits;        //trigger bits
 
     int fCalib_nChannel;
     // int fCalib_channelId[MAX_CHANNEL];  // hit channel id; size == fCalib_Nhit
@@ -246,6 +252,11 @@ void CellTree::initOutput()
     fEventTree->Branch("eventNo", &fEvent);
     fEventTree->Branch("runNo", &fRun);
     fEventTree->Branch("subRunNo", &fSubRun);
+    fEventTree->Branch("eventTime", &fEventTime);  // timestamp
+    fEventTree->Branch("triggerNo", &fTriggernumber);  // timestamp
+    fEventTree->Branch("triggerTime", &fTriggertime);  // timestamp
+    fEventTree->Branch("beamgateTime", &fBeamgatetime);  // timestamp
+    fEventTree->Branch("triggerBits", &fTriggerbits);  // timestamp
 
     fEventTree->Branch("raw_nChannel", &fRaw_nChannel);  // number of hit channels above threshold
     fEventTree->Branch("raw_channelId" , &fRaw_channelId); // hit channel id; size == raw_nChannel
@@ -352,6 +363,9 @@ void CellTree::analyze( const art::Event& event )
     fEvent  = event.id().event();
     fRun    = event.run();
     fSubRun = event.subRun();
+    art::Timestamp ts = event.time();
+    TTimeStamp tts(ts.timeHigh(), ts.timeLow());
+    fEventTime = tts.AsDouble();
 
     if (fSaveRaw) processRaw(event);
     if (fSaveCalib) processCalib(event);
@@ -364,7 +378,7 @@ void CellTree::analyze( const art::Event& event )
         for (int i=0; i<nSp; i++) {
             TString jsonfile;
             jsonfile.Form("data/%i/%i-%s.json", entryNo, entryNo, fSpacePointLabels[i].c_str());
-            ofstream out(jsonfile.Data());
+            std::ofstream out(jsonfile.Data());
             processSpacePoint(event, fSpacePointLabels[i], out);
             out.close();
         }
@@ -373,7 +387,7 @@ void CellTree::analyze( const art::Event& event )
             processMCTracks();
             TString jsonfile;
             jsonfile.Form("data/%i/%i-mc.json", entryNo, entryNo);
-            ofstream out(jsonfile.Data());
+            std::ofstream out(jsonfile.Data());
             DumpMCJSON(out);
             out.close();
         }
@@ -404,6 +418,7 @@ void CellTree::reset()
     fSIMIDE_z.clear();
     fSIMIDE_numElectrons.clear();
 
+    mc_Ntrack = 0;  
     for (int i=0; i<MAX_TRACKS; i++) {
         mc_id[i] = 0;
         mc_pdg[i] = 0;
@@ -448,6 +463,33 @@ void CellTree::reset()
 //-----------------------------------------------------------------------
 void CellTree::processRaw( const art::Event& event )
 {
+    art::Handle< std::vector<raw::Trigger>> triggerListHandle;
+    std::vector<art::Ptr<raw::Trigger>> triggerlist;
+    if (event.getByLabel(fRawDigitLabel, triggerListHandle)) {
+        art::fill_ptr_vector(triggerlist, triggerListHandle);
+    }
+    else {
+        cout << "WARNING: no label " << fRawDigitLabel << endl;
+    }
+    if (triggerlist.size()){
+        fTriggernumber = triggerlist[0]->TriggerNumber();
+        fTriggertime   = triggerlist[0]->TriggerTime();
+        fBeamgatetime  = triggerlist[0]->BeamGateTime();
+        fTriggerbits   = triggerlist[0]->TriggerBits();
+    }
+    else {
+        fTriggernumber = 0;
+        fTriggertime   = 0;
+        fBeamgatetime  = 0;
+        fTriggerbits   = 0;
+    }
+    // cout << "timestamp: " << fEventTime << endl;
+    // cout << "fTriggernumber: " << fTriggernumber << endl;
+    // cout << "fTriggertime: " << fTriggertime << endl;
+    // cout << "fBeamgatetime: " << fBeamgatetime << endl;
+    // cout << "fTriggerbits: " << fTriggerbits << endl;
+
+
     art::Handle< std::vector<raw::RawDigit> > rawdigit;
     if (! event.getByLabel(fRawDigitLabel, rawdigit)) {
         cout << "WARNING: no label " << fRawDigitLabel << endl;

@@ -14,17 +14,17 @@
 // framework
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Persistency/Common/Ptr.h"
-#include "art/Persistency/Common/PtrVector.h"
+#include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
 #include "art/Framework/Services/Optional/TFileService.h" 
 #include "art/Framework/Services/Optional/TFileDirectory.h" 
-#include "art/Framework/Core/FindManyP.h"
+#include "canvas/Persistency/Common/FindManyP.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // larsoft
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/AnalysisAlg/CalorimetryAlg.h"
+#include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "lardata/RecoBaseArt/TrackUtils.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/GeometryCore.h"
@@ -32,12 +32,12 @@
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
-#include "lardata/RecoBase/Cluster.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Track.h"
-#include "lardata/RecoBase/SpacePoint.h"
-#include "lardata/RecoBase/Vertex.h"
-#include "lardata/RecoBase/Shower.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/Vertex.h"
+#include "lardataobj/RecoBase/Shower.h"
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
@@ -109,7 +109,7 @@ public:
 					       std::vector<art::Ptr<recob::Hit> > const& track2);
 
   /// Finds the initial track-like part of the shower and the hits in all views associated with it
-  void FindInitialTrack(art::PtrVector<recob::Hit> const& hits,
+  void FindInitialTrack(const std::map<int,std::vector<art::Ptr<recob::Hit> > >& hits,//art::PtrVector<recob::Hit> const& hits,
 			std::unique_ptr<recob::Track>& initialTrack,
 			std::map<int,std::vector<art::Ptr<recob::Hit> > >& initialTrackHits, int plane);
 
@@ -125,6 +125,13 @@ public:
   recob::Shower MakeShower(art::PtrVector<recob::Hit> const& hits,
 			   art::Ptr<recob::Vertex> const& vertex,
 			   int & iok);
+
+  /// Makes space points from the shower hits in each plane
+  std::vector<recob::SpacePoint> MakeSpacePoints(std::map<int,std::vector<art::Ptr<recob::Hit> > > hits, std::vector<std::vector<art::Ptr<recob::Hit> > >& hitAssns);
+
+  /// Takes the hits associated with a shower and orders them so they follow the direction of the shower
+  //std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(art::PtrVector<recob::Hit> const& shower, int plane);
+  std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(const art::PtrVector<recob::Hit>& shower, int plane);
 
   /// <Tingjun to document>
   void FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> >const& showerHits,
@@ -184,9 +191,6 @@ private:
   std::unique_ptr<recob::Track> MakeInitialTrack(std::map<int,std::vector<art::Ptr<recob::Hit> > > const& initialHitsMap,
 						 std::map<int,std::vector<art::Ptr<recob::Hit> > > const& showerHitsMap);
 
-  /// Takes the hits associated with a shower and orders them so they follow the direction of the shower
-  std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(art::PtrVector<recob::Hit> const& shower, int plane);
-
   /// Takes the hits associated with a shower and orders then so they follow the direction of the shower
   void OrderShowerHits(std::vector<art::Ptr<recob::Hit> > const& shower,
 		       std::vector<art::Ptr<recob::Hit> >& orderedShower,
@@ -220,6 +224,7 @@ private:
   // Parameters
   double fMinTrackLength;
   double fdEdxTrackLength;
+  double fSpacePointSize;
   // Parameters to fit wire vs time
   unsigned int         fNfitpass;
   std::vector<unsigned int>     fNfithits;
