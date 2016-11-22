@@ -21,8 +21,11 @@
 #include "art/Framework/Services/Optional/TFileService.h" 
 #include "art/Framework/Services/Optional/TFileDirectory.h" 
 #include "canvas/Persistency/Common/FindManyP.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 // larsoft
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "larcore/Geometry/Geometry.h"
 #include "larsim/MCCheater/BackTracker.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
@@ -32,6 +35,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 
 // ROOT
+#include "TVector2.h"
 #include "TTree.h"
 #include "TMath.h"
 #include "TPrincipal.h"
@@ -53,19 +57,39 @@ class shower::ReconTrack {
     fShower = false;
     fShowerTrack = false;
     fShowerCone = false;
+
+    fNumHits = 0;
+    fNumRectangleHits = 0;
   }
 
   // Setters
+  void AddPlane(int plane) { fPlanes.push_back(plane); }
   void SetVertex(TVector3 vertex) { fVertex = vertex; }
+  void SetVertex2D(std::map<int,TVector2> vertices) { fVertex2D = vertices; }
+  void SetVertex2D(int plane, TVector2 vertex) { fVertex2D[plane] = vertex; }
   void SetEnd(TVector3 end) { fEnd = end; }
+  void SetEnd2D(std::map<int,TVector2> ends) { fEnd2D = ends; }
+  void SetEnd2D(int plane, TVector2 end) { fEnd2D[plane] = end; }
   void SetLength(double length) { fLength = length; }
   void SetVertexDir(TVector3 vertexDir) { fVertexDir = vertexDir; }
-  void SetDirection(TVector3 direction) { fDirection = direction; }
-  void SetHits(std::vector<art::Ptr<recob::Hit> > hits) { fHits = hits; }
+  void SetDirection3D(TVector3 direction) { fDirection3D = direction; }
+  void SetDirection2D(std::map<int,TVector2> directions) { fDirection2D = directions; }
+  void SetDirection2D(int plane, TVector2 direction) { fDirection2D[plane] = direction; }
+  void SetHits(std::vector<art::Ptr<recob::Hit> > hits) {
+    fNumHits = hits.size();
+    for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt)
+      fHits[(*hitIt)->WireID().Plane].push_back(*hitIt);
+  }
   void SetSpacePoints(std::vector<art::Ptr<recob::SpacePoint> > spacePoints) { fSpacePoints = spacePoints; }
 
-  void AddForwardTrack(int track) { if (std::find(fForwardConeTracks.begin(), fForwardConeTracks.end(), track) == fForwardConeTracks.end()) fForwardConeTracks.push_back(track); }
-  void AddBackwardTrack(int track) { if (std::find(fBackwardConeTracks.begin(), fBackwardConeTracks.end(), track) == fBackwardConeTracks.end()) fBackwardConeTracks.push_back(track); }
+  void AddForwardTrack(int track) {
+    if (std::find(fForwardConeTracks.begin(), fForwardConeTracks.end(), track) == fForwardConeTracks.end())
+      fForwardConeTracks.push_back(track);
+  }
+  void AddBackwardTrack(int track) {
+    if (std::find(fBackwardConeTracks.begin(), fBackwardConeTracks.end(), track) == fBackwardConeTracks.end())
+      fBackwardConeTracks.push_back(track);
+  }
   void AddShowerTrack(int track) { fShowerTracks.push_back(track); }
 
   void AddForwardSpacePoint(int spacePoint) { fForwardSpacePoints.push_back(spacePoint); }
@@ -73,6 +97,7 @@ class shower::ReconTrack {
   void AddCylinderSpacePoint(int spacePoint) { fCylinderSpacePoints.push_back(spacePoint); }
   void AddSphereSpacePoint(int spacePoint) { fSphereSpacePoints.push_back(spacePoint); }
   void AddIsolationSpacePoint(int spacePoint, double distance) { fIsolationSpacePoints[spacePoint] = distance; }
+  void AddRectangleHit(const art::Ptr<recob::Hit>& hit) { fRectangleHits[hit->WireID().Plane].push_back(hit.key()); ++fNumRectangleHits; }
 
   // Getters
   int ID() const { return fID; }
@@ -80,15 +105,25 @@ class shower::ReconTrack {
   TVector3 End() const { return fEnd; }
   double Length() const { return fLength; }
   TVector3 VertexDirection() const { return fVertexDir; }
-  TVector3 Direction() const { return fDirection; }
-  const std::vector<art::Ptr<recob::Hit> >& Hits() const { return fHits; }
+  TVector3 Direction3D() const { return fDirection3D; }
+  TVector2 Vertex2D(int plane) { return fVertex2D[plane]; }
+  TVector2 End2D(int plane) { return fEnd2D[plane]; }
+  TVector2 Direction2D(int plane) { return fDirection2D[plane]; }
+  const std::vector<art::Ptr<recob::Hit> >& Hits(int plane) { return fHits[plane]; }
+  const std::map<int,std::vector<art::Ptr<recob::Hit> > >& Hits() const { return fHits; }
   const std::vector<art::Ptr<recob::SpacePoint> >& SpacePoints() const { return fSpacePoints; }
 
   void FlipTrack() {
-    TVector3 tmp = fEnd;
+    TVector3 tmp3D = fEnd;
     fEnd = fVertex;
-    fVertex = tmp;
-    fDirection *= -1;
+    fVertex = tmp3D;
+    fDirection3D *= -1;
+    for (std::vector<int>::iterator plane = fPlanes.begin(); plane != fPlanes.end(); ++plane) {
+      TVector2 tmp2D = fEnd2D[*plane];
+      fEnd2D[*plane] = fVertex2D[*plane];
+      fVertex2D[*plane] = tmp2D;
+      fDirection2D[*plane] *= -1;
+    }
   }
 
   void MakeShower() {
@@ -134,6 +169,10 @@ class shower::ReconTrack {
   int NumSphereSpacePoints() const { return fSphereSpacePoints.size(); }
   //double SphereSpacePointDensity() const { return (double)fSphereSpacePoints.size()/((double)fSpacePoints.size()); }
   double SphereSpacePointDensity(double scale) const { return (double)fSphereSpacePoints.size()/(4*TMath::Pi()*TMath::Power((scale*fLength/2.),3)/3.); }
+  int NumRectangleHits() const { return fNumRectangleHits; }
+  int NumRectangleHits(int plane) { return fRectangleHits[plane].size(); }
+  double RectangleHitRatio() const { return (double)fNumRectangleHits/(double)fNumHits; }
+  double RectangleHitRatio(int plane) { return (double)fRectangleHits[plane].size()/fHits[plane].size(); }
   double IsolationSpacePointDistance() const { std::vector<double> distances;
     std::transform(fIsolationSpacePoints.begin(), fIsolationSpacePoints.end(), std::back_inserter(distances), [](const std::pair<int,double>& p){return p.second;});
     return TMath::Mean(distances.begin(), distances.end()); }
@@ -141,12 +180,17 @@ class shower::ReconTrack {
  private:
 
   int fID;
+  std::vector<int> fPlanes;
   TVector3 fVertex;
+  std::map<int,TVector2> fVertex2D;
   TVector3 fEnd;
+  std::map<int,TVector2> fEnd2D;
   double fLength;
   TVector3 fVertexDir;
-  TVector3 fDirection;
-  std::vector<art::Ptr<recob::Hit> > fHits;
+  TVector3 fDirection3D;
+  std::map<int,TVector2> fDirection2D;
+  std::map<int,std::vector<art::Ptr<recob::Hit> > > fHits;
+  int fNumHits;
   std::vector<art::Ptr<recob::SpacePoint> > fSpacePoints;
 
   std::vector<int> fForwardConeTracks;
@@ -158,6 +202,8 @@ class shower::ReconTrack {
   std::vector<int> fCylinderSpacePoints;
   std::vector<int> fSphereSpacePoints;
   std::map<int,double> fIsolationSpacePoints;
+  std::map<int,std::vector<int> > fRectangleHits;
+  int fNumRectangleHits;
 
   bool fShower;
   bool fShowerTrack;
@@ -197,6 +243,12 @@ class shower::TrackShowerSepAlg {
   std::vector<int> InitialTrackLikeSegment(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);
 
   ///
+  TVector2 Gradient(const std::vector<art::Ptr<recob::Hit> >& hits);
+
+  ///
+  TVector2 Gradient(const std::vector<art::Ptr<recob::Hit> >& hits, const std::unique_ptr<TVector2>& end);
+
+  ///
   TVector3 Gradient(const std::vector<TVector3>& points, const std::unique_ptr<TVector3>& dir);
 
   ///
@@ -215,6 +267,18 @@ class shower::TrackShowerSepAlg {
   ///
   double SpacePointsRMS(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints);
 
+  // Copied from EMShower -- would be good to have them in a common place
+  TVector2 HitCoordinates(art::Ptr<recob::Hit> const& hit);
+  TVector2 HitPosition(art::Ptr<recob::Hit> const& hit);
+  TVector2 HitPosition(TVector2 const& pos, geo::PlaneID planeID);
+  double GlobalWire(const geo::WireID& wireID);
+  TVector2 Project3DPointOntoPlane(TVector3 const& point, geo::PlaneID planeID);
+
+
+
+
+
+
   // All the information about all reconstructed tracks
   std::map<int,std::unique_ptr<ReconTrack> > fReconTracks;
 
@@ -224,15 +288,22 @@ class shower::TrackShowerSepAlg {
 
   // Parameters
   int fDebug;
+  std::string fDetector;
 
   // Properties
   double fConeAngle;
   double fCylinderRadius;
+  double fRectangleWidth;
 
   // Cuts
   double fTrackVertexCut;
   double fCylinderCut;
   double fShowerConeCut;
+  double fRectangleCut;
+
+  // art services
+  art::ServiceHandle<geo::Geometry> fGeom;
+  detinfo::DetectorProperties const* fDetProp;
 
 };
 

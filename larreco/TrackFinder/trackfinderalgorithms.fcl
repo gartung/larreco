@@ -159,15 +159,6 @@ standard_cosmictrackeralg:
     SMatch:   1
 }
 
-standard_trackshowersepalg:
-{
-  ConeAngle: 15
-  CylinderRadius: 20
-  TrackVertexCut: 5.
-  CylinderCut: 0.2
-  ShowerConeCut: 5.
-}
-
 argoneut_spacepointalg:      @local::standard_spacepointalg
 argoneut_kalmanfilteralg:    @local::standard_kalmanfilteralg
 argoneut_cosmictrackeralg:   @local::standard_cosmictrackeralg
