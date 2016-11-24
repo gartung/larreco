@@ -60,6 +60,9 @@ class shower::ReconTrack {
 
     fNumHits = 0;
     fNumRectangleHits = 0;
+
+    fMinForwardSpacePoint = 1e3;
+    fMinBackwardSpacePoint = 1e3;
   }
 
   // Setters
@@ -92,8 +95,16 @@ class shower::ReconTrack {
   }
   void AddShowerTrack(int track) { fShowerTracks.push_back(track); }
 
-  void AddForwardSpacePoint(int spacePoint) { fForwardSpacePoints.push_back(spacePoint); }
-  void AddBackwardSpacePoint(int spacePoint) { fBackwardSpacePoints.push_back(spacePoint); }
+  void AddForwardSpacePoint(int spacePoint, double distance) {
+    fForwardSpacePoints.push_back(spacePoint);
+    if (distance < fMinForwardSpacePoint)
+      fMinForwardSpacePoint = distance;
+  }
+  void AddBackwardSpacePoint(int spacePoint, double distance) {
+    fBackwardSpacePoints.push_back(spacePoint);
+    if (distance < fMinBackwardSpacePoint)
+      fMinBackwardSpacePoint = distance;
+  }
   void AddCylinderSpacePoint(int spacePoint) { fCylinderSpacePoints.push_back(spacePoint); }
   void AddSphereSpacePoint(int spacePoint) { fSphereSpacePoints.push_back(spacePoint); }
   void AddIsolationSpacePoint(int spacePoint, double distance) { fIsolationSpacePoints[spacePoint] = distance; }
@@ -114,6 +125,7 @@ class shower::ReconTrack {
   const std::vector<art::Ptr<recob::SpacePoint> >& SpacePoints() const { return fSpacePoints; }
 
   void FlipTrack() {
+    // Vertex and end
     TVector3 tmp3D = fEnd;
     fEnd = fVertex;
     fVertex = tmp3D;
@@ -124,6 +136,17 @@ class shower::ReconTrack {
       fVertex2D[*plane] = tmp2D;
       fDirection2D[*plane] *= -1;
     }
+    // Cone tracks and space points
+    std::vector<int> tmpVec = fForwardSpacePoints;
+    fForwardSpacePoints = fBackwardSpacePoints;
+    fBackwardSpacePoints = tmpVec;
+    tmpVec = fForwardConeTracks;
+    fForwardConeTracks = fBackwardConeTracks;
+    fBackwardConeTracks = tmpVec;
+    double tmpDouble;
+    tmpDouble = fMinForwardSpacePoint;
+    fMinForwardSpacePoint = fMinBackwardSpacePoint;
+    fMinBackwardSpacePoint = tmpDouble;
   }
 
   void MakeShower() {
@@ -164,6 +187,8 @@ class shower::ReconTrack {
 
   int ConeSize() const { return (int)fForwardSpacePoints.size() - (int)fBackwardSpacePoints.size(); }
   int ForwardSpacePoints() const { return fForwardSpacePoints.size(); }
+  double MinForwardSpacePointDistance() const { return fMinForwardSpacePoint; }
+  double MinBackwardSpacePointDistance() const { return fMinBackwardSpacePoint; }
   int NumCylinderSpacePoints() const { return fCylinderSpacePoints.size(); }
   double CylinderSpacePointRatio() const { return (double)fCylinderSpacePoints.size()/(double)fSpacePoints.size(); }
   int NumSphereSpacePoints() const { return fSphereSpacePoints.size(); }
@@ -171,11 +196,13 @@ class shower::ReconTrack {
   double SphereSpacePointDensity(double scale) const { return (double)fSphereSpacePoints.size()/(4*TMath::Pi()*TMath::Power((scale*fLength/2.),3)/3.); }
   int NumRectangleHits() const { return fNumRectangleHits; }
   int NumRectangleHits(int plane) { return fRectangleHits[plane].size(); }
-  double RectangleHitRatio() const { return (double)fNumRectangleHits/(double)fNumHits; }
-  double RectangleHitRatio(int plane) { return (double)fRectangleHits[plane].size()/fHits[plane].size(); }
-  double IsolationSpacePointDistance() const { std::vector<double> distances;
+  double RectangleHitRatio() const { return (double)TMath::Power(fNumRectangleHits,1)/(double)fNumHits; }
+  double RectangleHitRatio(int plane) { return (double)TMath::Power(fRectangleHits[plane].size(),1)/fHits[plane].size(); }
+  double IsolationSpacePointDistance() const {
+    std::vector<double> distances;
     std::transform(fIsolationSpacePoints.begin(), fIsolationSpacePoints.end(), std::back_inserter(distances), [](const std::pair<int,double>& p){return p.second;});
-    return TMath::Mean(distances.begin(), distances.end()); }
+    return TMath::Mean(distances.begin(), distances.end());
+  }
 
  private:
 
@@ -204,6 +231,8 @@ class shower::ReconTrack {
   std::map<int,double> fIsolationSpacePoints;
   std::map<int,std::vector<int> > fRectangleHits;
   int fNumRectangleHits;
+  double fMinForwardSpacePoint;
+  double fMinBackwardSpacePoint;
 
   bool fShower;
   bool fShowerTrack;
@@ -272,7 +301,7 @@ class shower::TrackShowerSepAlg {
   TVector2 HitPosition(art::Ptr<recob::Hit> const& hit);
   TVector2 HitPosition(TVector2 const& pos, geo::PlaneID planeID);
   double GlobalWire(const geo::WireID& wireID);
-  TVector2 Project3DPointOntoPlane(TVector3 const& point, geo::PlaneID planeID);
+  TVector2 Project3DPointOntoPlane(TVector3 const& point, int plane, int cryostat = 0);
 
 
 

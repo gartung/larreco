@@ -80,8 +80,8 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
     const std::map<int,std::vector<art::Ptr<recob::Hit> > >& trackHits = track->Hits();
     for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::const_iterator hitIt = trackHits.begin(); hitIt != trackHits.end(); ++hitIt) {
       track->AddPlane(hitIt->first);
-      track->SetVertex2D(hitIt->first, Project3DPointOntoPlane(track->Vertex(), hitIt->second.front()->WireID().planeID()));
-      track->SetEnd2D(hitIt->first, Project3DPointOntoPlane(track->End(), hitIt->second.front()->WireID().planeID()));
+      track->SetVertex2D(hitIt->first, Project3DPointOntoPlane(track->Vertex(), hitIt->first));
+      track->SetEnd2D(hitIt->first, Project3DPointOntoPlane(track->End(), hitIt->first));
       track->SetDirection2D(hitIt->first, Gradient(hitIt->second, std::make_unique<TVector2>(track->End2D(hitIt->first)-track->Vertex2D(hitIt->first))));
     }
 
@@ -98,7 +98,8 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
   // std::vector<int> showerLikeTracks, trackLikeTracks;
   // std::vector<int> showerTracks = InitialTrackLikeSegment(reconTracks);
 
-  // Consider the hit cylinder situation
+  // Consider the hit rectangle situation
+  double avRectangleHits = 0;
   for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt) {
     for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt) {
       const std::vector<art::Ptr<recob::Track> >& hitTracks = fmth.at(hitIt->key());
@@ -114,10 +115,18 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
 	  // (pos-point)*direction < (end-point)*direction)
 	trackIt->second->AddRectangleHit(*hitIt);
     }
-    std::cout << "  Track " << trackIt->first << " has " << trackIt->second->NumRectangleHits() << " (ratio of " << trackIt->second->RectangleHitRatio() << ")" << std::endl;
-    // const std::map<int,std::vector<art::Ptr<recob::Hit> > >& trackHits = trackIt->second->Hits();
-    // for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::const_iterator hitIt = trackHits.begin(); hitIt != trackHits.end(); ++hitIt)
-    //   std::cout << "    Plane " << hitIt->first << " has " << trackIt->second->NumRectangleHits(hitIt->first) << " (ratio " << trackIt->second->RectangleHitRatio(hitIt->first) << ")" << std::endl;
+    avRectangleHits += trackIt->second->RectangleHitRatio();
+  }
+  avRectangleHits /= (double)fReconTracks.size();
+
+  if (fDebug > 1) {
+    std::cout << std::endl << "Rectangle hit ratios:" << std::endl;
+    for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt) {
+      std::cout << "  Track " << trackIt->first << " has " << trackIt->second->NumRectangleHits() << ", ratio " << trackIt->second->RectangleHitRatio() << " (event average ratio " << avRectangleHits << ")" << std::endl;
+      // const std::map<int,std::vector<art::Ptr<recob::Hit> > >& trackHits = trackIt->second->Hits();
+      // for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::const_iterator hitIt = trackHits.begin(); hitIt != trackHits.end(); ++hitIt)
+      //   std::cout << "    Plane " << hitIt->first << " has " << trackIt->second->NumRectangleHits(hitIt->first) << " (ratio " << trackIt->second->RectangleHitRatio(hitIt->first) << ")" << std::endl;
+    }
   }
 
   // Consider the space point cylinder situation
@@ -164,14 +173,25 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
       std::cout << "  Track " << trackIt->first << " has cylinder space point ratio " << trackIt->second->CylinderSpacePointRatio() << " (event average " << avCylinderSpacePoints << ")" << std::endl;
   }
 
+  double avCylinderRectangle = 0;
+  for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt)
+    avCylinderRectangle += trackIt->second->CylinderSpacePointRatio()*trackIt->second->RectangleHitRatio();
+  avCylinderRectangle /= (double)fReconTracks.size();
+
+  if (fDebug > 1) {
+    std::cout << std::endl << "Combinded cylinder/rectangle:" << std::endl;
+    for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt)
+      std::cout << "  Track " << trackIt->first << ": " << (trackIt->second->CylinderSpacePointRatio()) * (trackIt->second->RectangleHitRatio()) << "\tEvent average is " << avCylinderRectangle << std::endl;
+  }
+
   // Identify tracks
   if (fDebug > 0)
     std::cout << std::endl << "Identifying tracks:" << std::endl;
   for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt)
     if (trackIt->second->CylinderSpacePointRatio() / avCylinderSpacePoints < fCylinderCut and
-	trackIt->second->RectangleHitRatio() < fRectangleCut) {
+	trackIt->second->RectangleHitRatio() / avRectangleHits < fRectangleCut) {
       if (fDebug > 0)
-	std::cout << "  Making track " << trackIt->first << " a track (Type I)" << std::endl;
+	std::cout << "  Making track " << trackIt->first << " a track (Type I) (" << trackIt->second->CylinderSpacePointRatio()/avCylinderSpacePoints << " < " << fCylinderCut << ", " << trackIt->second->RectangleHitRatio()/avRectangleHits << " < " << fRectangleCut << ")" << std::endl;
       trackIt->second->MakeTrack();
     }
 
@@ -193,6 +213,15 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
     for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator otherTrackIt = fReconTracks.begin(); otherTrackIt != fReconTracks.end(); ++otherTrackIt) {
       if (trackIt->first == otherTrackIt->first or !otherTrackIt->second->IsTrack())
   	continue;
+      if (fDebug > 3) {
+	std::cout << "Distances from tracks to tracks:" << std::endl;
+	double minDist = TMath::Min((trackIt->second->Vertex()-otherTrackIt->second->Vertex()).Mag(),
+				    TMath::Min((trackIt->second->Vertex()-otherTrackIt->second->End()).Mag(),
+					       TMath::Min((trackIt->second->End()-otherTrackIt->second->Vertex()).Mag(),
+							  (trackIt->second->End()-otherTrackIt->second->End()).Mag())));
+
+	std::cout << "  Min distance between track " << trackIt->first << " and " << otherTrackIt->first << " is " << minDist << std::endl;
+      }
       if ((trackIt->second->Vertex() - otherTrackIt->second->Vertex()).Mag() < fTrackVertexCut or
   	  (trackIt->second->Vertex() - otherTrackIt->second->End()).Mag() < fTrackVertexCut or
   	  (trackIt->second->End() - otherTrackIt->second->Vertex()).Mag() < fTrackVertexCut or
@@ -231,11 +260,13 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
       if (associatedSpacePoint)
 	continue;
       if ((SpacePointPos(*spacePointIt) - trackIt->second->Vertex()).Angle(trackIt->second->Direction3D()) < fConeAngle * TMath::Pi() / 180) {
-	trackIt->second->AddForwardSpacePoint(spacePointIt->key());
+	std::cout << "Space point at (" << SpacePointPos(*spacePointIt).X() << ", " << SpacePointPos(*spacePointIt).Y() << ", " << SpacePointPos(*spacePointIt).Z() << ") is " << (SpacePointPos(*spacePointIt)-trackIt->second->End())*trackIt->second->Direction3D() << " cm away from track " << trackIt->first << " end" << std::endl;
+	trackIt->second->AddForwardSpacePoint(spacePointIt->key(), (SpacePointPos(*spacePointIt)-trackIt->second->End())*trackIt->second->Direction3D());
 	trackIt->second->AddForwardTrack(spTracks.at(0).key());
       }
       if ((SpacePointPos(*spacePointIt) - trackIt->second->Vertex()).Angle(-1*trackIt->second->Direction3D()) < fConeAngle * TMath::Pi() / 180) {
-	trackIt->second->AddBackwardSpacePoint(spacePointIt->key());
+	std::cout << "Space point at (" << SpacePointPos(*spacePointIt).X() << ", " << SpacePointPos(*spacePointIt).Y() << ", " << SpacePointPos(*spacePointIt).Z() << ") is " << (SpacePointPos(*spacePointIt)-trackIt->second->Vertex())*(-1*trackIt->second->Direction3D()) << " cm away from track " << trackIt->first << " vertex" << std::endl;
+	trackIt->second->AddBackwardSpacePoint(spacePointIt->key(), (SpacePointPos(*spacePointIt)-trackIt->second->Vertex())*(-1*trackIt->second->Direction3D()));
 	trackIt->second->AddBackwardTrack(spTracks.at(0).key());
       }
     }
@@ -258,11 +289,14 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
     if (fDebug > 1)
       std::cout << "    Track " << trackIt->first << " has space point cone size " << trackIt->second->ConeSize() << " and track cone size " << trackIt->second->TrackConeSize() << std::endl;
     if (TMath::Abs(trackIt->second->ConeSize()) > 30 and TMath::Abs(trackIt->second->TrackConeSize()) > 3) {
-      trackIt->second->MakeShower();
-      if (fDebug > 0)
-	std::cout << "  Making track " << trackIt->first << " a shower (Type I)" << std::endl;
       if (trackIt->second->ConeSize() < 0)
 	trackIt->second->FlipTrack();
+      std::cout << "Track " << trackIt->first << " has min forward space point distance " << trackIt->second->MinForwardSpacePointDistance() << std::endl;
+      if (TMath::Abs(trackIt->second->MinForwardSpacePointDistance() < 10)) {
+	trackIt->second->MakeShower();
+	if (fDebug > 0)
+	  std::cout << "  Making track " << trackIt->first << " a shower (Type I)" << std::endl;
+      }
     }
   }
 
@@ -553,14 +587,17 @@ TVector2 shower::TrackShowerSepAlg::HitPosition(TVector2 const& pos, geo::PlaneI
 
 double shower::TrackShowerSepAlg::GlobalWire(const geo::WireID& wireID) {
 
-  double wireCentre[3];
-  fGeom->WireIDToWireGeo(wireID).GetCenter(wireCentre);
-
   double globalWire = -999;
+
+  // Induction
   if (fGeom->SignalType(wireID) == geo::kInduction) {
+    double wireCentre[3];
+    fGeom->WireIDToWireGeo(wireID).GetCenter(wireCentre);
     if (wireID.TPC % 2 == 0) globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 0, wireID.Cryostat);
     else globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 1, wireID.Cryostat);
   }
+
+  // Collection
   else {
     // FOR COLLECTION WIRES, HARD CODE THE GEOMETRY FOR GIVEN DETECTORS
     // THIS _SHOULD_ BE TEMPORARY. GLOBAL WIRE SUPPORT IS BEING ADDED TO THE LARSOFT GEOMETRY AND SHOULD BE AVAILABLE SOON
@@ -578,6 +615,8 @@ double shower::TrackShowerSepAlg::GlobalWire(const geo::WireID& wireID) {
       globalWire = (nwires*block) + wireID.Wire;
     }
     else {
+      double wireCentre[3];
+      fGeom->WireIDToWireGeo(wireID).GetCenter(wireCentre);
       if (wireID.TPC % 2 == 0) globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 0, wireID.Cryostat);
       else globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 1, wireID.Cryostat);
     }
@@ -587,12 +626,28 @@ double shower::TrackShowerSepAlg::GlobalWire(const geo::WireID& wireID) {
 
 }
 
-TVector2 shower::TrackShowerSepAlg::Project3DPointOntoPlane(TVector3 const& point, geo::PlaneID planeID) {
+TVector2 shower::TrackShowerSepAlg::Project3DPointOntoPlane(TVector3 const& point, int plane, int cryostat) {
 
+  TVector2 wireTickPos = TVector2(-999., -999.);
+
+  double pointPosition[3] = {point.X(), point.Y(), point.Z()};
+
+  geo::TPCID tpcID = fGeom->FindTPCAtPosition(pointPosition);
+  int tpc = 0;
+  if (tpcID.isValid)
+    tpc = tpcID.TPC;
+  else
+    return wireTickPos;
+
+  // Construct wire ID for this point projected onto the plane
+  geo::PlaneID planeID = geo::PlaneID(cryostat, tpc, plane);
   geo::WireID wireID = geo::WireID(planeID, fGeom->WireCoordinate(point.Y(), point.Z(), planeID));
 
-  TVector2 wireTickPos = TVector2(GlobalWire(wireID),
-				  fDetProp->ConvertXToTicks(point.X(), planeID));
+  wireTickPos = TVector2(GlobalWire(wireID),
+			 fDetProp->ConvertXToTicks(point.X(), planeID));
+
+  // wireTickPos = TVector2(fGeom->WireCoordinate(point.Y(), point.Z(), planeID.Plane, tpc % 2, planeID.Cryostat),
+  // 			 fDetProp->ConvertXToTicks(point.X(), planeID.Plane, tpc % 2, planeID.Cryostat));
 
   //return wireTickPos;
   return HitPosition(wireTickPos, planeID);
