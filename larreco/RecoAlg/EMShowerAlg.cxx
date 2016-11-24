@@ -2100,7 +2100,7 @@ TVector2 shower::EMShowerAlg::Project3DPointOntoPlane(TVector3 const& point, int
   geo::WireID wireID = geo::WireID(planeID, fGeom->WireCoordinate(point.Y(), point.Z(), planeID));
 
   wireTickPos = TVector2(GlobalWire(wireID),
-			 fDetProp->ConvertXToTicks(point.X(), planeID));
+                         fDetProp->ConvertXToTicks(point.X(), planeID));
 
   // wireTickPos = TVector2(fGeom->WireCoordinate(point.Y(), point.Z(), planeID.Plane, tpc % 2, planeID.Cryostat),
   // 			 fDetProp->ConvertXToTicks(point.X(), planeID.Plane, tpc % 2, planeID.Cryostat));
