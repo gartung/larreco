@@ -23,6 +23,7 @@ void shower::TrackShowerSepAlg::reconfigure(fhicl::ParameterSet const& pset) {
   fCylinderCut    = pset.get<double>("CylinderCut");
   fShowerConeCut  = pset.get<double>("ShowerConeCut");
   fRectangleCut   = pset.get<double>("RectangleCut");
+  fLeastSquareCut = pset.get<double>("LeastSquareCut");
 
   fDebug = pset.get<int>("Debug",0);
   fDetector = pset.get<std::string>("Detector");
@@ -184,14 +185,31 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
       std::cout << "  Track " << trackIt->first << ": " << (trackIt->second->CylinderSpacePointRatio()) * (trackIt->second->RectangleHitRatio()) << "\tEvent average is " << avCylinderRectangle << std::endl;
   }
 
+  if (fDebug > 1)
+    std::cout << std::endl << "Looking at track straightness:" << std::endl;
+  for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt) {
+    const std::vector<art::Ptr<recob::SpacePoint> >& trackPoints = trackIt->second->SpacePoints();
+    double least_sq = 0;
+    for (std::vector<art::Ptr<recob::SpacePoint> >::const_iterator spacePointIt = trackPoints.begin(); spacePointIt != trackPoints.end(); ++spacePointIt) {
+      TVector3 pos = SpacePointPos(*spacePointIt);
+      TVector3 proj = ProjPoint(pos, trackIt->second->Direction3D(), trackIt->second->Centre3D());
+      least_sq += TMath::Power((proj-pos).Mag(),2);
+    }
+    least_sq /= (double)((int)trackPoints.size()+2);
+    trackIt->second->SetLeastSquareNDOF(least_sq);
+    if (fDebug > 1)
+      std::cout << "  Track " << trackIt->first << " has least squared / dof " << least_sq << std::endl;
+  }
+
   // Identify tracks
   if (fDebug > 0)
     std::cout << std::endl << "Identifying tracks:" << std::endl;
   for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt)
     if (trackIt->second->CylinderSpacePointRatio() / avCylinderSpacePoints < fCylinderCut and
-	trackIt->second->RectangleHitRatio() / avRectangleHits < fRectangleCut) {
+	trackIt->second->RectangleHitRatio() / avRectangleHits < fRectangleCut and
+	trackIt->second->LeastSquareNDOF() < fLeastSquareCut) {
       if (fDebug > 0)
-	std::cout << "  Making track " << trackIt->first << " a track (Type I) (" << trackIt->second->CylinderSpacePointRatio()/avCylinderSpacePoints << " < " << fCylinderCut << ", " << trackIt->second->RectangleHitRatio()/avRectangleHits << " < " << fRectangleCut << ")" << std::endl;
+	std::cout << "  Making track " << trackIt->first << " a track (Type I) (" << trackIt->second->CylinderSpacePointRatio()/avCylinderSpacePoints << " < " << fCylinderCut << ", " << trackIt->second->RectangleHitRatio()/avRectangleHits << " < " << fRectangleCut << ", " << trackIt->second->LeastSquareNDOF() << " < " << fLeastSquareCut << ")" << std::endl;
       trackIt->second->MakeTrack();
     }
 
@@ -227,7 +245,7 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
   	  (trackIt->second->End() - otherTrackIt->second->Vertex()).Mag() < fTrackVertexCut or
   	  (trackIt->second->End() - otherTrackIt->second->End()).Mag() < fTrackVertexCut) {
 	if (fDebug > 0)
-	  std::cout << "  Making track " << trackIt->first << " a track (Type II)" << std::endl;
+	  std::cout << "  Making track " << trackIt->first << " a track (Type II) (close to " << otherTrackIt->first << ")" << std::endl;
   	trackIt->second->MakeTrack();
       }
     }
@@ -260,12 +278,12 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
       if (associatedSpacePoint)
 	continue;
       if ((SpacePointPos(*spacePointIt) - trackIt->second->Vertex()).Angle(trackIt->second->Direction3D()) < fConeAngle * TMath::Pi() / 180) {
-	std::cout << "Space point at (" << SpacePointPos(*spacePointIt).X() << ", " << SpacePointPos(*spacePointIt).Y() << ", " << SpacePointPos(*spacePointIt).Z() << ") is " << (SpacePointPos(*spacePointIt)-trackIt->second->End())*trackIt->second->Direction3D() << " cm away from track " << trackIt->first << " end" << std::endl;
+	//std::cout << "Space point at (" << SpacePointPos(*spacePointIt).X() << ", " << SpacePointPos(*spacePointIt).Y() << ", " << SpacePointPos(*spacePointIt).Z() << ") is " << (SpacePointPos(*spacePointIt)-trackIt->second->End())*trackIt->second->Direction3D() << " cm away from track " << trackIt->first << " end" << std::endl;
 	trackIt->second->AddForwardSpacePoint(spacePointIt->key(), (SpacePointPos(*spacePointIt)-trackIt->second->End())*trackIt->second->Direction3D());
 	trackIt->second->AddForwardTrack(spTracks.at(0).key());
       }
       if ((SpacePointPos(*spacePointIt) - trackIt->second->Vertex()).Angle(-1*trackIt->second->Direction3D()) < fConeAngle * TMath::Pi() / 180) {
-	std::cout << "Space point at (" << SpacePointPos(*spacePointIt).X() << ", " << SpacePointPos(*spacePointIt).Y() << ", " << SpacePointPos(*spacePointIt).Z() << ") is " << (SpacePointPos(*spacePointIt)-trackIt->second->Vertex())*(-1*trackIt->second->Direction3D()) << " cm away from track " << trackIt->first << " vertex" << std::endl;
+	//std::cout << "Space point at (" << SpacePointPos(*spacePointIt).X() << ", " << SpacePointPos(*spacePointIt).Y() << ", " << SpacePointPos(*spacePointIt).Z() << ") is " << (SpacePointPos(*spacePointIt)-trackIt->second->Vertex())*(-1*trackIt->second->Direction3D()) << " cm away from track " << trackIt->first << " vertex" << std::endl;
 	trackIt->second->AddBackwardSpacePoint(spacePointIt->key(), (SpacePointPos(*spacePointIt)-trackIt->second->Vertex())*(-1*trackIt->second->Direction3D()));
 	trackIt->second->AddBackwardTrack(spTracks.at(0).key());
       }
@@ -357,6 +375,11 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
   for (std::vector<art::Ptr<recob::Track> >::const_iterator trackIt = tracks.begin(); trackIt != tracks.end(); ++trackIt)
     if (fReconTracks[trackIt->key()]->IsTrack())
       fTrackTracks.push_back(*trackIt);
+
+  // Save shower starts
+  for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = fReconTracks.begin(); trackIt != fReconTracks.end(); ++trackIt)
+    if (trackIt->second->IsShowerTrack())
+      fShowerStarts.push_back(trackIt->second->Vertex());
 
 }
 
@@ -547,6 +570,15 @@ std::vector<art::Ptr<recob::Hit> > shower::TrackShowerSepAlg::ShowerHits() {
     std::cout << "Warning! (TrackShowerSepAlg): no shower hits found. (Did you RunTrackShowerSep first?)" << std::endl;
 
   return fShowerHits;
+
+}
+
+std::vector<TVector3> shower::TrackShowerSepAlg::ShowerStarts() {
+
+  if (fReconTracks.size() == 0)
+    std::cout << "Warning! (TrackShowerSepAlg): no shower starts found. (Did you RunTrackShowerSep first?)" << std::endl;
+
+  return fShowerStarts;  
 
 }
 

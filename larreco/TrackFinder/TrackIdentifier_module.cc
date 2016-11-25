@@ -78,6 +78,7 @@ shower::TrackIdentifier::TrackIdentifier(const fhicl::ParameterSet& pset) : fTra
   this->reconfigure(pset);
   produces<std::vector<recob::Track> >(fTrackInstanceLabel);
   produces<std::vector<recob::Hit> >(fShowerInstanceLabel);
+  produces<std::vector<recob::Vertex> >(fShowerInstanceLabel);
   produces<art::Assns<recob::Hit, recob::Track> >(fShowerInstanceLabel);
   produces<art::Assns<recob::Track, recob::Hit> >(fTrackInstanceLabel);
   produces<art::Assns<recob::Track, recob::Vertex> >(fTrackInstanceLabel);
@@ -97,6 +98,7 @@ void shower::TrackIdentifier::produce(art::Event& evt) {
   // Currently making all associations which PMTrack does itself, except for PFParticles and track meta data
   std::unique_ptr<std::vector<recob::Track> > outTracks(new std::vector<recob::Track>);
   std::unique_ptr<std::vector<recob::Hit> > outHits(new std::vector<recob::Hit>);
+  std::unique_ptr<std::vector<recob::Vertex> > outVertices(new std::vector<recob::Vertex>);
   std::unique_ptr<art::Assns<recob::Hit, recob::Track> > hitTrackAssns(new art::Assns<recob::Hit, recob::Track>);
   std::unique_ptr<art::Assns<recob::Track, recob::Hit> > trackHitAssns(new art::Assns<recob::Track, recob::Hit>);
   std::unique_ptr<art::Assns<recob::Track, recob::Vertex> > vertexAssns(new art::Assns<recob::Track, recob::Vertex>);
@@ -130,6 +132,7 @@ void shower::TrackIdentifier::produce(art::Event& evt) {
   // Get the output collections
   const std::vector<art::Ptr<recob::Track> > trackTracks = fTrackShowerSepAlg.TrackTracks();
   const std::vector<art::Ptr<recob::Hit> > showerHits = fTrackShowerSepAlg.ShowerHits();
+  const std::vector<TVector3> showerStarts = fTrackShowerSepAlg.ShowerStarts();
 
   // Make output data products
 
@@ -161,8 +164,15 @@ void shower::TrackIdentifier::produce(art::Event& evt) {
       hitTrackAssns->addSingle(hitPtr, *trackIt);
   }
 
+  // Vertices
+  for (std::vector<TVector3>::const_iterator vertexIt = showerStarts.begin(); vertexIt != showerStarts.end(); ++vertexIt) {
+    double point[3] = {vertexIt->X(), vertexIt->Y(), vertexIt->Z()};
+    outVertices->emplace_back(point, outVertices->size());
+  }
+
   evt.put(std::move(outTracks), fTrackInstanceLabel);
   evt.put(std::move(outHits), fShowerInstanceLabel);
+  evt.put(std::move(outVertices), fShowerInstanceLabel);
   evt.put(std::move(hitTrackAssns), fShowerInstanceLabel);
   evt.put(std::move(trackHitAssns), fTrackInstanceLabel);
   evt.put(std::move(spacePointAssns), fTrackInstanceLabel);

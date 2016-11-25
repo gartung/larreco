@@ -84,6 +84,7 @@ class shower::ReconTrack {
       fHits[(*hitIt)->WireID().Plane].push_back(*hitIt);
   }
   void SetSpacePoints(std::vector<art::Ptr<recob::SpacePoint> > spacePoints) { fSpacePoints = spacePoints; }
+  void SetLeastSquareNDOF(double ls) { fLeastSquareNDOF = ls; }
 
   void AddForwardTrack(int track) {
     if (std::find(fForwardConeTracks.begin(), fForwardConeTracks.end(), track) == fForwardConeTracks.end())
@@ -117,6 +118,15 @@ class shower::ReconTrack {
   double Length() const { return fLength; }
   TVector3 VertexDirection() const { return fVertexDir; }
   TVector3 Direction3D() const { return fDirection3D; }
+  TVector3 Centre3D() const {
+    TVector3 centre = TVector3(0,0,0);
+    for (std::vector<art::Ptr<recob::SpacePoint> >::const_iterator spIt = fSpacePoints.begin(); spIt != fSpacePoints.end(); ++spIt) {
+      const double* xyz = (*spIt)->XYZ();
+      centre += TVector3(xyz[0], xyz[1], xyz[2]);
+    }
+    centre *= 1./(double)fSpacePoints.size();
+    return centre;
+  }
   TVector2 Vertex2D(int plane) { return fVertex2D[plane]; }
   TVector2 End2D(int plane) { return fEnd2D[plane]; }
   TVector2 Direction2D(int plane) { return fDirection2D[plane]; }
@@ -203,6 +213,7 @@ class shower::ReconTrack {
     std::transform(fIsolationSpacePoints.begin(), fIsolationSpacePoints.end(), std::back_inserter(distances), [](const std::pair<int,double>& p){return p.second;});
     return TMath::Mean(distances.begin(), distances.end());
   }
+  double LeastSquareNDOF() const { return fLeastSquareNDOF; }
 
  private:
 
@@ -219,6 +230,8 @@ class shower::ReconTrack {
   std::map<int,std::vector<art::Ptr<recob::Hit> > > fHits;
   int fNumHits;
   std::vector<art::Ptr<recob::SpacePoint> > fSpacePoints;
+
+  double fLeastSquareNDOF;
 
   std::vector<int> fForwardConeTracks;
   std::vector<int> fBackwardConeTracks;
@@ -266,6 +279,9 @@ class shower::TrackShowerSepAlg {
   /// Returns shower-like hits
   std::vector<art::Ptr<recob::Hit> > ShowerHits();
 
+  /// Return shower shower points
+  std::vector<TVector3> ShowerStarts();
+
  private:
 
   ///
@@ -312,8 +328,9 @@ class shower::TrackShowerSepAlg {
   std::map<int,std::unique_ptr<ReconTrack> > fReconTracks;
 
   // Output data products
-  std::vector<art::Ptr<recob::Hit> > fShowerHits;
+  std::vector<art::Ptr<recob::Hit> >   fShowerHits;
   std::vector<art::Ptr<recob::Track> > fTrackTracks;
+  std::vector<TVector3>                fShowerStarts;
 
   // Parameters
   int fDebug;
@@ -329,6 +346,7 @@ class shower::TrackShowerSepAlg {
   double fCylinderCut;
   double fShowerConeCut;
   double fRectangleCut;
+  double fLeastSquareCut;
 
   // art services
   art::ServiceHandle<geo::Geometry> fGeom;
