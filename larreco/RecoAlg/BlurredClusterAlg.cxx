@@ -498,7 +498,7 @@ int cluster::BlurredClusterAlg::GlobalWire(const geo::WireID& wireID) {
       if (wireID.TPC == 0 or wireID.TPC == 1) globalWire = wireID.Wire;
       else if (wireID.TPC == 2 or wireID.TPC == 3 or wireID.TPC == 4 or wireID.TPC == 5) globalWire = nwires + wireID.Wire;
       else if (wireID.TPC == 6 or wireID.TPC == 7) globalWire = (2*nwires) + wireID.Wire;
-      else mf::LogError("BlurredClusterAlg") << "Error when trying to find a global induction plane coordinate for TPC " << wireID.TPC << " (geometry" << fDetector << ")";
+      else mf::LogError("BlurredClusterAlg") << "Error when trying to find a global induction plane coordinate for TPC " << wireID.TPC << " (geometry " << fDetector << ")";
     }
     else if (fDetector == "dune10kt") {
       unsigned int nwires = fGeom->Nwires(wireID.Plane, 0, wireID.Cryostat);
