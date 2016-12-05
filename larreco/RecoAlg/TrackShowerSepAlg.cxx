@@ -673,7 +673,7 @@ TVector2 shower::TrackShowerSepAlg::Project3DPointOntoPlane(TVector3 const& poin
 
   // Construct wire ID for this point projected onto the plane
   geo::PlaneID planeID = geo::PlaneID(cryostat, tpc, plane);
-  geo::WireID wireID = geo::WireID(planeID, fGeom->WireCoordinate(point.Y(), point.Z(), planeID));
+  geo::WireID wireID = fGeom->NearestWireID(point, planeID);
 
   wireTickPos = TVector2(GlobalWire(wireID),
 			 fDetProp->ConvertXToTicks(point.X(), planeID));

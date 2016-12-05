@@ -562,25 +562,37 @@ double shower::EMShowerAlg::FinddEdx(std::vector<art::Ptr<recob::Hit> > const& t
   try { pitch = lar::util::TrackPitchInView(*track, trackHits.at(0)->View()); }
   catch(...) { pitch = 0; }
 
+  std::cout << "dEdx for plane " << trackHits.at(0)->WireID().Plane << std::endl;
+  std::cout << "pitch is " << pitch << std::endl;
+  std::cout << "dEdx track length is " << fdEdxTrackLength << std::endl;
+
   // Deal with large pitches
   if (pitch > fdEdxTrackLength) {
     double dEdx = fCalorimetryAlg.dEdx_AREA(*trackHits.begin(), pitch);
     return dEdx;
   }
 
+  std::vector<int> wires;
   for (std::vector<art::Ptr<recob::Hit> >::const_iterator trackHitIt = trackHits.begin(); trackHitIt != trackHits.end(); ++trackHitIt) {
+    std::cout << "Hit " << trackHitIt->key() << " (wire " << (*trackHitIt)->WireID().Wire << ", time " << (*trackHitIt)->PeakTime() << " has charge " << (*trackHitIt)->Integral() << std::endl;
     if (totalDistance + pitch < fdEdxTrackLength) {
-      totalDistance += pitch;
+      if (std::find(wires.begin(), wires.end(), (*trackHitIt)->WireID().Wire) == wires.end()) {
+	wires.push_back((*trackHitIt)->WireID().Wire);
+	totalDistance += pitch;
+      }
       totalCharge += (*trackHitIt)->Integral();
       avHitTime += (*trackHitIt)->PeakTime();
       ++nHits;
+      std::cout << "Added! Total distance now " << totalDistance << std::endl;
     }
   }
 
   avHitTime /= (double)nHits;
 
   double dQdx = totalCharge / totalDistance;
+  std::cout << "Average hit time is " << avHitTime << " (from " << nHits << " hits, dQdx = " << dQdx << std::endl;
   double dEdx = fCalorimetryAlg.dEdx_AREA(dQdx, avHitTime, trackHits.at(0)->WireID().Plane);
+  std::cout << "dEdx = " << dEdx << std::endl;
 
   return dEdx;
 

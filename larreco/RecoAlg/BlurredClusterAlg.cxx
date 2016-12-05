@@ -95,6 +95,18 @@ void cluster::BlurredClusterAlg::CreateDebugPDF(int run, int subrun, int event) 
 
 }
 
+int cluster::BlurredClusterAlg::Convert3DPointToPlaneBin(const TVector3& point, int plane, const std::vector<std::vector<double> >& image) {
+
+  // Project the 3D point onto the correct plane
+  TVector2 wireTickPos = Project3DPointOntoPlane(point, plane);
+
+  // Now convert wire/tick to bin number
+  int bin = ConvertWireTickToBin(image, wireTickPos.X(), wireTickPos.Y());
+
+  return bin;
+
+}
+
 art::PtrVector<recob::Hit> cluster::BlurredClusterAlg::ConvertBinsToRecobHits(std::vector<std::vector<double> > const& image, std::vector<int> const& bins) {
 
   // Create the vector of hits to output
@@ -279,7 +291,7 @@ void cluster::BlurredClusterAlg::FindBlurringParameters(int& blur_wire, int& blu
 
 }
 
-int cluster::BlurredClusterAlg::FindClusters(std::vector<std::vector<double> > const& blurred, std::vector<std::vector<int> >& allcluster) {
+int cluster::BlurredClusterAlg::FindClusters(std::vector<std::vector<double> > const& blurred, std::vector<std::vector<int> >& allcluster, const std::vector<int>& vertices) {
 
   // Vectors to hold cluster information
   std::vector<int> cluster;
@@ -364,6 +376,8 @@ int cluster::BlurredClusterAlg::FindClusters(std::vector<std::vector<double> > c
 	      continue;
             if (used[bin])
               continue;
+	    if (std::find(vertices.begin(), vertices.end(), bin) != vertices.end())
+	      continue;
 
 	    // Get the blurred value and time for this bin
 	    blurred_binval = ConvertBinToCharge(blurred, bin);
@@ -701,6 +715,30 @@ bool cluster::BlurredClusterAlg::PassesTimeCut(std::vector<double> const& times,
   }
 
   return false;
+}
+
+TVector2 cluster::BlurredClusterAlg::Project3DPointOntoPlane(TVector3 const& point, int plane, int cryostat) {
+
+  TVector2 wireTickPos = TVector2(-999., -999.);
+
+  double pointPosition[3] = {point.X(), point.Y(), point.Z()};
+
+  geo::TPCID tpcID = fGeom->FindTPCAtPosition(pointPosition);
+  int tpc = 0;
+  if (tpcID.isValid)
+    tpc = tpcID.TPC;
+  else
+    return wireTickPos;
+
+  // Construct wire ID for this point projected onto the plane
+  geo::PlaneID planeID = geo::PlaneID(cryostat, tpc, plane);
+  geo::WireID wireID = fGeom->NearestWireID(point, planeID);
+
+  wireTickPos = TVector2(GlobalWire(wireID),
+                         fDetProp->ConvertXToTicks(point.X(), planeID));
+
+  return wireTickPos;
+
 }
 
 void cluster::BlurredClusterAlg::SaveImage(TH2F* image, std::vector<art::PtrVector<recob::Hit> > const& allClusters, int pad, int tpc, int plane) {

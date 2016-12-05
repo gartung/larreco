@@ -77,6 +77,9 @@ public:
   /// Create the PDF to save debug images
   void CreateDebugPDF(int run, int subrun, int event);
 
+  /// Projects a 3D point onto a plane and returns the bin number this point corresponds to on the plane
+  int Convert3DPointToPlaneBin(const TVector3& point, int plane, const std::vector<std::vector<double> >& image);
+
   /// Takes a vector of clusters (itself a vector of hits) and turns them into clusters using the initial hit selection
   void ConvertBinsToClusters(std::vector<std::vector<double> > const& image,
 			     std::vector<std::vector<int> > const& allClusterBins,
@@ -86,7 +89,7 @@ public:
   std::vector<std::vector<double> > ConvertRecobHitsToVector(std::vector<art::Ptr<recob::Hit> > const& hits);
 
   /// Find clusters in the histogram
-  int FindClusters(std::vector<std::vector<double> > const& image, std::vector<std::vector<int> >& allcluster);
+  int FindClusters(std::vector<std::vector<double> > const& image, std::vector<std::vector<int> >& allcluster, const std::vector<int>& vertices);
 
   /// Find the global wire position
   int GlobalWire(geo::WireID const& wireID);
@@ -119,10 +122,10 @@ private:
   /// Converts a bin into a recob::Hit (not all of these bins correspond to recob::Hits - some are fake hits created by the blurring)
   art::Ptr<recob::Hit> ConvertBinToRecobHit(std::vector<std::vector<double> > const& image, int bin);
 
-  /// Converts an xbin and a ybin to a global bin number                                                                                                                       
+  /// Converts an xbin and a ybin to a global bin number
   int ConvertWireTickToBin(std::vector<std::vector<double> > const& image, int xbin, int ybin);
 
-  /// Returns the charge stored in the global bin value                                                                                                                        
+  /// Returns the charge stored in the global bin value
   double ConvertBinToCharge(std::vector<std::vector<double> > const& image, int bin);
 
   /// Count how many dead wires there are in the blurring region for a particular hit
@@ -143,6 +146,10 @@ private:
 
   /// Determine if a hit is within a time threshold of any other hits in a cluster
   bool PassesTimeCut(std::vector<double> const& times, double time);
+
+  /// Projects a 3D point (units [cm]) onto a 2D plane
+  /// Returns 2D point (units [wire/tick])
+  TVector2 Project3DPointOntoPlane(TVector3 const& point, int plane, int cryostat = 0);
 
   bool fDebug;
   std::string fDetector;
@@ -169,6 +176,8 @@ private:
 
   // Hit containers
   std::vector<std::vector<art::Ptr<recob::Hit> > > fHitMap;
+
+  // Other useful information
   std::vector<bool> fDeadWires;
 
   int fLowerTick, fUpperTick;
