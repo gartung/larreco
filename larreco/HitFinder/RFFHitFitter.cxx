@@ -154,7 +154,7 @@ void hit::RFFHitFitter::CalculateAmplitudes(const std::vector<float>& signal)
     else if(fMeanVector[i]+1 > signal.size()) bin=signal.size()-2;
     else  bin = std::floor(fMeanVector[i]);
 
-    if(bin >= signal.size()-1)
+    if(bin >= signal.size()-1 || bin<0)
       throw cet::exception("RFFHitFitter") << "Error in CalculatAmplitudes! bin is out of range!\n"
 					   << "\tFor element " << i << " bin is " << bin << "(" << fMeanVector[i] << ")"
 					   << " but size is " << signal.size() << ".\n";
