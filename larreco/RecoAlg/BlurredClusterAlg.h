@@ -78,7 +78,7 @@ public:
   void CreateDebugPDF(int run, int subrun, int event);
 
   /// Projects a 3D point onto a plane and returns the bin number this point corresponds to on the plane
-  int Convert3DPointToPlaneBin(const TVector3& point, int plane, const std::vector<std::vector<double> >& image);
+  TVector2 Convert3DPointToPlaneBins(const TVector3& point, int plane, const std::vector<std::vector<double> >& image);
 
   /// Takes a vector of clusters (itself a vector of hits) and turns them into clusters using the initial hit selection
   void ConvertBinsToClusters(std::vector<std::vector<double> > const& image,
@@ -89,7 +89,7 @@ public:
   std::vector<std::vector<double> > ConvertRecobHitsToVector(std::vector<art::Ptr<recob::Hit> > const& hits);
 
   /// Find clusters in the histogram
-  int FindClusters(std::vector<std::vector<double> > const& image, std::vector<std::vector<int> >& allcluster, const std::vector<int>& vertices);
+  std::vector<std::vector<int> > FindClusters(std::vector<std::vector<double> > const& image, const std::vector<TVector2>& vertices);
 
   /// Find the global wire position
   int GlobalWire(geo::WireID const& wireID);
@@ -122,8 +122,11 @@ private:
   /// Converts a bin into a recob::Hit (not all of these bins correspond to recob::Hits - some are fake hits created by the blurring)
   art::Ptr<recob::Hit> ConvertBinToRecobHit(std::vector<std::vector<double> > const& image, int bin);
 
+  /// Converts a global bin number to an xbin and a ybin
+  void ConvertBinToWireTickBins(int bin, const std::vector<std::vector<double> >& blurred, int& xbin, int& ybin);
+
   /// Converts an xbin and a ybin to a global bin number
-  int ConvertWireTickToBin(std::vector<std::vector<double> > const& image, int xbin, int ybin);
+  int ConvertWireTickBinsToBin(std::vector<std::vector<double> > const& image, int xbin, int ybin);
 
   /// Returns the charge stored in the global bin value
   double ConvertBinToCharge(std::vector<std::vector<double> > const& image, int bin);
@@ -135,21 +138,18 @@ private:
   /// Dynamically find the blurring radii and Gaussian sigma in each dimension
   void FindBlurringParameters(int& blurwire, int& blurtick, int& sigmawire, int& sigmatick);
 
-  /// Returns the hit time of a hit in a particular bin
-  double GetTimeOfBin(std::vector<std::vector<double> > const& image, int bin);
-
   /// Makes all the kernels which could be required given the tuned parameters
   void MakeKernels();
 
   /// Determines the number of clustered neighbours of a hit
   unsigned int NumNeighbours(int nx, std::vector<bool> const& used, int bin);
 
-  /// Determine if a hit is within a time threshold of any other hits in a cluster
-  bool PassesTimeCut(std::vector<double> const& times, double time);
-
   /// Projects a 3D point (units [cm]) onto a 2D plane
   /// Returns 2D point (units [wire/tick])
   TVector2 Project3DPointOntoPlane(TVector3 const& point, int plane, int cryostat = 0);
+
+  /// Returns bool indiciating whether or not the specified bin corresponds to a real hit
+  bool RealHit(std::vector<std::vector<double> > const& image, int bin);
 
   bool fDebug;
   std::string fDetector;
@@ -167,7 +167,6 @@ private:
   int          fMinNeighbours;            // minumum number of neighbors to keep in the cluster
   unsigned int fMinSize;                  // minimum size for cluster
   double       fMinSeed;                  // minimum seed after blurring needed before clustering proceeds
-  double       fTimeThreshold;            // time threshold for clustering
   double       fChargeThreshold;          // charge threshold for clustering
 
   // Blurring stuff

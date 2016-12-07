@@ -182,6 +182,8 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
   for (std::map<std::pair<int,int>,std::vector<art::Ptr<recob::Hit> > >::iterator planeIt = planeToHits.begin(); planeIt != planeToHits.end(); ++planeIt) {
 
     //std::cout << "Clustering in plane " << planeIt->first.first << " in global TPC " << planeIt->first.second << std::endl;
+    // if (!(planeIt->first.first == 2 and planeIt->first.second == 17))
+    //   continue;
 
     std::vector<art::PtrVector<recob::Hit> > finalClusters;
 
@@ -193,18 +195,17 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
       std::vector<std::vector<double> > blurred = fBlurredClusterAlg.GaussianBlur(image);
 
       // Add vertices
-      std::vector<int> planeVertices;
+      std::vector<TVector2> planeVertices;
       if (fUseVertices) {
 	for (std::vector<art::Ptr<recob::Vertex> >::const_iterator vertexIt = vertices.begin(); vertexIt != vertices.end(); ++vertexIt) {
 	  double xyz[3]; (*vertexIt)->XYZ(xyz);
-	  planeVertices.push_back(fBlurredClusterAlg.Convert3DPointToPlaneBin(TVector3(xyz), planeIt->first.first, blurred));
+	  planeVertices.push_back(fBlurredClusterAlg.Convert3DPointToPlaneBins(TVector3(xyz), planeIt->first.first, blurred));
 	}
       }
 
       // Find clusters in histogram
-      std::vector<std::vector<int> > allClusterBins; // Vector of clusters (clusters are vectors of hits)
-      int numClusters = fBlurredClusterAlg.FindClusters(blurred, allClusterBins, planeVertices);
-      mf::LogVerbatim("Blurred Clustering") << "Found " << numClusters << " clusters" << std::endl;
+      std::vector<std::vector<int> > allClusterBins = fBlurredClusterAlg.FindClusters(blurred, planeVertices);
+      mf::LogVerbatim("Blurred Clustering") << "Found " << allClusterBins.size() << " clusters" << std::endl;
 
       // Create output clusters from the vector of clusters made in FindClusters
       std::vector<art::PtrVector<recob::Hit> > planeClusters;
