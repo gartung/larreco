@@ -51,7 +51,7 @@ namespace hit{
     void ClearResults();
 
     void PrintResults();
-			 
+    
   private:
     float fMeanMatchThreshold;
     unsigned int fMinMergeMultiplicity;

@@ -23,6 +23,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "RFFHitFitter.h"
+#include <thread>
 
 namespace hit{
 
@@ -32,12 +33,25 @@ namespace hit{
 
   public:
     RFFHitFinderAlg(fhicl::ParameterSet const&);
+    ~RFFHitFinderAlg();
 
     void SetFitterParamsVectors(geo::Geometry const&);
     void Run(std::vector<recob::Wire> const&,
 	     std::vector<recob::Hit>&,
 	     geo::Geometry const&);
 
+    typedef struct FitterInput{
+      geo::SigType_t      sigtype;
+      geo::WireID         wireid;
+      raw::ChannelID_t    channel;
+      geo::View_t         view;
+      raw::TDCtick_t      roi_start;
+      raw::TDCtick_t      roi_end;
+      std::vector<float>* roi_dataptr;      
+    } FitterInput_t;
+
+
+    
   private:
 
     std::vector<float> fMatchThresholdVec;
@@ -47,13 +61,17 @@ namespace hit{
     void SetFitterParams(unsigned int);
 
     void EmplaceHit(std::vector<recob::Hit>&,
-		    recob::Wire const&,
 		    float const&,
 		    raw::TDCtick_t const&, raw::TDCtick_t const&,
-		    geo::SigType_t const&, geo::WireID const&);
+		    geo::SigType_t const&, geo::WireID const&,
+		    raw::ChannelID_t const&, geo::View_t const&);
 
     
-    RFFHitFitter fFitter;
+    //RFFHitFitter fFitter;
+    void* fContext,fSender_ROI,fReceiver_Hits,fReceier_fit,fController;
+
+    size_t fNWorkers;
+    std::vector<std::thread> fWorkers;
     
   };
 

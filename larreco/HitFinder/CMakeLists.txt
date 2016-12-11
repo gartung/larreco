@@ -1,6 +1,7 @@
 
 art_make( 
           LIB_LIBRARIES
+			zmq
 			lardataobj_RawData
 			lardataobj_RecoBase 
                         larcore_Geometry
