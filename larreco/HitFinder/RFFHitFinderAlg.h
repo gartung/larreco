@@ -29,7 +29,7 @@ namespace hit{
 
   class RFFHitFinderAlg{
 
-  const float SQRT_TWO_PI = 2.506628;
+  static constexpr float SQRT_TWO_PI = 2.506628;
 
   public:
     RFFHitFinderAlg(fhicl::ParameterSet const&);
@@ -47,7 +47,10 @@ namespace hit{
       geo::View_t         view;
       raw::TDCtick_t      roi_start;
       raw::TDCtick_t      roi_end;
-      std::vector<float>* roi_dataptr;      
+      float               match_thresh;
+      unsigned int        merge_multi;
+      float               amp_thresh;
+      const std::vector<float>* roi_dataptr;      
     } FitterInput_t;
 
 
@@ -58,17 +61,31 @@ namespace hit{
     std::vector<unsigned int> fMergeMultiplicityVec;
     std::vector<float> fAmpThresholdVec;
 
-    void SetFitterParams(unsigned int);
+    //void SetFitterParams(unsigned int);
 
-    void EmplaceHit(std::vector<recob::Hit>&,
-		    float const&,
-		    raw::TDCtick_t const&, raw::TDCtick_t const&,
-		    geo::SigType_t const&, geo::WireID const&,
-		    raw::ChannelID_t const&, geo::View_t const&);
+    static void FitterWorker(void*);
+    static void SendDataToWorkers(std::vector<recob::Wire> const&,
+				  geo::Geometry const&,
+				  void*,
+				  std::vector<float> const&,
+				  std::vector<unsigned int > const&,
+				  std::vector<float> const&);
+
+    
+    static size_t EmplaceHit(std::vector<recob::Hit>&,
+			     RFFHitFitter &,
+			     float const&,
+			     raw::TDCtick_t const&, raw::TDCtick_t const&,
+			     geo::SigType_t const&, geo::WireID const&,
+			     raw::ChannelID_t const&, geo::View_t const&);
 
     
     //RFFHitFitter fFitter;
-    void* fContext,fSender_ROI,fReceiver_Hits,fReceier_fit,fController;
+    void *fContext;
+    void *fPairNROI;
+    void *fReceiver_Hits;
+    void *fReceiver_fin;
+    void* fController;
 
     size_t fNWorkers;
     std::vector<std::thread> fWorkers;

@@ -146,13 +146,28 @@ void hit::RFFHitFitter::CalculateMergedMeansAndSigmas(size_t signal_size)
 void hit::RFFHitFitter::CalculateAmplitudes(const std::vector<float>& signal)
 {
 
+  fMeanVector.reserve(fMergeVector.size());
+  fSigmaVector.reserve(fMergeVector.size());
+  fMeanErrorVector.reserve(fMergeVector.size());
+  fSigmaErrorVector.reserve(fMergeVector.size());
+
+  for(size_t i_h=0; i_h<fMeanVector.size(); ++i_h){
+    if(std::isnan(fMeanVector[i_h])){
+      fMeanVector.erase(fMeanVector.begin()+i_h);
+      fMeanErrorVector.erase(fMeanErrorVector.begin()+i_h);
+      fSigmaVector.erase(fSigmaVector.begin()+i_h);
+      fSigmaErrorVector.erase(fSigmaErrorVector.begin()+i_h);
+    }
+  }
+  
   std::vector<float> heightVector(fMeanVector.size());
   size_t bin=0;
   for(size_t i=0; i<fMeanVector.size(); i++){
 
-    if(fMeanVector[i]<0)  bin=0;
-    else if(fMeanVector[i]+1 > signal.size()) bin=signal.size()-2;
-    else  bin = std::floor(fMeanVector[i]);
+    bin = std::floor(fMeanVector[i]);
+    
+    if(bin<0)  bin=0;
+    else if(bin+1 >= signal.size()) bin=signal.size()-2;
 
     if(bin >= signal.size()-1 || bin<0)
       throw cet::exception("RFFHitFitter") << "Error in CalculatAmplitudes! bin is out of range!\n"
