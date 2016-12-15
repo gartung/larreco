@@ -383,8 +383,12 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
               continue;
 
 	    // Check we're not clustering across a vertex
-	    if (((vertices.at(0).X() - binx) * (vertices.at(0).X() - x)) <= 0 or
-		((vertices.at(0).Y() - biny) * (vertices.at(0).Y() - y)) <= 0)
+	    bool crossVertex = false;
+	    for (std::vector<TVector2>::const_iterator vertexIt = vertices.begin(); vertexIt != vertices.end(); ++vertexIt)
+	      if (((vertexIt->X() - binx) * (vertexIt->X() - x)) <= 0 or
+		  ((vertexIt->Y() - biny) * (vertexIt->Y() - y)) <= 0)
+		crossVertex = true;
+	    if (crossVertex)
 	      continue;
 
 	    // Cluster bin if above charge threshold
