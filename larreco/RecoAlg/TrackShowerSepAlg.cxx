@@ -309,12 +309,12 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
     if (TMath::Abs(trackIt->second->ConeSize()) > 30 and TMath::Abs(trackIt->second->TrackConeSize()) > 3) {
       if (trackIt->second->ConeSize() < 0)
 	trackIt->second->FlipTrack();
-      std::cout << "Track " << trackIt->first << " has min forward space point distance " << trackIt->second->MinForwardSpacePointDistance() << std::endl;
-      if (TMath::Abs(trackIt->second->MinForwardSpacePointDistance() < 10)) {
+      // std::cout << "    Track " << trackIt->first << " has min forward space point distance " << trackIt->second->MinForwardSpacePointDistance() << std::endl;
+      // if (TMath::Abs(trackIt->second->MinForwardSpacePointDistance() < 10)) {
 	trackIt->second->MakeShower();
 	if (fDebug > 0)
 	  std::cout << "  Making track " << trackIt->first << " a shower (Type I)" << std::endl;
-      }
+	//}
     }
   }
 
