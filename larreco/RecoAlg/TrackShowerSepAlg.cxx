@@ -62,6 +62,7 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
   fReconTracks.clear();
   fShowerHits.clear();
   fTrackTracks.clear();
+  fShowerStarts.clear();
 
   // Save info about the tracks
   for (std::vector<art::Ptr<recob::Track> >::const_iterator trackIt = tracks.begin(); trackIt != tracks.end(); ++trackIt) {

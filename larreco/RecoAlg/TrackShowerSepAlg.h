@@ -328,6 +328,7 @@ class shower::TrackShowerSepAlg {
   std::map<int,std::unique_ptr<ReconTrack> > fReconTracks;
 
   // Output data products
+  // Note anything added here needs to be cleared at the start of each event
   std::vector<art::Ptr<recob::Hit> >   fShowerHits;
   std::vector<art::Ptr<recob::Track> > fTrackTracks;
   std::vector<TVector3>                fShowerStarts;
