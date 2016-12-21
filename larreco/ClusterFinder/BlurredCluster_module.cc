@@ -170,20 +170,18 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
     hitsToCluster = hits;
 
   // Make a map between the planes and the hits on each
-  std::map<std::pair<int,int>,std::vector<art::Ptr<recob::Hit> > > planeToHits;
+  std::map<geo::PlaneID,std::vector<art::Ptr<recob::Hit> > > planeToHits;
   for (std::vector<art::Ptr<recob::Hit> >::iterator hitToCluster = hitsToCluster.begin(); hitToCluster != hitsToCluster.end(); ++hitToCluster) {
     if (fGlobalTPCRecon)
-      planeToHits[std::make_pair((*hitToCluster)->WireID().Plane,(*hitToCluster)->WireID().TPC%2)].push_back(*hitToCluster);
+      planeToHits[geo::PlaneID((*hitToCluster)->WireID().Cryostat,(*hitToCluster)->WireID().TPC%2,(*hitToCluster)->WireID().Plane)].push_back(*hitToCluster);
     else
-      planeToHits[std::make_pair((*hitToCluster)->WireID().Plane,(*hitToCluster)->WireID().TPC)].push_back(*hitToCluster);
+      planeToHits[(*hitToCluster)->WireID().planeID()].push_back(*hitToCluster);
   }
 
   // Loop over views
-  for (std::map<std::pair<int,int>,std::vector<art::Ptr<recob::Hit> > >::iterator planeIt = planeToHits.begin(); planeIt != planeToHits.end(); ++planeIt) {
+  for (std::map<geo::PlaneID,std::vector<art::Ptr<recob::Hit> > >::const_iterator planeIt = planeToHits.begin(); planeIt != planeToHits.end(); ++planeIt) {
 
-    //std::cout << "Clustering in plane " << planeIt->first.first << " in global TPC " << planeIt->first.second << std::endl;
-    // if (!(planeIt->first.first == 2 and planeIt->first.second == 17))
-    //   continue;
+    //std::cout << "Clustering in plane " << planeIt->first.Plane << " in global TPC " << planeIt->first.TPC << std::endl;
 
     std::vector<art::PtrVector<recob::Hit> > finalClusters;
 
@@ -199,7 +197,7 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
       if (fUseVertices) {
 	for (std::vector<art::Ptr<recob::Vertex> >::const_iterator vertexIt = vertices.begin(); vertexIt != vertices.end(); ++vertexIt) {
 	  double xyz[3]; (*vertexIt)->XYZ(xyz);
-	  planeVertices.push_back(fBlurredClusterAlg.Convert3DPointToPlaneBins(TVector3(xyz), planeIt->first.first, blurred));
+	  planeVertices.push_back(fBlurredClusterAlg.Convert3DPointToPlaneBins(TVector3(xyz), planeIt->first.Plane, blurred));
 	}
       }
 
@@ -225,10 +223,10 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
 	TH2F* imageHist = fBlurredClusterAlg.MakeHistogram(image, TString(name.str()));
 	name << "_convolved";
 	TH2F* blurredHist = fBlurredClusterAlg.MakeHistogram(blurred, TString(name.str()));
-      	fBlurredClusterAlg.SaveImage(imageHist, 1, planeIt->first.second, planeIt->first.first);
-      	fBlurredClusterAlg.SaveImage(blurredHist, 2, planeIt->first.second, planeIt->first.first);
-      	fBlurredClusterAlg.SaveImage(blurredHist, allClusterBins, 3, planeIt->first.second, planeIt->first.first);
-      	fBlurredClusterAlg.SaveImage(imageHist, finalClusters, 4, planeIt->first.second, planeIt->first.first);
+      	fBlurredClusterAlg.SaveImage(imageHist, 1, planeIt->first.TPC, planeIt->first.Plane);
+      	fBlurredClusterAlg.SaveImage(blurredHist, 2, planeIt->first.TPC, planeIt->first.Plane);
+      	fBlurredClusterAlg.SaveImage(blurredHist, allClusterBins, 3, planeIt->first.TPC, planeIt->first.Plane);
+      	fBlurredClusterAlg.SaveImage(imageHist, finalClusters, 4, planeIt->first.TPC, planeIt->first.Plane);
 	imageHist->Delete();
 	blurredHist->Delete();
       }
@@ -244,8 +242,10 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
       if (clusterHits.size() > 0) {
 
 	// Get the start and end wires of the cluster
-	unsigned int startWire = fBlurredClusterAlg.GlobalWire(clusterHits.front()->WireID());
-	unsigned int endWire = fBlurredClusterAlg.GlobalWire(clusterHits.back()->WireID());
+	// unsigned int startWire = fBlurredClusterAlg.GlobalWire(clusterHits.front()->WireID());
+	// unsigned int endWire = fBlurredClusterAlg.GlobalWire(clusterHits.back()->WireID());
+	unsigned int startWire = clusterHits.front()->WireID().Wire;
+	unsigned int endWire = clusterHits.back()->WireID().Wire;
 
 	// Put cluster hits in the algorithm
 	ClusterParamAlgo.ImportHits(clusterHits);
