@@ -65,10 +65,11 @@ public:
 
 private:
 
-  std::string fShowerHitsModuleLabel, fTrackHitsModuleLabel, fClusterModuleLabel, fTrackModuleLabel, fPFParticleModuleLabel;
+  std::string fShowerHitsModuleLabel, fTrackHitsModuleLabel, fClusterModuleLabel, fTrackModuleLabel, fVertexModuleLabel, fPFParticleModuleLabel;
   EMShowerAlg fEMShowerAlg;
   bool fSaveNonCompleteShowers;
   bool fFindBadPlanes;
+  bool fUseVertices;
   bool fMakeSpacePoints;
 
   art::ServiceHandle<geo::Geometry> fGeom;
@@ -93,13 +94,16 @@ shower::EMShower::EMShower(fhicl::ParameterSet const& pset) : fEMShowerAlg(pset.
 }
 
 void shower::EMShower::reconfigure(fhicl::ParameterSet const& p) {
+
   fShowerHitsModuleLabel = p.get<std::string>("ShowerHitsModuleLabel","");
   fTrackHitsModuleLabel  = p.get<std::string>("TrackHitsModuleLabel","");
   fClusterModuleLabel    = p.get<std::string>("ClusterModuleLabel");
   fTrackModuleLabel      = p.get<std::string>("TrackModuleLabel");
+  fVertexModuleLabel     = p.get<std::string>("VertexModuleLabel","");
   fPFParticleModuleLabel = p.get<std::string>("PFParticleModuleLabel","");
 
   fFindBadPlanes          = p.get<bool>("FindBadPlanes");
+  fUseVertices            = p.get<bool>("UseVertices",false);
   fSaveNonCompleteShowers = p.get<bool>("SaveNonCompleteShowers");
   fMakeSpacePoints        = p.get<bool>("MakeSpacePoints");
 
@@ -112,6 +116,10 @@ void shower::EMShower::reconfigure(fhicl::ParameterSet const& p) {
     throw art::Exception(art::errors::Configuration)
       << "EMShower: require either the module label of shower hits (ShowerHitsModuleLabel) or the hit label used in track finding (TrackHitsModuleLabel)"
       << std::endl;
+
+  if (fUseVertices and fVertexModuleLabel == "")
+    throw art::Exception(art::errors::Configuration) << "EMShower: UseVertices set to true but no vertex information is provided" << std::endl;
+
 }
 
 void shower::EMShower::produce(art::Event& evt) {
@@ -150,6 +158,12 @@ void shower::EMShower::produce(art::Event& evt) {
   if (evt.getByLabel(fClusterModuleLabel, clusterHandle))
     art::fill_ptr_vector(clusters, clusterHandle);
 
+  // Vertices
+  art::Handle<std::vector<recob::Vertex> > vertexHandle;
+  std::vector<art::Ptr<recob::Vertex> > vertices;
+  if (evt.getByLabel(fVertexModuleLabel, vertexHandle))
+    art::fill_ptr_vector(vertices, vertexHandle);
+
   // PFParticles
   art::Handle<std::vector<recob::PFParticle> > pfpHandle;
   std::vector<art::Ptr<recob::PFParticle> > pfps;
@@ -172,7 +186,7 @@ void shower::EMShower::produce(art::Event& evt) {
       fmth = std::make_unique<art::FindManyP<recob::Track> >(showerHitHandle, evt, fShowerHitsModuleLabel);
     else
       fmth = std::make_unique<art::FindManyP<recob::Track> >(trackHitHandle, evt, fTrackModuleLabel);
-    fEMShowerAlg.AssociateClustersAndTracks(clusters, fmhc, fmth, clusterToTracks, trackToClusters);
+    fEMShowerAlg.AssociateClustersAndTracks(clusters, fmhc, fmth, vertices, clusterToTracks, trackToClusters);
 
     // Make initial showers
     std::vector<std::vector<int> > initialShowers = fEMShowerAlg.FindShowers(trackToClusters);
@@ -184,7 +198,7 @@ void shower::EMShower::produce(art::Event& evt) {
     if (clustersToIgnore.size() > 0) {
       clusterToTracks.clear();
       trackToClusters.clear();
-      fEMShowerAlg.AssociateClustersAndTracks(clusters, fmhc, fmth, clustersToIgnore, clusterToTracks, trackToClusters);
+      fEMShowerAlg.AssociateClustersAndTracks(clusters, fmhc, fmth, vertices, clustersToIgnore, clusterToTracks, trackToClusters);
       newShowers = fEMShowerAlg.FindShowers(trackToClusters);
     }
     else
@@ -278,7 +292,7 @@ void shower::EMShower::produce(art::Event& evt) {
       // First, order the hits into the correct shower order in each plane
       if (fDebug > 1)
 	std::cout << " ------------------ Ordering shower hits -------------------- " << std::endl;
-      std::map<int,std::vector<art::Ptr<recob::Hit> > > showerHitsMap = fEMShowerAlg.OrderShowerHits(showerHits, fPlane);
+      std::map<int,std::vector<art::Ptr<recob::Hit> > > showerHitsMap = fEMShowerAlg.OrderShowerHits(showerHits, vertices, fPlane);
       if (fDebug > 1)
 	std::cout << " ------------------ End ordering shower hits -------------------- " << std::endl;
 

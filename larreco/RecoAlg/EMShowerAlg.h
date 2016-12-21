@@ -81,6 +81,7 @@ public:
   void AssociateClustersAndTracks(const std::vector<art::Ptr<recob::Cluster> >& clusters,
 				  const art::FindManyP<recob::Hit>& fmh,
 				  const std::unique_ptr<art::FindManyP<recob::Track> >& fmt,
+				  const std::vector<art::Ptr<recob::Vertex> >& vertices,
 				  std::map<int,std::vector<int> >& clusterToTracks,
 				  std::map<int,std::vector<int> >& trackToClusters);
 
@@ -88,6 +89,7 @@ public:
   void AssociateClustersAndTracks(const std::vector<art::Ptr<recob::Cluster> >& clusters,
 				  const art::FindManyP<recob::Hit>& fmh,
 				  const std::unique_ptr<art::FindManyP<recob::Track> >& fmt,
+				  const std::vector<art::Ptr<recob::Vertex> >& vertices,
 				  const std::vector<int>& clustersToIgnore,
 				  std::map<int,std::vector<int> >& clusterToTracks,
 				  std::map<int,std::vector<int> >& trackToClusters);
@@ -132,7 +134,7 @@ public:
 
   /// Takes the hits associated with a shower and orders them so they follow the direction of the shower
   //std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(art::PtrVector<recob::Hit> const& shower, int plane);
-  std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(const art::PtrVector<recob::Hit>& shower, int plane);
+  std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(const art::PtrVector<recob::Hit>& shower, const std::vector<art::Ptr<recob::Vertex> >& vertices, int plane);
 
   /// <Tingjun to document>
   void FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> >const& showerHits,
@@ -224,6 +226,7 @@ private:
 
   // Parameters
   double fMinTrackLength;
+  int fMinTrackShowerHits;
   double fdEdxTrackLength;
   double fSpacePointSize;
   // Parameters to fit wire vs time
