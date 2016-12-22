@@ -62,8 +62,12 @@ public:
 private:
 
   int fEvent, fRun, fSubrun;
+
+  // Input data products
   std::string fHitsModuleLabel, fTrackModuleLabel, fVertexModuleLabel;
-  bool fCreateDebugPDF, fMergeClusters, fGlobalTPCRecon, fShowerReconOnly, fUseVertices;
+
+  // Run options
+  bool fCreateDebugPDF, fMergeClusters, fGlobalTPCRecon, fShowerReconOnly, fUseVertices, fUseReblurring;
 
   // Create instances of algorithm classes to perform the clustering
   cluster::BlurredClusterAlg fBlurredClusterAlg;
@@ -95,6 +99,7 @@ void cluster::BlurredCluster::reconfigure(fhicl::ParameterSet const& p) {
   fGlobalTPCRecon        = p.get<bool>       ("GlobalTPCRecon",true);
   fShowerReconOnly       = p.get<bool>       ("ShowerReconOnly",false);
   fUseVertices           = p.get<bool>       ("UseVertices",false);
+  fUseReblurring         = p.get<bool>       ("UseReblurring",false);
   fBlurredClusterAlg.reconfigure(p.get<fhicl::ParameterSet>("BlurredClusterAlg"));
   fMergeClusterAlg.reconfigure(p.get<fhicl::ParameterSet>("MergeClusterAlg"));
   fTrackShowerSepAlg.reconfigure(p.get<fhicl::ParameterSet>("TrackShowerSepAlg"));
@@ -188,21 +193,25 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
     // Implement the algorithm
     if (planeIt->second.size() >= fBlurredClusterAlg.GetMinSize()) {
 
-      // Convert hit map to TH2 histogram and blur it
       std::vector<std::vector<double> > image = fBlurredClusterAlg.ConvertRecobHitsToVector(planeIt->second);
-      std::vector<std::vector<double> > blurred = fBlurredClusterAlg.GaussianBlur(image);
 
       // Add vertices
       std::vector<TVector2> planeVertices;
       if (fUseVertices) {
 	for (std::vector<art::Ptr<recob::Vertex> >::const_iterator vertexIt = vertices.begin(); vertexIt != vertices.end(); ++vertexIt) {
 	  double xyz[3]; (*vertexIt)->XYZ(xyz);
-	  planeVertices.push_back(fBlurredClusterAlg.Convert3DPointToPlaneBins(TVector3(xyz), planeIt->first.Plane, blurred));
+	  planeVertices.push_back(fBlurredClusterAlg.Convert3DPointToPlaneBins(TVector3(xyz), planeIt->first.Plane));
 	}
       }
 
-      // Find clusters in histogram
-      std::vector<std::vector<int> > allClusterBins = fBlurredClusterAlg.FindClusters(blurred, planeVertices);
+      // Find clusters in hit map
+      std::vector<std::vector<int> > allClusterBins;
+      if (fUseReblurring)
+	allClusterBins = fBlurredClusterAlg.FindClusters(image, planeVertices, true);
+      else {
+	std::vector<std::vector<double> > blurred = fBlurredClusterAlg.GaussianBlur(image);
+	allClusterBins = fBlurredClusterAlg.FindClusters(blurred, planeVertices);
+      }
       mf::LogVerbatim("Blurred Clustering") << "Found " << allClusterBins.size() << " clusters" << std::endl;
 
       // Create output clusters from the vector of clusters made in FindClusters
@@ -222,6 +231,7 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
 	name << "blurred_image";
 	TH2F* imageHist = fBlurredClusterAlg.MakeHistogram(image, TString(name.str()));
 	name << "_convolved";
+	std::vector<std::vector<double> > blurred = fBlurredClusterAlg.GaussianBlur(image);
 	TH2F* blurredHist = fBlurredClusterAlg.MakeHistogram(blurred, TString(name.str()));
       	fBlurredClusterAlg.SaveImage(imageHist, 1, planeIt->first.TPC, planeIt->first.Plane);
       	fBlurredClusterAlg.SaveImage(blurredHist, 2, planeIt->first.TPC, planeIt->first.Plane);
