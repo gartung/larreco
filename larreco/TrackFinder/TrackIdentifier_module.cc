@@ -83,6 +83,7 @@ shower::TrackIdentifier::TrackIdentifier(const fhicl::ParameterSet& pset) : fTra
   produces<art::Assns<recob::Track, recob::Hit> >(fTrackInstanceLabel);
   produces<art::Assns<recob::Track, recob::Vertex> >(fTrackInstanceLabel);
   produces<art::Assns<recob::Track, recob::SpacePoint> >(fTrackInstanceLabel);
+  produces<art::Assns<recob::SpacePoint, recob::Hit> >(fTrackInstanceLabel);
 }
 
 void shower::TrackIdentifier::reconfigure(const fhicl::ParameterSet& pset) {
@@ -103,6 +104,7 @@ void shower::TrackIdentifier::produce(art::Event& evt) {
   std::unique_ptr<art::Assns<recob::Track, recob::Hit> > trackHitAssns(new art::Assns<recob::Track, recob::Hit>);
   std::unique_ptr<art::Assns<recob::Track, recob::Vertex> > vertexAssns(new art::Assns<recob::Track, recob::Vertex>);
   std::unique_ptr<art::Assns<recob::Track, recob::SpacePoint> > spacePointAssns(new art::Assns<recob::Track, recob::SpacePoint>);
+  std::unique_ptr<art::Assns<recob::SpacePoint, recob::Hit> > spHitAssns(new art::Assns<recob::SpacePoint, recob::Hit>);
 
   // Input data products
   std::vector<art::Ptr<recob::Hit> > hits;
@@ -125,6 +127,7 @@ void shower::TrackIdentifier::produce(art::Event& evt) {
   art::FindManyP<recob::SpacePoint> fmspt(trackHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Track>      fmtsp(spacePointHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Vertex>     fmvt(trackHandle, evt, fTrackModuleLabel);
+  art::FindManyP<recob::Hit>        fmhsp(spacePointHandle, evt, fTrackModuleLabel);
 
   // Run track shower separation
   fTrackShowerSepAlg.RunTrackShowerSep(evt.event(), hits, tracks, spacePoints, fmht, fmth, fmspt, fmtsp);
@@ -153,6 +156,12 @@ void shower::TrackIdentifier::produce(art::Event& evt) {
       vertexAssns->addSingle(trackPtr, *trackVertexIt);
   }
 
+  // Track space points
+  for (std::vector<art::Ptr<recob::SpacePoint> >::const_iterator spIt = spacePoints.begin(); spIt != spacePoints.end(); ++spIt) {
+    const std::vector<art::Ptr<recob::Hit> > spHits = fmhsp.at(spIt->key());
+    util::CreateAssn(*this, evt, *spIt, spHits, *(spHitAssns.get()));
+  }
+
   // Shower
   art::ProductID showerHitID = getProductID<std::vector<recob::Hit> >(evt, fShowerInstanceLabel);
   const art::EDProductGetter* showerHitGetter = evt.productGetter(showerHitID);
@@ -177,6 +186,7 @@ void shower::TrackIdentifier::produce(art::Event& evt) {
   evt.put(std::move(trackHitAssns), fTrackInstanceLabel);
   evt.put(std::move(spacePointAssns), fTrackInstanceLabel);
   evt.put(std::move(vertexAssns), fTrackInstanceLabel);
+  evt.put(std::move(spHitAssns), fTrackInstanceLabel);
 
   return;
 
