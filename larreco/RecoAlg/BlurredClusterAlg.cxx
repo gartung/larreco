@@ -111,7 +111,7 @@ TVector2 cluster::BlurredClusterAlg::Convert3DPointToPlaneBins(const TVector3& p
 
 }
 
-TVector2 cluster::BlurredClusterAlg::ConvertBinTo2DPosition(const std::vector<std::vector<double> >& image, int bin) {
+TVector2 cluster::BlurredClusterAlg::ConvertBinTo2DPosition(const std::vector<std::vector<double > >& image, int bin) {
 
   art::Ptr<recob::Hit> hit = ConvertBinToRecobHit(image, bin);
   return HitPosition(hit);
@@ -191,11 +191,11 @@ std::vector<std::vector<double> > cluster::BlurredClusterAlg::ConvertRecobHitsTo
   // Define the size of this particular plane -- dynamically to avoid huge histograms
   int lowerTick = fDetProp->ReadOutWindowSize(), upperTick = 0, lowerWire = fGeom->MaxWires(), upperWire = 0;
   for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt) {
-    int histWire = GlobalWire((*hitIt)->WireID());
-    if ((*hitIt)->PeakTime() < lowerTick) lowerTick = (*hitIt)->PeakTime();
-    if ((*hitIt)->PeakTime() > upperTick) upperTick = (*hitIt)->PeakTime();
-    if (histWire < lowerWire) lowerWire = histWire;
-    if (histWire > upperWire) upperWire = histWire;
+    TVector2 hitCoords = HitCoordinates(*hitIt);
+    if (hitCoords.Y() < lowerTick) lowerTick = hitCoords.Y();
+    if (hitCoords.Y() > upperTick) upperTick = hitCoords.Y();
+    if (hitCoords.X() < lowerWire) lowerWire = hitCoords.X();
+    if (hitCoords.X() > upperWire) upperWire = hitCoords.X();
     //std::cout << "Hit at " << (*hitIt)->WireID() << " has peak time " << (*hitIt)->PeakTime() << " and RMS " << (*hitIt)->RMS() << ": lower and upper tick is " << (*hitIt)->StartTick() << " and " << (*hitIt)->EndTick() << ")" << std::endl;
   }
   fLowerTick = lowerTick-20;
@@ -273,7 +273,7 @@ std::pair<int,int> cluster::BlurredClusterAlg::DeadWireCount(int wire_bin, int w
 
 }
 
-void cluster::BlurredClusterAlg::FindBlurringParameters(int& blur_wire, int& blur_tick, int& sigma_wire, int& sigma_tick, TVector2 point) {
+BlurringParameters cluster::BlurredClusterAlg::FindBlurringParameters(const std::vector<std::vector<double> >& image, const TVector2& point, const std::vector<bool>& used) {
 
   // Define a unit vector for the rough shower direction
   const TVector2 unit = TVector2(0,1).Unit();
@@ -285,41 +285,42 @@ void cluster::BlurredClusterAlg::FindBlurringParameters(int& blur_wire, int& blu
   // Look over a range of angles and save the direction vector for the angle
   // which encloses the most hits within a certain rectangle width
   TVector2 pos, proj;
-  int max_num_hits = 0;
+  double max_charge = 0.;
   for (int angle = 0; angle < 360; angle+=5) {
     TVector2 rotated = unit.Rotate(angle*TMath::Pi()/180);
-    int num_hits = 0;
+    int charge = 0;
     for (unsigned int wireIt = 0; wireIt < fHitMap.size(); ++wireIt) {
       for (unsigned int tickIt = 0; tickIt < fHitMap.at(wireIt).size(); ++tickIt) {
-	if (fHitMap[wireIt][tickIt].isNull())
+	int bin = ConvertWireTickBinsToBin(image, wireIt, tickIt);
+	if (fHitMap[wireIt][tickIt].isNull() or used[bin])
 	  continue;
 	pos = HitPosition(fHitMap[wireIt][tickIt]) - point;
 	proj = pos.Proj(rotated);
 	if ((pos-proj).Mod() < fShowerDirectionWidth)
-	  ++num_hits;
+	  charge += ConvertBinToCharge(image, bin);
       }
     }
-    if (num_hits > max_num_hits) {
-      max_num_hits = num_hits;
+    if (charge > max_charge) {
+      max_charge = charge;
       direction = rotated;
     }
   }
 
   // Use this direction to scale the blurring radii and Gaussian sigma
-  blur_wire = std::max(std::abs(std::round(fBlurWire * direction.X())),1.);
-  blur_tick = std::max(std::abs(std::round(fBlurTick * direction.Y())),1.);
+  int blur_wire = std::max(std::abs(std::round(fBlurWire * direction.X())),1.);
+  int blur_tick = std::max(std::abs(std::round(fBlurTick * direction.Y())),1.);
 
-  sigma_wire = std::max(std::abs(std::round(fSigmaWire * direction.X())),1.);
-  sigma_tick = std::max(std::abs(std::round(fSigmaTick * direction.Y())),1.);
+  int sigma_wire = std::max(std::abs(std::round(fSigmaWire * direction.X())),1.);
+  int sigma_tick = std::max(std::abs(std::round(fSigmaTick * direction.Y())),1.);
 
-  // std::cout << "Gradient is " << gradient << ", giving x and y components " << unit.X() << " and " << unit.Y() << std::endl;
-  // std::cout << "Blurring: wire " << blurwire << " and tick " << blurtick << "; sigma: wire " << sigmawire << " and tick " << sigmatick << std::endl;
+  // std::cout << "  Blurring: direction (" << direction.X() << ", " << direction.Y() << ")"
+  // 	    << "; wire " << blur_wire << " and tick " << blur_tick << "; sigma: wire " << sigma_wire << " and tick " << sigma_tick << std::endl;
 
-  return;
+  return BlurringParameters(blur_wire, blur_tick, sigma_wire, sigma_tick);
 
 }
 
-void cluster::BlurredClusterAlg::FindBlurringParameters(int& blur_wire, int& blur_tick, int& sigma_wire, int& sigma_tick) {
+BlurringParameters cluster::BlurredClusterAlg::FindBlurringParameters() {
 
   // Calculate least squares slope
   int x, y;
@@ -347,16 +348,16 @@ void cluster::BlurredClusterAlg::FindBlurringParameters(int& blur_wire, int& blu
     unit = TVector2(0,1);
 
   // Use this direction to scale the blurring radii and Gaussian sigma
-  blur_wire = std::max(std::abs(std::round(fBlurWire * unit.X())),1.);
-  blur_tick = std::max(std::abs(std::round(fBlurTick * unit.Y())),1.);
+  int blur_wire = std::max(std::abs(std::round(fBlurWire * unit.X())),1.);
+  int blur_tick = std::max(std::abs(std::round(fBlurTick * unit.Y())),1.);
 
-  sigma_wire = std::max(std::abs(std::round(fSigmaWire * unit.X())),1.);
-  sigma_tick = std::max(std::abs(std::round(fSigmaTick * unit.Y())),1.);
+  int sigma_wire = std::max(std::abs(std::round(fSigmaWire * unit.X())),1.);
+  int sigma_tick = std::max(std::abs(std::round(fSigmaTick * unit.Y())),1.);
 
   // std::cout << "Gradient is " << gradient << ", giving x and y components " << unit.X() << " and " << unit.Y() << std::endl;
-  // std::cout << "Blurring: wire " << blurwire << " and tick " << blurtick << "; sigma: wire " << sigmawire << " and tick " << sigmatick << std::endl;
+  // std::cout << "Blurring: wire " << blur_wire << " and tick " << blur_tick << "; sigma: wire " << sigma_wire << " and tick " << sigma_tick << std::endl;
 
-  return;
+  return BlurringParameters(blur_wire, blur_tick, sigma_wire, sigma_tick);
 
 }
 
@@ -404,18 +405,18 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
     cluster.clear();
 
     // Find the highest charged unclustered bin
-    double highest_charge = bin_charges[niter].first;
-    if (highest_charge < fMinSeed)
+    double bin_charge = bin_charges[niter].first;
+    if (bin_charge < fMinSeed) {
       createNewClusters = false;
+      break;
+    }
     int bin = bin_charges[niter++].second;
     if (used[bin])
       continue;
 
-    //std::cout << "Starting new cluster " << allClusters.size() << " (highest charge " << highest_charge << ")" << std::endl;
-
     // Reblur the hit map around this bin if necessary
     if (reblur)
-      blurred = GaussianBlur(hit_map, bin);
+      blurred = GaussianBlur(hit_map, bin, used);
     else
       blurred = hit_map;
 
@@ -551,13 +552,21 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
 
 }
 
-TVector2 cluster::BlurredClusterAlg::HitCoordinates(art::Ptr<recob::Hit> const& hit) {
+TVector2 cluster::BlurredClusterAlg::HitCoordinates(const art::Ptr<recob::Hit>& hit) {
 
   return TVector2(GlobalWire(hit->WireID()), hit->PeakTime());
 
 }
 
-TVector2 cluster::BlurredClusterAlg::HitPosition(art::Ptr<recob::Hit> const& hit) {
+TVector2 cluster::BlurredClusterAlg::BinCoordinates(int bin, const std::vector<std::vector<double> >& image) {
+
+  int wire_bin, tick_bin;
+  ConvertBinToWireTickBins(bin, image, wire_bin, tick_bin);
+  return TVector2(wire_bin+fLowerWire, tick_bin+fLowerTick);
+
+}
+
+TVector2 cluster::BlurredClusterAlg::HitPosition(const art::Ptr<recob::Hit>& hit) {
 
   geo::PlaneID planeID = hit->WireID().planeID();
 
@@ -565,10 +574,17 @@ TVector2 cluster::BlurredClusterAlg::HitPosition(art::Ptr<recob::Hit> const& hit
 
 }
 
-TVector2 cluster::BlurredClusterAlg::HitPosition(TVector2 const& pos, geo::PlaneID planeID) {
+TVector2 cluster::BlurredClusterAlg::HitPosition(const TVector2& pos, geo::PlaneID planeID) {
 
   return TVector2(pos.X() * fGeom->WirePitch(planeID),
 		  fDetProp->ConvertTicksToX(pos.Y(), planeID));
+
+}
+
+TVector2 cluster::BlurredClusterAlg::BinPosition(int bin, const std::vector<std::vector<double> >& image) {
+
+  TVector2 binCoords = BinCoordinates(bin, image);
+  return HitPosition(binCoords, fDefaultPlaneID);
 
 }
 
@@ -613,21 +629,25 @@ int cluster::BlurredClusterAlg::GlobalWire(const geo::WireID& wireID) {
 
 }
 
-std::vector<std::vector<double> > cluster::BlurredClusterAlg::GaussianBlur(std::vector<std::vector<double> > const& image, int bin) {
+std::vector<std::vector<double> > cluster::BlurredClusterAlg::GaussianBlur(std::vector<std::vector<double> > const& image, int bin, const std::vector<bool>& used) {
 
   if (fSigmaWire == 0 and fSigmaTick == 0)
     return image;
 
+  int wire_bin, tick_bin;
+  ConvertBinToWireTickBins(bin, image, wire_bin, tick_bin);
+  //std::cout << "About to reblur around wire " << wire_bin+fLowerWire << ", tick " << tick_bin+fLowerTick << std::endl;
+
   // Find the blurring parameters
-  int blur_wire, blur_tick, sigma_wire, sigma_tick;
+  BlurringParameters blurring_parameters;
   if (bin == -1)
-    FindBlurringParameters(blur_wire, blur_tick, sigma_wire, sigma_tick);
+    blurring_parameters = FindBlurringParameters();
   else
-    FindBlurringParameters(blur_wire, blur_tick, sigma_wire, sigma_tick, ConvertBinTo2DPosition(image, bin));
+    blurring_parameters = FindBlurringParameters(image, ConvertBinTo2DPosition(image, bin), used);
 
   // Convolve the Gaussian
-  int width = 2 * blur_wire + 1;
-  int height = 2 * blur_tick + 1;
+  int width = 2 * blurring_parameters.blur_wire + 1;
+  int height = 2 * blurring_parameters.blur_tick + 1;
   int nbinsx = image.size();
   int nbinsy = image.at(0).size();
 
@@ -642,9 +662,9 @@ std::vector<std::vector<double> > cluster::BlurredClusterAlg::GaussianBlur(std::
       	continue;
 
       // Scale the tick blurring based on the width of the hit
-      int tick_scale = TMath::Sqrt(TMath::Power(fHitMap[x][y]->RMS(),2) + TMath::Power(sigma_tick,2)) / (double)sigma_tick;
+      int tick_scale = TMath::Sqrt(TMath::Power(fHitMap[x][y]->RMS(),2) + TMath::Power(blurring_parameters.sigma_tick,2)) / (double)blurring_parameters.sigma_tick;
       tick_scale = TMath::Max(TMath::Min(tick_scale,fMaxTickWidthBlur),1);
-      std::vector<double> correct_kernel = fAllKernels[sigma_wire][sigma_tick*tick_scale];
+      std::vector<double> correct_kernel = fAllKernels[blurring_parameters.sigma_wire][blurring_parameters.sigma_tick*tick_scale];
 
       // Find any dead wires in the potential blurring region
       std::pair<int,int> num_deadwires = DeadWireCount(x, width);

@@ -66,6 +66,20 @@ namespace cluster {
   class BlurredClusterAlg;
 }
 
+struct BlurringParameters {
+  int blur_wire;
+  int blur_tick;
+  int sigma_wire;
+  int sigma_tick;
+  BlurringParameters(int blurWire, int blurTick, int sigmaWire, int sigmaTick) {
+    blur_wire = blurWire;
+    blur_tick = blurTick;
+    sigma_wire = sigmaWire;
+    sigma_tick = sigmaTick;
+  }
+  BlurringParameters() { }
+};
+
 class cluster::BlurredClusterAlg {
 public:
 
@@ -95,7 +109,7 @@ public:
   int GlobalWire(geo::WireID const& wireID);
 
   /// Applies Gaussian blur to image
-  std::vector<std::vector<double> > GaussianBlur(std::vector<std::vector<double> > const& image, int bin = -1);
+  std::vector<std::vector<double> > GaussianBlur(std::vector<std::vector<double> > const& image, int bin = -1, const std::vector<bool>& used = {});
 
   /// Minimum size of cluster to save
   unsigned int GetMinSize() { return fMinSize; }
@@ -113,6 +127,9 @@ public:
   /// Save the images for debugging
   /// This version takes a vector of bins and overlays the relevant bins on the hit map
   void SaveImage(TH2F* image, std::vector<std::vector<int> > const& allClusterBins, int pad, int tpc, int plane);
+
+  /// Set the default planeID for this hit space
+  void SetPlaneID(const geo::PlaneID& planeID) { fDefaultPlaneID = planeID; }
 
 private:
 
@@ -140,21 +157,27 @@ private:
 
   /// Dynamically find the blurring radii and Gaussian sigma in each dimension
   /// Use the full hit map to determine the rough direction of the showers (good for single particle events)
-  void FindBlurringParameters(int& blurwire, int& blurtick, int& sigmawire, int& sigmatick);
+  BlurringParameters FindBlurringParameters();
 
   /// Dynamically find the blurring radii and Gaussian sigma in each dimension
   /// Look over a rangle of angles about a specific point to determine the rough direction of the shower
   /// Intended to be used in multi shower events as part of 'reblurring'
-  void FindBlurringParameters(int& blurwire, int& blurtick, int& sigmawire, int& sigmatick, TVector2 point);
+  BlurringParameters FindBlurringParameters(const std::vector<std::vector<double> >& image, const TVector2& point, const std::vector<bool>& used);
 
   /// Return the coordinates of this hit in global wire/tick space
   TVector2 HitCoordinates(art::Ptr<recob::Hit> const& hit);
+
+  /// Return the coordinates of this bin in global wire/tick space
+  TVector2 BinCoordinates(int bin, const std::vector<std::vector<double> >& image);
 
   /// Return the coordinates of this hit in units of cm
   TVector2 HitPosition(art::Ptr<recob::Hit> const& hit);
 
   /// Return the coordinates of this hit in units of cm
   TVector2 HitPosition(TVector2 const& pos, geo::PlaneID planeID);
+
+  /// Return the coordinates of this bin in units of cm
+  TVector2 BinPosition(int bin, const std::vector<std::vector<double> >& image);
 
   /// Makes all the kernels which could be required given the tuned parameters
   void MakeKernels();
@@ -197,6 +220,7 @@ private:
 
   // Other useful information
   std::vector<bool> fDeadWires;
+  geo::PlaneID fDefaultPlaneID;
 
   int fLowerTick, fUpperTick;
   int fLowerWire, fUpperWire;

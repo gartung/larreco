@@ -186,7 +186,8 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
   // Loop over views
   for (std::map<geo::PlaneID,std::vector<art::Ptr<recob::Hit> > >::const_iterator planeIt = planeToHits.begin(); planeIt != planeToHits.end(); ++planeIt) {
 
-    //std::cout << "Clustering in plane " << planeIt->first.Plane << " in global TPC " << planeIt->first.TPC << std::endl;
+    std::cout << "Clustering in plane " << planeIt->first.Plane << " in global TPC " << planeIt->first.TPC << std::endl;
+    fBlurredClusterAlg.SetPlaneID(planeIt->first);
 
     std::vector<art::PtrVector<recob::Hit> > finalClusters;
 
