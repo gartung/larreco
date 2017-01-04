@@ -103,13 +103,13 @@ public:
   std::vector<std::vector<double> > ConvertRecobHitsToVector(std::vector<art::Ptr<recob::Hit> > const& hits);
 
   /// Find clusters in the histogram
-  std::vector<std::vector<int> > FindClusters(std::vector<std::vector<double> > const& image, const std::vector<TVector2>& vertices, bool reblur = false);
+  std::vector<std::vector<int> > FindClusters(const std::vector<std::vector<double> >& image, const std::vector<TVector2>& vertices, bool reblur = false);
 
   /// Find the global wire position
   int GlobalWire(geo::WireID const& wireID);
 
   /// Applies Gaussian blur to image
-  std::vector<std::vector<double> > GaussianBlur(std::vector<std::vector<double> > const& image, int bin = -1, const std::vector<bool>& used = {});
+  std::vector<std::vector<double> > GaussianBlur(const std::vector<std::vector<double> >& image, int bin = -1, const std::vector<bool>& used = {});
 
   /// Minimum size of cluster to save
   unsigned int GetMinSize() { return fMinSize; }
@@ -132,6 +132,10 @@ public:
   void SetPlaneID(const geo::PlaneID& planeID) { fDefaultPlaneID = planeID; }
 
 private:
+
+  /// Returns the key of the hit present at this bin
+  /// If the hit is fake, -999 is returned
+  int BinKey(const std::vector<std::vector<double> >& image, int bin);
 
   /// Return the coordinates of the specified bin in the hit map (units [cm])
   TVector2 ConvertBinTo2DPosition(const std::vector<std::vector<double> >& image, int bin);
@@ -162,7 +166,10 @@ private:
   /// Dynamically find the blurring radii and Gaussian sigma in each dimension
   /// Look over a rangle of angles about a specific point to determine the rough direction of the shower
   /// Intended to be used in multi shower events as part of 'reblurring'
-  BlurringParameters FindBlurringParameters(const std::vector<std::vector<double> >& image, const TVector2& point, const std::vector<bool>& used);
+  BlurringParameters FindBlurringParameters(const std::vector<std::pair<int,std::pair<TVector2,double> > >& hits, const TVector2& point, const std::vector<bool>& used);
+
+  /// Returns the BlurringParameters given a shower direction vector
+  BlurringParameters FindBlurringParameters(const TVector2& direction);
 
   /// Return the coordinates of this hit in global wire/tick space
   TVector2 HitCoordinates(art::Ptr<recob::Hit> const& hit);
@@ -183,7 +190,7 @@ private:
   void MakeKernels();
 
   /// Determines the number of clustered neighbours of a hit
-  unsigned int NumNeighbours(int nx, std::vector<bool> const& used, int bin);
+  unsigned int NumNeighbours(int xbin, int ybin, const std::vector<std::vector<bool> >& used);
 
   /// Projects a 3D point (units [cm]) onto a 2D plane
   /// Returns 2D point (units [wire/tick])
@@ -217,6 +224,7 @@ private:
 
   // Hit containers
   std::vector<std::vector<art::Ptr<recob::Hit> > > fHitMap;
+  std::vector<std::pair<int,std::pair<TVector2,double> > > fHits;
 
   // Other useful information
   std::vector<bool> fDeadWires;

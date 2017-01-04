@@ -54,6 +54,14 @@ void cluster::BlurredClusterAlg::reconfigure(fhicl::ParameterSet const& p) {
   fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
 }
 
+int cluster::BlurredClusterAlg::BinKey(const std::vector<std::vector<double> >& image, int bin) {
+
+  art::Ptr<recob::Hit> hit = ConvertBinToRecobHit(image, bin);
+
+  return hit.isNull() ? -999 : hit.key();
+
+}
+
 void cluster::BlurredClusterAlg::CreateDebugPDF(int run, int subrun, int event) {
 
   if (!fDebugCanvas) {
@@ -118,7 +126,7 @@ TVector2 cluster::BlurredClusterAlg::ConvertBinTo2DPosition(const std::vector<st
 
 }
 
-art::PtrVector<recob::Hit> cluster::BlurredClusterAlg::ConvertBinsToRecobHits(std::vector<std::vector<double> > const& image, std::vector<int> const& bins) {
+art::PtrVector<recob::Hit> cluster::BlurredClusterAlg::ConvertBinsToRecobHits(const std::vector<std::vector<double> >& image, std::vector<int> const& bins) {
 
   // Create the vector of hits to output
   art::PtrVector<recob::Hit> hits;
@@ -138,7 +146,7 @@ art::PtrVector<recob::Hit> cluster::BlurredClusterAlg::ConvertBinsToRecobHits(st
   return hits;
 }
 
-art::Ptr<recob::Hit> cluster::BlurredClusterAlg::ConvertBinToRecobHit(std::vector<std::vector<double> > const& image, int bin) {
+art::Ptr<recob::Hit> cluster::BlurredClusterAlg::ConvertBinToRecobHit(const std::vector<std::vector<double> >& image, int bin) {
 
   int wire = bin % image.size();
   int tick = bin / image.size();
@@ -221,6 +229,7 @@ std::vector<std::vector<double> > cluster::BlurredClusterAlg::ConvertRecobHitsTo
     if (charge > image.at(wire-fLowerWire).at(tick-fLowerTick)) {
       image.at(wire-fLowerWire).at(tick-fLowerTick) = charge;
       fHitMap[wire-fLowerWire][tick-fLowerTick] = (*hitIt);
+      fHits.push_back(std::make_pair(hitIt->key(), std::make_pair(HitPosition(*hitIt), (*hitIt)->Integral())));
     }
   }
 
@@ -273,32 +282,32 @@ std::pair<int,int> cluster::BlurredClusterAlg::DeadWireCount(int wire_bin, int w
 
 }
 
-BlurringParameters cluster::BlurredClusterAlg::FindBlurringParameters(const std::vector<std::vector<double> >& image, const TVector2& point, const std::vector<bool>& used) {
+BlurringParameters cluster::BlurredClusterAlg::FindBlurringParameters(const std::vector<std::pair<int,std::pair<TVector2,double> > >& hits,
+								      const TVector2& point,
+								      const std::vector<bool>& used) {
 
   // Define a unit vector for the rough shower direction
   const TVector2 unit = TVector2(0,1).Unit();
   TVector2 direction;
 
-  // Map out how many hits are in each direction
-  std::vector<std::pair<int,TVector2> > hitPopulation;
+  // Reduce the hit container to just ununsed hits
+  std::vector<std::pair<TVector2,double> > unusedHits;
+  for (std::vector<std::pair<int,std::pair<TVector2,double> > >::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt)
+    if (!used[hitIt->first])
+      unusedHits.push_back(hitIt->second);
 
   // Look over a range of angles and save the direction vector for the angle
-  // which encloses the most hits within a certain rectangle width
+  // which contains most of the charge within a certain rectangle width
   TVector2 pos, proj;
-  double max_charge = 0.;
+  double max_charge = 0;
   for (int angle = 0; angle < 360; angle+=5) {
     TVector2 rotated = unit.Rotate(angle*TMath::Pi()/180);
     int charge = 0;
-    for (unsigned int wireIt = 0; wireIt < fHitMap.size(); ++wireIt) {
-      for (unsigned int tickIt = 0; tickIt < fHitMap.at(wireIt).size(); ++tickIt) {
-	int bin = ConvertWireTickBinsToBin(image, wireIt, tickIt);
-	if (fHitMap[wireIt][tickIt].isNull() or used[bin])
-	  continue;
-	pos = HitPosition(fHitMap[wireIt][tickIt]) - point;
-	proj = pos.Proj(rotated);
-	if ((pos-proj).Mod() < fShowerDirectionWidth)
-	  charge += ConvertBinToCharge(image, bin);
-      }
+    for (std::vector<std::pair<TVector2,double> >::const_iterator hitIt = unusedHits.begin(); hitIt != unusedHits.end(); ++hitIt) {
+      pos = hitIt->first - point;
+      proj = pos.Proj(rotated);
+      if ((pos-proj).Mod() < fShowerDirectionWidth)
+	charge += hitIt->second;
     }
     if (charge > max_charge) {
       max_charge = charge;
@@ -306,17 +315,7 @@ BlurringParameters cluster::BlurredClusterAlg::FindBlurringParameters(const std:
     }
   }
 
-  // Use this direction to scale the blurring radii and Gaussian sigma
-  int blur_wire = std::max(std::abs(std::round(fBlurWire * direction.X())),1.);
-  int blur_tick = std::max(std::abs(std::round(fBlurTick * direction.Y())),1.);
-
-  int sigma_wire = std::max(std::abs(std::round(fSigmaWire * direction.X())),1.);
-  int sigma_tick = std::max(std::abs(std::round(fSigmaTick * direction.Y())),1.);
-
-  // std::cout << "  Blurring: direction (" << direction.X() << ", " << direction.Y() << ")"
-  // 	    << "; wire " << blur_wire << " and tick " << blur_tick << "; sigma: wire " << sigma_wire << " and tick " << sigma_tick << std::endl;
-
-  return BlurringParameters(blur_wire, blur_tick, sigma_wire, sigma_tick);
+  return FindBlurringParameters(direction);
 
 }
 
@@ -347,48 +346,49 @@ BlurringParameters cluster::BlurredClusterAlg::FindBlurringParameters() {
   if (std::isnan(gradient))
     unit = TVector2(0,1);
 
+  return FindBlurringParameters(unit);
+
+}
+
+BlurringParameters cluster::BlurredClusterAlg::FindBlurringParameters(const TVector2& direction) {
+
   // Use this direction to scale the blurring radii and Gaussian sigma
-  int blur_wire = std::max(std::abs(std::round(fBlurWire * unit.X())),1.);
-  int blur_tick = std::max(std::abs(std::round(fBlurTick * unit.Y())),1.);
+  int blur_wire = std::max(std::abs(std::round(fBlurWire * direction.X())),1.);
+  int blur_tick = std::max(std::abs(std::round(fBlurTick * direction.Y())),1.);
 
-  int sigma_wire = std::max(std::abs(std::round(fSigmaWire * unit.X())),1.);
-  int sigma_tick = std::max(std::abs(std::round(fSigmaTick * unit.Y())),1.);
+  int sigma_wire = std::max(std::abs(std::round(fSigmaWire * direction.X())),1.);
+  int sigma_tick = std::max(std::abs(std::round(fSigmaTick * direction.Y())),1.);
 
-  // std::cout << "Gradient is " << gradient << ", giving x and y components " << unit.X() << " and " << unit.Y() << std::endl;
-  // std::cout << "Blurring: wire " << blur_wire << " and tick " << blur_tick << "; sigma: wire " << sigma_wire << " and tick " << sigma_tick << std::endl;
-
+  // std::cout << "  Blurring: direction (" << direction.X() << ", " << direction.Y() << ")"
+  // 	    << "; wire " << blur_wire << " and tick " << blur_tick << "; sigma: wire " << sigma_wire << " and tick " << sigma_tick << std::endl;
+  
   return BlurringParameters(blur_wire, blur_tick, sigma_wire, sigma_tick);
 
 }
 
 std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const std::vector<std::vector<double> >& hit_map, const std::vector<TVector2>& vertices, bool reblur) {
 
-  // Container to hold output clusters
-  std::vector<std::vector<int> > allClusters;
-
-  // Vectors to hold cluster information
+  // Containers to hold output clusters
   std::vector<int> cluster;
+  std::vector<std::vector<int> > allClusters;
 
   // Size of image in x and y
   const int nbinsx = hit_map.size();
   const int nbinsy = hit_map.at(0).size();
-  const int nbins = nbinsx * nbinsy;
 
   // Keep an note of which bins have been clustered
-  std::vector<bool> used(nbins);
+  std::vector<std::vector<bool> > used(nbinsx, std::vector<bool>(nbinsy, false));
+  std::vector<bool> usedHits(nbinsx*nbinsy, false);
 
   // Get list of bins and charges
-  std::vector<std::pair<double,int> > bin_charges;
-  for (int xbin = 0; xbin < nbinsx; ++xbin) {
-    for (int ybin = 0; ybin < nbinsy; ++ybin) {
-      int bin = ConvertWireTickBinsToBin(hit_map, xbin, ybin);
-      bin_charges.push_back(std::make_pair(ConvertBinToCharge(hit_map, bin), bin));
-    }
-  }
+  std::vector<std::pair<double,std::pair<int,int> > > bin_charges;
+  for (int xbin = 0; xbin < nbinsx; ++xbin)
+    for (int ybin = 0; ybin < nbinsy; ++ybin)
+      bin_charges.push_back(std::make_pair(hit_map[xbin][ybin], std::make_pair(xbin, ybin)));
   std::sort(bin_charges.rbegin(), bin_charges.rend());
 
   // Hit map to hold the blurred image
-  std::vector<std::vector<double> > blurred;
+  std::vector<std::vector<double> > blurred, reblurred;
 
   int niter = 0;
 
@@ -397,9 +397,6 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
   // Second loop - looks at the direct neighbours of this seed and clusters to this if above charge thresholds. Runs recursively over all hits in cluster (inc. new ones)
   bool createNewClusters = true;
   while (createNewClusters) {
-
-    // if (allClusters.size() > 10)
-    //   createNewClusters = false;
 
     // Start a new cluster each time loop is executed
     cluster.clear();
@@ -410,19 +407,25 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
       createNewClusters = false;
       break;
     }
-    int bin = bin_charges[niter++].second;
-    if (used[bin])
+    std::pair<int,int> bins = bin_charges[niter++].second;
+    int xbin = bins.first, ybin = bins.second;
+    if (used[xbin][ybin])
       continue;
 
     // Reblur the hit map around this bin if necessary
+    int bin = ConvertWireTickBinsToBin(hit_map, xbin, ybin);
     if (reblur)
-      blurred = GaussianBlur(hit_map, bin, used);
-    else
-      blurred = hit_map;
+      reblurred = GaussianBlur(hit_map, bin, usedHits);
+    const std::vector<std::vector<double> >& blurred = reblur ? reblurred : hit_map;
 
     // Start a new cluster
     cluster.push_back(bin);
-    used[bin] = true;
+    used[xbin][ybin] = true;
+    if (reblur) {
+      int key = BinKey(blurred, bin);
+      if (key >= 0)
+	usedHits[key] = true;
+    }
 
     // Now cluster neighbouring hits to this seed
     bool growCluster = true;
@@ -433,33 +436,35 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
       for (unsigned int clusBin = 0; clusBin < cluster.size(); ++clusBin) {
 
 	// Get x and y bins
-        int binx, biny;
-	ConvertBinToWireTickBins(cluster[clusBin], blurred, binx, biny);
+	ConvertBinToWireTickBins(cluster[clusBin], blurred, xbin, ybin);
 
 	// Look for hits in the neighbouring x/y bins
-        for (int x = binx - fClusterWireDistance; x <= binx + fClusterWireDistance; x++) {
-          for (int y = biny - fClusterTickDistance; y <= biny + fClusterTickDistance; y++) {
-            if ( (x == binx and y == biny) or (x >= nbinsx or y >= nbinsy) or (x < 0 or y < 0) )
-              continue;
-
-	    // Get this bin
-	    bin = ConvertWireTickBinsToBin(blurred, x, y);
-	    if (bin >= nbinsx * nbinsy or bin < 0 or used[bin])
+        for (int x = xbin - fClusterWireDistance; x <= xbin + fClusterWireDistance; ++x) {
+          for (int y = ybin - fClusterTickDistance; y <= ybin + fClusterTickDistance; ++y) {
+            if (used[x][y] or (x == xbin and y == ybin) or (x >= nbinsx or y >= nbinsy) or (x < 0 or y < 0))
               continue;
 
 	    // Check we're not clustering across a vertex
 	    bool crossVertex = false;
 	    for (std::vector<TVector2>::const_iterator vertexIt = vertices.begin(); vertexIt != vertices.end(); ++vertexIt)
-	      if (((vertexIt->X() - binx) * (vertexIt->X() - x)) <= 0 or
-		  ((vertexIt->Y() - biny) * (vertexIt->Y() - y)) <= 0)
+	      if (((vertexIt->X() - xbin) * (vertexIt->X() - x)) <= 0 or
+		  ((vertexIt->Y() - ybin) * (vertexIt->Y() - y)) <= 0)
 		crossVertex = true;
 	    if (crossVertex)
 	      continue;
 
 	    // Cluster bin if above charge threshold
+	    bin = ConvertWireTickBinsToBin(blurred, x, y);
+	    // if (bin >= nbinsx * nbinsy or bin < 0)
+            //   continue;
             if (ConvertBinToCharge(blurred, bin) > fChargeThreshold) {
-              used[bin] = true;
               cluster.push_back(bin);
+              used[x][y] = true;
+	      if (reblur) {
+		int key = BinKey(blurred, bin);
+		if (key >= 0)
+		  usedHits[key] = true;
+	      }
               ++nadded;
             }
 
@@ -475,8 +480,10 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
 
     // Check this cluster is above minimum size
     if (cluster.size() < fMinSize) {
-      for (unsigned int i = 0; i < cluster.size(); i++)
-        used[cluster[i]] = false;
+      for (unsigned int clusterBin = 0; clusterBin < cluster.size(); clusterBin++) {
+	ConvertBinToWireTickBins(cluster[clusterBin], blurred, xbin, ybin);
+        used[xbin][ybin] = false;
+      }
       continue;
     }
 
@@ -494,10 +501,16 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
             continue;
 
 	  // If not already clustered and passes neighbour thresholds, add to cluster
-          if (!used[neighbouringBin] and (NumNeighbours(nbinsx, used, neighbouringBin) > fNeighboursThreshold) and RealHit(blurred, neighbouringBin)) {
-            used[neighbouringBin] = true;
+	  ConvertBinToWireTickBins(neighbouringBin, blurred, xbin, ybin);
+          if (!used[xbin][ybin] and (NumNeighbours(xbin, ybin, used) > fNeighboursThreshold) and RealHit(blurred, neighbouringBin)) {
+            used[xbin][ybin] = true;
+	    if (reblur) {
+	      int key = BinKey(blurred, neighbouringBin);
+	      if (key >= 0)
+		usedHits[key] = true;
+	    }
             cluster.push_back(neighbouringBin);
-          } // End of clustering neighbouring bin
+          }
 
         }
       } // End of looping over neighbouring bins
@@ -522,8 +535,9 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
 	  continue;
 
 	// Remove hit if it has too few neighbouring hits
-        if ((int) NumNeighbours(nbinsx, used, bin) < fMinNeighbours) {
-          used[bin] = false;
+	ConvertBinToWireTickBins(bin, blurred, xbin, ybin);
+        if ((int) NumNeighbours(xbin, ybin, used) < fMinNeighbours) {
+          used[xbin][ybin] = false;
           nremoved++;
           cluster.erase(cluster.begin() + clusBin);
         }
@@ -538,8 +552,10 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
 
     // Disregard cluster if not of minimum size
     if (cluster.size() < fMinSize) {
-      for (unsigned int i = 0; i < cluster.size(); i++)
-        used[cluster[i]] = false;
+      for (unsigned int clusterBin = 0; clusterBin < cluster.size(); clusterBin++) {
+	ConvertBinToWireTickBins(cluster[clusterBin], blurred, xbin, ybin);
+        used[xbin][ybin] = false;
+      }
       continue;
     }
 
@@ -588,47 +604,6 @@ TVector2 cluster::BlurredClusterAlg::BinPosition(int bin, const std::vector<std:
 
 }
 
-int cluster::BlurredClusterAlg::GlobalWire(const geo::WireID& wireID) {
-
-  double globalWire = -999;
-
-  // Induction
-  if (fGeom->SignalType(wireID) == geo::kInduction) {
-    double wireCentre[3];
-    fGeom->WireIDToWireGeo(wireID).GetCenter(wireCentre);
-    if (wireID.TPC % 2 == 0) globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 0, wireID.Cryostat);
-    else globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 1, wireID.Cryostat);
-  }
-
-  // Collection
-  else {
-    // FOR COLLECTION WIRES, HARD CODE THE GEOMETRY FOR GIVEN DETECTORS
-    // THIS _SHOULD_ BE TEMPORARY. GLOBAL WIRE SUPPORT IS BEING ADDED TO THE LARSOFT GEOMETRY AND SHOULD BE AVAILABLE SOON
-    if (fDetector == "dune35t") {
-      unsigned int nwires = fGeom->Nwires(wireID.Plane, 0, wireID.Cryostat);
-      if (wireID.TPC == 0 or wireID.TPC == 1) globalWire = wireID.Wire;
-      else if (wireID.TPC == 2 or wireID.TPC == 3 or wireID.TPC == 4 or wireID.TPC == 5) globalWire = nwires + wireID.Wire;
-      else if (wireID.TPC == 6 or wireID.TPC == 7) globalWire = (2*nwires) + wireID.Wire;
-      else mf::LogError("BlurredClusterAlg") << "Error when trying to find a global induction plane coordinate for TPC " << wireID.TPC << " (geometry " << fDetector << ")";
-    }
-    else if (fDetector == "dune10kt") {
-      unsigned int nwires = fGeom->Nwires(wireID.Plane, 0, wireID.Cryostat);
-      // Detector geometry has four TPCs, two on top of each other, repeated along z...
-      int block = wireID.TPC / 4;
-      globalWire = (nwires*block) + wireID.Wire;
-    }
-    else {
-      double wireCentre[3];
-      fGeom->WireIDToWireGeo(wireID).GetCenter(wireCentre);
-      if (wireID.TPC % 2 == 0) globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 0, wireID.Cryostat);
-      else globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 1, wireID.Cryostat);
-    }
-  }
-
-  return std::round(globalWire);
-
-}
-
 std::vector<std::vector<double> > cluster::BlurredClusterAlg::GaussianBlur(std::vector<std::vector<double> > const& image, int bin, const std::vector<bool>& used) {
 
   if (fSigmaWire == 0 and fSigmaTick == 0)
@@ -643,7 +618,7 @@ std::vector<std::vector<double> > cluster::BlurredClusterAlg::GaussianBlur(std::
   if (bin == -1)
     blurring_parameters = FindBlurringParameters();
   else
-    blurring_parameters = FindBlurringParameters(image, ConvertBinTo2DPosition(image, bin), used);
+    blurring_parameters = FindBlurringParameters(fHits, ConvertBinTo2DPosition(image, bin), used);
 
   // Convolve the Gaussian
   int width = 2 * blurring_parameters.blur_wire + 1;
@@ -720,6 +695,47 @@ std::vector<std::vector<double> > cluster::BlurredClusterAlg::GaussianBlur(std::
 
 }
 
+int cluster::BlurredClusterAlg::GlobalWire(const geo::WireID& wireID) {
+
+  double globalWire = -999;
+
+  // Induction
+  if (fGeom->SignalType(wireID) == geo::kInduction) {
+    double wireCentre[3];
+    fGeom->WireIDToWireGeo(wireID).GetCenter(wireCentre);
+    if (wireID.TPC % 2 == 0) globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 0, wireID.Cryostat);
+    else globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 1, wireID.Cryostat);
+  }
+
+  // Collection
+  else {
+    // FOR COLLECTION WIRES, HARD CODE THE GEOMETRY FOR GIVEN DETECTORS
+    // THIS _SHOULD_ BE TEMPORARY. GLOBAL WIRE SUPPORT IS BEING ADDED TO THE LARSOFT GEOMETRY AND SHOULD BE AVAILABLE SOON
+    if (fDetector == "dune35t") {
+      unsigned int nwires = fGeom->Nwires(wireID.Plane, 0, wireID.Cryostat);
+      if (wireID.TPC == 0 or wireID.TPC == 1) globalWire = wireID.Wire;
+      else if (wireID.TPC == 2 or wireID.TPC == 3 or wireID.TPC == 4 or wireID.TPC == 5) globalWire = nwires + wireID.Wire;
+      else if (wireID.TPC == 6 or wireID.TPC == 7) globalWire = (2*nwires) + wireID.Wire;
+      else mf::LogError("BlurredClusterAlg") << "Error when trying to find a global induction plane coordinate for TPC " << wireID.TPC << " (geometry " << fDetector << ")";
+    }
+    else if (fDetector == "dune10kt") {
+      unsigned int nwires = fGeom->Nwires(wireID.Plane, 0, wireID.Cryostat);
+      // Detector geometry has four TPCs, two on top of each other, repeated along z...
+      int block = wireID.TPC / 4;
+      globalWire = (nwires*block) + wireID.Wire;
+    }
+    else {
+      double wireCentre[3];
+      fGeom->WireIDToWireGeo(wireID).GetCenter(wireCentre);
+      if (wireID.TPC % 2 == 0) globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 0, wireID.Cryostat);
+      else globalWire = fGeom->WireCoordinate(wireCentre[1], wireCentre[2], wireID.Plane, 1, wireID.Cryostat);
+    }
+  }
+
+  return std::round(globalWire);
+
+}
+
 void cluster::BlurredClusterAlg::MakeKernels() {
 
   // Kernel size is the largest possible given the hit width rescaling
@@ -778,26 +794,23 @@ TH2F* cluster::BlurredClusterAlg::MakeHistogram(std::vector<std::vector<double> 
 
 }
 
-unsigned int cluster::BlurredClusterAlg::NumNeighbours(int nbinsx, std::vector<bool> const& used, int bin) {
+unsigned int cluster::BlurredClusterAlg::NumNeighbours(int xbin, int ybin, std::vector<std::vector<bool> > const& used) {
 
   unsigned int neighbours = 0;
 
   // Loop over all directly neighbouring hits (not itself)
-  for (int x = -1; x <= 1; x++) {
-    for (int y = -1; y <= 1; y++) {
-      if (!x && !y) continue;
-
-      // Determine bin
-      int neighbouringBin = bin + x + (y * nbinsx); /// 2D hists can be considered a string of bins - the equation to convert between them is [bin = x + (nbinsx * y)]
-
-      // If this bin is in the cluster, increase the neighbouring bin counter
-      if (used.at(neighbouringBin))
+  for (int x = -1; x <= 1; ++x) {
+    for (int y = -1; y <= 1; ++y) {
+      if (x == 0 and y == 0)
+	continue;
+      if (used[xbin+x][ybin+y])
 	neighbours++;
     }
   }
 
   // Return the number of neighbours in the cluster of a particular hit
   return neighbours;
+
 }
 
 TVector2 cluster::BlurredClusterAlg::Project3DPointOntoPlane(TVector3 const& point, int plane, int cryostat) {
