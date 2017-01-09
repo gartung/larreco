@@ -122,6 +122,27 @@ void shower::TrackIdentifier::produce(art::Event& evt) {
   if (evt.getByLabel(fTrackModuleLabel, spacePointHandle))
     art::fill_ptr_vector(spacePoints, spacePointHandle);
 
+  std::vector<art::Ptr<recob::Vertex> > nodes;
+  art::Handle<std::vector<recob::Vertex> > nodeHandle;
+  if (evt.getByLabel(fTrackModuleLabel+":node", nodeHandle))
+    art::fill_ptr_vector(nodes, nodeHandle);
+  std::vector<art::Ptr<recob::Vertex> > kinks;
+  art::Handle<std::vector<recob::Vertex> > kinkHandle;
+  if (evt.getByLabel(fTrackModuleLabel+":kink", kinkHandle))
+    art::fill_ptr_vector(kinks, kinkHandle);
+
+  std::cout << std::endl << "Here are the PMTrack vertices:" << std::endl;
+  std::cout << "  Nodes:" << std::endl;
+  for (std::vector<art::Ptr<recob::Vertex> >::iterator nodeIt = nodes.begin(); nodeIt != nodes.end(); ++nodeIt) {
+    double xyz[3]; (*nodeIt)->XYZ(xyz);
+    std::cout << "    Node " << std::distance(nodes.begin(), nodeIt) << ": (" << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")" << std::endl;
+  }
+  std::cout << "  Kinks:" << std::endl;
+  for (std::vector<art::Ptr<recob::Vertex> >::iterator kinkIt = kinks.begin(); kinkIt != kinks.end(); ++kinkIt) {
+    double xyz[3]; (*kinkIt)->XYZ(xyz);
+    std::cout << "    Kink " << std::distance(kinks.begin(), kinkIt) << ": (" << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")" << std::endl;
+  }
+
   art::FindManyP<recob::Hit>        fmht(trackHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Track>      fmth(hitHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::SpacePoint> fmspt(trackHandle, evt, fTrackModuleLabel);

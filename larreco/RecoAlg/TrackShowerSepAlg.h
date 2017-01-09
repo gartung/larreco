@@ -46,6 +46,7 @@
 namespace shower {
   class TrackShowerSepAlg;
   class ReconTrack;
+  struct TrackShowerSepParameters;
 }
 
 class shower::ReconTrack {
@@ -54,7 +55,9 @@ class shower::ReconTrack {
   ReconTrack(int id) {
     fID = id;
     fTrack = false;
+    fTrackLike = false;
     fShower = false;
+    fShowerLike = false;
     fShowerTrack = false;
     fShowerCone = false;
 
@@ -86,6 +89,8 @@ class shower::ReconTrack {
   void SetSpacePoints(std::vector<art::Ptr<recob::SpacePoint> > spacePoints) { fSpacePoints = spacePoints; }
   void SetLeastSquareNDOF(double ls) { fLeastSquareNDOF = ls; }
 
+  void AddTrackConversion(int track) { fTrackConversions.push_back(track); }
+
   void AddForwardTrack(int track) {
     if (std::find(fForwardConeTracks.begin(), fForwardConeTracks.end(), track) == fForwardConeTracks.end())
       fForwardConeTracks.push_back(track);
@@ -95,6 +100,7 @@ class shower::ReconTrack {
       fBackwardConeTracks.push_back(track);
   }
   void AddShowerTrack(int track) { fShowerTracks.push_back(track); }
+  void AddShowerCone(int track) { fShowerCones.push_back(track); }
 
   void AddForwardSpacePoint(int spacePoint, double distance) {
     fForwardSpacePoints.push_back(spacePoint);
@@ -134,6 +140,78 @@ class shower::ReconTrack {
   const std::map<int,std::vector<art::Ptr<recob::Hit> > >& Hits() const { return fHits; }
   const std::vector<art::Ptr<recob::SpacePoint> >& SpacePoints() const { return fSpacePoints; }
 
+  bool IsShower() const { return fShower; }
+  bool IsShowerLike() const { return fShowerLike; }
+  bool IsShowerTrack() const { return fShowerTrack; }
+  bool IsShowerCone() const { return fShowerCone; }
+  bool IsTrack() const { return fTrack; }
+  bool IsTrackLike() const { return fTrackLike; }
+  bool IsUndetermined() const { return !fTrack and !fShower; }
+
+  const std::vector<int>& TrackConversions() const { return fTrackConversions; }
+
+  int TrackConeSize() const { return (int)fForwardConeTracks.size() - (int)fBackwardConeTracks.size(); }
+  bool ShowerTrackCandidate() const { return TrackConeSize() > 5; }
+  const std::vector<int>& ShowerTracks() const { return fShowerTracks; }
+  const std::vector<int>& ShowerCones() const { return fShowerCones; }
+  const std::vector<int>& ForwardConeTracks() const { return fForwardConeTracks; }
+
+  int ConeSize() const { return (int)fForwardSpacePoints.size() - (int)fBackwardSpacePoints.size(); }
+  int ForwardSpacePoints() const { return fForwardSpacePoints.size(); }
+  double MinForwardSpacePointDistance() const { return fMinForwardSpacePoint; }
+  double MinBackwardSpacePointDistance() const { return fMinBackwardSpacePoint; }
+  int NumCylinderSpacePoints() const { return fCylinderSpacePoints.size(); }
+  double CylinderSpacePointRatio() const { return (double)fCylinderSpacePoints.size()/(double)fSpacePoints.size(); }
+  int NumSphereSpacePoints() const { return fSphereSpacePoints.size(); }
+  //double SphereSpacePointDensity() const { return (double)fSphereSpacePoints.size()/((double)fSpacePoints.size()); }
+  double SphereSpacePointDensity(double scale) const { return (double)fSphereSpacePoints.size()/(4*TMath::Pi()*TMath::Power((scale*fLength/2.),3)/3.); }
+  int NumRectangleHits() const { return fNumRectangleHits; }
+  int NumRectangleHits(int plane) { return fRectangleHits[plane].size(); }
+  double RectangleHitRatio() const { return (double)TMath::Power(fNumRectangleHits,1)/(double)fNumHits; }
+  double RectangleHitRatio(int plane) { return (double)TMath::Power(fRectangleHits[plane].size(),1)/fHits[plane].size(); }
+  double IsolationSpacePointDistance() const {
+    std::vector<double> distances;
+    std::transform(fIsolationSpacePoints.begin(), fIsolationSpacePoints.end(), std::back_inserter(distances), [](const std::pair<int,double>& p){return p.second;});
+    return TMath::Mean(distances.begin(), distances.end());
+  }
+  double LeastSquareNDOF() const { return fLeastSquareNDOF; }
+
+  // Doers
+  void MakeShower() {
+    fShowerLike = true;
+    if (fTrack)
+      this->MakeShowerTrack();
+    else
+      this->MakeShowerCone();
+  }
+  void MakeShowerTrack() {
+    fShower = true;
+    fShowerLike = true;
+    fShowerTrack = true;
+    fShowerCone = false;
+    fTrack = false;
+  }
+  void MakeShowerCone() {
+    fShower = true;
+    fShowerLike = true;
+    fShowerCone = true;
+    fShowerTrack = false;
+    fTrack = false;
+  }
+  void MakeTrack() {
+    fTrack = true;
+    fTrackLike = true;
+    fShower = false;
+    fShowerTrack = false;
+    fShowerCone = false;
+  }
+  void MakeUndetermined() {
+    fTrack = false;
+    fShower = false;
+    fShowerTrack = false;
+    fShowerCone = false;
+  }
+
   void FlipTrack() {
     // Vertex and end
     TVector3 tmp3D = fEnd;
@@ -159,62 +237,6 @@ class shower::ReconTrack {
     fMinBackwardSpacePoint = tmpDouble;
   }
 
-  void MakeShower() {
-    if (fTrack)
-      this->MakeShowerTrack();
-    else
-      this->MakeShowerCone();
-  }
-  void MakeShowerTrack() {
-    fShower = true;
-    fShowerTrack = true;
-    fShowerCone = false;
-    fTrack = false;
-  }
-  void MakeShowerCone() {
-    fShower = true;
-    fShowerCone = true;
-    fShowerTrack = false;
-    fTrack = false;
-  }
-  void MakeTrack() {
-    fTrack = true;
-    fShower = false;
-    fShowerTrack = false;
-    fShowerCone = false;
-  }
-
-  bool IsShower() const { return fShower; }
-  bool IsShowerTrack() const { return fShowerTrack; }
-  bool IsShowerCone() const { return fShowerCone; }
-  bool IsTrack() const { return fTrack; }
-  bool IsUndetermined() const { return !fTrack and !fShower; }
-
-  int TrackConeSize() const { return (int)fForwardConeTracks.size() - (int)fBackwardConeTracks.size(); }
-  bool ShowerTrackCandidate() const { return TrackConeSize() > 5; }
-  const std::vector<int>& ShowerTracks() const { return fShowerTracks; }
-  const std::vector<int>& ForwardConeTracks() const { return fForwardConeTracks; }
-
-  int ConeSize() const { return (int)fForwardSpacePoints.size() - (int)fBackwardSpacePoints.size(); }
-  int ForwardSpacePoints() const { return fForwardSpacePoints.size(); }
-  double MinForwardSpacePointDistance() const { return fMinForwardSpacePoint; }
-  double MinBackwardSpacePointDistance() const { return fMinBackwardSpacePoint; }
-  int NumCylinderSpacePoints() const { return fCylinderSpacePoints.size(); }
-  double CylinderSpacePointRatio() const { return (double)fCylinderSpacePoints.size()/(double)fSpacePoints.size(); }
-  int NumSphereSpacePoints() const { return fSphereSpacePoints.size(); }
-  //double SphereSpacePointDensity() const { return (double)fSphereSpacePoints.size()/((double)fSpacePoints.size()); }
-  double SphereSpacePointDensity(double scale) const { return (double)fSphereSpacePoints.size()/(4*TMath::Pi()*TMath::Power((scale*fLength/2.),3)/3.); }
-  int NumRectangleHits() const { return fNumRectangleHits; }
-  int NumRectangleHits(int plane) { return fRectangleHits[plane].size(); }
-  double RectangleHitRatio() const { return (double)TMath::Power(fNumRectangleHits,1)/(double)fNumHits; }
-  double RectangleHitRatio(int plane) { return (double)TMath::Power(fRectangleHits[plane].size(),1)/fHits[plane].size(); }
-  double IsolationSpacePointDistance() const {
-    std::vector<double> distances;
-    std::transform(fIsolationSpacePoints.begin(), fIsolationSpacePoints.end(), std::back_inserter(distances), [](const std::pair<int,double>& p){return p.second;});
-    return TMath::Mean(distances.begin(), distances.end());
-  }
-  double LeastSquareNDOF() const { return fLeastSquareNDOF; }
-
  private:
 
   int fID;
@@ -233,9 +255,12 @@ class shower::ReconTrack {
 
   double fLeastSquareNDOF;
 
+  std::vector<int> fTrackConversions;
+
   std::vector<int> fForwardConeTracks;
   std::vector<int> fBackwardConeTracks;
   std::vector<int> fShowerTracks;
+  std::vector<int> fShowerCones;
 
   std::vector<int> fForwardSpacePoints;
   std::vector<int> fBackwardSpacePoints;
@@ -247,11 +272,32 @@ class shower::ReconTrack {
   double fMinForwardSpacePoint;
   double fMinBackwardSpacePoint;
 
+  bool fTrack;
+  bool fTrackLike;
   bool fShower;
+  bool fShowerLike;
   bool fShowerTrack;
   bool fShowerCone;
-  bool fTrack;
 
+};
+
+struct shower::TrackShowerSepParameters {
+  double AverageRectangleHits;
+  double AverageCylinderSpacePoints;
+  double AverageConeSize;
+  TrackShowerSepParameters() {
+    AverageRectangleHits = 0;
+    AverageCylinderSpacePoints = 0;
+    AverageConeSize = 0;
+  }    
+  TrackShowerSepParameters(double avRectangleHits, double avCylinderSpacePoints, double avConeSize) {
+    AverageRectangleHits = avRectangleHits;
+    AverageCylinderSpacePoints = avCylinderSpacePoints;
+    AverageConeSize = avConeSize;
+  }
+  void SetAvRectangleHits(double avRectangleHits) { AverageRectangleHits = avRectangleHits; }
+  void SetAvCylinderSpacePoints(double avCylinderSpacePoints) { AverageCylinderSpacePoints = avCylinderSpacePoints; }
+  void SetAvConeSize(double avConeSize) { AverageConeSize = avConeSize; }
 };
 
 class shower::TrackShowerSepAlg {
@@ -285,7 +331,37 @@ class shower::TrackShowerSepAlg {
  private:
 
   ///
-  std::vector<int> InitialTrackLikeSegment(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);
+  void TrackProperties2D(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks,
+			 TrackShowerSepParameters& parameters,
+			 const std::vector<art::Ptr<recob::Hit> >& hits,
+			 const art::FindManyP<recob::Track> fmth);
+
+  ///
+  void TrackProperties3D(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks,
+			 TrackShowerSepParameters& parameters,
+			 const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
+			 const art::FindManyP<recob::Track>& fmtsp);
+
+  ///
+  void IdentifyTracks(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks, const TrackShowerSepParameters& parameters);
+
+  ///
+  void ConeProperties(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks,
+		      TrackShowerSepParameters& parameters,
+		      const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
+		      const art::FindManyP<recob::Track>& fmtsp);
+
+  ///
+  void IdentifyShowers(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);
+
+  ///
+  void IdentifyShowerTracks(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);
+
+  ///
+  void IdentifyShowerCones(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);
+
+  ///
+  void ResolveUndeterminedTracks(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);
 
   ///
   TVector2 Gradient(const std::vector<art::Ptr<recob::Hit> >& hits);
@@ -324,9 +400,6 @@ class shower::TrackShowerSepAlg {
 
 
 
-  // All the information about all reconstructed tracks
-  std::map<int,std::unique_ptr<ReconTrack> > fReconTracks;
-
   // Output data products
   // Note anything added here needs to be cleared at the start of each event
   std::vector<art::Ptr<recob::Hit> >   fShowerHits;
@@ -334,6 +407,7 @@ class shower::TrackShowerSepAlg {
   std::vector<TVector3>                fShowerStarts;
 
   // Parameters
+  bool fRunTrackShowerSep;
   int fDebug;
   std::string fDetector;
 
@@ -356,95 +430,3 @@ class shower::TrackShowerSepAlg {
 };
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
- /*  // --------------------------- OLD (late 2015) ------------------------------- */
-
- /* public: */
-
- /*  /// Takes specific previously reconstructed quantites and removes hits which are considered track-like */
- /*  /// Returns a vector of hits which are determined to be shower-like */
- /*  std::vector<art::Ptr<recob::Hit> > RemoveTrackHits(const std::vector<art::Ptr<recob::Hit> >& initialHits, */
- /* 						     const std::vector<art::Ptr<recob::Track> >& tracks, */
- /* 						     const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, */
- /* 						     const std::vector<art::Ptr<recob::Vertex> >& vertices, */
- /* 						     const art::FindManyP<recob::Track>& fmth, */
- /* 						     const art::FindManyP<recob::Track>& fmtsp, */
- /* 						     const art::FindManyP<recob::Hit>& fmh, */
- /* 						     int event, */
- /* 						     int run); */
-
- /*  /// Uses information from Pandora reconstruction to separate track-like and shower-like hits */
- /*  /// Returns a vector of hits which are determined to be shower-like */
- /*  std::vector<art::Ptr<recob::Hit> > RemoveTrackHits(const std::vector<art::Ptr<recob::Hit> >& hits, */
- /* 						     const std::vector<art::Ptr<recob::PFParticle> > pfParticles, */
- /* 						     const art::FindManyP<recob::Cluster>& fmc, */
- /* 						     const art::FindManyP<recob::Hit>& fmh); */
-
-
- /* private: */
-
- /*  /// Fill the output container with all the hits not associated with track-like objects */
- /*  std::vector<art::Ptr<recob::Hit> > FillHitsToCluster(const std::vector<art::Ptr<recob::Hit> >& initialHits, */
- /* 						       const art::FindManyP<recob::Track>& fmt); */
-
- /*  /// Find the true track most likely associated with this hit */
- /*  int FindTrackID(const art::Ptr<recob::Hit>& hit); */
-
- /*  /// Find the true track most likely associated with this set of hits */
- /*  int FindTrueTrack(const std::vector<art::Ptr<recob::Hit> >& trackHits); */
-
- /*  /// Finds the space points surrounding the track but not part of it */
- /*  std::vector<art::Ptr<recob::SpacePoint> > GetSurroundingSpacePoints(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, */
- /* 								      const art::FindManyP<recob::Track>& fmt, */
- /* 								      unsigned int trackID); */
-
- /*  /// Look for space points near the track and within a narrow cone */
- /*  std::vector<art::Ptr<recob::SpacePoint> > GetSpacePointsInCone(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, */
- /* 								 const TVector3& trackEnd, */
- /* 								 const TVector3& trackDirection); */
-
- /*  /// Determines whether or not a track is actually the start of a shower */
- /*  bool IdentifyShowerLikeTrack(const TVector3& end, */
- /* 			       const TVector3& direction, */
- /* 			       const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints); */
-
- /*  /// Attempt to identify tracks in the event by using the centre of the event */
- /*  void IdentifyTracksFromEventCentre(const std::vector<art::Ptr<recob::Track> >& tracks, */
- /* 				     const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, */
- /* 				     const art::FindManyP<recob::Track>& fmtsp); */
-
- /*  /// Identifies tracks which start just after previously identified tracks end */
- /*  void IdentifyTracksNearTracks(const std::vector<art::Ptr<recob::Track> >& tracks); */
-
- /*  /// Identifies hadron-like tracks which originate from near the interaction vertex */
- /*  void IdentifyTracksNearVertex(const art::Ptr<recob::Vertex>& vertex, */
- /* 				const std::vector<art::Ptr<recob::Track> >& tracks, */
- /* 				const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, */
- /* 				const art::FindManyP<recob::Track>& fmtsp); */
-
- /*  /// Finds the spread of a set of space points about their central axis */
- /*  double SpacePointSpread(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints); */
-
- /*  std::vector<int> fTrackLikeIDs, fShowerLikeIDs; */
-
- /*  // Configurable parameters */
- /*  double fAngleCut, fDistanceCut, fVertexProximityCut, fTrackProximityCut, fAvTrackHitDistance; */
-
- /*  art::ServiceHandle<cheat::BackTracker> backtracker; */
- /*  art::ServiceHandle<art::TFileService> tfs; */
-
- /*  TTree* ftree; */
- /*  double Distance, Angle, Length, AvDistance; */
- /*  int Event, Run, TrackID, pdg, NSpacePoints; */

@@ -466,7 +466,7 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
 		  usedHits[key] = true;
 	      }
               ++nadded;
-            }
+	    }
 
           }
 	} // End of looking at directly neighbouring bins
