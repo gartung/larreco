@@ -161,7 +161,7 @@ void shower::EMShower::produce(art::Event& evt) {
   // Vertices
   art::Handle<std::vector<recob::Vertex> > vertexHandle;
   std::vector<art::Ptr<recob::Vertex> > vertices;
-  if (evt.getByLabel(fVertexModuleLabel, vertexHandle))
+  if (fUseVertices and evt.getByLabel(fVertexModuleLabel, vertexHandle))
     art::fill_ptr_vector(vertices, vertexHandle);
 
   // PFParticles

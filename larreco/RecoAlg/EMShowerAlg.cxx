@@ -10,7 +10,7 @@
 
 #include "larreco/RecoAlg/EMShowerAlg.h"
 
-shower::EMShowerAlg::EMShowerAlg(fhicl::ParameterSet const& pset) : fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()),
+shower::EMShowerAlg::EMShowerAlg(const fhicl::ParameterSet& pset) : fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()),
 								    fShowerEnergyAlg(pset.get<fhicl::ParameterSet>("ShowerEnergyAlg")),
 								    fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
 								    fProjectionMatchingAlg(pset.get<fhicl::ParameterSet>("ProjectionMatchingAlg")) {
@@ -75,10 +75,8 @@ void shower::EMShowerAlg::AssociateClustersAndTracks(const std::vector<art::Ptr<
     // Look at all these hits and find the associated tracks
     for (std::vector<art::Ptr<recob::Hit> >::iterator clusterHitIt = clusterHits.begin(); clusterHitIt != clusterHits.end(); ++clusterHitIt) {
 
-      // Get the tracks associated with this hit
+      // Get the track(s) associated with this hit and check their properties
       const std::vector<art::Ptr<recob::Track> > clusterHitTracks = fmth->at(clusterHitIt->key());
-      
-      // Check the properties of these track(s)
       if (clusterHitTracks.size() > 1) {
 	std::cout << "More than one track associated with this hit!" << std::endl;
 	continue;
@@ -206,12 +204,15 @@ void shower::EMShowerAlg::CheckIsolatedHits(std::map<int,std::vector<art::Ptr<re
 
 }
 
-bool shower::EMShowerAlg::CheckShowerHits(std::map<int,std::vector<art::Ptr<recob::Hit> > > const& showerHitsMap) {
+bool shower::EMShowerAlg::CheckShowerHits(const std::map<int,std::vector<art::Ptr<recob::Hit> > >& showerHitsMap) {
 
   bool consistencyCheck = true;
 
   if (showerHitsMap.size() < 2)
     consistencyCheck = true;
+
+  if (fDebug > 2)
+    std::cout << std::endl;
 
   else if (showerHitsMap.size() == 2) {
 
@@ -268,9 +269,9 @@ bool shower::EMShowerAlg::CheckShowerHits(std::map<int,std::vector<art::Ptr<reco
 
       if (fDebug > 2) {
 	std::cout << "Plane... " << plane << std::endl;
-	std::cout << "Start position in this plane is " << HitPosition(start2DMap.at(plane)).X() << ", " << HitPosition(start2DMap.at(plane)).Y() << ")" << std::endl;
-	std::cout << "Shower start from other two planes is (" << showerStartPos.X() << ", " << showerStartPos.Y() << ", " << showerStartPos.Z() << ")" << std::endl;
-	std::cout << "Projecting the other two planes gives position (" << showerStartProj.X() << ", " << showerStartProj.Y() << ")" << std::endl;
+	std::cout << "  Start position in this plane is (" << HitPosition(start2DMap.at(plane)).X() << ", " << HitPosition(start2DMap.at(plane)).Y() << ")" << std::endl;
+	std::cout << "  Shower start from other two planes is (" << showerStartPos.X() << ", " << showerStartPos.Y() << ", " << showerStartPos.Z() << ")" << std::endl;
+	std::cout << "  Projecting the other two planes gives position (" << showerStartProj.X() << ", " << showerStartProj.Y() << ")" << std::endl;
       }
 
       double projDiff = TMath::Abs((showerStartProj-HitPosition(start2DMap.at(plane))).Mod());
@@ -278,7 +279,7 @@ bool shower::EMShowerAlg::CheckShowerHits(std::map<int,std::vector<art::Ptr<reco
 				   TMath::Abs(start2DMap.at(plane)->PeakTime() - start2DMap.at(otherPlanes.at(1))->PeakTime()));
 
       if (fDebug > 1)
-	std::cout << "Plane " << plane << " has projDiff " << projDiff << " (cut 10) and timeDiff " << timeDiff << " (cut 40)" << std::endl;
+	std::cout << "    Plane " << plane << " has projDiff " << projDiff << " (cut 10) and timeDiff " << timeDiff << " (cut 40)" << std::endl;
 
       if (projDiff > 10 or timeDiff > 40)
 	consistencyCheck = false;
@@ -294,9 +295,9 @@ bool shower::EMShowerAlg::CheckShowerHits(std::map<int,std::vector<art::Ptr<reco
 
 }
 
-std::vector<int> shower::EMShowerAlg::CheckShowerPlanes(std::vector<std::vector<int> > const& initialShowers,
-							std::vector<art::Ptr<recob::Cluster> > const& clusters,
-							art::FindManyP<recob::Hit> const& fmh) {
+std::vector<int> shower::EMShowerAlg::CheckShowerPlanes(const std::vector<std::vector<int> >& initialShowers,
+							const std::vector<art::Ptr<recob::Cluster> >& clusters,
+							const art::FindManyP<recob::Hit>& fmh) {
 
   std::vector<int> clustersToIgnore;
 
@@ -419,7 +420,7 @@ std::vector<int> shower::EMShowerAlg::CheckShowerPlanes(std::vector<std::vector<
 
 }
 
-TVector3 shower::EMShowerAlg::Construct3DPoint(art::Ptr<recob::Hit> const& hit1, art::Ptr<recob::Hit> const& hit2) {
+TVector3 shower::EMShowerAlg::Construct3DPoint(const art::Ptr<recob::Hit>& hit1, const art::Ptr<recob::Hit>& hit2) {
 
   // x is average of the two x's
   double x = (fDetProp->ConvertTicksToX(hit1->PeakTime(), hit1->WireID().planeID()) + fDetProp->ConvertTicksToX(hit2->PeakTime(), hit2->WireID().planeID())) / (double)2;
@@ -432,9 +433,9 @@ TVector3 shower::EMShowerAlg::Construct3DPoint(art::Ptr<recob::Hit> const& hit1,
 
 }
 
-std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(std::vector<art::Ptr<recob::Hit> > const& hits1,
-								  std::vector<art::Ptr<recob::Hit> > const& hits2,
-								  std::map<int,TVector2> const& showerCentreMap) {
+std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(const std::vector<art::Ptr<recob::Hit> >& hits1,
+								  const std::vector<art::Ptr<recob::Hit> >& hits2,
+								  const std::map<int,TVector2>& showerCentreMap) {
 
   std::unique_ptr<recob::Track> track;
 
@@ -466,11 +467,11 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(std::vector<ar
   }
 
   if (fDebug > 1) {
-    std::cout << "About to make a track from these hits:" << std::endl;
+    std::cout << std::endl << "About to make a track from these hits:" << std::endl;
     for (std::vector<art::Ptr<recob::Hit> >::const_iterator hit1 = track1.begin(); hit1 != track1.end(); ++hit1)
-      std::cout << "Hit (" << HitCoordinates(*hit1).X() << ", " << HitCoordinates(*hit1).Y() << ") (real wire " << (*hit1)->WireID().Wire << ") in TPC " << (*hit1)->WireID().TPC << std::endl;
+      std::cout << "  Hit (" << HitCoordinates(*hit1).X() << ", " << HitCoordinates(*hit1).Y() << ") (real wire " << (*hit1)->WireID().Wire << ") in TPC " << (*hit1)->WireID().TPC << std::endl;
     for (std::vector<art::Ptr<recob::Hit> >::const_iterator hit2 = track2.begin(); hit2 != track2.end(); ++hit2)
-      std::cout << "Hit (" << HitCoordinates(*hit2).X() << ", " << HitCoordinates(*hit2).Y() << ") (real wire " << (*hit2)->WireID().Wire << ") in TPC " << (*hit2)->WireID().TPC << std::endl;
+      std::cout << "  Hit (" << HitCoordinates(*hit2).X() << ", " << HitCoordinates(*hit2).Y() << ") (real wire " << (*hit2)->WireID().Wire << ") in TPC " << (*hit2)->WireID().TPC << std::endl;
   }
 
   TVector3 trackStart = Construct3DPoint(track1.at(0), track2.at(0));
@@ -537,12 +538,12 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(std::vector<ar
   avDistanceToEnd /= distanceToEnd.size();
 
   if (fDebug > 2)
-    std::cout << "Distance to vertex is " << avDistanceToVertex << " and distance to end is " << avDistanceToEnd << std::endl;
+    std::cout << std::endl << "Distance to vertex is " << avDistanceToVertex << " and distance to end is " << avDistanceToEnd << std::endl;
 
   // Change order if necessary
   if (avDistanceToEnd > avDistanceToVertex) {
     std::reverse(xyz.begin(), xyz.end());
-    std::transform(dircos.begin(), dircos.end(), dircos.begin(), [](TVector3 const& vec){return -1*vec;});
+    std::transform(dircos.begin(), dircos.end(), dircos.begin(), [](const TVector3& vec){return -1*vec;});
   }
 
   if (xyz.size() != dircos.size())
@@ -554,8 +555,8 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(std::vector<ar
 
 }
 
-std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(std::vector<art::Ptr<recob::Hit> > const& track1,
-								  std::vector<art::Ptr<recob::Hit> > const& track2) {
+std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(const std::vector<art::Ptr<recob::Hit> >& track1,
+								  const std::vector<art::Ptr<recob::Hit> >& track2) {
 
   std::map<int,TVector2> showerCentreMap;
 
@@ -563,7 +564,7 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::ConstructTrack(std::vector<ar
 
 }
 
-double shower::EMShowerAlg::FinddEdx(std::vector<art::Ptr<recob::Hit> > const& trackHits, std::unique_ptr<recob::Track> const& track) {
+double shower::EMShowerAlg::FinddEdx(const std::vector<art::Ptr<recob::Hit> >& trackHits, const std::unique_ptr<recob::Track>& track) {
 
   double totalCharge = 0, totalDistance = 0, avHitTime = 0;
   unsigned int nHits = 0;
@@ -653,8 +654,10 @@ void shower::EMShowerAlg::FindInitialTrack(const std::map<int,std::vector<art::P
     std::cout << " ------------------ Finding initial track -------------------- " << std::endl;
   initialTrack = MakeInitialTrack(initialTrackHits, showerHitsMap);
   if (initialTrack and fDebug > 1) {
+    std::cout << std::endl;
     std::cout << "The track start is (" << initialTrack->Vertex().X() << ", " << initialTrack->Vertex().Y() << ", " << initialTrack->Vertex().Z() << ")" << std::endl;
-    std::cout << "The track direction is (" << initialTrack->VertexDirection().X() << ", " << initialTrack->VertexDirection().Y() << ", " << initialTrack->VertexDirection().Z() << ")" << std::endl;
+    std::cout << "The track direction is (" << initialTrack->VertexDirection().X() << ", " << initialTrack->VertexDirection().Y() << ", "
+	      << initialTrack->VertexDirection().Z() << ")" << std::endl;
   }
   if (fDebug > 1)
     std::cout << " ------------------ End finding initial track -------------------- " << std::endl;
@@ -685,7 +688,7 @@ void shower::EMShowerAlg::FindInitialTrack(const std::map<int,std::vector<art::P
 
 }
 
-std::vector<art::Ptr<recob::Hit> > shower::EMShowerAlg::FindOrderOfHits(std::vector<art::Ptr<recob::Hit> > const& hits, bool perpendicular) {
+std::vector<art::Ptr<recob::Hit> > shower::EMShowerAlg::FindOrderOfHits(const std::vector<art::Ptr<recob::Hit> >& hits, bool perpendicular) {
 
   // Find the charge-weighted centre (in [cm]) of this shower
   TVector2 centre = ShowerCentre(hits);
@@ -706,7 +709,7 @@ std::vector<art::Ptr<recob::Hit> > shower::EMShowerAlg::FindOrderOfHits(std::vec
 
   // Get a vector of hits in order of the shower
   std::vector<art::Ptr<recob::Hit> > showerHits;
-  std::transform(hitProjection.begin(), hitProjection.end(), std::back_inserter(showerHits), [](std::pair<double,art::Ptr<recob::Hit> > const& hit) { return hit.second; });
+  std::transform(hitProjection.begin(), hitProjection.end(), std::back_inserter(showerHits), [](const std::pair<double,art::Ptr<recob::Hit> >& hit) { return hit.second; });
 
   // Make gradient plot
   if (fMakeGradientPlot) {
@@ -738,7 +741,7 @@ std::vector<art::Ptr<recob::Hit> > shower::EMShowerAlg::FindOrderOfHits(std::vec
 
 }
 
-std::vector<std::vector<int> > shower::EMShowerAlg::FindShowers(std::map<int,std::vector<int> > const& trackToClusters) {
+std::vector<std::vector<int> > shower::EMShowerAlg::FindShowers(const std::map<int,std::vector<int> >& trackToClusters) {
 
   // Showers are vectors of clusters
   std::vector<std::vector<int> > showers;
@@ -776,7 +779,7 @@ std::vector<std::vector<int> > shower::EMShowerAlg::FindShowers(std::map<int,std
 
 }
 
-std::map<int,std::vector<art::Ptr<recob::Hit> > > shower::EMShowerAlg::FindShowerStart(std::map<int,std::vector<art::Ptr<recob::Hit> > > const& orderedShowerMap) {
+std::map<int,std::vector<art::Ptr<recob::Hit> > > shower::EMShowerAlg::FindShowerStart(const std::map<int,std::vector<art::Ptr<recob::Hit> > >& orderedShowerMap) {
 
   std::map<int,std::vector<art::Ptr<recob::Hit> > > initialHitsMap;
 
@@ -864,7 +867,19 @@ std::map<int,std::vector<art::Ptr<recob::Hit> > > shower::EMShowerAlg::FindShowe
     else
       newInitialHits = initialHits;
 
-    initialHitsMap[orderedShowerIt->first] = newInitialHits;
+    // Ensure the initial hits look like a track!
+    std::vector<art::Ptr<recob::Hit> > newerInitialHits = newInitialHits;
+    if (TrackLeastSquare(newInitialHits) > 0.1 and newInitialHits.size() > 1) {
+      for (unsigned int iteration = 0; iteration < newInitialHits.size(); ++iteration) {
+	newerInitialHits.erase(newerInitialHits.begin());
+	if (TrackLeastSquare(newerInitialHits) < 0.1)
+	  break;
+	else
+	  newerInitialHits.push_back(newInitialHits.at(iteration));
+      }
+    }
+
+    initialHitsMap[orderedShowerIt->first] = newerInitialHits;
 
   }
 
@@ -943,11 +958,11 @@ std::map<int,std::map<int,bool> > shower::EMShowerAlg::GetPlanePermutations(cons
   ++perm;
 
   if (fDebug > 1) {
-    std::cout << "Here are the permutations!" << std::endl;
+    std::cout << std::endl << "Here are the permutations!" << std::endl;
     for (std::map<int,std::map<int,bool> >::iterator permIt = permutations.begin(); permIt != permutations.end(); ++permIt) {
-      std::cout << "Permutation " << permIt->first << std::endl;
+      std::cout << "  Permutation " << permIt->first << std::endl;
       for (std::map<int,bool>::iterator planePermIt = permIt->second.begin(); planePermIt != permIt->second.end(); ++planePermIt)
-	std::cout << "  Plane " << planePermIt->first << " has value " << planePermIt->second << std::endl;
+	std::cout << "    Plane " << planePermIt->first << " has value " << planePermIt->second << std::endl;
     }
   }
 
@@ -969,7 +984,7 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::MakeInitialTrack(const std::m
     initialHitsSize.push_back(std::make_pair(initialHitIt->first, initialHitIt->second.size()));
 
   // Sort the planes by number of hits
-  std::sort(initialHitsSize.begin(), initialHitsSize.end(), [](std::pair<int,int> const& size1, std::pair<int,int> const& size2) { return size1.second > size2.second; });
+  std::sort(initialHitsSize.begin(), initialHitsSize.end(), [](const std::pair<int,int>& size1, const std::pair<int,int>& size2) { return size1.second > size2.second; });
 
   // Pick the two planes to use to make the track
   //   -- if more than two planes, can choose the two views
@@ -995,9 +1010,9 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::MakeInitialTrack(const std::m
 
 }
 
-recob::Shower shower::EMShowerAlg::MakeShower(art::PtrVector<recob::Hit> const& hits,
-					      std::unique_ptr<recob::Track> const& initialTrack,
-					      std::map<int,std::vector<art::Ptr<recob::Hit> > > const& initialHitsMap) {
+recob::Shower shower::EMShowerAlg::MakeShower(const art::PtrVector<recob::Hit>& hits,
+					      const std::unique_ptr<recob::Track>& initialTrack,
+					      const std::map<int,std::vector<art::Ptr<recob::Hit> > >& initialHitsMap) {
 
   //return recob::Shower();
 
@@ -1049,8 +1064,8 @@ recob::Shower shower::EMShowerAlg::MakeShower(art::PtrVector<recob::Hit> const& 
 
 }
 
-recob::Shower shower::EMShowerAlg::MakeShower(art::PtrVector<recob::Hit> const& hits,
-					      art::Ptr<recob::Vertex> const& vertex,
+recob::Shower shower::EMShowerAlg::MakeShower(const art::PtrVector<recob::Hit>& hits,
+					      const art::Ptr<recob::Vertex>& vertex,
 					      int & iok) {
   
   iok = 1;
@@ -1439,16 +1454,18 @@ std::map<int,std::vector<art::Ptr<recob::Hit> > > shower::EMShowerAlg::OrderShow
   for (std::vector<art::Ptr<recob::Vertex> >::const_iterator vertexIt = vertices.begin(); vertexIt != vertices.end(); ++vertexIt) {
     double xyz[3]; (*vertexIt)->XYZ(xyz);
     unsigned int consistentPlanes = 0;
-    //std::cout << "Looking at vertex (" << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")" << std::endl;
+    if (fDebug > 3)
+      std::cout << std::endl << "Looking at vertex (" << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")" << std::endl;
     for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::iterator showerHitsIt = showerHitsMap.begin(); showerHitsIt != showerHitsMap.end(); ++showerHitsIt) {
       TVector2 proj = Project3DPointOntoPlane(TVector3(xyz), showerHitsIt->first);
-      // std::cout << "Projected into plane " << showerHitsIt->first << " is (" << proj.X() << ", " << proj.Y() << ")"
-      // 		<< " and distance to front (" << HitPosition(showerHitsIt->second.front()).X() << ", " << HitPosition(showerHitsIt->second.front()).Y() << ")"
-      // 		<< " (wire " << showerHitsIt->second.front()->WireID() << ")"
-      // 		<< " is " << (HitPosition(showerHitsIt->second.front())-proj).Mod()
-      // 		<< " and distance to back (" << HitPosition(showerHitsIt->second.back()).X() << ", " << HitPosition(showerHitsIt->second.back()).Y() << ")"
-      // 		<< " (wire " << showerHitsIt->second.back()->WireID() << ")"
-      // 		<< " is " << (HitPosition(showerHitsIt->second.back())-proj).Mod() << std::endl;			      
+      if (fDebug > 3)
+	std::cout << "  Projected into plane " << showerHitsIt->first << " is (" << proj.X() << ", " << proj.Y() << ")"
+		  << " and distance to front (" << HitPosition(showerHitsIt->second.front()).X() << ", " << HitPosition(showerHitsIt->second.front()).Y() << ")"
+		  << " (wire " << showerHitsIt->second.front()->WireID() << ")"
+		  << " is " << (HitPosition(showerHitsIt->second.front())-proj).Mod() << std::endl
+		  << " and distance to back (" << HitPosition(showerHitsIt->second.back()).X() << ", " << HitPosition(showerHitsIt->second.back()).Y() << ")"
+		  << " (wire " << showerHitsIt->second.back()->WireID() << ")"
+		  << " is " << (HitPosition(showerHitsIt->second.back())-proj).Mod() << std::endl;			      
       if ((HitPosition(showerHitsIt->second.front())-proj).Mod() < 5) {
 	++consistentPlanes;
   	continue;
@@ -1493,10 +1510,10 @@ std::map<int,std::vector<art::Ptr<recob::Hit> > > shower::EMShowerAlg::OrderShow
   std::map<double,int> wireWidths = RelativeWireWidth(showerHitsMap);
   std::vector<int> badPlanes;
   if (fDebug > 1)
-    std::cout << "Here are the relative wire widths... " << std::endl;
+    std::cout << std::endl << "Here are the relative wire widths... " << std::endl;
   for (std::map<double,int>::iterator wireWidthIt = wireWidths.begin(); wireWidthIt != wireWidths.end(); ++wireWidthIt) {
     if (fDebug > 1)
-      std::cout << "Plane " << wireWidthIt->second << " has relative wire width " << wireWidthIt->first << std::endl;
+      std::cout << "  Plane " << wireWidthIt->second << " has relative wire width " << wireWidthIt->first << std::endl;
     if (wireWidthIt->first < 1/(double)wireWidths.size())
       badPlanes.push_back(wireWidthIt->second);
   }
@@ -1505,7 +1522,7 @@ std::map<int,std::vector<art::Ptr<recob::Hit> > > shower::EMShowerAlg::OrderShow
   if (badPlanes.size() == 1) {
     int badPlane = badPlanes.at(0);
     if (fDebug > 1)
-      std::cout << "Ignoring plane " << badPlane << " when orientating" << std::endl;
+      std::cout << std::endl << "Ignoring plane " << badPlane << " when orientating" << std::endl;
     ignoredPlanes[badPlane] = showerHitsMap.at(badPlane);
     showerHitsMap.erase(showerHitsMap.find(badPlane));
   }
@@ -1536,11 +1553,12 @@ std::map<int,std::vector<art::Ptr<recob::Hit> > > shower::EMShowerAlg::OrderShow
     showerHitsMap = originalShowerHitsMap;
 
   if (fDebug > 2) {
-    std::cout << "End of OrderShowerHits: here are the order of hits:" << std::endl;
+    std::cout << std::endl << "End of OrderShowerHits: here are the order of hits:" << std::endl;
     for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::iterator planeHitsIt = showerHitsMap.begin(); planeHitsIt != showerHitsMap.end(); ++planeHitsIt) {
       std::cout << "  Plane " << planeHitsIt->first << std::endl;
       for (std::vector<art::Ptr<recob::Hit> >::iterator hitIt = planeHitsIt->second.begin(); hitIt != planeHitsIt->second.end(); ++hitIt)
-  	std::cout << "    Hit (" << HitCoordinates(*hitIt).X() << " (real wire " << (*hitIt)->WireID() << "), " << HitCoordinates(*hitIt).Y() << ") -- pos (" << HitPosition(*hitIt).X() << ", " << HitPosition(*hitIt).Y() << ")" << std::endl;
+  	std::cout << "    Hit (" << HitCoordinates(*hitIt).X() << " (real wire " << (*hitIt)->WireID() << "), " << HitCoordinates(*hitIt).Y() << ")"
+		  << " -- pos (" << HitPosition(*hitIt).X() << ", " << HitPosition(*hitIt).Y() << ")" << std::endl;
     }
   }
 
@@ -1588,8 +1606,8 @@ void shower::EMShowerAlg::OrderShowerHits(const std::vector<art::Ptr<recob::Hit>
   //std::cout<<showerHits[0]->WireID()<<" "<<showerHits.back()->WireID()<<std::endl;
 }
 
-void shower::EMShowerAlg::FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> >const& showerHits,
-					       art::Ptr<recob::Vertex> const& vertex,
+void shower::EMShowerAlg::FindInitialTrackHits(const std::vector<art::Ptr<recob::Hit> >& showerHits,
+					       const art::Ptr<recob::Vertex>& vertex,
 					       std::vector<art::Ptr<recob::Hit> >& trackHits){
 
   // Find TPC for the vertex
@@ -1661,13 +1679,13 @@ void shower::EMShowerAlg::FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> 
 }
 
 
-TVector2 shower::EMShowerAlg::HitCoordinates(art::Ptr<recob::Hit> const& hit) {
+TVector2 shower::EMShowerAlg::HitCoordinates(const art::Ptr<recob::Hit>& hit) {
 
   return TVector2(GlobalWire(hit->WireID()), hit->PeakTime());
 
 }
 
-TVector2 shower::EMShowerAlg::HitPosition(art::Ptr<recob::Hit> const& hit) {
+TVector2 shower::EMShowerAlg::HitPosition(const art::Ptr<recob::Hit>& hit) {
 
   geo::PlaneID planeID = hit->WireID().planeID();
 
@@ -1675,7 +1693,7 @@ TVector2 shower::EMShowerAlg::HitPosition(art::Ptr<recob::Hit> const& hit) {
 
 }
 
-TVector2 shower::EMShowerAlg::HitPosition(TVector2 const& pos, geo::PlaneID planeID) {
+TVector2 shower::EMShowerAlg::HitPosition(const TVector2& pos, geo::PlaneID planeID) {
 
   return TVector2(pos.X() * fGeom->WirePitch(planeID),
 		  fDetProp->ConvertTicksToX(pos.Y(), planeID));
@@ -2142,7 +2160,24 @@ double shower::EMShowerAlg::ShowerHitRMSGradient(const std::vector<art::Ptr<reco
 
 }
 
-TVector2 shower::EMShowerAlg::Project3DPointOntoPlane(TVector3 const& point, int plane, int cryostat) {
+double shower::EMShowerAlg::TrackLeastSquare(const std::vector<art::Ptr<recob::Hit> >& hits) {
+
+  // Find the charge weighted centre and direction of all hits
+  TVector2 centre = ShowerCentre(hits), direction = ShowerDirection(hits);
+
+  // Calculate least square/d.o.f
+  double least_sq = 0;
+  for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt)
+    least_sq += TMath::Power((((HitPosition(*hitIt)-centre).Proj(direction)+centre)-HitPosition(*hitIt)).Mod(),2);
+
+  int ndof = TMath::Max((int)hits.size()-2,1);
+  least_sq /= (double)ndof;
+
+  return least_sq;
+
+}
+
+TVector2 shower::EMShowerAlg::Project3DPointOntoPlane(const TVector3& point, int plane, int cryostat) {
 
   TVector2 wireTickPos = TVector2(-999., -999.);
 
@@ -2285,7 +2320,7 @@ Int_t shower::EMShowerAlg::WeightedFit(const Int_t n, const Double_t *x, const D
     
 }
 
-bool shower::EMShowerAlg::isCleanShower(std::vector<art::Ptr<recob::Hit> > const& hits){
+bool shower::EMShowerAlg::isCleanShower(const std::vector<art::Ptr<recob::Hit> >& hits){
 
   if (!hits.size()) return false;
   if (hits.size()>2000) return true;

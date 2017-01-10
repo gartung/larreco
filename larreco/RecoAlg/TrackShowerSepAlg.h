@@ -63,12 +63,11 @@ class shower::ReconTrack {
 
     fNumHits = 0;
     fNumRectangleHits = 0;
-
-    fMinForwardSpacePoint = 1e3;
-    fMinBackwardSpacePoint = 1e3;
   }
 
-  // Setters
+  // Setters -------------------------------------------------------------------------------------------------
+
+  // Track properties
   void AddPlane(int plane) { fPlanes.push_back(plane); }
   void SetVertex(TVector3 vertex) { fVertex = vertex; }
   void SetVertex2D(std::map<int,TVector2> vertices) { fVertex2D = vertices; }
@@ -89,35 +88,60 @@ class shower::ReconTrack {
   void SetSpacePoints(std::vector<art::Ptr<recob::SpacePoint> > spacePoints) { fSpacePoints = spacePoints; }
   void SetLeastSquareNDOF(double ls) { fLeastSquareNDOF = ls; }
 
-  void AddTrackConversion(int track) { fTrackConversions.push_back(track); }
-
-  void AddForwardTrack(int track) {
+  // Determined properties
+  void AddForwardConeSpacePoint(int spacePoint) { fForwardConeSpacePoints.push_back(spacePoint); }
+  void AddBackwardConeSpacePoint(int spacePoint) { fBackwardConeSpacePoints.push_back(spacePoint); }
+  void AddForwardShowerConeSpacePoint(int spacePoint) { fForwardShowerConeSpacePoints.push_back(spacePoint); }
+  void AddBackwardShowerConeSpacePoint(int spacePoint) { fBackwardShowerConeSpacePoints.push_back(spacePoint); }
+  void AddForwardConeTrack(int track) {
     if (std::find(fForwardConeTracks.begin(), fForwardConeTracks.end(), track) == fForwardConeTracks.end())
       fForwardConeTracks.push_back(track);
   }
-  void AddBackwardTrack(int track) {
+  void AddBackwardConeTrack(int track) {
     if (std::find(fBackwardConeTracks.begin(), fBackwardConeTracks.end(), track) == fBackwardConeTracks.end())
       fBackwardConeTracks.push_back(track);
   }
+  void AddForwardShowerConeTrack(int track) {
+    if (std::find(fForwardShowerConeTracks.begin(), fForwardShowerConeTracks.end(), track) == fForwardShowerConeTracks.end())
+      fForwardShowerConeTracks.push_back(track);
+  }
+  void AddBackwardShowerConeTrack(int track) {
+    if (std::find(fBackwardShowerConeTracks.begin(), fBackwardShowerConeTracks.end(), track) == fBackwardShowerConeTracks.end())
+      fBackwardShowerConeTracks.push_back(track);
+  }
+  void AddForwardConeSpacePointEnd(int spacePoint) { fForwardConeSpacePointsEnd.push_back(spacePoint); }
+  void AddBackwardConeSpacePointEnd(int spacePoint) { fBackwardConeSpacePointsEnd.push_back(spacePoint); }
+  void AddForwardShowerConeSpacePointEnd(int spacePoint) { fForwardShowerConeSpacePointsEnd.push_back(spacePoint); }
+  void AddBackwardShowerConeSpacePointEnd(int spacePoint) { fBackwardShowerConeSpacePointsEnd.push_back(spacePoint); }
+  void AddForwardConeTrackEnd(int track) {
+    if (std::find(fForwardConeTracksEnd.begin(), fForwardConeTracksEnd.end(), track) == fForwardConeTracksEnd.end())
+      fForwardConeTracksEnd.push_back(track);
+  }
+  void AddBackwardConeTrackEnd(int track) {
+    if (std::find(fBackwardConeTracksEnd.begin(), fBackwardConeTracksEnd.end(), track) == fBackwardConeTracksEnd.end())
+      fBackwardConeTracksEnd.push_back(track);
+  }
+  void AddForwardShowerConeTrackEnd(int track) {
+    if (std::find(fForwardShowerConeTracksEnd.begin(), fForwardShowerConeTracksEnd.end(), track) == fForwardShowerConeTracksEnd.end())
+      fForwardShowerConeTracksEnd.push_back(track);
+  }
+  void AddBackwardShowerConeTrackEnd(int track) {
+    if (std::find(fBackwardShowerConeTracksEnd.begin(), fBackwardShowerConeTracksEnd.end(), track) == fBackwardShowerConeTracksEnd.end())
+      fBackwardShowerConeTracksEnd.push_back(track);
+  }
+
+  void AddTrackConversion(int track) { fTrackConversions.push_back(track); }
   void AddShowerTrack(int track) { fShowerTracks.push_back(track); }
   void AddShowerCone(int track) { fShowerCones.push_back(track); }
 
-  void AddForwardSpacePoint(int spacePoint, double distance) {
-    fForwardSpacePoints.push_back(spacePoint);
-    if (distance < fMinForwardSpacePoint)
-      fMinForwardSpacePoint = distance;
-  }
-  void AddBackwardSpacePoint(int spacePoint, double distance) {
-    fBackwardSpacePoints.push_back(spacePoint);
-    if (distance < fMinBackwardSpacePoint)
-      fMinBackwardSpacePoint = distance;
-  }
   void AddCylinderSpacePoint(int spacePoint) { fCylinderSpacePoints.push_back(spacePoint); }
   void AddSphereSpacePoint(int spacePoint) { fSphereSpacePoints.push_back(spacePoint); }
   void AddIsolationSpacePoint(int spacePoint, double distance) { fIsolationSpacePoints[spacePoint] = distance; }
   void AddRectangleHit(const art::Ptr<recob::Hit>& hit) { fRectangleHits[hit->WireID().Plane].push_back(hit.key()); ++fNumRectangleHits; }
 
-  // Getters
+  // Getters -------------------------------------------------------------------------------------------------
+
+  // Track properties
   int ID() const { return fID; }
   TVector3 Vertex() const { return fVertex; }
   TVector3 End() const { return fEnd; }
@@ -140,26 +164,35 @@ class shower::ReconTrack {
   const std::map<int,std::vector<art::Ptr<recob::Hit> > >& Hits() const { return fHits; }
   const std::vector<art::Ptr<recob::SpacePoint> >& SpacePoints() const { return fSpacePoints; }
 
-  bool IsShower() const { return fShower; }
-  bool IsShowerLike() const { return fShowerLike; }
-  bool IsShowerTrack() const { return fShowerTrack; }
-  bool IsShowerCone() const { return fShowerCone; }
-  bool IsTrack() const { return fTrack; }
-  bool IsTrackLike() const { return fTrackLike; }
-  bool IsUndetermined() const { return !fTrack and !fShower; }
+  // Determined space point properties
+  int ConeSpacePointSize() const { return (int)fForwardConeSpacePoints.size() - (int)fBackwardConeSpacePoints.size(); }
+  int NumForwardConeSpacePoints() const { return fForwardConeSpacePoints.size(); }
+  int NumBackwardConeSpacePoints() const { return fBackwardConeSpacePoints.size(); }
+  const std::vector<int>& ForwardConeSpacePoints() const { return fForwardConeSpacePoints; }
+  const std::vector<int>& BackwardConeSpacePoints() const { return fBackwardConeSpacePoints; }
+  int ShowerConeSpacePointSize() const { return (int)fForwardShowerConeSpacePoints.size() - (int)fBackwardShowerConeSpacePoints.size(); }
+  int NumForwardShowerConeSpacePoints() const { return fForwardShowerConeSpacePoints.size(); }
+  int NumBackwardShowerConeSpacePoints() const { return fBackwardShowerConeSpacePoints.size(); }
+  const std::vector<int>& ForwardShowerConeSpacePoints() const { return fForwardShowerConeSpacePoints; }
+  const std::vector<int>& BackwardShowerConeSpacePoints() const { return fBackwardShowerConeSpacePoints; }
+  int ConeSpacePointSizeEnd() const { return (int)fForwardConeSpacePointsEnd.size() - (int)fBackwardConeSpacePointsEnd.size(); }
+  int ShowerConeSpacePointSizeEnd() const { return (int)fForwardShowerConeSpacePointsEnd.size() - (int)fBackwardShowerConeSpacePointsEnd.size(); }
 
-  const std::vector<int>& TrackConversions() const { return fTrackConversions; }
-
-  int TrackConeSize() const { return (int)fForwardConeTracks.size() - (int)fBackwardConeTracks.size(); }
-  bool ShowerTrackCandidate() const { return TrackConeSize() > 5; }
-  const std::vector<int>& ShowerTracks() const { return fShowerTracks; }
-  const std::vector<int>& ShowerCones() const { return fShowerCones; }
+  // Determined track properties
+  int ConeTrackSize() const { return (int)fForwardConeTracks.size() - (int)fBackwardConeTracks.size(); }
+  int NumForwardConeTracks() const { return fForwardConeTracks.size(); }
+  int NumBackwardConeTracks() const { return fBackwardConeTracks.size(); }
   const std::vector<int>& ForwardConeTracks() const { return fForwardConeTracks; }
+  const std::vector<int>& BackwardConeTracks() const { return fBackwardConeTracks; }
+  int ShowerConeTrackSize() const { return (int)fForwardShowerConeTracks.size() - (int)fBackwardShowerConeTracks.size(); }
+  int NumForwardShowerConeTracks() const { return fForwardShowerConeTracks.size(); }
+  int NumBackwardShowerConeTracks() const { return fBackwardShowerConeTracks.size(); }
+  const std::vector<int>& ForwardShowerConeTracks() const { return fForwardShowerConeTracks; }
+  const std::vector<int>& BackwardShowerConeTracks() const { return fBackwardShowerConeTracks; }
+  int ConeTrackSizeEnd() const { return (int)fForwardConeTracksEnd.size() - (int)fBackwardConeTracksEnd.size(); }
+  int ShowerConeTrackSizeEnd() const { return (int)fForwardShowerConeTracksEnd.size() - (int)fBackwardShowerConeTracksEnd.size(); }
 
-  int ConeSize() const { return (int)fForwardSpacePoints.size() - (int)fBackwardSpacePoints.size(); }
-  int ForwardSpacePoints() const { return fForwardSpacePoints.size(); }
-  double MinForwardSpacePointDistance() const { return fMinForwardSpacePoint; }
-  double MinBackwardSpacePointDistance() const { return fMinBackwardSpacePoint; }
+  //
   int NumCylinderSpacePoints() const { return fCylinderSpacePoints.size(); }
   double CylinderSpacePointRatio() const { return (double)fCylinderSpacePoints.size()/(double)fSpacePoints.size(); }
   int NumSphereSpacePoints() const { return fSphereSpacePoints.size(); }
@@ -176,7 +209,21 @@ class shower::ReconTrack {
   }
   double LeastSquareNDOF() const { return fLeastSquareNDOF; }
 
-  // Doers
+  //
+  const std::vector<int>& ShowerTracks() const { return fShowerTracks; }
+  const std::vector<int>& ShowerCones() const { return fShowerCones; }
+  const std::vector<int>& TrackConversions() const { return fTrackConversions; }
+
+  // Decision
+  bool IsShower() const { return fShower; }
+  bool IsShowerLike() const { return fShowerLike; }
+  bool IsShowerTrack() const { return fShowerTrack; }
+  bool IsShowerCone() const { return fShowerCone; }
+  bool IsTrack() const { return fTrack; }
+  bool IsTrackLike() const { return fTrackLike; }
+  bool IsUndetermined() const { return !fTrack and !fShower; }
+
+  // Doers -------------------------------------------------------------------------------------------------
   void MakeShower() {
     fShowerLike = true;
     if (fTrack)
@@ -198,6 +245,7 @@ class shower::ReconTrack {
     fShowerTrack = false;
     fTrack = false;
   }
+  void MakeShowerLike() { fShowerLike = true; }
   void MakeTrack() {
     fTrack = true;
     fTrackLike = true;
@@ -205,6 +253,7 @@ class shower::ReconTrack {
     fShowerTrack = false;
     fShowerCone = false;
   }
+  void MakeTrackLike() { fTrackLike = true; }
   void MakeUndetermined() {
     fTrack = false;
     fShower = false;
@@ -225,16 +274,31 @@ class shower::ReconTrack {
       fDirection2D[*plane] *= -1;
     }
     // Cone tracks and space points
-    std::vector<int> tmpVec = fForwardSpacePoints;
-    fForwardSpacePoints = fBackwardSpacePoints;
-    fBackwardSpacePoints = tmpVec;
-    tmpVec = fForwardConeTracks;
-    fForwardConeTracks = fBackwardConeTracks;
+    std::vector<int> tmpVec;
+    tmpVec = fForwardConeSpacePointsEnd;
+    fForwardConeSpacePointsEnd = fForwardConeSpacePoints;
+    fForwardConeSpacePoints = tmpVec;
+    tmpVec = fBackwardConeSpacePointsEnd;
+    fBackwardConeSpacePointsEnd = fBackwardConeSpacePoints;
+    fBackwardConeSpacePoints = tmpVec;
+    tmpVec = fForwardShowerConeSpacePointsEnd;
+    fForwardShowerConeSpacePointsEnd = fForwardShowerConeSpacePoints;
+    fForwardShowerConeSpacePoints = tmpVec;
+    tmpVec = fBackwardShowerConeSpacePointsEnd;
+    fBackwardShowerConeSpacePointsEnd = fBackwardShowerConeSpacePoints;
+    fBackwardShowerConeSpacePoints = tmpVec;
+    tmpVec = fForwardConeTracksEnd;
+    fForwardConeTracksEnd = fForwardConeTracks;
+    fForwardConeTracks = tmpVec;
+    tmpVec = fBackwardConeTracksEnd;
+    fBackwardConeTracksEnd = fBackwardConeTracks;
     fBackwardConeTracks = tmpVec;
-    double tmpDouble;
-    tmpDouble = fMinForwardSpacePoint;
-    fMinForwardSpacePoint = fMinBackwardSpacePoint;
-    fMinBackwardSpacePoint = tmpDouble;
+    tmpVec = fForwardShowerConeTracksEnd;
+    fForwardShowerConeTracksEnd = fForwardShowerConeTracks;
+    fForwardShowerConeTracks = tmpVec;
+    tmpVec = fBackwardShowerConeTracksEnd;
+    fBackwardShowerConeTracksEnd = fBackwardShowerConeTracks;
+    fBackwardShowerConeTracks = tmpVec;
   }
 
  private:
@@ -256,21 +320,23 @@ class shower::ReconTrack {
   double fLeastSquareNDOF;
 
   std::vector<int> fTrackConversions;
-
-  std::vector<int> fForwardConeTracks;
-  std::vector<int> fBackwardConeTracks;
   std::vector<int> fShowerTracks;
   std::vector<int> fShowerCones;
 
-  std::vector<int> fForwardSpacePoints;
-  std::vector<int> fBackwardSpacePoints;
+  std::vector<int> fForwardConeSpacePoints, fForwardConeSpacePointsEnd;
+  std::vector<int> fBackwardConeSpacePoints, fBackwardConeSpacePointsEnd;
+  std::vector<int> fForwardShowerConeSpacePoints, fForwardShowerConeSpacePointsEnd;
+  std::vector<int> fBackwardShowerConeSpacePoints, fBackwardShowerConeSpacePointsEnd;
+  std::vector<int> fForwardConeTracks, fForwardConeTracksEnd;
+  std::vector<int> fBackwardConeTracks, fBackwardConeTracksEnd;
+  std::vector<int> fForwardShowerConeTracks, fForwardShowerConeTracksEnd;
+  std::vector<int> fBackwardShowerConeTracks, fBackwardShowerConeTracksEnd;
+
   std::vector<int> fCylinderSpacePoints;
   std::vector<int> fSphereSpacePoints;
   std::map<int,double> fIsolationSpacePoints;
-  std::map<int,std::vector<int> > fRectangleHits;
   int fNumRectangleHits;
-  double fMinForwardSpacePoint;
-  double fMinBackwardSpacePoint;
+  std::map<int,std::vector<int> > fRectangleHits;
 
   bool fTrack;
   bool fTrackLike;
@@ -356,6 +422,9 @@ class shower::TrackShowerSepAlg {
 
   ///
   void IdentifyShowerTracks(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);
+
+  ///
+  void DowngradeTrack(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks, int track);
 
   ///
   void IdentifyShowerCones(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);
