@@ -16,6 +16,8 @@ standard_blurredcluster:
  MergeClusters:         false
  GlobalTPCRecon:        true
  ShowerReconOnly:       false
+ UseVertices:           false
+ UseReblurring:         false
  HitsModuleLabel:       "gaushit"
  TrackModuleLabel:      "pmtrack"
  VertexModuleLabel:     "linecluster"

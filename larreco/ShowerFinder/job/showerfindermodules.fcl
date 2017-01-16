@@ -30,28 +30,18 @@ standard_showercheater:
  G4ModuleLabel:       "largeant"
 }
 
-standard_emshoweralg:
-{
- CalorimetryAlg:        @local::standard_calorimetryalgmc
- ShowerEnergyAlg:       @local::standard_showerenergyalg
- ProjectionMatchingAlg: @local::standard_projectionmatchingalg
- MinTrackLength:  3
- dEdxTrackLength: 3
- SpacePointSize:  0.1
- Nfitpass:        4
- Nfithits:        [50, 30, 20, 20]
- Toler:           [30., 5., 2., 2.]
-}
-
 standard_emshower:
 {
  module_type:            "EMShower"
- HitsModuleLabel:        "linecluster"
+ ShowerHitsModuleLabel:  "trackshowersep:shower"
+ TrackHitsModuleLabel:   "linecluster"
  ClusterModuleLabel:     "blurredcluster"
  TrackModuleLabel:       "pmtrack"
+ VertexModuleLabel:      "linecluster"
  SaveNonCompleteShowers: true
- FindBadPlanes:          true
+ FindBadPlanes:          false
  MakeSpacePoints:        true
+ UseVertices:            false
  EMShowerAlg:            @local::standard_emshoweralg
 }
 

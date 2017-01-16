@@ -1,5 +1,6 @@
 #include "trackfinderalgorithms.fcl"
 #include "clusteralgorithms.fcl"
+#include "showeralgorithms.fcl"
 #include "pmavertexalg.fcl"
 
 BEGIN_PROLOG
