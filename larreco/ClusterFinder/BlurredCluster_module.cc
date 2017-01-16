@@ -94,12 +94,12 @@ void cluster::BlurredCluster::reconfigure(fhicl::ParameterSet const& p) {
   fHitsModuleLabel       = p.get<std::string>("HitsModuleLabel");
   fTrackModuleLabel      = p.get<std::string>("TrackModuleLabel");
   fVertexModuleLabel     = p.get<std::string>("VertexModuleLabel");
-  fCreateDebugPDF        = p.get<bool>       ("CreateDebugPDF",false);
-  fMergeClusters         = p.get<bool>       ("MergeClusters",false);
-  fGlobalTPCRecon        = p.get<bool>       ("GlobalTPCRecon",true);
-  fShowerReconOnly       = p.get<bool>       ("ShowerReconOnly",false);
-  fUseVertices           = p.get<bool>       ("UseVertices",false);
-  fUseReblurring         = p.get<bool>       ("UseReblurring",false);
+  fCreateDebugPDF        = p.get<bool>       ("CreateDebugPDF");
+  fMergeClusters         = p.get<bool>       ("MergeClusters");
+  fGlobalTPCRecon        = p.get<bool>       ("GlobalTPCRecon");
+  fShowerReconOnly       = p.get<bool>       ("ShowerReconOnly");
+  fUseVertices           = p.get<bool>       ("UseVertices");
+  fUseReblurring         = p.get<bool>       ("UseReblurring");
   fBlurredClusterAlg.reconfigure(p.get<fhicl::ParameterSet>("BlurredClusterAlg"));
   fMergeClusterAlg.reconfigure(p.get<fhicl::ParameterSet>("MergeClusterAlg"));
   fTrackShowerSepAlg.reconfigure(p.get<fhicl::ParameterSet>("TrackShowerSepAlg"));

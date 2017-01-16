@@ -46,7 +46,7 @@ void cluster::BlurredClusterAlg::reconfigure(fhicl::ParameterSet const& p) {
   fMinSeed              = p.get<double>("MinSeed");
   fChargeThreshold      = p.get<double>("ChargeThreshold");
   fDebug                = p.get<bool>  ("Debug",false);
-  fDetector             = p.get<std::string>("Detector","dune35t");
+  fDetector             = p.get<std::string>("Detector");
 
   fKernelWidth = 2 * fBlurWire + 1;
   fKernelHeight = 2 * fBlurTick*fMaxTickWidthBlur + 1;

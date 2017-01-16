@@ -103,14 +103,15 @@ void shower::EMShower::reconfigure(fhicl::ParameterSet const& p) {
   fPFParticleModuleLabel = p.get<std::string>("PFParticleModuleLabel","");
 
   fFindBadPlanes          = p.get<bool>("FindBadPlanes");
-  fUseVertices            = p.get<bool>("UseVertices",false);
+  fUseVertices            = p.get<bool>("UseVertices");
   fSaveNonCompleteShowers = p.get<bool>("SaveNonCompleteShowers");
   fMakeSpacePoints        = p.get<bool>("MakeSpacePoints");
 
-  fShower = p.get<int>("Shower",-1);
-  fPlane = p.get<int>("Plane",-1);
   fDebug = p.get<int>("Debug",0);
   fEMShowerAlg.fDebug = fDebug;
+
+  fShower = p.get<int>("Shower",-1);
+  fPlane = p.get<int>("Plane",-1);
 
   if (fTrackHitsModuleLabel == "" and fShowerHitsModuleLabel == "")
     throw art::Exception(art::errors::Configuration)
