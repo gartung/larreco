@@ -33,7 +33,7 @@ standard_showercheater:
 standard_emshower:
 {
  module_type:            "EMShower"
- ShowerHitsModuleLabel:  "trackshowersep:shower"
+ ShowerHitsModuleLabel:  "linecluster" #"trackshowersep:shower"
  TrackHitsModuleLabel:   "linecluster"
  ClusterModuleLabel:     "blurredcluster"
  TrackModuleLabel:       "pmtrack"
