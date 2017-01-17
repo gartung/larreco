@@ -441,7 +441,7 @@ std::vector<std::vector<int> > cluster::BlurredClusterAlg::FindClusters(const st
 	// Look for hits in the neighbouring x/y bins
         for (int x = xbin - fClusterWireDistance; x <= xbin + fClusterWireDistance; ++x) {
           for (int y = ybin - fClusterTickDistance; y <= ybin + fClusterTickDistance; ++y) {
-            if (used[x][y] or (x == xbin and y == ybin) or (x >= nbinsx or y >= nbinsy) or (x < 0 or y < 0))
+            if ((x >= nbinsx or y >= nbinsy) or (x < 0 or y < 0) or (x == xbin and y == ybin) or used[x][y])
               continue;
 
 	    // Check we're not clustering across a vertex
