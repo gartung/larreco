@@ -128,9 +128,6 @@ public:
   /// This version takes a vector of bins and overlays the relevant bins on the hit map
   void SaveImage(TH2F* image, std::vector<std::vector<int> > const& allClusterBins, int pad, int tpc, int plane);
 
-  /// Set the default planeID for this hit space
-  void SetPlaneID(const geo::PlaneID& planeID) { fDefaultPlaneID = planeID; }
-
 private:
 
   /// Returns the key of the hit present at this bin
@@ -228,7 +225,6 @@ private:
 
   // Other useful information
   std::vector<bool> fDeadWires;
-  geo::PlaneID fDefaultPlaneID;
 
   int fLowerTick, fUpperTick;
   int fLowerWire, fUpperWire;

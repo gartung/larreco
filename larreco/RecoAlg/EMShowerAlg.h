@@ -101,13 +101,6 @@ public:
 
   /// Constructs a recob::Track from sets of hits in two views. Intended to be used to construct the initial first part of a shower.
   /// All PMA methods taken from the pma tracking algorithm (R. Sulej and D. Stefan).
-  /// This implementation also orients the track in the correct direction if a map of shower centres (units [cm]) in each view is provided.
-  std::unique_ptr<recob::Track> ConstructTrack(const std::vector<art::Ptr<recob::Hit> >& track1,
-					       const std::vector<art::Ptr<recob::Hit> >& track2,
-					       const std::map<int,TVector2>& showerCentreMap);
-
-  /// Constructs a recob::Track from sets of hits in two views. Intended to be used to construct the initial first part of a shower.
-  /// All methods taken from the pma tracking algorithm (R. Sulej and D. Stefan).
   std::unique_ptr<recob::Track> ConstructTrack(const std::vector<art::Ptr<recob::Hit> >& track1,
 					       const std::vector<art::Ptr<recob::Hit> >& track2);
 

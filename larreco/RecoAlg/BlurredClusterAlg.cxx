@@ -597,13 +597,6 @@ TVector2 cluster::BlurredClusterAlg::HitPosition(const TVector2& pos, geo::Plane
 
 }
 
-TVector2 cluster::BlurredClusterAlg::BinPosition(int bin, const std::vector<std::vector<double> >& image) {
-
-  TVector2 binCoords = BinCoordinates(bin, image);
-  return HitPosition(binCoords, fDefaultPlaneID);
-
-}
-
 std::vector<std::vector<double> > cluster::BlurredClusterAlg::GaussianBlur(std::vector<std::vector<double> > const& image, int bin, const std::vector<bool>& used) {
 
   if (fSigmaWire == 0 and fSigmaTick == 0)

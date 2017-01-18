@@ -54,12 +54,15 @@ class shower::ReconTrack {
 
   ReconTrack(int id) {
     fID = id;
+
     fTrack = false;
-    fTrackLike = false;
     fShower = false;
-    fShowerLike = false;
     fShowerTrack = false;
     fShowerCone = false;
+
+    fTrackLike = false;
+    fVeryTrackLike = false;
+    fShowerLike = false;
 
     fNumHits = 0;
     fNumRectangleHits = 0;
@@ -221,6 +224,7 @@ class shower::ReconTrack {
   bool IsShowerCone() const { return fShowerCone; }
   bool IsTrack() const { return fTrack; }
   bool IsTrackLike() const { return fTrackLike; }
+  bool IsVeryTrackLike() const { return fVeryTrackLike; }
   bool IsUndetermined() const { return !fTrack and !fShower; }
 
   // Doers -------------------------------------------------------------------------------------------------
@@ -254,6 +258,7 @@ class shower::ReconTrack {
     fShowerCone = false;
   }
   void MakeTrackLike() { fTrackLike = true; }
+  void MakeVeryTrackLike() { fVeryTrackLike = true; }
   void MakeUndetermined() {
     fTrack = false;
     fShower = false;
@@ -339,11 +344,13 @@ class shower::ReconTrack {
   std::map<int,std::vector<int> > fRectangleHits;
 
   bool fTrack;
-  bool fTrackLike;
   bool fShower;
-  bool fShowerLike;
   bool fShowerTrack;
   bool fShowerCone;
+
+  bool fTrackLike;
+  bool fVeryTrackLike;
+  bool fShowerLike;
 
 };
 
