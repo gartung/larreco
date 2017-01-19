@@ -115,7 +115,8 @@ public:
   /// Makes a recob::Shower object given the hits in the shower and the initial track-like part
   recob::Shower MakeShower(const art::PtrVector<recob::Hit>& hits,
 			   const std::unique_ptr<recob::Track>& initialTrack,
-			   const std::map<int,std::vector<art::Ptr<recob::Hit> > >& initialTrackHits);
+			   const std::map<int,std::vector<art::Ptr<recob::Hit> > >& initialTrackHits,
+			   const std::unique_ptr<TVector3>& defaultDirection);
 
   /// <Tingjun to document>
   recob::Shower MakeShower(const art::PtrVector<recob::Hit>& hits,
@@ -129,11 +130,15 @@ public:
   //std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(art::PtrVector<recob::Hit> const& shower, int plane);
   std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(const art::PtrVector<recob::Hit>& shower, const std::vector<art::Ptr<recob::Vertex> >& vertices, int plane);
 
+  /// Returns the 3D shower centre
+  /// If space point-hit assocations are valid, the centre is charge weighted
+  TVector3 ShowerCentre(const std::vector<recob::SpacePoint>& showerSpacePoints, const std::vector<std::vector<art::Ptr<recob::Hit> > >& hitAssns);
+
   /// <Tingjun to document>
   void FindInitialTrackHits(const std::vector<art::Ptr<recob::Hit> >& showerHits,
 			    const art::Ptr<recob::Vertex>& vertex,
 			    std::vector<art::Ptr<recob::Hit> >& trackHits);
-
+  
   /// <Tingjun to document>
   Int_t WeightedFit(const Int_t n, const Double_t *x, const Double_t *y, const Double_t *w,  Double_t *parm);
 
@@ -223,8 +228,11 @@ private:
   // Parameters
   double fMinTrackLength;
   int fMinTrackShowerHits;
+  int fNumShowerSegments;
   double fdEdxTrackLength;
   double fSpacePointSize;
+  std::string fBestPlaneMetric;
+
   // Parameters to fit wire vs time
   unsigned int         fNfitpass;
   std::vector<unsigned int>     fNfithits;
@@ -244,14 +252,8 @@ private:
 
 
   // tmp
-  int FindTrueParticle(const std::vector<art::Ptr<recob::Hit> >& showerHits);
-  int FindParticleID(const art::Ptr<recob::Hit>& hit);
-  art::ServiceHandle<cheat::BackTracker> bt;
-  TH1I* hTrueDirection;
-  TProfile* hNumHitsInSegment, *hNumSegments;
   void MakePicture();
   bool fMakeGradientPlot, fMakeRMSGradientPlot;
-  int fNumShowerSegments;
 
 };
 

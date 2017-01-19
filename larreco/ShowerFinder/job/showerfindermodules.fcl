@@ -42,6 +42,7 @@ standard_emshower:
  FindBadPlanes:          false
  MakeSpacePoints:        true
  UseVertices:            false
+ CrudeDirection:         false
  EMShowerAlg:            @local::standard_emshoweralg
 }
 

@@ -35,9 +35,10 @@ standard_emshoweralg:
  ProjectionMatchingAlg: @local::standard_projectionmatchingalg
  MinTrackLength:     3
  MinTrackShowerHits: 1
- dEdxTrackLength:    3
  NumShowerSegments:  4
+ dEdxTrackLength:    3
  SpacePointSize:     0.1
+ BestPlaneMetric:    "Hits"
  Nfitpass:           4
  Nfithits:           [50, 30, 20, 20]
  Toler:              [30., 5., 2., 2.]

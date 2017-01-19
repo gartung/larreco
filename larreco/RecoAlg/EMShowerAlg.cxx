@@ -15,10 +15,13 @@ shower::EMShowerAlg::EMShowerAlg(const fhicl::ParameterSet& pset) : fDetProp(lar
 								    fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
 								    fProjectionMatchingAlg(pset.get<fhicl::ParameterSet>("ProjectionMatchingAlg")) {
 
-  fMinTrackLength     = pset.get<double>("MinTrackLength");
-  fMinTrackShowerHits = pset.get<int>("MinTrackShowerHits");
-  fdEdxTrackLength    = pset.get<double>("dEdxTrackLength");
-  fSpacePointSize     = pset.get<double>("SpacePointSize");
+  fMinTrackLength     = pset.get<double>     ("MinTrackLength");
+  fMinTrackShowerHits = pset.get<int>        ("MinTrackShowerHits");
+  fNumShowerSegments = pset.get<int>         ("NumShowerSegments");
+  fdEdxTrackLength    = pset.get<double>     ("dEdxTrackLength");
+  fSpacePointSize     = pset.get<double>     ("SpacePointSize");
+  fBestPlaneMetric    = pset.get<std::string>("BestPlaneMetric");
+
   fNfitpass           = pset.get<unsigned int>("Nfitpass");
   fNfithits           = pset.get<std::vector<unsigned int> >("Nfithits");
   fToler              = pset.get<std::vector<double> >("Toler");
@@ -29,15 +32,10 @@ shower::EMShowerAlg::EMShowerAlg(const fhicl::ParameterSet& pset) : fDetProp(lar
   }
   fDetector = pset.get<std::string>("Detector","dune35t");
 
-  hTrueDirection = tfs->make<TH1I>("trueDir","",2,0,2);
-
   //this->MakePicture();
   // tmp
   fMakeGradientPlot = pset.get<bool>("MakeGradientPlot",false);
   fMakeRMSGradientPlot = pset.get<bool>("MakeRMSGradientPlot",false);
-  fNumShowerSegments = pset.get<int>("NumShowerSegments",4);
-  hNumHitsInSegment = tfs->make<TProfile>("NumHitsInSegment","",100,0,100);
-  hNumSegments = tfs->make<TProfile>("NumSegments","",100,0,100);
 
 }
 
@@ -674,28 +672,6 @@ void shower::EMShowerAlg::FindInitialTrack(const std::map<int,std::vector<art::P
   if (fDebug > 1)
     std::cout << " ------------------ End finding initial track -------------------- " << std::endl;
 
-  // // Fill correct or incorrect direction histogram
-  // std::map<int,int> trackHits;
-  // for (art::PtrVector<recob::Hit>::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt)
-  //   ++trackHits[FindTrackID(*hitIt)];
-  // int trueTrack = -9999;
-  // for (std::map<int,int>::iterator trackHitIt = trackHits.begin(); trackHitIt != trackHits.end(); ++trackHitIt)
-  //   if (trackHitIt->second/(double)hits.size() > 0.8)
-  //     trueTrack = trackHitIt->first;
-  // if (trueTrack != -9999) {
-  //   const simb::MCParticle* trueParticle = backtracker->TrackIDToParticle(trueTrack);
-  //   TVector3 trueStart = trueParticle->Position().Vect();
-  //   if (initialTrack) {
-  //     TVector3 recoStart = initialTrack->Vertex();
-  //     if ((recoStart-trueStart).Mag() < 5)
-  // 	hTrueDirection->Fill(1);
-  //     else
-  // 	hTrueDirection->Fill(0);
-  //   }
-  // }
-  // else
-  //   hTrueDirection->Fill(0);
-
   return;
 
 }
@@ -1036,7 +1012,8 @@ std::unique_ptr<recob::Track> shower::EMShowerAlg::MakeInitialTrack(const std::m
 
 recob::Shower shower::EMShowerAlg::MakeShower(const art::PtrVector<recob::Hit>& hits,
 					      const std::unique_ptr<recob::Track>& initialTrack,
-					      const std::map<int,std::vector<art::Ptr<recob::Hit> > >& initialHitsMap) {
+					      const std::map<int,std::vector<art::Ptr<recob::Hit> > >& initialHitsMap,
+					      const std::unique_ptr<TVector3>& defaultDirection) {
 
   //return recob::Shower();
 
@@ -1045,8 +1022,9 @@ recob::Shower shower::EMShowerAlg::MakeShower(const art::PtrVector<recob::Hit>& 
   for (art::PtrVector<recob::Hit>::const_iterator hit = hits.begin(); hit != hits.end(); ++hit)
     planeHitsMap[(*hit)->View()].push_back(*hit);
 
-  int bestPlane = -1;
+  int most_hits = -1, most_energy = -1;
   unsigned int highestNumberOfHits = 0;
+  double highestEnergy = 0;
   std::vector<double> totalEnergy, totalEnergyError, dEdx, dEdxError;
 
   // Look at each of the planes
@@ -1055,10 +1033,15 @@ recob::Shower shower::EMShowerAlg::MakeShower(const art::PtrVector<recob::Hit>& 
     // If there's hits on this plane...
     if (planeHitsMap.count(plane)) {
       dEdx.push_back(FinddEdx(initialHitsMap.at(plane), initialTrack));
-      totalEnergy.push_back(fShowerEnergyAlg.ShowerEnergy(planeHitsMap.at(plane), plane));
+      double energy = fShowerEnergyAlg.ShowerEnergy(planeHitsMap.at(plane), plane);
+      totalEnergy.push_back(energy);
       if (planeHitsMap.at(plane).size() > highestNumberOfHits and initialHitsMap.count(plane)) {
-	bestPlane = plane;
+	most_hits = plane;
 	highestNumberOfHits = planeHitsMap.at(plane).size();
+      }
+      if (energy > highestEnergy) {
+	most_energy = plane;
+	highestEnergy = energy;
       }
     }
 
@@ -1072,12 +1055,25 @@ recob::Shower shower::EMShowerAlg::MakeShower(const art::PtrVector<recob::Hit>& 
 
   TVector3 direction, directionError, showerStart, showerStartError;
   if (initialTrack) {
-    direction = initialTrack->VertexDirection();
+    if (defaultDirection)
+      direction = *defaultDirection;
+    else
+      direction = initialTrack->VertexDirection();
     showerStart = initialTrack->Vertex();
   }
 
+  // Get best plane
+  int bestPlane = -1;
+  if (fBestPlaneMetric == "Energy")
+    bestPlane = most_energy;
+  else if (fBestPlaneMetric == "Hits")
+    bestPlane = most_hits;
+  else
+    std::cout << "EMShowerAlg: error! Best plane metric " << fBestPlaneMetric << " is unknown" << std::endl
+	      << "  Currently, either Energy or Hits are valid" << std::endl;
+
   if (fDebug > 0) {
-    std::cout << "Best plane is " << bestPlane << std::endl;
+    std::cout << "Best plane is " << bestPlane << " (using " << fBestPlaneMetric << ")" << std::endl;
     std::cout << "dE/dx for each plane is: " << dEdx[0] << ", " << dEdx[1] << " and " << dEdx[2] << std::endl;
     std::cout << "Total energy for each plane is: " << totalEnergy[0] << ", " << totalEnergy[1] << " and " << totalEnergy[2] << std::endl;
     std::cout << "The shower start is (" << showerStart.X() << ", " << showerStart.Y() << ", " << showerStart.Z() << ")" << std::endl;
@@ -1832,6 +1828,30 @@ TVector2 shower::EMShowerAlg::ShowerCentre(const std::vector<art::Ptr<recob::Hit
 
 }
 
+TVector3 shower::EMShowerAlg::ShowerCentre(const std::vector<recob::SpacePoint>& showerSpacePoints,
+					   const std::vector<std::vector<art::Ptr<recob::Hit> > >& hitAssns) {
+
+  TVector3 pos, chargePoint = TVector3(0,0,0);
+  double totalCharge = 0;
+
+  for (unsigned int spacePointIt = 0; spacePointIt < showerSpacePoints.size(); ++spacePointIt) {
+    pos = TVector3(showerSpacePoints[spacePointIt].XYZ());
+    double charge = 0;
+    if (hitAssns[spacePointIt].size())
+      for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = hitAssns[spacePointIt].begin(); hitIt != hitAssns[spacePointIt].end(); ++hitIt)
+	charge += (*hitIt)->Integral();
+    else
+      charge = 1;
+    totalCharge += charge;
+    chargePoint += charge * pos;
+  }
+
+  TVector3 centre = chargePoint * (1./totalCharge);
+
+  return centre;
+
+}
+
 double shower::EMShowerAlg::ShowerHitRMS(const std::vector<art::Ptr<recob::Hit> >& showerHits) {
 
   TVector2 direction = ShowerDirection(showerHits);
@@ -1854,265 +1874,6 @@ double shower::EMShowerAlg::ShowerHitRMSGradient(const std::vector<art::Ptr<reco
 
   // Find a rough shower 'direction' and centre
   TVector2 direction = ShowerDirection(showerHits);
-
-  //std::cout << std::endl << "Number of hits in this shower: " << showerHits.size() << std::endl;
-
-  // for (int i = 0; i < 100; ++i) {
-
-  //   // Bin the hits into discreet chunks
-  //   //int nSegmentHits = fNumSegmentHits;
-  //   int nSegmentHits = i;
-  //   int nShowerSegments = showerHits.size() / (double)nSegmentHits;
-  //   //int nShowerSegments = fNumShowerSegments;
-  //   double lengthOfShower = (HitPosition(showerHits.back()) - HitPosition(showerHits.front())).Mod();
-  //   double lengthOfSegment = lengthOfShower / (double)nShowerSegments;
-  //   std::map<int,std::vector<art::Ptr<recob::Hit> > > showerSegments;
-  //   std::map<int,double> segmentCharge;
-  //   for (std::vector<art::Ptr<recob::Hit> >::const_iterator showerHitsIt = showerHits.begin(); showerHitsIt != showerHits.end(); ++showerHitsIt) {
-  //     showerSegments[(int)(HitPosition(*showerHitsIt)-HitPosition(showerHits.front())).Mod() / lengthOfSegment].push_back(*showerHitsIt);
-  //     segmentCharge[(int)(HitPosition(*showerHitsIt)-HitPosition(showerHits.front())).Mod() / lengthOfSegment] += (*showerHitsIt)->Integral();
-  //   }
-
-  //   TGraph* graph = new TGraph();
-  //   std::vector<std::pair<int,double> > binVsRMS;
-
-  //   // Loop over the bins to find the distribution of hits as the shower progresses
-  //   for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::iterator showerSegmentIt = showerSegments.begin(); showerSegmentIt != showerSegments.end(); ++showerSegmentIt) {
-
-  //     // Get the mean position of the hits in this bin
-  //     TVector2 meanPosition(0,0);
-  //     for (std::vector<art::Ptr<recob::Hit> >::iterator hitInSegmentIt = showerSegmentIt->second.begin(); hitInSegmentIt != showerSegmentIt->second.end(); ++hitInSegmentIt)
-  // 	meanPosition += HitPosition(*hitInSegmentIt);
-  //     meanPosition /= (double)showerSegmentIt->second.size();
-
-  //     // Get the RMS of this bin
-  //     std::vector<double> distanceToAxisBin;
-  //     for (std::vector<art::Ptr<recob::Hit> >::iterator hitInSegmentIt = showerSegmentIt->second.begin(); hitInSegmentIt != showerSegmentIt->second.end(); ++hitInSegmentIt) {
-  // 	TVector2 proj = (HitPosition(*hitInSegmentIt) - meanPosition).Proj(direction) + meanPosition;
-  // 	distanceToAxisBin.push_back((HitPosition(*hitInSegmentIt) - proj).Mod());
-  //     }
-
-  //     double RMSBin = TMath::RMS(distanceToAxisBin.begin(), distanceToAxisBin.end());
-  //     binVsRMS.push_back(std::make_pair(showerSegmentIt->first, RMSBin));
-  //     if (fMakeRMSGradientPlot)
-  // 	graph->SetPoint(graph->GetN(), showerSegmentIt->first, RMSBin);
-
-  //   }
-
-  //   // Get the gradient of the RMS-bin plot
-
-  //   // OLD
-  //   int nhits1 = 0;
-  //   double sumx1=0., sumy1=0., sumx21=0., sumxy1=0.;
-  //   for (std::vector<std::pair<int,double> >::iterator binVsRMSIt = binVsRMS.begin(); binVsRMSIt != binVsRMS.end(); ++binVsRMSIt) {
-  //     ++nhits1;
-  //     sumx1 += binVsRMSIt->first;
-  //     sumy1 += binVsRMSIt->second;
-  //     sumx21 += binVsRMSIt->first * binVsRMSIt->first;
-  //     sumxy1 += binVsRMSIt->first * binVsRMSIt->second;
-  //   }
-  //   double RMSgradient1 = (nhits1 * sumxy1 - sumx1 * sumy1) / (nhits1 * sumx21 - sumx1 * sumx1);
-
-  //   // NEW
-  //   double sumx=0., sumy=0., sumx2=0., sumxy=0., sumweight = 0.;
-  //   for (std::vector<std::pair<int,double> >::iterator binVsRMSIt = binVsRMS.begin(); binVsRMSIt != binVsRMS.end(); ++binVsRMSIt) {
-  //     //double weight = showerSegments.at(binVsRMSIt->first).size();
-  //     double weight = TMath::Power(segmentCharge.at(binVsRMSIt->first),2);
-  //     sumweight += weight;
-  //     sumx += weight * binVsRMSIt->first;
-  //     sumy += weight * binVsRMSIt->second;
-  //     sumx2 += weight * binVsRMSIt->first * binVsRMSIt->first;
-  //     sumxy += weight * binVsRMSIt->first * binVsRMSIt->second;
-  //   }
-  //   double RMSgradient = (sumweight * sumxy - sumx * sumy) / (sumweight * sumx2 - sumx * sumx);
-
-  //   // PCA
-  //   TPrincipal* pca = new TPrincipal(2,"");
-  //   double point[2];
-  //   for (std::vector<std::pair<int,double> >::iterator binVsRMSIt = binVsRMS.begin(); binVsRMSIt != binVsRMS.end(); ++binVsRMSIt) {
-  //     if (fDebug > 2)
-  // 	std::cout << "Number of hits in segment " << binVsRMSIt->first << " is " << showerSegments.at(binVsRMSIt->first).size() << std::endl;
-  //     for (int nhit = 0; nhit < (int)showerSegments.at(binVsRMSIt->first).size(); ++nhit) {
-  // 	point[0] = binVsRMSIt->first;
-  // 	point[1] = binVsRMSIt->second;
-  // 	pca->AddRow(point);
-  //     }
-  //   }
-  //   pca->MakePrincipals();
-  //   TVector2 RMSgradientPCA = TVector2( (*pca->GetEigenVectors())[0][0], (*pca->GetEigenVectors())[1][0] ).Unit();
-
-  //   if (fDebug > 1)
-  //     std::cout << "RMS gradient without weighting: " << RMSgradient1 << ", and with weighting: " << RMSgradient << "; PCA with weighting: " << RMSgradientPCA.Y()/RMSgradientPCA.X() << std::endl;
-
-  //   if (fMakeRMSGradientPlot) {
-  //     TVector2 direction = TVector2(1,RMSgradient).Unit();
-  //     TVector2 direction1 = TVector2(1,RMSgradient1).Unit();
-  //     TCanvas* canv = new TCanvas();
-  //     graph->Draw();
-  //     TVector2 centre = TVector2(graph->GetMean(1), graph->GetMean(2));
-  //     TLine line, line1, line2;
-  //     line.SetLineColor(3);
-  //     line1.SetLineColor(4);
-  //     line2.SetLineColor(5);
-  //     line.DrawLine(centre.X()-1000*direction.X(),centre.Y()-1000*direction.Y(),centre.X()+1000*direction.X(),centre.Y()+1000*direction.Y());
-  //     line1.DrawLine(centre.X()-1000*direction1.X(),centre.Y()-1000*direction1.Y(),centre.X()+1000*direction1.X(),centre.Y()+1000*direction1.Y());
-  //     line2.DrawLine(centre.X()-1000*RMSgradientPCA.X(),centre.Y()-1000*RMSgradientPCA.Y(),centre.X()+1000*RMSgradientPCA.X(),centre.Y()+1000*RMSgradientPCA.Y());
-  //     canv->SaveAs("RMSGradient.png");
-  //     delete canv;
-  //   }
-  //   delete graph; delete pca;
-
-  //   //std::cout << "Number of hits per bin " << i << " gives gradient of " << RMSgradient << std::endl;
-
-  //   double distanceFromStart = 0, distanceFromEnd = 0;
-  //   if (RMSgradient > 0) {
-  //     distanceFromStart = (trueStart - HitPosition(showerHits.front())).Mod();
-  //     distanceFromEnd = (trueStart - HitPosition(showerHits.back())).Mod();
-  //   }
-  //   if (RMSgradient < 0) {
-  //    distanceFromStart = (trueStart - HitPosition(showerHits.back())).Mod();
-  //    distanceFromEnd = (trueStart - HitPosition(showerHits.front())).Mod();
-  //   }
-  //   bool correct = distanceFromStart < distanceFromEnd;
-  //   hNumHitsInSegment->Fill(i,correct);
-
-  // }
-
-
-
-
-  // for (int i = 0; i < 100; ++i) {
-
-  //   // Bin the hits into discreet chunks
-  //   int nShowerSegments = i;
-  //   double lengthOfShower = (HitPosition(showerHits.back()) - HitPosition(showerHits.front())).Mod();
-  //   double lengthOfSegment = lengthOfShower / (double)nShowerSegments;
-  //   std::map<int,std::vector<art::Ptr<recob::Hit> > > showerSegments;
-  //   std::map<int,double> segmentCharge;
-  //   for (std::vector<art::Ptr<recob::Hit> >::const_iterator showerHitsIt = showerHits.begin(); showerHitsIt != showerHits.end(); ++showerHitsIt) {
-  //     showerSegments[(int)(HitPosition(*showerHitsIt)-HitPosition(showerHits.front())).Mod() / lengthOfSegment].push_back(*showerHitsIt);
-  //     segmentCharge[(int)(HitPosition(*showerHitsIt)-HitPosition(showerHits.front())).Mod() / lengthOfSegment] += (*showerHitsIt)->Integral();
-  //   }
-
-  //   TGraph* graph = new TGraph();
-  //   std::vector<std::pair<int,double> > binVsRMS;
-
-  //   // Loop over the bins to find the distribution of hits as the shower progresses
-  //   for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::iterator showerSegmentIt = showerSegments.begin(); showerSegmentIt != showerSegments.end(); ++showerSegmentIt) {
-
-  //     // Get the mean position of the hits in this bin
-  //     TVector2 meanPosition(0,0);
-  //     for (std::vector<art::Ptr<recob::Hit> >::iterator hitInSegmentIt = showerSegmentIt->second.begin(); hitInSegmentIt != showerSegmentIt->second.end(); ++hitInSegmentIt)
-  // 	meanPosition += HitPosition(*hitInSegmentIt);
-  //     meanPosition /= (double)showerSegmentIt->second.size();
-
-  //     // Get the RMS of this bin
-  //     std::vector<double> distanceToAxisBin;
-  //     for (std::vector<art::Ptr<recob::Hit> >::iterator hitInSegmentIt = showerSegmentIt->second.begin(); hitInSegmentIt != showerSegmentIt->second.end(); ++hitInSegmentIt) {
-  // 	TVector2 proj = (HitPosition(*hitInSegmentIt) - meanPosition).Proj(direction) + meanPosition;
-  // 	distanceToAxisBin.push_back((HitPosition(*hitInSegmentIt) - proj).Mod());
-  //     }
-
-  //     double RMSBin = TMath::RMS(distanceToAxisBin.begin(), distanceToAxisBin.end());
-  //     binVsRMS.push_back(std::make_pair(showerSegmentIt->first, RMSBin));
-  //     if (fMakeRMSGradientPlot)
-  // 	graph->SetPoint(graph->GetN(), showerSegmentIt->first, RMSBin);
-
-  //   }
-
-  //   // Get the gradient of the RMS-bin plot
-
-  //   // OLD
-  //   int nhits1 = 0;
-  //   double sumx1=0., sumy1=0., sumx21=0., sumxy1=0.;
-  //   for (std::vector<std::pair<int,double> >::iterator binVsRMSIt = binVsRMS.begin(); binVsRMSIt != binVsRMS.end(); ++binVsRMSIt) {
-  //     ++nhits1;
-  //     sumx1 += binVsRMSIt->first;
-  //     sumy1 += binVsRMSIt->second;
-  //     sumx21 += binVsRMSIt->first * binVsRMSIt->first;
-  //     sumxy1 += binVsRMSIt->first * binVsRMSIt->second;
-  //   }
-  //   double RMSgradient1 = (nhits1 * sumxy1 - sumx1 * sumy1) / (nhits1 * sumx21 - sumx1 * sumx1);
-
-  //   // NEW
-  //   double sumx=0., sumy=0., sumx2=0., sumxy=0., sumweight = 0.;
-  //   for (std::vector<std::pair<int,double> >::iterator binVsRMSIt = binVsRMS.begin(); binVsRMSIt != binVsRMS.end(); ++binVsRMSIt) {
-  //     //double weight = showerSegments.at(binVsRMSIt->first).size();
-  //     double weight = TMath::Power(segmentCharge.at(binVsRMSIt->first),2);
-  //     sumweight += weight;
-  //     sumx += weight * binVsRMSIt->first;
-  //     sumy += weight * binVsRMSIt->second;
-  //     sumx2 += weight * binVsRMSIt->first * binVsRMSIt->first;
-  //     sumxy += weight * binVsRMSIt->first * binVsRMSIt->second;
-  //   }
-  //   double RMSgradient = (sumweight * sumxy - sumx * sumy) / (sumweight * sumx2 - sumx * sumx);
-
-  //   // PCA
-  //   TPrincipal* pca = new TPrincipal(2,"");
-  //   double point[2];
-  //   for (std::vector<std::pair<int,double> >::iterator binVsRMSIt = binVsRMS.begin(); binVsRMSIt != binVsRMS.end(); ++binVsRMSIt) {
-  //     if (fDebug > 2)
-  // 	std::cout << "Number of hits in segment " << binVsRMSIt->first << " is " << showerSegments.at(binVsRMSIt->first).size() << std::endl;
-  //     for (int nhit = 0; nhit < (int)showerSegments.at(binVsRMSIt->first).size(); ++nhit) {
-  // 	point[0] = binVsRMSIt->first;
-  // 	point[1] = binVsRMSIt->second;
-  // 	pca->AddRow(point);
-  //     }
-  //   }
-  //   pca->MakePrincipals();
-  //   TVector2 RMSgradientPCA = TVector2( (*pca->GetEigenVectors())[0][0], (*pca->GetEigenVectors())[1][0] ).Unit();
-
-  //   if (fDebug > 1)
-  //     std::cout << "RMS gradient without weighting: " << RMSgradient1 << ", and with weighting: " << RMSgradient << "; PCA with weighting: " << RMSgradientPCA.Y()/RMSgradientPCA.X() << std::endl;
-
-  //   if (fMakeRMSGradientPlot) {
-  //     TVector2 direction = TVector2(1,RMSgradient).Unit();
-  //     TVector2 direction1 = TVector2(1,RMSgradient1).Unit();
-  //     TCanvas* canv = new TCanvas();
-  //     graph->Draw();
-  //     TVector2 centre = TVector2(graph->GetMean(1), graph->GetMean(2));
-  //     TLine line, line1, line2;
-  //     line.SetLineColor(3);
-  //     line1.SetLineColor(4);
-  //     line2.SetLineColor(5);
-  //     line.DrawLine(centre.X()-1000*direction.X(),centre.Y()-1000*direction.Y(),centre.X()+1000*direction.X(),centre.Y()+1000*direction.Y());
-  //     line1.DrawLine(centre.X()-1000*direction1.X(),centre.Y()-1000*direction1.Y(),centre.X()+1000*direction1.X(),centre.Y()+1000*direction1.Y());
-  //     line2.DrawLine(centre.X()-1000*RMSgradientPCA.X(),centre.Y()-1000*RMSgradientPCA.Y(),centre.X()+1000*RMSgradientPCA.X(),centre.Y()+1000*RMSgradientPCA.Y());
-  //     canv->SaveAs("RMSGradient.png");
-  //     delete canv;
-  //   }
-  //   delete graph; delete pca;
-
-  //   //std::cout << "Number of hits per bin " << i << " gives gradient of " << RMSgradient << std::endl;
-
-  //   double distanceFromStart = 0, distanceFromEnd = 0;
-  //   if (RMSgradient > 0) {
-  //     distanceFromStart = (trueStart - HitPosition(showerHits.front())).Mod();
-  //     distanceFromEnd = (trueStart - HitPosition(showerHits.back())).Mod();
-  //   }
-  //   if (RMSgradient < 0) {
-  //    distanceFromStart = (trueStart - HitPosition(showerHits.back())).Mod();
-  //    distanceFromEnd = (trueStart - HitPosition(showerHits.front())).Mod();
-  //   }
-  //   bool correct = distanceFromStart < distanceFromEnd;
-  //   hNumSegments->Fill(i,correct);
-
-  // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   // Bin the hits into discreet chunks
   int nShowerSegments = fNumShowerSegments;
@@ -2445,47 +2206,3 @@ shower::HitPosition::HitPosition()
 // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start_time).count();
 // std::cout << "Duration is " << duration/1000000.0 << " s " << std::endl;;
 //
-
-int shower::EMShowerAlg::FindTrueParticle(const std::vector<art::Ptr<recob::Hit> >& showerHits) {
-
-  /// Returns the true particle most likely associated with this shower
-
-  // Make a map of the tracks which are associated with this shower and the charge each contributes
-  std::map<int,double> trackMap;
-  for (std::vector<art::Ptr<recob::Hit> >::const_iterator showerHitIt = showerHits.begin(); showerHitIt != showerHits.end(); ++showerHitIt) {
-    art::Ptr<recob::Hit> hit = *showerHitIt;
-    int trackID = FindParticleID(hit);
-    trackMap[trackID] += hit->Integral();
-  }
-
-  // Pick the track with the highest charge as the 'true track'
-  double highestCharge = 0;
-  int showerTrack = 0;
-  for (std::map<int,double>::iterator trackIt = trackMap.begin(); trackIt != trackMap.end(); ++trackIt) {
-    if (trackIt->second > highestCharge) {
-      highestCharge = trackIt->second;
-      showerTrack  = trackIt->first;
-    }
-  }
-
-  return showerTrack;
-
-}
-
-int shower::EMShowerAlg::FindParticleID(const art::Ptr<recob::Hit>& hit) {
-
-  /// Returns the true track ID associated with this hit (if more than one, returns the one with highest energy)
-
-  double particleEnergy = 0;
-  int likelyTrackID = 0;
-  std::vector<sim::TrackIDE> trackIDs = bt->HitToTrackID(hit);
-  for (unsigned int idIt = 0; idIt < trackIDs.size(); ++idIt) {
-    if (trackIDs.at(idIt).energy > particleEnergy) {
-      particleEnergy = trackIDs.at(idIt).energy;
-      likelyTrackID = TMath::Abs(trackIDs.at(idIt).trackID);
-    }
-  }
-
-  return likelyTrackID;
-
-}

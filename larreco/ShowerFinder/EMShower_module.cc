@@ -71,6 +71,7 @@ private:
   bool fFindBadPlanes;
   bool fUseVertices;
   bool fMakeSpacePoints;
+  bool fCrudeDirection;
 
   art::ServiceHandle<geo::Geometry> fGeom;
   detinfo::DetectorProperties const* fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
@@ -106,6 +107,7 @@ void shower::EMShower::reconfigure(fhicl::ParameterSet const& p) {
   fUseVertices            = p.get<bool>("UseVertices");
   fSaveNonCompleteShowers = p.get<bool>("SaveNonCompleteShowers");
   fMakeSpacePoints        = p.get<bool>("MakeSpacePoints");
+  fCrudeDirection         = p.get<bool>("CrudeDirection");
 
   fDebug = p.get<int>("Debug",0);
   fEMShowerAlg.fDebug = fDebug;
@@ -326,8 +328,16 @@ void shower::EMShower::produce(art::Event& evt) {
       }
       int lastSpacePoint = spacePoints->size();
 
+      // Make crude direction vector
+      std::unique_ptr<TVector3> defaultDirection;
+      if (fCrudeDirection and initialTrack) {
+	TVector3 showerCentre = fEMShowerAlg.ShowerCentre(showerSpacePoints, hitAssns);
+	TVector3 showerDirection = (showerCentre - initialTrack->Vertex()).Unit();
+	defaultDirection = std::make_unique<TVector3>(showerDirection);
+      }
+
       // Make shower object and associations
-      recob::Shower shower = fEMShowerAlg.MakeShower(showerHits, initialTrack, initialTrackHits);
+      recob::Shower shower = fEMShowerAlg.MakeShower(showerHits, initialTrack, initialTrackHits, defaultDirection);
       shower.set_id(showerNum);
       if ( fSaveNonCompleteShowers or (!fSaveNonCompleteShowers and shower.ShowerStart() != TVector3(0,0,0)) ) {
 	showers->push_back(shower);
