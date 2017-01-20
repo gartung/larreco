@@ -110,7 +110,7 @@ void shower::TrackShowerSepAlg::RunTrackShowerSep(int event,
   ConeProperties(reconTracks, parameters, spacePoints, fmtsp);
 
   // Look for showers
-  IdentifyShowers(reconTracks);
+  IdentifyShowers(reconTracks, parameters);
 
   // Look for shower tracks
   IdentifyShowerTracks(reconTracks);
@@ -439,7 +439,7 @@ void shower::TrackShowerSepAlg::ConeProperties(std::map<int,std::unique_ptr<Reco
 
 }
 
-void shower::TrackShowerSepAlg::IdentifyShowers(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks) {
+void shower::TrackShowerSepAlg::IdentifyShowers(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks, const TrackShowerSepParameters& parameters) {
 
   if (fDebug > 1)
     std::cout << std::endl << "Identifying showers:" << std::endl;
@@ -460,18 +460,22 @@ void shower::TrackShowerSepAlg::IdentifyShowers(std::map<int,std::unique_ptr<Rec
 
     if (fDebug > 2)
       std::cout << "  Track " << trackIt->first << " has space point shower cone size " << trackIt->second->ShowerConeSpacePointSize()
-		<< " and track shower cone size " << trackIt->second->ShowerConeTrackSize()
+		<< " (average " << parameters.AverageConeSize << ") and track shower cone size " << trackIt->second->ShowerConeTrackSize()
 		<< " (very track like? " << trackIt->second->IsVeryTrackLike() << ")" << std::endl;
 
     // Large shower cones...
-    if (TMath::Abs(trackIt->second->ShowerConeSpacePointSize()) > 30 and TMath::Abs(trackIt->second->ShowerConeTrackSize()) > 3 and !trackIt->second->IsVeryTrackLike()) {
-      if (trackIt->second->ShowerConeSpacePointSize() < 0 or trackIt->second->ShowerConeSpacePointSizeEnd() > trackIt->second->ShowerConeSpacePointSize()) {
-	if (fDebug > 1)
-	  std::cout << "      Flipping track: shower cone size "
-		    << trackIt->second->ShowerConeSpacePointSize() << "; from end " << trackIt->second->ShowerConeSpacePointSizeEnd() << std::endl;
-	trackIt->second->FlipTrack();
+    if (TMath::Abs(trackIt->second->ShowerConeSpacePointSize()) > 30 and //parameters.AverageConeSize and
+	TMath::Abs(trackIt->second->ShowerConeTrackSize()) > 2 and
+	!trackIt->second->IsVeryTrackLike()) {
+    //if (trackIt->second->ShowerConeSpacePointSize() > 30 and trackIt->second->ShowerConeTrackSize() > 3 and !trackIt->second->IsVeryTrackLike()) {
+      if (trackIt->second->IsTrackLike() and 
+      	  (trackIt->second->ShowerConeSpacePointSize() < 0 or trackIt->second->ShowerConeSpacePointSizeEnd() > trackIt->second->ShowerConeSpacePointSize())) {
+      	if (fDebug > 1)
+      	  std::cout << "      Flipping track: shower cone size "
+      		    << trackIt->second->ShowerConeSpacePointSize() << "; from end " << trackIt->second->ShowerConeSpacePointSizeEnd() << std::endl;
+      	trackIt->second->FlipTrack();
       }
-      if (trackIt->second->ShowerConeSpacePointSize() > 500 and trackIt->second->ShowerConeTrackSize() > 10)
+      if (trackIt->second->ShowerConeSpacePointSize() > parameters.AverageConeSize * 5)
 	trackIt->second->MakeTrack();
       trackIt->second->MakeShower();
       if (fDebug > 1)
@@ -494,10 +498,14 @@ void shower::TrackShowerSepAlg::IdentifyShowerTracks(std::map<int,std::unique_pt
   // Look at the shower tracks and make sure there is only one per shower
 
   // First, identify 'competing shower tracks' which have the same tracks in their cones
+  bool presentShowerTrack = false, presentShower = false;
   std::vector<std::pair<int,int> > competingShowerTracks;
   for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
+    if (trackIt->second->IsShower())
+      presentShower = true;
     if (!trackIt->second->IsShowerTrack())
       continue;
+    presentShowerTrack = true;
     const std::vector<int>& forwardTracks = trackIt->second->ForwardConeTracks();
     for (std::map<int,std::unique_ptr<ReconTrack> >::iterator otherTrackIt = reconTracks.begin(); otherTrackIt != reconTracks.end(); ++otherTrackIt) {
       if (trackIt->first == otherTrackIt->first or !otherTrackIt->second->IsShowerTrack())
@@ -512,6 +520,20 @@ void shower::TrackShowerSepAlg::IdentifyShowerTracks(std::map<int,std::unique_pt
     }
   }
 
+  // If no shower track, make track with the largest shower cone the shower track
+  if (presentShower and !presentShowerTrack) {
+    int largestShowerTrack = -1, showerTrackSize = 0;
+    for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
+      if (trackIt->second->ShowerConeSpacePointSize() > showerTrackSize) {
+	largestShowerTrack = trackIt->first;
+	showerTrackSize = trackIt->second->ShowerConeSpacePointSize();
+      }
+    }
+    reconTracks[largestShowerTrack]->MakeShowerTrack();
+    if (fDebug > 1)
+      std::cout << std::endl << "  Making " << largestShowerTrack << " a shower track (there were previously none)"<< std::endl;
+  }
+
   // Now look at each of these pairs of competing shower tracks and decide which should be kept
   for (std::vector<std::pair<int,int> >::const_iterator trackPairIt = competingShowerTracks.begin(); trackPairIt != competingShowerTracks.end(); ++trackPairIt) {
     if (!reconTracks.at(trackPairIt->first)->IsShowerTrack() or !reconTracks.at(trackPairIt->second)->IsShowerTrack())
@@ -519,9 +541,13 @@ void shower::TrackShowerSepAlg::IdentifyShowerTracks(std::map<int,std::unique_pt
     int nonShowerTrack;
     const std::unique_ptr<ReconTrack>& firstTrack = reconTracks.at(trackPairIt->first);
     const std::unique_ptr<ReconTrack>& secondTrack = reconTracks.at(trackPairIt->second);
-    if ((firstTrack->ShowerConeSpacePointSize() - secondTrack->ShowerConeSpacePointSize()) / (double)firstTrack->ShowerConeSpacePointSize() < 0.05 and
-	(firstTrack->Length() / (double)secondTrack->Length() > 10 or secondTrack->Length() / (double)firstTrack->Length() > 10))
-      nonShowerTrack = firstTrack->Length () > secondTrack->Length() ? trackPairIt->first : trackPairIt->second;
+    if ((firstTrack->Length() < 5) xor (secondTrack->Length() < 5))
+      nonShowerTrack = firstTrack->Length() < secondTrack->Length() ? trackPairIt->first : trackPairIt->second;
+    else if (TMath::Abs(firstTrack->Vertex().Z() - secondTrack->Vertex().Z()) > 50)
+      nonShowerTrack = firstTrack->Vertex().Z() - secondTrack->Vertex().Z() > 0 ? trackPairIt->first : trackPairIt->second;
+    else if ((firstTrack->ShowerConeSpacePointSize() - secondTrack->ShowerConeSpacePointSize()) / (double)firstTrack->ShowerConeSpacePointSize() < 0.05 and
+	     (firstTrack->Length() / (double)secondTrack->Length() > 10 or secondTrack->Length() / (double)firstTrack->Length() > 10))
+      nonShowerTrack = firstTrack->Length () < secondTrack->Length() ? trackPairIt->first : trackPairIt->second;
     else
       nonShowerTrack = firstTrack->ShowerConeSpacePointSize() > secondTrack->ShowerConeSpacePointSize() ? trackPairIt->second : trackPairIt->first;
     if (fDebug > 1)
@@ -529,7 +555,7 @@ void shower::TrackShowerSepAlg::IdentifyShowerTracks(std::map<int,std::unique_pt
 		<< trackPairIt->second << ")" << std::endl;
     DowngradeTrack(reconTracks, nonShowerTrack);
   }
-  
+
   // Make sure there aren't any tracks left which were made track by shower tracks and are in the cone
   for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
     if (!trackIt->second->IsShowerTrack())
@@ -583,6 +609,7 @@ void shower::TrackShowerSepAlg::IdentifyShowerCones(std::map<int,std::unique_ptr
 	  !otherTrackIt->second->IsUndetermined() or
 	  otherTrackIt->second->Length() > 100 or
 	  otherTrackIt->second->IsVeryTrackLike() or
+	  (otherTrackIt->second->Vertex() - trackIt->second->Vertex()).Mag() < 5 or
 	  (otherTrackIt->second->IsTrackLike() and !otherTrackIt->second->IsShowerLike()))
 	continue;
 

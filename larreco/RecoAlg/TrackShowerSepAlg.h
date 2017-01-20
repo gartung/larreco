@@ -425,7 +425,7 @@ class shower::TrackShowerSepAlg {
 		      const art::FindManyP<recob::Track>& fmtsp);
 
   ///
-  void IdentifyShowers(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);
+  void IdentifyShowers(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks, const TrackShowerSepParameters& parameters);
 
   ///
   void IdentifyShowerTracks(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);

@@ -224,7 +224,7 @@ bool shower::EMShowerAlg::CheckShowerHits(const std::map<int,std::vector<art::Pt
       startHits.push_back(showerHitsIt->second.front());
       planes.push_back(showerHitsIt->first);
     }
-
+      
     TVector3 showerStartPos = Construct3DPoint(startHits.at(0), startHits.at(1));
     TVector2 proj1 = Project3DPointOntoPlane(showerStartPos, planes.at(0));
     TVector2 proj2 = Project3DPointOntoPlane(showerStartPos, planes.at(1));
