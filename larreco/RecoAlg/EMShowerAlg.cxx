@@ -439,6 +439,105 @@ std::vector<int> shower::EMShowerAlg::CheckShowerPlanes(const std::vector<std::v
 
 }
 
+std::map<int,std::vector<art::Ptr<recob::Hit> > > shower::EMShowerAlg::CleanShowerHits(const std::map<int,std::vector<art::Ptr<recob::Hit> > >& showerHits) {
+
+  // Check the vertex agrees in all planes
+  // If not, but it agrees well using just two planes, tidy up the hits
+
+  // Need at least three views
+  if (showerHits.size() < 3)
+    return showerHits;
+
+  std::map<int,std::vector<art::Ptr<recob::Hit> > > tidyShowerHits;
+
+  // Map the vertices
+  std::map<int,TVector2> vertices, projectedVertices;
+  std::map<int,std::pair<geo::WireID,double> > wireVertices, wireProjections;
+  for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::const_iterator showerHitsIt = showerHits.begin(); showerHitsIt != showerHits.end(); ++showerHitsIt) {
+    vertices[showerHitsIt->first] = HitPosition(showerHitsIt->second.front());
+    wireVertices[showerHitsIt->first] = HitWireX(showerHitsIt->second.front());
+  }
+
+  std::cout << "Wire vertices..." << std::endl;
+  for (std::map<int,std::pair<geo::WireID,double> >::const_iterator wireProjIt = wireVertices.begin(); wireProjIt != wireVertices.end(); ++wireProjIt)
+    std::cout << "  Wire projection for plane " << wireProjIt->first << " is (" << wireProjIt->second.first << ", " << wireProjIt->second.second << ")" << std::endl;
+
+  // Form a map of vertices from each plane, constructed assuming hits from the other two planes
+  for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::const_iterator firstHitsIt = showerHits.begin(); firstHitsIt != showerHits.end(); ++firstHitsIt) {
+    for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::const_iterator secondHitsIt = showerHits.begin(); secondHitsIt != showerHits.end(); ++secondHitsIt) {
+      if (firstHitsIt->first == secondHitsIt->first)
+	continue;
+      int otherPlane = -1;
+      for (int otherPlaneIt = 0; otherPlaneIt < (int)fGeom->MaxPlanes(); ++otherPlaneIt)
+	if (firstHitsIt->first != otherPlaneIt and secondHitsIt->first != otherPlaneIt)
+	  otherPlane = otherPlaneIt;
+      projectedVertices[otherPlane] = Project3DPointOntoPlane(Construct3DPoint(wireVertices[firstHitsIt->first], wireVertices[secondHitsIt->first]), otherPlane);
+      wireProjections[otherPlane] = Project3DPointOntoWire(Construct3DPoint(wireVertices[firstHitsIt->first], wireVertices[secondHitsIt->first]), otherPlane);
+    }
+  }
+
+  std::cout << "Projecting hits onto wires..." << std::endl;
+  for (std::map<int,std::pair<geo::WireID,double> >::const_iterator wireProjIt = wireProjections.begin(); wireProjIt != wireProjections.end(); ++wireProjIt)
+    std::cout << "  Wire projection for plane " << wireProjIt->first << " is (" << wireProjIt->second.first << ", " << wireProjIt->second.second << ")" << std::endl;
+
+  // Check for disagreements
+  double shortestDistance = 1e10;
+  for (std::map<int,TVector2>::const_iterator vertexIt = vertices.begin(); vertexIt != vertices.end(); ++vertexIt) {
+    double vertexDiff = (vertexIt->second - projectedVertices[vertexIt->first]).Mod();
+    if (vertexDiff > 5 and vertexDiff < shortestDistance)
+      shortestDistance = vertexDiff;
+  }
+
+  if (shortestDistance < 5)
+    return showerHits;
+  
+  // Find which plane needs fixing
+  int planeToFix = -1;
+  double distanceToOriginalVertex = 5;
+  for (int plane = 0; plane < (int)fGeom->MaxPlanes(); ++plane) {
+    for (int firstPlane = 0; firstPlane < (int)fGeom->MaxPlanes(); ++firstPlane) {
+      for (int secondPlane = 0; secondPlane < (int)fGeom->MaxPlanes(); ++secondPlane) {
+	if (firstPlane == secondPlane or firstPlane == plane or secondPlane == plane)
+	  continue;
+	TVector2 newVertex = Project3DPointOntoPlane(Construct3DPoint(wireProjections[plane], wireVertices[firstPlane]), secondPlane);
+	double distToVertex = (newVertex-vertices[secondPlane]).Mod();
+	if (distToVertex < distanceToOriginalVertex) {
+	  distanceToOriginalVertex = distToVertex;
+	  planeToFix = plane;
+	}
+      }
+    }
+  }
+
+  if (planeToFix == -1)
+    return showerHits;
+  TVector2 newVertex = projectedVertices[planeToFix];
+
+  // Make the new shower hits
+  std::map<int,std::vector<art::Ptr<recob::Hit> > > newShowerHits;
+  for (std::map<int,std::vector<art::Ptr<recob::Hit> > >::const_iterator showerHitsIt = showerHits.begin(); showerHitsIt != showerHits.end(); ++showerHitsIt) {
+    if (showerHitsIt->first != planeToFix)
+      newShowerHits[showerHitsIt->first] = showerHitsIt->second;
+    else {
+      TVector2 direction = ShowerDirection(showerHitsIt->second);
+      TVector2 centre = ShowerCentre(showerHitsIt->second);
+      std::map<double,art::Ptr<recob::Hit> > hitProjections;
+      for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = showerHitsIt->second.begin(); hitIt != showerHitsIt->second.end(); ++hitIt)
+	hitProjections[direction*(HitPosition(*hitIt)-newVertex)] = *hitIt;
+      double centreProj = (centre-newVertex).Proj(direction)*direction;
+      int sign = centreProj / TMath::Abs(centreProj);
+      std::vector<art::Ptr<recob::Hit> > newHits;
+      for (std::map<double,art::Ptr<recob::Hit> >::const_iterator hitProjectionIt = hitProjections.begin(); hitProjectionIt != hitProjections.end(); ++hitProjectionIt)
+	if ((hitProjectionIt->first/TMath::Abs(hitProjectionIt->first)) == sign)
+	  newHits.push_back(hitProjectionIt->second);
+      newShowerHits[showerHitsIt->first] = newHits;
+    }
+  }
+
+  return newShowerHits;
+
+}
+
 TVector3 shower::EMShowerAlg::Construct3DPoint(const art::Ptr<recob::Hit>& hit1, const art::Ptr<recob::Hit>& hit2) {
 
   // x is average of the two x's
@@ -447,6 +546,19 @@ TVector3 shower::EMShowerAlg::Construct3DPoint(const art::Ptr<recob::Hit>& hit1,
   // y and z got from the wire interections
   geo::WireIDIntersection intersection;
   fGeom->WireIDsIntersect(hit1->WireID(), hit2->WireID(), intersection);
+
+  return TVector3(x, intersection.y, intersection.z);
+
+}
+
+TVector3 shower::EMShowerAlg::Construct3DPoint(const std::pair<geo::WireID,double>& hit1, const std::pair<geo::WireID,double>& hit2) {
+
+  // x is average of the two x's
+  double x = (hit1.second + hit2.second) / (double)2;
+
+  // y and z got from the wire intersections
+  geo::WireIDIntersection intersection;
+  fGeom->WireIDsIntersect(hit1.first, hit2.first, intersection);
 
   return TVector3(x, intersection.y, intersection.z);
 
@@ -1585,6 +1697,8 @@ std::map<int,std::vector<art::Ptr<recob::Hit> > > shower::EMShowerAlg::OrderShow
   if (ignoredPlanes.size())
     showerHitsMap[ignoredPlanes.begin()->first] = ignoredPlanes.begin()->second;
 
+  //showerHitsMap = CleanShowerHits(showerHitsMap);
+
   return showerHitsMap;
 
 }
@@ -1717,6 +1831,13 @@ TVector2 shower::EMShowerAlg::HitPosition(const TVector2& pos, geo::PlaneID plan
 
   return TVector2(pos.X() * fGeom->WirePitch(planeID),
 		  fDetProp->ConvertTicksToX(pos.Y(), planeID));
+
+}
+
+std::pair<geo::WireID,double> shower::EMShowerAlg::HitWireX(const art::Ptr<recob::Hit>& hit) {
+
+  return std::make_pair(hit->WireID(),
+			fDetProp->ConvertTicksToX(hit->PeakTime(), hit->WireID().planeID()));
 
 }
 
@@ -1868,9 +1989,25 @@ double shower::EMShowerAlg::ShowerHitRMS(const std::vector<art::Ptr<recob::Hit> 
 
 }
 
-double shower::EMShowerAlg::ShowerHitRMSGradient(const std::vector<art::Ptr<recob::Hit> >& showerHits, TVector2 trueStart) {
+double shower::EMShowerAlg::ShowerHitRMSGradient(const std::vector<art::Ptr<recob::Hit> >& allShowerHits, TVector2 trueStart) {
 
   // Don't forget to clean up the header file!
+
+  std::vector<art::Ptr<recob::Hit> > showerHits;
+
+  // Test -- try looking at only those hits on single occupancy wires
+  if (0) {
+    std::map<geo::WireID,int> wireOccupancy;
+    for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = allShowerHits.begin(); hitIt != allShowerHits.end(); ++hitIt)
+      ++wireOccupancy[(*hitIt)->WireID()];
+    std::vector<art::Ptr<recob::Hit> > showerHits;
+    for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = allShowerHits.begin(); hitIt != allShowerHits.end(); ++hitIt)
+      if (wireOccupancy[(*hitIt)->WireID()] == 1)
+	showerHits.push_back(*hitIt);
+    std::cout << "There were " << allShowerHits.size() << " hit in the shower; there are " << showerHits.size() << " hits one single occupancy wires" << std::endl;
+  }
+  else
+    showerHits = allShowerHits;
 
   // Find a rough shower 'direction' and centre
   TVector2 direction = ShowerDirection(showerHits);
@@ -1987,6 +2124,29 @@ TVector2 shower::EMShowerAlg::Project3DPointOntoPlane(const TVector3& point, int
 
   //return wireTickPos;
   return HitPosition(wireTickPos, planeID);
+
+}
+
+std::pair<geo::WireID, double> shower::EMShowerAlg::Project3DPointOntoWire(const TVector3& point, int plane, int cryostat) {
+
+  std::pair<geo::WireID,double> wireXPos = std::make_pair(geo::WireID(), -999.);
+
+  double pointPosition[3] = {point.X(), point.Y(), point.Z()};
+
+  geo::TPCID tpcID = fGeom->FindTPCAtPosition(pointPosition);
+  int tpc = 0;
+  if (tpcID.isValid)
+    tpc = tpcID.TPC;
+  else
+    return wireXPos;
+
+  // Construct wire ID for this point projected onto the plane
+  geo::PlaneID planeID = geo::PlaneID(cryostat, tpc, plane);
+  geo::WireID wireID = fGeom->NearestWireID(point, planeID);
+
+  wireXPos = std::make_pair(wireID, point.X());
+
+  return wireXPos;
 
 }
 

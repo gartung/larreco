@@ -156,8 +156,16 @@ private:
   /// Returns bool, indicating whether or not everything makes sense!
   bool CheckShowerHits(const std::map<int,std::vector<art::Ptr<recob::Hit> > >& showerHitsMap);
 
+  /// Takes the correctly oriented hit map and attempts to clean things up
+  /// Fixes issues such as where tracks near the vertex are accidentally reconstructed as part of the shower
+  /// and is evident in the positioning of the vertex in each plane
+  std::map<int,std::vector<art::Ptr<recob::Hit> > > CleanShowerHits(const std::map<int,std::vector<art::Ptr<recob::Hit> > >& showerHits);
+
   /// Constructs a 3D point (in [cm]) to represent the hits given in two views
   TVector3 Construct3DPoint(const art::Ptr<recob::Hit>& hit1, const art::Ptr<recob::Hit>& hit2);
+
+  /// Constructs a 3D point (in [cm]) given two sets of wire IDs and x coordinates
+  TVector3 Construct3DPoint(const std::pair<geo::WireID,double>& hit1, const std::pair<geo::WireID,double>& hit2);
 
   /// Finds dE/dx for the track given a set of hits
   double FinddEdx(const std::vector<art::Ptr<recob::Hit> >& trackHits, const std::unique_ptr<recob::Track>& track);
@@ -188,6 +196,9 @@ private:
   /// Return the coordinates of this hit in units of cm
   TVector2 HitPosition(const TVector2& pos, geo::PlaneID planeID);
 
+  /// Return the coordiantes of this hit in units geo::WireID and x coordinate
+  std::pair<geo::WireID,double> HitWireX(const art::Ptr<recob::Hit>& hit);
+
   /// Takes initial track hits from multiple views and forms a track object which best represents the start of the shower
   std::unique_ptr<recob::Track> MakeInitialTrack(const std::map<int,std::vector<art::Ptr<recob::Hit> > >& initialHitsMap,
 						 const std::map<int,std::vector<art::Ptr<recob::Hit> > >& showerHitsMap);
@@ -200,6 +211,10 @@ private:
   /// Projects a 3D point (units [cm]) onto a 2D plane
   /// Returns 2D point (units [cm])
   TVector2 Project3DPointOntoPlane(const TVector3& point, int plane, int cryostat = 0);
+
+  /// Projects a 3D point (units [cm]) onto a 2D wire
+  /// Returns a pair containing the wire ID and the x coordinate of the point
+  std::pair<geo::WireID, double> Project3DPointOntoWire(const TVector3& point, int plane, int cryostat = 0);
 
   /// Determines the 'relative wire width', i.e. how spread a shower is across wires of each plane relative to the others
   /// If a shower travels along the wire directions in a particular view, it will have a smaller wire width in that view

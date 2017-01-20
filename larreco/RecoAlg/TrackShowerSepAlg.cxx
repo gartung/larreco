@@ -298,32 +298,38 @@ void shower::TrackShowerSepAlg::IdentifyTracks(std::map<int,std::unique_ptr<Reco
     std::cout << std::endl << "Identifying tracks:" << std::endl;
 
   for (std::map<int,std::unique_ptr<ReconTrack> >::iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
-    if (trackIt->second->CylinderSpacePointRatio() / parameters.AverageCylinderSpacePoints < fCylinderCut and
-	trackIt->second->RectangleHitRatio() / parameters.AverageRectangleHits < fRectangleCut and
-	//trackIt->second->LeastSquareNDOF() < fLeastSquareCut) {
-	(trackIt->second->LeastSquareNDOF() < fLeastSquareCut or trackIt->second->LeastSquareNDOF() > 500)) { // only very failed tracking give ls/dof > 500!
-      if (fDebug > 1)
-	std::cout << "  Making track " << trackIt->first << " a track (Type I) ("
-		  << trackIt->second->CylinderSpacePointRatio()/parameters.AverageCylinderSpacePoints << " < " << fCylinderCut << ", "
-		  << trackIt->second->RectangleHitRatio()/parameters.AverageRectangleHits << " < " << fRectangleCut << ", "
-		  << trackIt->second->LeastSquareNDOF() << " < " << fLeastSquareCut
-		  << ")" << std::endl;
-      trackIt->second->MakeTrack();
-      std::vector<double> howTrackLike = { trackIt->second->CylinderSpacePointRatio() / (double)(parameters.AverageCylinderSpacePoints * fCylinderCut),
-					   trackIt->second->RectangleHitRatio() / (double)(parameters.AverageRectangleHits * fRectangleCut),
-					   trackIt->second->LeastSquareNDOF() / (double)fLeastSquareCut };
-      int nLessThan5 = 0, nLessThan10 = 0;
-      for (std::vector<double>::const_iterator howTrackLikeIt = howTrackLike.begin(); howTrackLikeIt != howTrackLike.end(); ++howTrackLikeIt) {
-	if (*howTrackLikeIt < 0.2) ++nLessThan5;
-	if (*howTrackLikeIt < 0.1) ++nLessThan10;
-      }
-      if (nLessThan5 == 3 or nLessThan10 >= 2) {
-      //if (nLessThan5 == 3) {
-	trackIt->second->MakeVeryTrackLike();
-	if (fDebug > 1)
-	  std::cout << "    -- and it's very track like!" << std::endl;
-      }
+    double trackCylinder = trackIt->second->CylinderSpacePointRatio() / parameters.AverageCylinderSpacePoints;
+    double trackRectangle = trackIt->second->RectangleHitRatio() / parameters.AverageRectangleHits;
+    double trackLeastSq = trackIt->second->LeastSquareNDOF();
+    if (trackCylinder < fCylinderCut) {
+      trackIt->second->IncreaseTrackiness();
+      if (trackCylinder < fCylinderCut / 5.)
+	trackIt->second->IncreaseTrackiness();
+      if (trackCylinder < fCylinderCut / 10.)
+	trackIt->second->IncreaseTrackiness();
     }
+    if (trackRectangle < fRectangleCut) {
+      trackIt->second->IncreaseTrackiness();
+      if (trackRectangle < fRectangleCut / 5.)
+	trackIt->second->IncreaseTrackiness();
+      if (trackRectangle < fRectangleCut / 10.)
+	trackIt->second->IncreaseTrackiness();
+    }
+    if (trackLeastSq < fLeastSquareCut) {
+      trackIt->second->IncreaseTrackiness();
+      if (trackLeastSq < fLeastSquareCut / 10.)
+	trackIt->second->IncreaseTrackiness();
+    }
+
+    if (trackIt->second->Trackiness() > 4) {
+      if (fDebug > 1)
+	std::cout << "  Making track " << trackIt->first << " a track (Type I)"
+		  << " -- Cylinder " << trackCylinder << " (cut " << fCylinderCut << ")"
+		  << " Rectangle " << trackRectangle << " (cut " << fRectangleCut << ")"
+		  << " Least square " << trackLeastSq << " (cut " << fLeastSquareCut << ")" << std::endl;
+      trackIt->second->MakeTrack();
+    }
+
   }
 
   // for (std::map<int,std::unique_ptr<ReconTrack> >::const_iterator trackIt = reconTracks.begin(); trackIt != reconTracks.end(); ++trackIt) {
@@ -383,13 +389,13 @@ void shower::TrackShowerSepAlg::ConeProperties(std::map<int,std::unique_ptr<Reco
     // Do everything via space points
     for (std::vector<art::Ptr<recob::SpacePoint> >::const_iterator spacePointIt = spacePoints.begin(); spacePointIt != spacePoints.end(); ++spacePointIt) {
 
-      // Ignore space points associated with the track
+      // Ignore space points associated with tracks
       bool associatedSpacePoint = false, trackLikeSpacePoint = false;
       const std::vector<art::Ptr<recob::Track> > spTracks = fmtsp.at(spacePointIt->key());
       for (std::vector<art::Ptr<recob::Track> >::const_iterator spTrackIt = spTracks.begin(); spTrackIt != spTracks.end(); ++spTrackIt) {
 	if ((int)spTrackIt->key() == trackIt->first)
 	  associatedSpacePoint = true;
-	if (reconTracks[(int)spTrackIt->key()]->IsTrackLike())
+	if (reconTracks[(int)spTrackIt->key()]->Trackiness() > 6)
 	  trackLikeSpacePoint = true;
       }
       if (associatedSpacePoint)
@@ -461,12 +467,12 @@ void shower::TrackShowerSepAlg::IdentifyShowers(std::map<int,std::unique_ptr<Rec
     if (fDebug > 2)
       std::cout << "  Track " << trackIt->first << " has space point shower cone size " << trackIt->second->ShowerConeSpacePointSize()
 		<< " (average " << parameters.AverageConeSize << ") and track shower cone size " << trackIt->second->ShowerConeTrackSize()
-		<< " (very track like? " << trackIt->second->IsVeryTrackLike() << ")" << std::endl;
+		<< " (trackiness " << trackIt->second->Trackiness() << ")" << std::endl;
 
     // Large shower cones...
     if (TMath::Abs(trackIt->second->ShowerConeSpacePointSize()) > 30 and //parameters.AverageConeSize and
 	TMath::Abs(trackIt->second->ShowerConeTrackSize()) > 2 and
-	!trackIt->second->IsVeryTrackLike()) {
+	trackIt->second->Trackiness() < 8) {
     //if (trackIt->second->ShowerConeSpacePointSize() > 30 and trackIt->second->ShowerConeTrackSize() > 3 and !trackIt->second->IsVeryTrackLike()) {
       if (trackIt->second->IsTrackLike() and 
       	  (trackIt->second->ShowerConeSpacePointSize() < 0 or trackIt->second->ShowerConeSpacePointSizeEnd() > trackIt->second->ShowerConeSpacePointSize())) {
@@ -608,7 +614,7 @@ void shower::TrackShowerSepAlg::IdentifyShowerCones(std::map<int,std::unique_ptr
       if (trackIt->first == otherTrackIt->first or
 	  !otherTrackIt->second->IsUndetermined() or
 	  otherTrackIt->second->Length() > 100 or
-	  otherTrackIt->second->IsVeryTrackLike() or
+	  otherTrackIt->second->Trackiness() > 6 or
 	  (otherTrackIt->second->Vertex() - trackIt->second->Vertex()).Mag() < 5 or
 	  (otherTrackIt->second->IsTrackLike() and !otherTrackIt->second->IsShowerLike()))
 	continue;
@@ -646,7 +652,7 @@ void shower::TrackShowerSepAlg::ResolveUndeterminedTracks(std::map<int,std::uniq
     if (!trackIt->second->IsUndetermined())
       continue;
 
-    if (trackIt->second->IsTrackLike())
+    if (trackIt->second->Trackiness() >= 3)
       trackIt->second->MakeTrack();
 
     else

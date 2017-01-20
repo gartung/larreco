@@ -60,8 +60,7 @@ class shower::ReconTrack {
     fShowerTrack = false;
     fShowerCone = false;
 
-    fTrackLike = false;
-    fVeryTrackLike = false;
+    fTrackLike = 0;
     fShowerLike = false;
 
     fNumHits = 0;
@@ -223,9 +222,9 @@ class shower::ReconTrack {
   bool IsShowerTrack() const { return fShowerTrack; }
   bool IsShowerCone() const { return fShowerCone; }
   bool IsTrack() const { return fTrack; }
-  bool IsTrackLike() const { return fTrackLike; }
-  bool IsVeryTrackLike() const { return fVeryTrackLike; }
+  bool IsTrackLike() const { return fTrackLike > 3; }
   bool IsUndetermined() const { return !fTrack and !fShower; }
+  int Trackiness() const { return fTrackLike; }
 
   // Doers -------------------------------------------------------------------------------------------------
   void MakeShower() {
@@ -252,19 +251,17 @@ class shower::ReconTrack {
   void MakeShowerLike() { fShowerLike = true; }
   void MakeTrack() {
     fTrack = true;
-    fTrackLike = true;
     fShower = false;
     fShowerTrack = false;
     fShowerCone = false;
   }
-  void MakeTrackLike() { fTrackLike = true; }
-  void MakeVeryTrackLike() { fVeryTrackLike = true; }
   void MakeUndetermined() {
     fTrack = false;
     fShower = false;
     fShowerTrack = false;
     fShowerCone = false;
   }
+  void IncreaseTrackiness() { ++fTrackLike; }
 
   void FlipTrack() {
     // Vertex and end
@@ -348,8 +345,7 @@ class shower::ReconTrack {
   bool fShowerTrack;
   bool fShowerCone;
 
-  bool fTrackLike;
-  bool fVeryTrackLike;
+  int fTrackLike;
   bool fShowerLike;
 
 };
