@@ -4,8 +4,8 @@ process_name: celltree
 
 services:
 {
-  # TFileService: { fileName: "test.root" }
-  TimeTracker   {}
+  #TFileService: { fileName: "test.root" }
+  #TimeTracker   {}
   RandomNumberGenerator: {}
   message:      @local::standard_info
                  @table::microboone_services
@@ -15,7 +15,7 @@ services:
 source:
 {
   module_type: RootInput
-  fileNames:  [ "gen.root" ]
+  fileNames:  ["laser-7267-0790.root"] #[ "gen.root" ]
   firstEvent : 1
   maxEvents:  -1
 }
@@ -33,13 +33,17 @@ physics:
       module_type     : "CellTree"
       saveRaw         : false
       saveCalib       : false
-      saveSimChannel  : false
-      saveMC          : true
-      saveJSON        : true
-      RawDigitLabel   : "daq"
+      saveOpRaw	      : true
+      saveOpFlash     : true
+      saveSimChannel  : false 
+      saveMC          : false 
+      saveJSON        : false 
+      OpRawDigitLabel : "pmtreadout"
+      RawDigitLabel   : "daq"  
       CalibLabel      : "caldata"
       SpacePointLabels: ["trackkalmanhit","wirecell"]
       mcOption        : "all"
+      opMultPEThresh  : 5
       saveMCTrackPoints : true
       outFile           : "celltree.root"
     }
@@ -48,3 +52,8 @@ physics:
   end_paths: [ analysis ]
 }
 
+services.DetectorPropertiesService.NumberTimeSamples:               6400
+services.DetectorPropertiesService.ReadOutWindowSize:               6400
+services.DetectorPropertiesService.InheritNumberTimeSamples:        false
+services.DetectorClocksService.InheritClockConfig:                  false
+services.DetectorClocksService.TriggerOffsetTPC:                    -0.400e3
