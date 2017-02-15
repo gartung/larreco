@@ -44,10 +44,6 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "fhiclcpp/ParameterSet.h"
 
-// MicroBooNE specific
-#include "uboone/Geometry/UBOpChannelTypes.h"
-//#include "uboone/Geometry/UBOpReadoutMap.h"
-
 // ROOT includes.
 #include "TFile.h"
 #include "TTree.h"
@@ -100,6 +96,7 @@ public:
   void processSimChannel(const art::Event& evt);
   void processMC(const art::Event& evt);
   void processMCTracks();
+  void processTrigger(const art::Event& evt);
   
   void reset();
   void InitProcessMap();
@@ -117,7 +114,9 @@ private:
   // the parameters we'll read from the .fcl
   std::string fRawDigitLabel;
   std::string fCalibLabel;
-  std::string fOpRawDigitLabel;
+  std::string fOpDigitLabel;
+  std::string fOpFlashLabel;
+  std::string fTriggerLabel;
   std::vector<std::string> fSpacePointLabels;
   std::string fOutFileName;
   std::string mcOption;
@@ -129,6 +128,7 @@ private:
   bool fSaveOpRaw;
   bool fSaveOpFlash;
   bool fSaveMC;
+  bool fSaveTrigger;
   bool fSaveJSON;
   art::ServiceHandle<geo::Geometry> fGeometry;       // pointer to Geometry service
 
@@ -147,6 +147,7 @@ private:
   int fRun;
   int fSubRun;
   double fEventTime;
+
   unsigned int fTriggernumber;      //trigger counter
   double fTriggertime;        //trigger time w.r.t. electronics clock T0
   double fBeamgatetime;       //beamgate time w.r.t. electronics clock T0
@@ -160,18 +161,24 @@ private:
   TClonesArray *fCalib_wf;
   // std::vector<std::vector<int> > fCalib_wfTDC;
 
+  
+  
   int op_nFlash;
+  vector<int> op_nOpDetId;
   vector<float> op_t;
+  vector<float> op_pe;
   vector<float> op_peTotal;
   vector<int> op_multiplicity;
   TClonesArray *fPEperOpDet;
+  TClonesArray *fFlashTperOpDet;
 
   int fRaw_nChannel;
   std::vector<int> fRaw_channelId;
   TClonesArray *fRaw_wf;
 
-  int fOpRaw_nChannel;
+  int fOpRaw_nWaveform;
   std::vector<int> fOpRaw_channelId;
+  std::vector<double> fTimeStamp;
   TClonesArray *fOpRaw_wf;
 
   int fSIMIDE_size;
@@ -244,7 +251,9 @@ CellTree::~CellTree()
 void CellTree::reconfigure(fhicl::ParameterSet const& p){
     fRawDigitLabel   = p.get<std::string>("RawDigitLabel");
     fCalibLabel      = p.get<std::string>("CalibLabel");
-    fOpRawDigitLabel = p.get<std::string>("OpRawDigitLabel");
+    fOpDigitLabel    = p.get<std::string>("OpDigitLabel");
+    fOpFlashLabel    = p.get<std::string>("OpFlashLabel");
+    fTriggerLabel    = p.get<std::string>("TriggerLabel");
     fSpacePointLabels= p.get<std::vector<std::string> >("SpacePointLabels");
     fOutFileName     = p.get<std::string>("outFile");
     mcOption        = p.get<std::string>("mcOption");
@@ -255,6 +264,7 @@ void CellTree::reconfigure(fhicl::ParameterSet const& p){
     fSaveOpFlash     = p.get<bool>("saveOpFlash");
     fSaveMC          = p.get<bool>("saveMC");
     fSaveSimChannel  = p.get<bool>("saveSimChannel");
+    fSaveTrigger     = p.get<bool>("saveTrigger");
     fSaveJSON        = p.get<bool>("saveJSON");
     opMultPEThresh   = p.get<float>("opMultPEThresh");
 }
@@ -278,6 +288,7 @@ void CellTree::initOutput()
     fEventTree->Branch("runNo", &fRun);
     fEventTree->Branch("subRunNo", &fSubRun);
     fEventTree->Branch("eventTime", &fEventTime);  // timestamp
+
     fEventTree->Branch("triggerNo", &fTriggernumber);  // timestamp
     fEventTree->Branch("triggerTime", &fTriggertime);  // timestamp
     fEventTree->Branch("beamgateTime", &fBeamgatetime);  // timestamp
@@ -296,17 +307,22 @@ void CellTree::initOutput()
     // fCalib_wf->BypassStreamer();
     // fEventTree->Branch("calib_wfTDC", &fCalib_wfTDC);  // calib waveform tdc of each channel
 
-    fEventTree->Branch("opraw_nChannel", &fOpRaw_nChannel); // number of hit channels above threshold
-    fEventTree->Branch("opraw_channelId", &fOpRaw_channelId); // hit channel id; size == raw_nChannel
+    fEventTree->Branch("opraw_nWaveform", &fOpRaw_nWaveform); // number of optical waveforms
+    fEventTree->Branch("opraw_channelId", &fOpRaw_channelId); // opchannel id; size == no. waveforms
+    fEventTree->Branch("opraw_timestamp", &fTimeStamp); // waveform time stamp
     fOpRaw_wf = new TClonesArray("TH1F");
     fEventTree->Branch("opraw_wf", &fOpRaw_wf, 256000, 0); //optical waveform adc of each channel
 
+    fEventTree->Branch("op_nOpDetId", &op_nOpDetId);
     fEventTree->Branch("op_nFlash", &op_nFlash);
     fEventTree->Branch("op_t", &op_t); // time in us w.r.t. the trigger for each flash
+    fEventTree->Branch("op_pe", &op_pe); // PE for each flash
     fEventTree->Branch("op_peTotal", &op_peTotal); // total PE (sum of all PMTs) for each flash
     fEventTree->Branch("op_multiplicity", &op_multiplicity); // total number of PMTs above threshold for each flash
     fPEperOpDet = new TClonesArray("TH1F");
     fEventTree->Branch("pe_opdet", &fPEperOpDet, 256000, 0);
+    fFlashTperOpDet = new TClonesArray("TH1F");
+    fEventTree->Branch("ftime_opdet", &fFlashTperOpDet, 256000, 0);
 
     fEventTree->Branch("simide_size", &fSIMIDE_size);  // size of stored sim:IDE
     fEventTree->Branch("simide_channelIdY", &fSIMIDE_channelIdY);
@@ -410,6 +426,7 @@ void CellTree::analyze( const art::Event& event )
     if (fSaveOpFlash) processOpFlash(event); 
     if (fSaveSimChannel) processSimChannel(event);
     if (fSaveMC) processMC(event);
+    if (fSaveTrigger) processTrigger(event);
 
     if (fSaveJSON) {
         gSystem->MakeDirectory(TString::Format("data/%i", entryNo).Data());
@@ -450,12 +467,16 @@ void CellTree::reset()
     fCalib_wf->Clear();
 
     fOpRaw_channelId.clear();
+    fTimeStamp.clear();
     fOpRaw_wf->Delete();
 
+    op_nOpDetId.clear();
     op_t.clear();
+    op_pe.clear();
     op_peTotal.clear();
     op_multiplicity.clear();
     fPEperOpDet->Delete();
+    fFlashTperOpDet->Delete();
 
     fSIMIDE_channelIdY.clear();
     fSIMIDE_trackId.clear();
@@ -510,33 +531,6 @@ void CellTree::reset()
 //-----------------------------------------------------------------------
 void CellTree::processRaw( const art::Event& event )
 {
-    art::Handle< std::vector<raw::Trigger>> triggerListHandle;
-    std::vector<art::Ptr<raw::Trigger>> triggerlist;
-    if (event.getByLabel(fRawDigitLabel, triggerListHandle)) {
-        art::fill_ptr_vector(triggerlist, triggerListHandle);
-    }
-    else {
-        cout << "WARNING: no label " << fRawDigitLabel << endl;
-    }
-    if (triggerlist.size()){
-        fTriggernumber = triggerlist[0]->TriggerNumber();
-        fTriggertime   = triggerlist[0]->TriggerTime();
-        fBeamgatetime  = triggerlist[0]->BeamGateTime();
-        fTriggerbits   = triggerlist[0]->TriggerBits();
-    }
-    else {
-        fTriggernumber = 0;
-        fTriggertime   = 0;
-        fBeamgatetime  = 0;
-        fTriggerbits   = 0;
-    }
-    // cout << "timestamp: " << fEventTime << endl;
-    // cout << "fTriggernumber: " << fTriggernumber << endl;
-    // cout << "fTriggertime: " << fTriggertime << endl;
-    // cout << "fBeamgatetime: " << fBeamgatetime << endl;
-    // cout << "fTriggerbits: " << fTriggerbits << endl;
-
-
     art::Handle< std::vector<raw::RawDigit> > rawdigit;
     if (! event.getByLabel(fRawDigitLabel, rawdigit)) {
         cout << "WARNING: no label " << fRawDigitLabel << endl;
@@ -599,69 +593,47 @@ void CellTree::processCalib( const art::Event& event )
   //-----------------------------------------------------------------------                                                                                                      
   void CellTree::processOpRaw( const art::Event& event )
   {
-    art::Handle< std::vector<raw::Trigger>> triggerListHandle;
-    std::vector<art::Ptr<raw::Trigger>> triggerlist;
-    if (event.getByLabel(fOpRawDigitLabel, triggerListHandle)) {
-      art::fill_ptr_vector(triggerlist, triggerListHandle);
-    }
-    else {
-      cout << "WARNING: no label " << fOpRawDigitLabel << endl;
-    }
-    if (triggerlist.size()){
-      fTriggernumber = triggerlist[0]->TriggerNumber();
-      fTriggertime   = triggerlist[0]->TriggerTime();
-      fBeamgatetime  = triggerlist[0]->BeamGateTime();
-      fTriggerbits   = triggerlist[0]->TriggerBits();
-    }
-    else {
-      fTriggernumber = 0;
-      fTriggertime   = 0;
-      fBeamgatetime  = 0;
-      fTriggerbits   = 0;
-    }
-
-    //art::ServiceHandle<geo::UBOpReadoutMap> ub_pmt_channel_map;
     art::Handle< std::vector<raw::OpDetWaveform> > opwfHandle;
-    for(unsigned int a=0; a<(unsigned int)opdet::NumUBOpticalChannelCategories; a++){
-      event.getByLabel(fOpRawDigitLabel, opdet::UBOpChannelEnumName( (opdet::UBOpticalChannelCategory_t) a), opwfHandle);
-      if( !opwfHandle.isValid() ){
-	std::cout << "Missing pmtreadout " << opdet::UBOpChannelEnumName( (opdet::UBOpticalChannelCategory_t)a) << " info. Skipping." << std::endl;
-	return; 
+    if(!event.getByLabel(fOpDigitLabel, opwfHandle)){
+      cout << "WARNING: no label " << fOpDigitLabel << endl;
+      return;
+    }
+    //std::vector<art::Ptr<raw::OpDetWaveform> > opwfms;
+    //art::fill_ptr_vector(opwfms,opwfHandle);
+
+    std::vector<raw::OpDetWaveform> const& opwfms(*opwfHandle);
+
+    fOpRaw_nWaveform = (int)opwfms.size();
+
+    int i=0;
+    std::vector<short> OpWfm;
+    for(auto &wfm : opwfms){
+      fOpRaw_channelId.push_back(wfm.ChannelNumber());
+      fTimeStamp.push_back(wfm.TimeStamp());
+      OpWfm.clear();
+      OpWfm.reserve(wfm.size());
+      for(auto &adc : wfm){
+	OpWfm.push_back( (short) adc );
       }
-      std::vector<raw::OpDetWaveform> const& opwfms(*opwfHandle);
-      if( opwfms.size()==0){
-	std::cout << opdet::UBOpChannelEnumName( (opdet::UBOpticalChannelCategory_t)a) << " zero waveforms." << std::endl;
-	continue;
-      }
-      int i=0;
-      for(auto &wfm : opwfms){
-	//unsigned int c, s, f;
-	//ub_pmt_channel_map->GetCrateSlotFEMChFromReadoutChannel(wfm.ChannelNumber(), c, s, f);
-	//fOpRaw_channelId.push_back(f);
-	fOpRaw_channelId.push_back(wfm.ChannelNumber());
-	TH1F *h = new((*fOpRaw_wf)[i]) TH1F("", "", 9600, 0, 9600);
-	int bin = 0;
-	for(auto & adc : wfm){
-	  h->SetBinContent(bin+1,adc);
-	  bin++;
-	}
-	i++;
+      TH1F *h = new((*fOpRaw_wf)[i])TH1F("","",(int)OpWfm.size(),0,(int)OpWfm.size());
+      for(int j=1; j<=(int)OpWfm.size()+1; j++){
+	h->SetBinContent(j,OpWfm.at(j-1));
       }
     }
-    
+    i++;    
   }
 
   //----------------------------------------------------------------------
   void CellTree::processOpFlash( const art::Event& event)
   {
     art::Handle<std::vector<recob::OpFlash> > flash_handle;
-    if(! event.getByLabel("opflash", flash_handle)){
+    if(! event.getByLabel(fOpFlashLabel, flash_handle)){
       cout << "WARNING: no label " << "opflash" << endl;
       return;
     }
     std::vector<art::Ptr<recob::OpFlash> > flashes;
     art::fill_ptr_vector(flashes, flash_handle);
-    op_nFlash = flashes.size();
+    op_nFlash = (int)flashes.size();
 
     int a=0;
     int nOpDet = fGeometry->NOpDets();
@@ -669,20 +641,28 @@ void CellTree::processCalib( const art::Event& event )
     for(auto const& flash: flashes){
       op_t.push_back(flash->Time());
       op_peTotal.push_back(flash->TotalPE());
-      TH1F *h = new ((*fPEperOpDet)[a]) TH1F("","",200,0,200);
-      
+      TH1F *h = new ((*fPEperOpDet)[a]) TH1F("","",nOpDet,0,nOpDet);
+      TH1F *m = new ((*fFlashTperOpDet)[a]) TH1F("","",nOpDet,0,nOpDet);
+
       int mult = 0;
       for(int i=0; i<nOpDet; ++i){
 	if(flash->PE(i) >= opMultPEThresh){
 	  mult++;
 	}
+	if(flash->PE(i)>0){
+	  op_nOpDetId.push_back(i);
+	  op_pe.push_back(flash->PE(i));
+	}
+	else if(flash->PE(i) == 0){
+	  op_pe.push_back(flash->PE(i));
+	}
 	h->SetBinContent(i, flash->PE(i));
+	m->SetBinContent(i, flash->Time());
       }
       op_multiplicity.push_back(mult);
       a++;
     }
   }
-
 
 //-----------------------------------------------------------------------
 void CellTree::processSimChannel( const art::Event& event )
@@ -964,6 +944,31 @@ void CellTree::processMCTracks()
         trackSiblings.push_back(siblings);
     }
 
+}
+
+//-----------------------------------------------------------------------
+void CellTree::processTrigger(const art::Event& event)
+{
+  art::Handle< std::vector<raw::Trigger>> triggerListHandle;
+  std::vector<art::Ptr<raw::Trigger>> triggerlist;
+  if (event.getByLabel(fTriggerLabel, triggerListHandle)) {
+    art::fill_ptr_vector(triggerlist, triggerListHandle);
+  }
+  else {
+    cout << "WARNING: no label " << fTriggerLabel << endl;
+  }
+  if (triggerlist.size()){
+    fTriggernumber = triggerlist[0]->TriggerNumber();
+    fTriggertime   = triggerlist[0]->TriggerTime();
+    fBeamgatetime  = triggerlist[0]->BeamGateTime();
+    fTriggerbits   = triggerlist[0]->TriggerBits();
+  }
+  else {
+    fTriggernumber = 0;
+    fTriggertime   = 0;
+    fBeamgatetime  = 0;
+    fTriggerbits   = 0;
+  }    
 }
 
 //-----------------------------------------------------------------------

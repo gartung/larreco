@@ -36,11 +36,14 @@ physics:
       saveOpRaw	      : true
       saveOpFlash     : true
       saveSimChannel  : false 
+      saveTrigger     : true
       saveMC          : false 
       saveJSON        : false 
-      OpRawDigitLabel : "pmtreadout"
-      RawDigitLabel   : "daq"  
+      RawDigitLabel   : "daq"
       CalibLabel      : "caldata"
+      OpDigitLabel    : "pmtreadout"
+      OpFlashLabel    : "opflash"
+      TriggerLabel    : "daq"  
       SpacePointLabels: ["trackkalmanhit","wirecell"]
       mcOption        : "all"
       opMultPEThresh  : 5
