@@ -23,9 +23,9 @@
 // #include "MCCheater/BackTracker.h"
 #include "lardataobj/RawData/raw.h"
 #include "lardataobj/RawData/RawDigit.h"
-#include "lardataobj/RawData/OpDetWaveform.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/RecoBase/OpHit.h"
 #include "lardataobj/RecoBase/OpFlash.h"
 #include "lardataobj/AnalysisBase/ParticleID.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
@@ -90,7 +90,7 @@ public:
 
   void processRaw(const art::Event& evt);
   void processCalib(const art::Event& evt);
-  void processOpRaw(const art::Event& evt);
+  void processOpHit(const art::Event& evt);
   void processOpFlash(const art::Event& evt);
   void processSpacePoint( const art::Event& event, TString option, ostream& out=cout);
   void processSimChannel(const art::Event& evt);
@@ -114,7 +114,7 @@ private:
   // the parameters we'll read from the .fcl
   std::string fRawDigitLabel;
   std::string fCalibLabel;
-  std::string fOpDigitLabel;
+  std::string fOpHitLabel;
   std::string fOpFlashLabel;
   std::string fTriggerLabel;
   std::vector<std::string> fSpacePointLabels;
@@ -125,7 +125,7 @@ private:
   bool fSaveSimChannel;
   bool fSaveRaw;
   bool fSaveCalib;
-  bool fSaveOpRaw;
+  bool fSaveOpHit;
   bool fSaveOpFlash;
   bool fSaveMC;
   bool fSaveTrigger;
@@ -161,25 +161,21 @@ private:
   TClonesArray *fCalib_wf;
   // std::vector<std::vector<int> > fCalib_wfTDC;
 
+  int oh_nHits;
+  vector<int> oh_channel;
+  vector<double> oh_bgtime;
+  vector<double> oh_trigtime;
+  vector<double> oh_pe;
   
-  
-  int op_nFlash;
-  vector<int> op_nOpDetId;
-  vector<float> op_t;
-  vector<float> op_pe;
-  vector<float> op_peTotal;
-  vector<int> op_multiplicity;
+  int of_nFlash;
+  vector<float> of_t;
+  vector<float> of_peTotal;
+  vector<int> of_multiplicity;
   TClonesArray *fPEperOpDet;
-  TClonesArray *fFlashTperOpDet;
 
   int fRaw_nChannel;
   std::vector<int> fRaw_channelId;
   TClonesArray *fRaw_wf;
-
-  int fOpRaw_nWaveform;
-  std::vector<int> fOpRaw_channelId;
-  std::vector<double> fTimeStamp;
-  TClonesArray *fOpRaw_wf;
 
   int fSIMIDE_size;
   vector<int> fSIMIDE_channelIdY;
@@ -251,7 +247,7 @@ CellTree::~CellTree()
 void CellTree::reconfigure(fhicl::ParameterSet const& p){
     fRawDigitLabel   = p.get<std::string>("RawDigitLabel");
     fCalibLabel      = p.get<std::string>("CalibLabel");
-    fOpDigitLabel    = p.get<std::string>("OpDigitLabel");
+    fOpHitLabel      = p.get<std::string>("OpHitLabel");
     fOpFlashLabel    = p.get<std::string>("OpFlashLabel");
     fTriggerLabel    = p.get<std::string>("TriggerLabel");
     fSpacePointLabels= p.get<std::vector<std::string> >("SpacePointLabels");
@@ -260,7 +256,7 @@ void CellTree::reconfigure(fhicl::ParameterSet const& p){
     fSaveMCTrackPoints = p.get<bool>("saveMCTrackPoints");
     fSaveRaw         = p.get<bool>("saveRaw");
     fSaveCalib       = p.get<bool>("saveCalib");
-    fSaveOpRaw       = p.get<bool>("saveOpRaw");
+    fSaveOpHit       = p.get<bool>("saveOpHit");
     fSaveOpFlash     = p.get<bool>("saveOpFlash");
     fSaveMC          = p.get<bool>("saveMC");
     fSaveSimChannel  = p.get<bool>("saveSimChannel");
@@ -307,23 +303,19 @@ void CellTree::initOutput()
     // fCalib_wf->BypassStreamer();
     // fEventTree->Branch("calib_wfTDC", &fCalib_wfTDC);  // calib waveform tdc of each channel
 
-    fEventTree->Branch("opraw_nWaveform", &fOpRaw_nWaveform); // number of optical waveforms
-    fEventTree->Branch("opraw_channelId", &fOpRaw_channelId); // opchannel id; size == no. waveforms
-    fEventTree->Branch("opraw_timestamp", &fTimeStamp); // waveform time stamp
-    fOpRaw_wf = new TClonesArray("TH1F");
-    fEventTree->Branch("opraw_wf", &fOpRaw_wf, 256000, 0); //optical waveform adc of each channel
+    fEventTree->Branch("oh_nHits", &oh_nHits); // number of op hits
+    fEventTree->Branch("oh_channel", &oh_channel); //opchannel id; size == no ophits
+    fEventTree->Branch("oh_bgtime", &oh_bgtime); // optical pulse peak time w.r.t. start of beam gate 
+    fEventTree->Branch("oh_trigtime", &oh_trigtime); // optical pulse peak time w.r.t. trigger
+    fEventTree->Branch("oh_pe", &oh_pe); // pulse PE 
 
-    fEventTree->Branch("op_nOpDetId", &op_nOpDetId);
-    fEventTree->Branch("op_nFlash", &op_nFlash);
-    fEventTree->Branch("op_t", &op_t); // time in us w.r.t. the trigger for each flash
-    fEventTree->Branch("op_pe", &op_pe); // PE for each flash
-    fEventTree->Branch("op_peTotal", &op_peTotal); // total PE (sum of all PMTs) for each flash
-    fEventTree->Branch("op_multiplicity", &op_multiplicity); // total number of PMTs above threshold for each flash
+    fEventTree->Branch("of_nFlash", &of_nFlash);
+    fEventTree->Branch("of_t", &of_t); // time in us w.r.t. the trigger for each flash
+    fEventTree->Branch("of_peTotal", &of_peTotal); // total PE (sum of all PMTs) for each flash
+    fEventTree->Branch("of_multiplicity", &of_multiplicity); // total number of PMTs above threshold for each flash
     fPEperOpDet = new TClonesArray("TH1F");
     fEventTree->Branch("pe_opdet", &fPEperOpDet, 256000, 0);
-    fFlashTperOpDet = new TClonesArray("TH1F");
-    fEventTree->Branch("ftime_opdet", &fFlashTperOpDet, 256000, 0);
-
+ 
     fEventTree->Branch("simide_size", &fSIMIDE_size);  // size of stored sim:IDE
     fEventTree->Branch("simide_channelIdY", &fSIMIDE_channelIdY);
     fEventTree->Branch("simide_trackId", &fSIMIDE_trackId);
@@ -422,7 +414,7 @@ void CellTree::analyze( const art::Event& event )
 
     if (fSaveRaw) processRaw(event);
     if (fSaveCalib) processCalib(event);
-    if (fSaveOpRaw) processOpRaw(event); 
+    if (fSaveOpHit) processOpHit(event); 
     if (fSaveOpFlash) processOpFlash(event); 
     if (fSaveSimChannel) processSimChannel(event);
     if (fSaveMC) processMC(event);
@@ -466,17 +458,15 @@ void CellTree::reset()
     fCalib_channelId.clear();
     fCalib_wf->Clear();
 
-    fOpRaw_channelId.clear();
-    fTimeStamp.clear();
-    fOpRaw_wf->Delete();
+    oh_channel.clear();
+    oh_bgtime.clear();
+    oh_trigtime.clear();
+    oh_pe.clear();
 
-    op_nOpDetId.clear();
-    op_t.clear();
-    op_pe.clear();
-    op_peTotal.clear();
-    op_multiplicity.clear();
+    of_t.clear();
+    of_peTotal.clear();
+    of_multiplicity.clear();
     fPEperOpDet->Delete();
-    fFlashTperOpDet->Delete();
 
     fSIMIDE_channelIdY.clear();
     fSIMIDE_trackId.clear();
@@ -590,76 +580,56 @@ void CellTree::processCalib( const art::Event& event )
     }
 
 }
-  //-----------------------------------------------------------------------                                                                                                      
-  void CellTree::processOpRaw( const art::Event& event )
-  {
-    art::Handle< std::vector<raw::OpDetWaveform> > opwfHandle;
-    if(!event.getByLabel(fOpDigitLabel, opwfHandle)){
-      cout << "WARNING: no label " << fOpDigitLabel << endl;
-      return;
-    }
-    //std::vector<art::Ptr<raw::OpDetWaveform> > opwfms;
-    //art::fill_ptr_vector(opwfms,opwfHandle);
 
-    std::vector<raw::OpDetWaveform> const& opwfms(*opwfHandle);
-
-    fOpRaw_nWaveform = (int)opwfms.size();
-
-    int i=0;
-    std::vector<short> OpWfm;
-    for(auto &wfm : opwfms){
-      fOpRaw_channelId.push_back(wfm.ChannelNumber());
-      fTimeStamp.push_back(wfm.TimeStamp());
-      OpWfm.clear();
-      OpWfm.reserve(wfm.size());
-      for(auto &adc : wfm){
-	OpWfm.push_back( (short) adc );
-      }
-      TH1F *h = new((*fOpRaw_wf)[i])TH1F("","",(int)OpWfm.size(),0,(int)OpWfm.size());
-      for(int j=1; j<=(int)OpWfm.size()+1; j++){
-	h->SetBinContent(j,OpWfm.at(j-1));
-      }
-    }
-    i++;    
+  //---------------------------------------------------------------------- 
+void CellTree::processOpHit( const art::Event& event)
+{
+  art::Handle<std::vector<recob::OpHit> > ophit_handle;
+  if(! event.getByLabel(fOpHitLabel, ophit_handle)){
+    cout << "WARNING: no label " << fOpHitLabel << endl;
+    return;
   }
+  std::vector<art::Ptr<recob::OpHit> > ophits;
+  art::fill_ptr_vector(ophits, ophit_handle);
+  oh_nHits = (int)ophits.size();
+ 
+  for(auto const& oh : ophits){
+    oh_channel.push_back(oh->OpChannel());
+    oh_bgtime.push_back(oh->PeakTime());
+    oh_trigtime.push_back(oh->PeakTimeAbs());
+    oh_pe.push_back(oh->PE());
+  }
+
+}
 
   //----------------------------------------------------------------------
   void CellTree::processOpFlash( const art::Event& event)
   {
     art::Handle<std::vector<recob::OpFlash> > flash_handle;
     if(! event.getByLabel(fOpFlashLabel, flash_handle)){
-      cout << "WARNING: no label " << "opflash" << endl;
+      cout << "WARNING: no label " << fOpFlashLabel << endl;
       return;
     }
     std::vector<art::Ptr<recob::OpFlash> > flashes;
     art::fill_ptr_vector(flashes, flash_handle);
-    op_nFlash = (int)flashes.size();
+    of_nFlash = (int)flashes.size();
 
     int a=0;
     int nOpDet = fGeometry->NOpDets();
 
     for(auto const& flash: flashes){
-      op_t.push_back(flash->Time());
-      op_peTotal.push_back(flash->TotalPE());
+      of_t.push_back(flash->Time());
+      of_peTotal.push_back(flash->TotalPE());
       TH1F *h = new ((*fPEperOpDet)[a]) TH1F("","",nOpDet,0,nOpDet);
-      TH1F *m = new ((*fFlashTperOpDet)[a]) TH1F("","",nOpDet,0,nOpDet);
 
       int mult = 0;
       for(int i=0; i<nOpDet; ++i){
 	if(flash->PE(i) >= opMultPEThresh){
 	  mult++;
 	}
-	if(flash->PE(i)>0){
-	  op_nOpDetId.push_back(i);
-	  op_pe.push_back(flash->PE(i));
-	}
-	else if(flash->PE(i) == 0){
-	  op_pe.push_back(flash->PE(i));
-	}
 	h->SetBinContent(i, flash->PE(i));
-	m->SetBinContent(i, flash->Time());
       }
-      op_multiplicity.push_back(mult);
+      of_multiplicity.push_back(mult);
       a++;
     }
   }

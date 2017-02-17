@@ -33,7 +33,7 @@ physics:
       module_type     : "CellTree"
       saveRaw         : false
       saveCalib       : false
-      saveOpRaw	      : true
+      saveOpHit	      : true
       saveOpFlash     : true
       saveSimChannel  : false 
       saveTrigger     : true
@@ -41,7 +41,7 @@ physics:
       saveJSON        : false 
       RawDigitLabel   : "daq"
       CalibLabel      : "caldata"
-      OpDigitLabel    : "pmtreadout"
+      OpHitLabel      : "opflash"
       OpFlashLabel    : "opflash"
       TriggerLabel    : "daq"  
       SpacePointLabels: ["trackkalmanhit","wirecell"]
