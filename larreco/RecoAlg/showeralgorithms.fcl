@@ -38,7 +38,7 @@ standard_emshoweralg:
  NumShowerSegments:  4
  dEdxTrackLength:    3
  SpacePointSize:     0.1
- BestPlaneMetric:    "Hits"
+ BestPlaneMetric:    "Energy"
  Nfitpass:           4
  Nfithits:           [50, 30, 20, 20]
  Toler:              [30., 5., 2., 2.]
