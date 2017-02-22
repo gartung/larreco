@@ -41,7 +41,7 @@ physics:
       saveJSON        : false 
       RawDigitLabel   : "daq"
       CalibLabel      : "caldata"
-      OpHitLabel      : "opflash"
+      OpHitLabel      : "ophitBeam"
       OpFlashLabel    : "opflash"
       TriggerLabel    : "daq"  
       SpacePointLabels: ["trackkalmanhit","wirecell"]
@@ -55,8 +55,3 @@ physics:
   end_paths: [ analysis ]
 }
 
-services.DetectorPropertiesService.NumberTimeSamples:               6400
-services.DetectorPropertiesService.ReadOutWindowSize:               6400
-services.DetectorPropertiesService.InheritNumberTimeSamples:        false
-services.DetectorClocksService.InheritClockConfig:                  false
-services.DetectorClocksService.TriggerOffsetTPC:                    -0.400e3

@@ -273,7 +273,7 @@ void CellTree::initOutput()
     fOutFile = new TFile(fOutFileName.c_str(), "recreate");
 
     // 3.1: add mc_trackPosition
-    TNamed version("version", "3.1");
+    TNamed version("version", "4.0");
     version.Write();
 
     // init Event TTree
