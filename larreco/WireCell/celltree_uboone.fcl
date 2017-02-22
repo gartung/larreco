@@ -41,7 +41,7 @@ physics:
       saveJSON        : false 
       RawDigitLabel   : "daq"
       CalibLabel      : "caldata"
-      OpHitLabel      : "ophitBeam"
+      OpHitLabel      : "ophit"
       OpFlashLabel    : "opflash"
       TriggerLabel    : "daq"  
       SpacePointLabels: ["trackkalmanhit","wirecell"]
