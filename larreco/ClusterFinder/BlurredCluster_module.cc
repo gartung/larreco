@@ -176,8 +176,8 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
     if (evt.getByLabel(fPFParticleModuleLabel, pfParticleHandle))
       art::fill_ptr_vector(pfParticles, pfParticleHandle);
 
-    art::Handle<std::vector<recob::PFParticle> > clusterHandle;;
-    std::vector<art::Ptr<recob::PFParticle> > clusters;
+    art::Handle<std::vector<recob::Cluster> > clusterHandle;;
+    std::vector<art::Ptr<recob::Cluster> > clusters;
     if (evt.getByLabel(fPFParticleModuleLabel, clusterHandle))
       art::fill_ptr_vector(clusters, clusterHandle);
 
