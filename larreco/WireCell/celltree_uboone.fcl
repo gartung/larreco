@@ -33,21 +33,21 @@ physics:
       module_type     : "CellTree"
       saveRaw         : false
       saveCalib       : false
-      saveOpHit	      : true
-      saveOpFlash     : true
-      saveSimChannel  : false 
-      saveTrigger     : true
+      saveOpHit	      : false
+      saveOpFlash     : false
+      saveSimChannel  : true 
+      saveTrigger     : false
       saveMC          : false 
       saveJSON        : false 
       RawDigitLabel   : "daq"
       CalibLabel      : "caldata"
-      OpHitLabel      : "ophit"
+      OpHitLabel      : "opflash" #"ophit"
       OpFlashLabel    : "opflash"
       TriggerLabel    : "daq"  
       SpacePointLabels: ["trackkalmanhit","wirecell"]
       mcOption        : "all"
       opMultPEThresh  : 5
-      saveMCTrackPoints : true
+      saveMCTrackPoints : false
       outFile           : "celltree.root"
     }
   }
@@ -55,3 +55,6 @@ physics:
   end_paths: [ analysis ]
 }
 
+services.DetectorPropertiesService.NumberTimeSamples:            6400
+services.DetectorClocksService.InheritClockConfig:                  false
+services.DetectorClocksService.TriggerOffsetTPC:                    -0.400e3

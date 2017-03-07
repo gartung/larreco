@@ -5,6 +5,7 @@ art_make(
 			larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
 			lardataobj_RawData
 			lardataobj_RecoBase
+			lardataobj_MCBase
 			lardata_RecoObjects larreco_Deprecated
 			lardata_Utilities
                         nusimdata_SimulationBase
