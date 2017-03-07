@@ -1,0 +1,51 @@
+#include "services_microboone.fcl"
+#include "opticaldetectorservices_microboone.fcl"
+
+process_name: celltreetruth
+
+services:
+{
+  RandomNumberGenerator: {}
+  message:               @local::standard_info
+	   		 @table::microboone_services
+}
+
+source:
+{
+  module_type: RootInput
+  fileNames:   [ "gen.root" ]
+  firstEvent:  1
+  maxEvents:   -1
+}
+
+outputs:{}
+
+physics:
+{
+  analyzers:
+  {
+    WireCell:
+    {
+      module_type:      "CellTreeTruth"
+      saveMCTruth:	false
+      saveMCNeutrino:   false
+      saveMCParticle:	true
+      saveMCTrack: 	true
+      saveMCShower:	true
+      saveSimChannel:	true
+      MCTruthLabel:	"generator"
+      MCNeutrinoLabel:  "generator"
+      MCParticleLabel:	"largeant"
+      MCTrackLabel:     "mcreco"
+      MCShowerLabel:    "mcreco"
+      SimChannelLabel:	"largeant"	
+      outFile:		"celltreetruth.root"
+    }
+  }
+  analysis: [ WireCell ]
+  end_paths: [ analysis ]
+}
+
+services.DetectorPropertiesService.NumberTimeSamples:            6400
+services.DetectorClocksService.InheritClockConfig:                  false
+services.DetectorClocksService.TriggerOffsetTPC:                    -0.400e3
