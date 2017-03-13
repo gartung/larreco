@@ -11,11 +11,13 @@
 #include "lardataobj/MCBase/MCTrack.h"
 #include "lardataobj/MCBase/MCShower.h"
 #include "lardataobj/Simulation/SimChannel.h"
+#include "lardataobj/RecoBase/OpFlash.h"
 #include "larsim/Simulation/LArG4Parameters.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "lardata/DetectorInfoServices/DetectorClocksServiceStandard.h"
+#include "larcore/Geometry/Geometry.h"
 
 // Framework includes
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -80,6 +82,7 @@ namespace wc {
     void processMCTrack(const art::Event& evt);
     void processMCShower(const art::Event& evt);
     void processSimChannel(const art::Event& evt);
+    void processOpFlash(const art::Event& evt);
 
   private:
     bool fSaveMCTruth;
@@ -87,14 +90,17 @@ namespace wc {
     bool fSaveMCParticle;
     bool fSaveMCTrack;
     bool fSaveMCShower;
-    bool fSaveSimChannel;
+    //bool fSaveSimChannel;
+    bool fSaveOpFlash;
     std::string fMCTruthLabel;
     std::string fMCNeutrinoLabel;
     std::string fMCParticleLabel;
     std::string fMCTrackLabel;
     std::string fMCShowerLabel;
     std::string fSimChannelLabel;
+    std::string fOpFlashLabel;
     std::string fOutFileName;
+    float opMultPEThresh;
 
     TFile *fOutFile;
     TTree *fEventTree;
@@ -103,7 +109,8 @@ namespace wc {
     TTree *fParticleTree;
     TTree *fTrackTree;
     TTree *fShowerTree;
-    TTree *fSimChTree;
+    //TTree *fSimChTree;
+    TTree *fOpFlashTree;
 
     int fRun;
     int fSubRun;
@@ -175,7 +182,6 @@ namespace wc {
     // trajectory                                              
     vector<double> mcparticle_weight;
 
-
     // MC TRACK
     int Nmctrack;
     vector<int> mctrack_pdg;
@@ -238,6 +244,20 @@ namespace wc {
     vector<float> simchannel_x;
     vector<float> simchannel_y;
     vector<float> simchannel_z; 
+
+    // OPFLASH
+    int of_nFlash;
+    vector<float> of_t;
+    vector<float> of_peTotal;
+    vector<int> of_multiplicity;
+    TClonesArray *fPEperOpDet;
+
+    art::ServiceHandle<geo::Geometry> fGeometry;
+
+    // dummy variables not filled and not used in imaging
+    int fCalib_nChannel;
+    std::vector<int> fCalib_channelId;
+    TClonesArray *fCalib_wf;
   }; // class
 
   //-------------------------------------------------------------------
@@ -262,15 +282,19 @@ namespace wc {
     fMCTrackLabel = p.get<std::string>("MCTrackLabel");
     fMCShowerLabel = p.get<std::string>("MCShowerLabel");
     fSimChannelLabel = p.get<std::string>("SimChannelLabel");
+    fOpFlashLabel = p.get<std::string>("OpFlashLabel");
 
     fSaveMCTruth = p.get<bool>("saveMCTruth");
     fSaveMCNeutrino = p.get<bool>("saveMCNeutrino");
     fSaveMCParticle = p.get<bool>("saveMCParticle");
     fSaveMCTrack = p.get<bool>("saveMCTrack");
     fSaveMCShower = p.get<bool>("saveMCShower");
-    fSaveSimChannel = p.get<bool>("saveSimChannel");
+    //fSaveSimChannel = p.get<bool>("saveSimChannel");
+    fSaveOpFlash = p.get<bool>("saveOpFlash");
    
     fOutFileName = p.get<std::string>("outFile");
+
+    opMultPEThresh   = p.get<float>("opMultPEThresh");
   }
 
   //-------------------------------------------------------------------
@@ -278,6 +302,10 @@ namespace wc {
   {
     TDirectory* tmpDir = gDirectory;
     fOutFile = new TFile(fOutFileName.c_str(), "recreate");
+
+    TNamed version("version","4.0");
+    version.Write();
+
     TDirectory* subDir = fOutFile->mkdir("Event");
     subDir->cd();
     fEventTree = new TTree("Sim","Event Tree from Simulation");
@@ -316,7 +344,7 @@ namespace wc {
     fmcparticle_polarization = new TObjArray();
     fmcparticle_polarization->SetOwner(kTRUE);
     fParticleTree->Branch("mcparticle_polarization",   &fmcparticle_polarization); 
-    fParticleTree->Branch("mcparitcle_process",        &mcparticle_process);
+    fParticleTree->Branch("mcparticle_process",        &mcparticle_process);
     fParticleTree->Branch("mcparticle_endProcess",     &mcparticle_endProcess);           
     fParticleTree->Branch("mcparticle_ndaughters",     &mcparticle_ndaughters);
     fParticleTree->Branch("mcparticle_daughterId",     &mcparticle_daughterId);
@@ -343,7 +371,7 @@ namespace wc {
     fParticleTree->Branch("mcparticle_endZ",           &mcparticle_endZ);
     fParticleTree->Branch("mcparticle_endT",           &mcparticle_endT);
     fParticleTree->Branch("mcparticle_mass",           &mcparticle_mass);
-    fParticleTree->Branch("mcparitlce_endPX",          &mcparticle_endPX);
+    fParticleTree->Branch("mcparticle_endPX",          &mcparticle_endPX);
     fParticleTree->Branch("mcparticle_endPY",          &mcparticle_endPY);
     fParticleTree->Branch("mcparticle_endPZ",          &mcparticle_endPZ);
     fParticleTree->Branch("mcparticle_endE",           &mcparticle_endE);
@@ -456,17 +484,32 @@ namespace wc {
     fShowerTree->Branch("mcshower_startDir",       &fmcshower_startDir);
 
     // SIM CHANNEL
-    fSimChTree = new TTree("SimChannel","SimChannel Tree from Output of LArG4");
-    fSimChTree->Branch("Nsimchannel",               &Nsimchannel);
-    fSimChTree->Branch("simchannel_channelID",      &simchannel_channelID);
-    fSimChTree->Branch("simchannel_tdc",            &simchannel_tdc);
-    fSimChTree->Branch("simchannel_nEnergyDeposits", &simchannel_nEnergyDeposits);
-    fSimChTree->Branch("simchannel_id",             &simchannel_id);
-    fSimChTree->Branch("simchannel_nElectrons",     &simchannel_nElectrons);
-    fSimChTree->Branch("simchannel_energy",         &simchannel_energy);
-    fSimChTree->Branch("simchannel_x",              &simchannel_x);
-    fSimChTree->Branch("simchannel_y",              &simchannel_y);
-    fSimChTree->Branch("simchannel_z",              &simchannel_z);
+    //fSimChTree = new TTree("SimChannel","SimChannel Tree from Output of LArG4");
+    fEventTree->Branch("simide_size",           &Nsimchannel);
+    fEventTree->Branch("simide_channelIdY",     &simchannel_channelID);
+    fEventTree->Branch("simide_tdc",            &simchannel_tdc);
+    fEventTree->Branch("simide_nEnergyDeposits", &simchannel_nEnergyDeposits);
+    fEventTree->Branch("simide_trackId",        &simchannel_id);
+    fEventTree->Branch("simide_numElectrons",   &simchannel_nElectrons);
+    fEventTree->Branch("simide_energy",         &simchannel_energy);
+    fEventTree->Branch("simide_x",              &simchannel_x);
+    fEventTree->Branch("simide_y",              &simchannel_y);
+    fEventTree->Branch("simide_z",              &simchannel_z);
+
+    // OPFLASH
+    fOpFlashTree = new TTree("OpFlash","Reco OpFlash Tree");
+    fOpFlashTree->Branch("of_nFlash", &of_nFlash);
+    fOpFlashTree->Branch("of_t", &of_t);                              
+    fOpFlashTree->Branch("of_peTotal", &of_peTotal);                     
+    fOpFlashTree->Branch("of_multiplicity", &of_multiplicity);            
+    fPEperOpDet = new TClonesArray("TH1F");
+    fOpFlashTree->Branch("pe_opdet", &fPEperOpDet, 256000, 0);
+
+    // dummy variables not used
+    fEventTree->Branch("calib_nChannel", &fCalib_nChannel);           
+    fEventTree->Branch("calib_channelId" , &fCalib_channelId);        
+    fCalib_wf = new TClonesArray("TH1F");
+    fEventTree->Branch("calib_wf", &fCalib_wf, 256000, 0);
 
     gDirectory = tmpDir;
   }
@@ -482,12 +525,13 @@ namespace wc {
     TDirectory* tmpDir = gDirectory;
     fOutFile->cd("/Event");
     fEventTree->Write();
-    fTrueTree->Write();
-    fNeutrinoTree->Write();
-    fParticleTree->Write();
-    fTrackTree->Write();
-    fShowerTree->Write(); cout << "Wrote fShowerTree to file inside endJob() " << endl;
-    fSimChTree->Write();
+    if(fSaveMCTruth == true) { fTrueTree->Write(); }
+    if(fSaveMCNeutrino == true) { fNeutrinoTree->Write(); }
+    if(fSaveMCParticle == true) { fParticleTree->Write(); }
+    if(fSaveMCTrack == true) { fTrackTree->Write(); }
+    if(fSaveMCShower == true) { fShowerTree->Write(); }
+    //if(fSaveSimChannel == true) { fSimChTree->Write(); }
+    if(fSaveOpFlash == true) { fOpFlashTree->Write(); }
     gDirectory = tmpDir;
     fOutFile->Close();
   }
@@ -509,13 +553,15 @@ namespace wc {
     art::Timestamp ts = event.time();
     TTimeStamp tts(ts.timeHigh(), ts.timeLow());
     fEventTime = tts.AsDouble();
+    processSimChannel(event); 
+    fEventTree->Fill();
 
     if(fSaveMCTruth == true) { processMCTruth(event); fTrueTree->Fill(); }
     if(fSaveMCNeutrino == true) { processMCNeutrino(event); fNeutrinoTree->Fill(); }
     if(fSaveMCParticle == true) { processMCParticle(event); fParticleTree->Fill(); }
     if(fSaveMCTrack == true) { processMCTrack(event); fTrackTree->Fill(); }
     if(fSaveMCShower == true) { processMCShower(event); fShowerTree->Fill(); }
-    if(fSaveSimChannel == true) { processSimChannel(event); fSimChTree->Fill(); }
+    if(fSaveOpFlash == true) { processOpFlash(event); fOpFlashTree->Fill(); }
   }
 
   //-------------------------------------------------------------------
@@ -638,7 +684,7 @@ namespace wc {
     fmcshower_startDir->Clear();
     }
 
-    if(fSaveSimChannel == true){
+    //if(fSaveSimChannel == true){
     Nsimchannel = 0;
     simchannel_channelID.clear();
     simchannel_tdc.clear();
@@ -649,7 +695,18 @@ namespace wc {
     simchannel_x.clear();
     simchannel_y.clear();
     simchannel_z.clear();
+    //}
+
+    if(fSaveOpFlash == true){
+      of_t.clear();
+      of_peTotal.clear();
+      of_multiplicity.clear();
+      fPEperOpDet->Delete();
     }
+
+    // dummy variables not used
+    fCalib_channelId.clear();
+    fCalib_wf->Clear();
   }
 
   //-------------------------------------------------------------------
@@ -937,6 +994,39 @@ namespace wc {
       }
     }
   }
+
+  //----------------------------------------------------------------------          
+  void CellTreeTruth::processOpFlash( const art::Event& event)
+  {
+    art::Handle<std::vector<recob::OpFlash> > flash_handle;
+    if(! event.getByLabel(fOpFlashLabel, flash_handle)){
+      cout << "WARNING: no label " << fOpFlashLabel << endl;
+      return;
+    }
+    std::vector<art::Ptr<recob::OpFlash> > flashes;
+    art::fill_ptr_vector(flashes, flash_handle);
+    of_nFlash = (int)flashes.size();
+
+    int a=0;
+    int nOpDet = fGeometry->NOpDets();
+
+    for(auto const& flash: flashes){
+      of_t.push_back(flash->Time());
+      of_peTotal.push_back(flash->TotalPE());
+      TH1F *h = new ((*fPEperOpDet)[a]) TH1F("","",nOpDet,0,nOpDet);
+
+      int mult = 0;
+      for(int i=0; i<nOpDet; ++i){
+        if(flash->PE(i) >= opMultPEThresh){
+          mult++;
+        }
+        h->SetBinContent(i, flash->PE(i));
+      }
+      of_multiplicity.push_back(mult);
+      a++;
+    }
+  }
+
 
   DEFINE_ART_MODULE(CellTreeTruth)
 } // namespace wc

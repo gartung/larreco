@@ -32,13 +32,16 @@ physics:
       saveMCParticle:	true
       saveMCTrack: 	true
       saveMCShower:	true
-      saveSimChannel:	true
+      saveOpFlash:	true
       MCTruthLabel:	"generator"
       MCNeutrinoLabel:  "generator"
       MCParticleLabel:	"largeant"
       MCTrackLabel:     "mcreco"
       MCShowerLabel:    "mcreco"
       SimChannelLabel:	"largeant"	
+      OpFlashLabel:	"simpleFlashBeam"
+
+      opMultPEThresh:	5	
       outFile:		"celltreetruth.root"
     }
   }

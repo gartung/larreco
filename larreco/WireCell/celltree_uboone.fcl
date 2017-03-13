@@ -37,7 +37,7 @@ physics:
       saveOpFlash     : false
       saveSimChannel  : true 
       saveTrigger     : false
-      saveMC          : false 
+      saveMC          : true 
       saveJSON        : false 
       RawDigitLabel   : "daq"
       CalibLabel      : "caldata"
