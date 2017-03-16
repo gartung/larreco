@@ -147,52 +147,62 @@ void cluster::BlurredCluster::produce(art::Event &evt) {
   // Remove track hits if required
   if (fShowerReconOnly) {
 
-    // // Get the tracks from the event
-    // art::Handle<std::vector<recob::Track> > trackCollection;
-    // std::vector<art::Ptr<recob::Track> > tracks;
-    // if (evt.getByLabel(fTrackModuleLabel,trackCollection))
-    //   art::fill_ptr_vector(tracks, trackCollection);
-
-    // // Get the space points from the event
-    // art::Handle<std::vector<recob::SpacePoint> > spacePointCollection;
-    // std::vector<art::Ptr<recob::SpacePoint> > spacePoints;
-    // if (evt.getByLabel(fTrackModuleLabel,spacePointCollection))
-    //   art::fill_ptr_vector(spacePoints, spacePointCollection);
-
-    // if (trackCollection.isValid()) {
-    //   art::FindManyP<recob::Hit> fmht(trackCollection, evt, fTrackModuleLabel);
-    //   art::FindManyP<recob::Track> fmth(hitCollection, evt, fTrackModuleLabel);
-    //   art::FindManyP<recob::SpacePoint> fmspt(trackCollection, evt, fTrackModuleLabel);
-    //   art::FindManyP<recob::Track> fmtsp(spacePointCollection, evt, fTrackModuleLabel);
-    //   fTrackShowerSepAlg.RunTrackShowerSep(evt.event(), hits, tracks, spacePoints, fmht, fmth, fmspt, fmtsp);
-    //   hitsToCluster = fTrackShowerSepAlg.ShowerHits();
-    // }
-    // else
-    //   hitsToCluster = hits;
-
     // Get Pandora PFParticles from the event
     art::Handle<std::vector<recob::PFParticle> > pfParticleHandle;
     std::vector<art::Ptr<recob::PFParticle> > pfParticles;
     if (evt.getByLabel(fPFParticleModuleLabel, pfParticleHandle))
       art::fill_ptr_vector(pfParticles, pfParticleHandle);
 
-    art::Handle<std::vector<recob::Cluster> > clusterHandle;;
-    std::vector<art::Ptr<recob::Cluster> > clusters;
-    if (evt.getByLabel(fPFParticleModuleLabel, clusterHandle))
-      art::fill_ptr_vector(clusters, clusterHandle);
+    // Pandora based track shower separation
+    if (pfParticleHandle.isValid()) {
 
-    art::FindManyP<recob::Cluster> fmcpfp(pfParticleHandle, evt, fPFParticleModuleLabel);
-    art::FindManyP<recob::Hit> fmhc(clusterHandle, evt, fPFParticleModuleLabel);
+      art::Handle<std::vector<recob::Cluster> > clusterHandle;;
+      std::vector<art::Ptr<recob::Cluster> > clusters;
+      if (evt.getByLabel(fPFParticleModuleLabel, clusterHandle))
+	art::fill_ptr_vector(clusters, clusterHandle);
 
-    for (std::vector<art::Ptr<recob::PFParticle> >::const_iterator pfParticleIt = pfParticles.begin(); pfParticleIt != pfParticles.end(); ++pfParticleIt) {
-      if ((*pfParticleIt)->PdgCode() != 11)
-	continue;
-      const std::vector<art::Ptr<recob::Cluster> > pfParticleClusters = fmcpfp.at(pfParticleIt->key());
-      for (std::vector<art::Ptr<recob::Cluster> >::const_iterator pfpClusterIt = pfParticleClusters.begin(); pfpClusterIt != pfParticleClusters.end(); ++pfpClusterIt) {
-	const std::vector<art::Ptr<recob::Hit> > pfpClusterHits = fmhc.at(pfpClusterIt->key());
-        for (std::vector<art::Ptr<recob::Hit> >::const_iterator pfpClusterHitIt = pfpClusterHits.begin(); pfpClusterHitIt != pfpClusterHits.end(); ++pfpClusterHitIt)
-	  hitsToCluster.push_back(*pfpClusterHitIt);
+      art::FindManyP<recob::Cluster> fmcpfp(pfParticleHandle, evt, fPFParticleModuleLabel);
+      art::FindManyP<recob::Hit> fmhc(clusterHandle, evt, fPFParticleModuleLabel);
+
+      for (std::vector<art::Ptr<recob::PFParticle> >::const_iterator pfParticleIt = pfParticles.begin(); pfParticleIt != pfParticles.end(); ++pfParticleIt) {
+	if ((*pfParticleIt)->PdgCode() != 11)
+	  continue;
+	const std::vector<art::Ptr<recob::Cluster> > pfParticleClusters = fmcpfp.at(pfParticleIt->key());
+	for (std::vector<art::Ptr<recob::Cluster> >::const_iterator pfpClusterIt = pfParticleClusters.begin(); pfpClusterIt != pfParticleClusters.end(); ++pfpClusterIt) {
+	  const std::vector<art::Ptr<recob::Hit> > pfpClusterHits = fmhc.at(pfpClusterIt->key());
+	  for (std::vector<art::Ptr<recob::Hit> >::const_iterator pfpClusterHitIt = pfpClusterHits.begin(); pfpClusterHitIt != pfpClusterHits.end(); ++pfpClusterHitIt)
+	    hitsToCluster.push_back(*pfpClusterHitIt);
+	}
       }
+
+    }
+
+    // Use trackshowersep module
+    else {
+
+      // Get the tracks from the event
+      art::Handle<std::vector<recob::Track> > trackCollection;
+      std::vector<art::Ptr<recob::Track> > tracks;
+      if (evt.getByLabel(fTrackModuleLabel,trackCollection))
+	art::fill_ptr_vector(tracks, trackCollection);
+
+      // Get the space points from the event
+      art::Handle<std::vector<recob::SpacePoint> > spacePointCollection;
+      std::vector<art::Ptr<recob::SpacePoint> > spacePoints;
+      if (evt.getByLabel(fTrackModuleLabel,spacePointCollection))
+	art::fill_ptr_vector(spacePoints, spacePointCollection);
+
+      if (trackCollection.isValid()) {
+	art::FindManyP<recob::Hit> fmht(trackCollection, evt, fTrackModuleLabel);
+	art::FindManyP<recob::Track> fmth(hitCollection, evt, fTrackModuleLabel);
+	art::FindManyP<recob::SpacePoint> fmspt(trackCollection, evt, fTrackModuleLabel);
+	art::FindManyP<recob::Track> fmtsp(spacePointCollection, evt, fTrackModuleLabel);
+	fTrackShowerSepAlg.RunTrackShowerSep(evt.event(), hits, tracks, spacePoints, fmht, fmth, fmspt, fmtsp);
+	hitsToCluster = fTrackShowerSepAlg.ShowerHits();
+      }
+      else
+	hitsToCluster = hits;
+
     }
 
   }
