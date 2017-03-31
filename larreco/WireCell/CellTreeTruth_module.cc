@@ -486,7 +486,7 @@ namespace wc {
     // SIM CHANNEL
     //fSimChTree = new TTree("SimChannel","SimChannel Tree from Output of LArG4");
     fEventTree->Branch("simide_size",           &Nsimchannel);
-    fEventTree->Branch("simide_channelIdY",     &simchannel_channelID);
+    fEventTree->Branch("simide_channelId ",     &simchannel_channelID);
     fEventTree->Branch("simide_tdc",            &simchannel_tdc);
     fEventTree->Branch("simide_nEnergyDeposits", &simchannel_nEnergyDeposits);
     fEventTree->Branch("simide_trackId",        &simchannel_id);
