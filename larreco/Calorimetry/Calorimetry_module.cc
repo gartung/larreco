@@ -33,6 +33,7 @@ extern "C" {
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
+#include "lardataobj/AnalysisBase/TrueCalorimetry.h"
 #include "lardataobj/AnalysisBase/T0.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
@@ -40,6 +41,7 @@ extern "C" {
 #include "lardata/RecoBaseArt/TrackUtils.h" // lar::util::TrackPitchInView()
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
+#include "larsim/MCCheater/BackTracker.h"
 
 // ROOT includes
 #include <TROOT.h>
@@ -98,6 +100,7 @@ namespace calo {
     bool fUseArea;
     bool fFlipTrack_dQdx; //flip track direction if significant rise of dQ/dx at the track start
     CalorimetryAlg caloAlg;
+    art::ServiceHandle<cheat::BackTracker> fBT;
 	
     int fnsps;
     std::vector<int>    fwire;
@@ -130,7 +133,9 @@ calo::Calorimetry::Calorimetry(fhicl::ParameterSet const& pset)
     caloAlg(pset.get< fhicl::ParameterSet >("CaloAlg"))
 {
   produces< std::vector<anab::Calorimetry>              >();
+  produces< std::vector<anab::TrueCalorimetry>              >();
   produces< art::Assns<recob::Track, anab::Calorimetry> >();
+  //produces< art::Assns<anab::Calorimetry, anab::TrueCalorimetry> >();
 }
 
 //-------------------------------------------------
@@ -167,6 +172,10 @@ void calo::Calorimetry::produce(art::Event& evt)
   //create anab::Calorimetry objects and make association with recob::Track
   std::unique_ptr< std::vector<anab::Calorimetry> > calorimetrycol(new std::vector<anab::Calorimetry>);
   std::unique_ptr< art::Assns<recob::Track, anab::Calorimetry> > assn(new art::Assns<recob::Track, anab::Calorimetry>);
+
+  //create anab::TrueCalorimetry objects and make associations with produces anab::Calorimetry
+  std::unique_ptr< std::vector<anab::TrueCalorimetry> > truecalorimetrycol(new std::vector<anab::TrueCalorimetry>);
+  //std::unique_ptr< art::Assns<anab::Calorimetry, anab::TrueCalorimetry> > trueassn(new art::Assns<anab::Calorimetry,anab::TrueCalorimetry>);
 
   //art::FindManyP<recob::SpacePoint> fmsp(trackListHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Hit>        fmht(trackListHandle, evt, fTrackModuleLabel);
@@ -232,6 +241,15 @@ void calo::Calorimetry::produce(art::Event& evt)
       std::vector<double> vdQdx;
       std::vector<double> deadwire; //residual range for dead wires
       std::vector<TVector3> vXYZ;
+
+      // Vars to fill true calo;
+      double true_Kin_En = 0.;
+      std::vector<double> true_dEdx;
+      std::vector<double> true_dQdx;
+      std::vector<unsigned int> true_wire;
+      std::vector<double> true_dE;
+      std::vector<double> true_dQ;
+      //std::vector<TVector3> true_XYZ;
 
       //range of wire signals
       unsigned int wire0 = 100000;
@@ -369,7 +387,7 @@ void calo::Calorimetry::produce(art::Event& evt)
           yy = xyz3d[1];
           zz = xyz3d[2];
         }
-	
+
 	ChargeBeg.push_back(charge);
 	ChargeEnd.push(charge);
 
@@ -383,6 +401,38 @@ void calo::Calorimetry::produce(art::Event& evt)
 
 	if (allHits[hits[ipl][ihit]]->WireID().Wire < wire0) wire0 = allHits[hits[ipl][ihit]]->WireID().Wire;
 	if (allHits[hits[ipl][ihit]]->WireID().Wire > wire1) wire1 = allHits[hits[ipl][ihit]]->WireID().Wire;
+
+    // Get Truth Info
+    if(!evt.isRealData())
+    {
+        std::vector<sim::IDE> ides;
+        fBT->HitToSimIDEs(allHits[hits[ipl][ihit]],ides);
+        //std::cout << "Truth Info: Hit charge: " << charge << " dQdx: " << charge/pitch << " dEdx: " << dEdx << " pitch: " << pitch << std::endl;
+        double true_numElectrons = 0.;
+        double true_energy = 0.;
+        for (const auto ide: ides)
+        {
+            //std::cout << "  IDE: Hit charge: " << ide.numElectrons << " E: " <<ide.energy << " dEdx: "<< ide.energy/pitch <<" dQdx: "<<ide.numElectrons/pitch << " trackID: "<< ide.trackID << std::endl;
+            true_numElectrons += ide.numElectrons;
+            true_energy += ide.energy;
+        }
+        //std::cout << "  charge: " << true_numElectrons << " E: " <<true_energy << " dEdx: "<< true_energy/pitch <<" dQdx: "<<true_numElectrons/pitch << std::endl;
+        true_Kin_En += true_energy;
+        true_dE.push_back(true_energy);
+        true_dQ.push_back(true_numElectrons);
+        true_dEdx.push_back(true_energy/pitch);
+        true_dQdx.push_back(true_numElectrons/pitch);
+        true_wire.push_back(allHits[hits[ipl][ihit]]->WireID().Wire);
+    }
+    else
+    {
+        true_Kin_En = -9999999.;
+        true_dE.push_back(-9999.);
+        true_dQ.push_back(-9999.);
+        true_dEdx.push_back(-9999.);
+        true_dQdx.push_back(-9999.);
+        true_wire.push_back(allHits[hits[ipl][ihit]]->WireID().Wire);
+    }
 
 	fMIPs.push_back(MIPs);
 	fdEdx.push_back(dEdx);
@@ -555,12 +605,27 @@ void calo::Calorimetry::produce(art::Event& evt)
 						  vXYZ,
 						  planeID));
       util::CreateAssn(*this, evt, *calorimetrycol, tracklist[trkIter], *assn);
+      truecalorimetrycol->push_back(anab::TrueCalorimetry(true_Kin_En,
+	    				  true_dEdx,
+	    				  true_dQdx,
+	    				  vresRange,
+	    				  deadwire,
+	    				  Trk_Length,
+	    				  fpitch,
+	    				  vXYZ,
+	    				  planeID,
+                        true_wire,
+                        true_dE,
+                        true_dQ));
+      //util::CreateAssn(*this, evt, *truecalorimetrycol, tracklist[trkIter], *assn);
       
     }//end looping over planes
   }//end looping over tracks
   
   evt.put(std::move(calorimetrycol));
   evt.put(std::move(assn));
+  evt.put(std::move(truecalorimetrycol));
+  //evt.put(std::move(trueassn));
 
   return;
 }
