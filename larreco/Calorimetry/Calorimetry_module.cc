@@ -135,7 +135,7 @@ calo::Calorimetry::Calorimetry(fhicl::ParameterSet const& pset)
   produces< std::vector<anab::Calorimetry>              >();
   produces< std::vector<anab::TrueCalorimetry>              >();
   produces< art::Assns<recob::Track, anab::Calorimetry> >();
-  //produces< art::Assns<anab::Calorimetry, anab::TrueCalorimetry> >();
+  produces< art::Assns<recob::Track, anab::TrueCalorimetry> >();
 }
 
 //-------------------------------------------------
@@ -175,7 +175,7 @@ void calo::Calorimetry::produce(art::Event& evt)
 
   //create anab::TrueCalorimetry objects and make associations with produces anab::Calorimetry
   std::unique_ptr< std::vector<anab::TrueCalorimetry> > truecalorimetrycol(new std::vector<anab::TrueCalorimetry>);
-  //std::unique_ptr< art::Assns<anab::Calorimetry, anab::TrueCalorimetry> > trueassn(new art::Assns<anab::Calorimetry,anab::TrueCalorimetry>);
+  std::unique_ptr< art::Assns<recob::Track, anab::TrueCalorimetry> > trueassn(new art::Assns<recob::Track,anab::TrueCalorimetry>);
 
   //art::FindManyP<recob::SpacePoint> fmsp(trackListHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Hit>        fmht(trackListHandle, evt, fTrackModuleLabel);
@@ -459,6 +459,19 @@ void calo::Calorimetry::produce(art::Event& evt)
 						    vXYZ,
 						    planeID));
 	util::CreateAssn(*this, evt, *calorimetrycol, tracklist[trkIter], *assn);
+    truecalorimetrycol->push_back(anab::TrueCalorimetry(util::kBogusD,
+	  				  true_dEdx,
+	  				  true_dQdx,
+	  				  vresRange,
+	  				  deadwire,
+	  				  Trk_Length,
+	  				  fpitch,
+	  				  vXYZ,
+	  				  planeID,
+                      true_wire,
+                      true_dE,
+                      true_dQ));
+    util::CreateAssn(*this, evt, *truecalorimetrycol, tracklist[trkIter], *trueassn);
 	continue;
       }
       for (int isp = 0; isp<fnsps; ++isp){
@@ -617,7 +630,7 @@ void calo::Calorimetry::produce(art::Event& evt)
                         true_wire,
                         true_dE,
                         true_dQ));
-      //util::CreateAssn(*this, evt, *truecalorimetrycol, tracklist[trkIter], *assn);
+      util::CreateAssn(*this, evt, *truecalorimetrycol, tracklist[trkIter], *trueassn);
       
     }//end looping over planes
   }//end looping over tracks
@@ -625,7 +638,7 @@ void calo::Calorimetry::produce(art::Event& evt)
   evt.put(std::move(calorimetrycol));
   evt.put(std::move(assn));
   evt.put(std::move(truecalorimetrycol));
-  //evt.put(std::move(trueassn));
+  evt.put(std::move(trueassn));
 
   return;
 }
