@@ -1,11 +1,6 @@
 #ifndef CELLTREETRUTH_MODULE
 #define CELLTREETRUTH_MODULE
 
-#ifdef __CINT__
-#pramga link C++ class std::vector<TVector3>+;
-#pragma link C++ class std::vector<TLorentzVector>+;
-#endif
-
 // LArSoft includes
 #include "lardataobj/MCBase/MCStep.h"
 #include "lardataobj/MCBase/MCTrack.h"
@@ -56,8 +51,6 @@
 #include <iostream>
 #include <cstdio>
 
-#define MAX_TRACKS 30000
-
 using namespace std;
 
 namespace wc {
@@ -76,7 +69,6 @@ namespace wc {
     void initOutput();
     void reset();
 
-    void processMCTruth(const art::Event& evt);
     void processMCNeutrino(const art::Event& evt);
     void processMCParticle(const art::Event& evt);
     void processMCTrack(const art::Event& evt);
@@ -85,43 +77,45 @@ namespace wc {
     void processOpFlash(const art::Event& evt);
 
   private:
-    bool fSaveMCTruth;
-    bool fSaveMCNeutrino;
-    bool fSaveMCParticle;
-    bool fSaveMCTrack;
-    bool fSaveMCShower;
-    //bool fSaveSimChannel;
-    bool fSaveOpFlash;
-    std::string fMCTruthLabel;
-    std::string fMCNeutrinoLabel;
-    std::string fMCParticleLabel;
-    std::string fMCTrackLabel;
-    std::string fMCShowerLabel;
-    std::string fSimChannelLabel;
-    std::string fOpFlashLabel;
+
     std::string fOutFileName;
-    float opMultPEThresh;
 
     TFile *fOutFile;
     TTree *fEventTree;
-    TTree *fTrueTree;
-    TTree *fNeutrinoTree;
-    TTree *fParticleTree;
-    TTree *fTrackTree;
-    TTree *fShowerTree;
-    //TTree *fSimChTree;
-    TTree *fOpFlashTree;
 
     int fRun;
     int fSubRun;
     int fEvent;
     double fEventTime;
 
-    // MC TRUTH
-    int Nmctruth;
-
     // MC Neutrino;
-    int Nmcneutrino;
+    bool fSaveMCNeutrino;
+    std::string fMCNeutrinoLabel;
+    TTree *fNeutrinoTree;
+    vector<int> mcneutrino_nuStatus;
+    vector<int> mcneutrino_nuTrackId;
+    vector<int> mcneutrino_nuPdg;
+    vector<int> mcneutrino_nuMother;
+    vector<string> mcneutrino_nuProcess;
+    vector<string> mcneutrino_nuEndProcess;
+    vector<double> mcneutrino_nuMass;
+    vector<double> mcneutrino_nuWeight;
+    vector<double> mcneutrino_nuGvtxX;
+    vector<double> mcneutrino_nuGvtxY;
+    vector<double> mcneutrino_nuGvtxZ;
+    vector<int> mcneutrino_nuRescatter;
+    vector<int> mcneutrino_leptonStatus;
+    vector<int> mcneutrino_leptonTrackId;
+    vector<int> mcneutrino_leptonPdg;
+    vector<int> mcneutrino_leptonMother;
+    vector<string> mcneutrino_leptonProcess;
+    vector<string> mcneutrino_leptonEndProcess;
+    vector<double> mcneutrino_leptonMass;
+    vector<double> mcneutrino_leptonWeight;
+    vector<double> mcneutrino_leptonGvtxX;
+    vector<double> mcneutrino_leptonGvtxY;
+    vector<double> mcneutrino_leptonGvtxZ;
+    vector<int> mcneutrino_leptonRescatter;
     vector<int> mcneutrino_ccnc;
     vector<int> mcneutrino_mode;
     vector<int> mcneutrino_interactionType;
@@ -136,25 +130,22 @@ namespace wc {
     vector<double> mcneutrino_theta;
 
     // MC PARTICLE
+    bool fSaveMCParticle;
+    std::string fMCParticleLabel;
+    TTree *fParticleTree;
     int Nmcparticle;
     vector<int> mcparticle_id;
     vector<int> mcparticle_statusCode;
     vector<int> mcparticle_pdg;
     vector<int> mcparticle_mother;
-    TObjArray *fmcparticle_polarization;
     vector<std::string> mcparticle_process;
     vector<std::string> mcparticle_endProcess;
     vector<int> mcparticle_ndaughters;
     vector<int> mcparticle_daughterId;
     vector<int> mcparticle_ntrajpts;
-    float mcparticle_startXYZT[MAX_TRACKS][4];
-    float mcparticle_endXYZT[MAX_TRACKS][4];
-    float mcparticle_startMomentum[MAX_TRACKS][4];
-    float mcparticle_endMomentum[MAX_TRACKS][4];
-    TObjArray *fmcparticle_position;
-    vector<double> mcparticle_vx;                                      
-    vector<double> mcparticle_vy;                              
-    vector<double> mcparticle_vz;                              
+    vector<double> mcparticle_x;                                      
+    vector<double> mcparticle_y;                              
+    vector<double> mcparticle_z;                              
     vector<double> mcparticle_t;
     vector<double> mcparticle_px;
     vector<double> mcparticle_py;
@@ -171,18 +162,20 @@ namespace wc {
     vector<double> mcparticle_endPY;
     vector<double> mcparticle_endPZ;
     vector<double> mcparticle_endE;
-    TObjArray *fmcparticle_Gvtx;                  
-    vector<double> mcparticle_Gvx;
-    vector<double> mcparticle_Gvy;
-    vector<double> mcparticle_Gvz;
-    vector<double> mcparticle_Gvt;
-    vector<int> mcparticle_firstDaughter;
-    vector<int> mcparticle_lastDaughter;
+    vector<double> mcparticle_GvtxX;
+    vector<double> mcparticle_GvtxY;
+    vector<double> mcparticle_GvtxZ;
+    vector<double> mcparticle_GvtxPX;
+    vector<double> mcparticle_GvtxPY;
+    vector<double> mcparticle_GvtxPZ;
+    vector<double> mcparticle_GvtxE;
     vector<int> mcparticle_rescatter;
-    // trajectory                                              
     vector<double> mcparticle_weight;
 
     // MC TRACK
+    bool fSaveMCTrack;
+    std::string fMCTrackLabel;
+    TTree *fTrackTree;
     int Nmctrack;
     vector<int> mctrack_pdg;
     vector<int> mctrack_motherPdg;
@@ -193,22 +186,59 @@ namespace wc {
     vector<std::string> mctrack_process;
     vector<std::string> mctrack_motherProcess;
     vector<std::string> mctrack_ancestorProcess;
-    TObjArray *fmctrack_startPosition;
-    TObjArray *fmctrack_motherStartPosition;
-    TObjArray *fmctrack_ancestorStartPosition;
-    TObjArray *fmctrack_endPosition;
-    TObjArray *fmctrack_motherEndPosition;
-    TObjArray *fmctrack_ancestorEndPosition;
-    TObjArray *fmctrack_startMomentum;
-    TObjArray *fmctrack_motherStartMomentum;
-    TObjArray *fmctrack_ancestorStartMomentum;
-    TObjArray *fmctrack_endMomentum;
-    TObjArray *fmctrack_motherEndMomentum;
-    TObjArray *fmctrack_ancestorEndMomentum;
-    vector<vector<vector<double> > >mctrack_dQdx;
-    vector<vector<double> > mctrack_dEdx;
+    vector<double> mctrack_startX;
+    vector<double> mctrack_startY;
+    vector<double> mctrack_startZ;
+    vector<double> mctrack_startT;
+    vector<double> mctrack_motherStartX;
+    vector<double> mctrack_motherStartY;
+    vector<double> mctrack_motherStartZ;
+    vector<double> mctrack_motherStartT;
+    vector<double> mctrack_ancestorStartX;
+    vector<double> mctrack_ancestorStartY;
+    vector<double> mctrack_ancestorStartZ;
+    vector<double> mctrack_ancestorStartT;
+    vector<double> mctrack_endX;
+    vector<double> mctrack_endY;
+    vector<double> mctrack_endZ;
+    vector<double> mctrack_endT;
+    vector<double> mctrack_motherEndX;
+    vector<double> mctrack_motherEndY;
+    vector<double> mctrack_motherEndZ;
+    vector<double> mctrack_motherEndT;
+    vector<double> mctrack_ancestorEndX;
+    vector<double> mctrack_ancestorEndY;
+    vector<double> mctrack_ancestorEndZ;
+    vector<double> mctrack_ancestorEndT;
+    vector<double> mctrack_startPX;
+    vector<double> mctrack_startPY;
+    vector<double> mctrack_startPZ;
+    vector<double> mctrack_startE;
+    vector<double> mctrack_motherStartPX;
+    vector<double> mctrack_motherStartPY;
+    vector<double> mctrack_motherStartPZ;
+    vector<double> mctrack_motherStartE;
+    vector<double> mctrack_ancestorStartPX;
+    vector<double> mctrack_ancestorStartPY;
+    vector<double> mctrack_ancestorStartPZ;
+    vector<double> mctrack_ancestorStartE;
+    vector<double> mctrack_endPX;
+    vector<double> mctrack_endPY;
+    vector<double> mctrack_endPZ;
+    vector<double> mctrack_endE;
+    vector<double> mctrack_motherEndPX;
+    vector<double> mctrack_motherEndPY;
+    vector<double> mctrack_motherEndPZ;
+    vector<double> mctrack_motherEndE;
+    vector<double> mctrack_ancestorEndPX;
+    vector<double> mctrack_ancestorEndPY;
+    vector<double> mctrack_ancestorEndPZ;
+    vector<double> mctrack_ancestorEndE;
 
     // MC SHOWER
+    bool fSaveMCShower;
+    std::string fMCShowerLabel;
+    TTree *fShowerTree;
     int Nmcshower;
     vector<int> mcshower_pdg;
     vector<int> mcshower_motherPdg;
@@ -219,21 +249,66 @@ namespace wc {
     vector<std::string> mcshower_process;
     vector<std::string> mcshower_motherProcess;
     vector<std::string> mcshower_ancestorProcess;
-    TObjArray *fmcshower_start;
-    TObjArray *fmcshower_motherStart;
-    TObjArray *fmcshower_ancestorStart;
-    TObjArray *fmcshower_end;
-    TObjArray *fmcshower_motherEnd;
-    TObjArray *fmcshower_ancestorEnd;
-    TObjArray *fmcshower_detprofilePos;
-    TObjArray *fmcshower_detprofileMom;
-    vector<vector<unsigned int> > mcshower_daughterTrackID;
-    vector<vector<double> > mcshower_charge;
-    vector<vector<double> > mcshower_dQdx;
+    vector<double> mcshower_startX;
+    vector<double> mcshower_startY;
+    vector<double> mcshower_startZ;
+    vector<double> mcshower_startT;
+    vector<double> mcshower_motherStartX;
+    vector<double> mcshower_motherStartY;
+    vector<double> mcshower_motherStartZ;
+    vector<double> mcshower_motherStartT;
+    vector<double> mcshower_ancestorStartX;
+    vector<double> mcshower_ancestorStartY;
+    vector<double> mcshower_ancestorStartZ;
+    vector<double> mcshower_ancestorStartT;
+    vector<double> mcshower_endX;
+    vector<double> mcshower_endY;
+    vector<double> mcshower_endZ;
+    vector<double> mcshower_endT;
+    vector<double> mcshower_motherEndX;
+    vector<double> mcshower_motherEndY;
+    vector<double> mcshower_motherEndZ;
+    vector<double> mcshower_motherEndT;
+    vector<double> mcshower_ancestorEndX;
+    vector<double> mcshower_ancestorEndY;
+    vector<double> mcshower_ancestorEndZ;
+    vector<double> mcshower_ancestorEndT;
+    vector<double> mcshower_startPX;
+    vector<double> mcshower_startPY;
+    vector<double> mcshower_startPZ;
+    vector<double> mcshower_startE;
+    vector<double> mcshower_motherStartPX;
+    vector<double> mcshower_motherStartPY;
+    vector<double> mcshower_motherStartPZ;
+    vector<double> mcshower_motherStartE;
+    vector<double> mcshower_ancestorStartPX;
+    vector<double> mcshower_ancestorStartPY;
+    vector<double> mcshower_ancestorStartPZ;
+    vector<double> mcshower_ancestorStartE;
+    vector<double> mcshower_endPX;
+    vector<double> mcshower_endPY;
+    vector<double> mcshower_endPZ;
+    vector<double> mcshower_endE;
+    vector<double> mcshower_motherEndPX;
+    vector<double> mcshower_motherEndPY;
+    vector<double> mcshower_motherEndPZ;
+    vector<double> mcshower_motherEndE;
+    vector<double> mcshower_ancestorEndPX;
+    vector<double> mcshower_ancestorEndPY;
+    vector<double> mcshower_ancestorEndPZ;
+    vector<double> mcshower_ancestorEndE;
+    vector<double> mcshower_detProfileX;
+    vector<double> mcshower_detProfileY;
+    vector<double> mcshower_detProfileZ;
+    vector<double> mcshower_detProfileT;
+    vector<double> mcshower_detProfilePX;
+    vector<double> mcshower_detProfilePY;
+    vector<double> mcshower_detProfilePZ;
+    vector<double> mcshower_detProfileE;
     vector<double> mcshower_dEdx;
-    TObjArray *fmcshower_startDir;
 
     // SIM CHANNEL
+    std::string fSimChannelLabel; 
     int Nsimchannel;
     vector<int> simchannel_channelID;
     vector<int> simchannel_tdc;
@@ -246,6 +321,10 @@ namespace wc {
     vector<float> simchannel_z; 
 
     // OPFLASH
+    bool fSaveOpFlash;
+    std::string fOpFlashLabel;
+    TTree *fOpFlashTree;
+    float opMultPEThresh; // fhicl param
     int of_nFlash;
     vector<float> of_t;
     vector<float> of_peTotal;
@@ -264,6 +343,7 @@ namespace wc {
   CellTreeTruth::CellTreeTruth(fhicl::ParameterSet const& parameterSet)
     : EDAnalyzer(parameterSet)
   {
+    std::cout << "CellTreeTruth constructor" << std::endl;
     reconfigure(parameterSet);
     initOutput();
   }
@@ -276,7 +356,7 @@ namespace wc {
   //-------------------------------------------------------------------
   void CellTreeTruth::reconfigure(fhicl::ParameterSet const& p)
   {
-    fMCTruthLabel = p.get<std::string>("MCTruthLabel");
+    std::cout << "Reconfigure" << std::endl;
     fMCNeutrinoLabel = p.get<std::string>("MCNeutrinoLabel");
     fMCParticleLabel = p.get<std::string>("MCParticleLabel");
     fMCTrackLabel = p.get<std::string>("MCTrackLabel");
@@ -284,7 +364,6 @@ namespace wc {
     fSimChannelLabel = p.get<std::string>("SimChannelLabel");
     fOpFlashLabel = p.get<std::string>("OpFlashLabel");
 
-    fSaveMCTruth = p.get<bool>("saveMCTruth");
     fSaveMCNeutrino = p.get<bool>("saveMCNeutrino");
     fSaveMCParticle = p.get<bool>("saveMCParticle");
     fSaveMCTrack = p.get<bool>("saveMCTrack");
@@ -300,6 +379,7 @@ namespace wc {
   //-------------------------------------------------------------------
   void CellTreeTruth::initOutput()
   {
+    std::cout << "Initialize output" << std::endl;
     TDirectory* tmpDir = gDirectory;
     fOutFile = new TFile(fOutFileName.c_str(), "recreate");
 
@@ -314,25 +394,44 @@ namespace wc {
     fEventTree->Branch("eventNo", &fEvent);    
     fEventTree->Branch("eventTime", &fEventTime);
 
-    // MC TRUTH
-    fTrueTree = new TTree("MCTruth","MC Truth Tree");
-    fTrueTree->Branch("Nmctruth",                  &Nmctruth);
-
     // MC Neutrino
     fNeutrinoTree = new TTree("MCNeutrino","MC Neutrino Tree from Output of LArG4");
-    fNeutrinoTree->Branch("Nmcneutrino",               &Nmcneutrino);
-    fNeutrinoTree->Branch("mcneutrino_ccnc",           &mcneutrino_ccnc);
-    fNeutrinoTree->Branch("mcneutrino_mode",           &mcneutrino_mode);
-    fNeutrinoTree->Branch("mcneutrino_interactionType",&mcneutrino_interactionType);
-    fNeutrinoTree->Branch("mcneutrino_target",         &mcneutrino_target);
-    fNeutrinoTree->Branch("mcneutrino_hitNuc",         &mcneutrino_hitNuc);
-    fNeutrinoTree->Branch("mcneutrino_hitQuark",       &mcneutrino_hitQuark);
-    fNeutrinoTree->Branch("mcneutrino_w",              &mcneutrino_w);
-    fNeutrinoTree->Branch("mcneutrino_x",              &mcneutrino_x);
-    fNeutrinoTree->Branch("mcneutrino_y",              &mcneutrino_y);
-    fNeutrinoTree->Branch("mcneutrino_qSqr",           &mcneutrino_qSqr);
-    fNeutrinoTree->Branch("mcneutrino_pt",             &mcneutrino_pt);
-    fNeutrinoTree->Branch("mcneutrino_theta",          &mcneutrino_theta);
+    fNeutrinoTree->Branch("mcneutrino_nuStatus",             &mcneutrino_nuStatus);
+    fNeutrinoTree->Branch("mcneutrino_nuTrackId",            &mcneutrino_nuTrackId);
+    fNeutrinoTree->Branch("mcneutrino_nuPdg",                &mcneutrino_nuPdg);
+    fNeutrinoTree->Branch("mcneutrino_nuMother",             &mcneutrino_nuMother);
+    fNeutrinoTree->Branch("mcneutrino_nuProcess",            &mcneutrino_nuProcess);
+    fNeutrinoTree->Branch("mcneutrino_nuEndProcess",         &mcneutrino_nuEndProcess);
+    fNeutrinoTree->Branch("mcneutrino_nuMass",               &mcneutrino_nuMass);
+    fNeutrinoTree->Branch("mcneutrino_nuWeight",             &mcneutrino_nuWeight);
+    fNeutrinoTree->Branch("mcneutrino_nuGvtxX",              &mcneutrino_nuGvtxX);
+    fNeutrinoTree->Branch("mcneutrino_nuGvtxY",              &mcneutrino_nuGvtxY);
+    fNeutrinoTree->Branch("mcneutrino_nuGvtxZ",              &mcneutrino_nuGvtxZ);
+    fNeutrinoTree->Branch("mcneutrino_nuRescatter",          &mcneutrino_nuRescatter);
+    fNeutrinoTree->Branch("mcneutrino_leptonStatus",         &mcneutrino_leptonStatus);
+    fNeutrinoTree->Branch("mcneutrino_leptonTrackId",        &mcneutrino_leptonTrackId);
+    fNeutrinoTree->Branch("mcneutrino_leptonPdg",            &mcneutrino_leptonPdg);
+    fNeutrinoTree->Branch("mcneutrino_leptonMother",         &mcneutrino_leptonMother);
+    fNeutrinoTree->Branch("mcneutrino_leptonProcess",        &mcneutrino_leptonProcess);
+    fNeutrinoTree->Branch("mcneutrino_leptonEndProcess",     &mcneutrino_leptonEndProcess);
+    fNeutrinoTree->Branch("mcneutrino_leptonMass",           &mcneutrino_leptonMass);
+    fNeutrinoTree->Branch("mcneutrino_leptonWeight",         &mcneutrino_leptonWeight);
+    fNeutrinoTree->Branch("mcneutrino_leptonGvtxX",          &mcneutrino_leptonGvtxX);
+    fNeutrinoTree->Branch("mcneutrino_leptonGvtxY",          &mcneutrino_leptonGvtxY);
+    fNeutrinoTree->Branch("mcneutrino_leptonGvtxZ",          &mcneutrino_leptonGvtxZ);
+    fNeutrinoTree->Branch("mcneutrino_leptonRescatter",      &mcneutrino_leptonRescatter);
+    fNeutrinoTree->Branch("mcneutrino_ccnc",                 &mcneutrino_ccnc);
+    fNeutrinoTree->Branch("mcneutrino_mode",                 &mcneutrino_mode);
+    fNeutrinoTree->Branch("mcneutrino_interactionType",      &mcneutrino_interactionType);
+    fNeutrinoTree->Branch("mcneutrino_target",               &mcneutrino_target);
+    fNeutrinoTree->Branch("mcneutrino_hitNuc",               &mcneutrino_hitNuc);
+    fNeutrinoTree->Branch("mcneutrino_hitQuark",             &mcneutrino_hitQuark);
+    fNeutrinoTree->Branch("mcneutrino_w",                    &mcneutrino_w);
+    fNeutrinoTree->Branch("mcneutrino_x",                    &mcneutrino_x);
+    fNeutrinoTree->Branch("mcneutrino_y",                    &mcneutrino_y);
+    fNeutrinoTree->Branch("mcneutrino_qSqr",                 &mcneutrino_qSqr);
+    fNeutrinoTree->Branch("mcneutrino_pt",                   &mcneutrino_pt);
+    fNeutrinoTree->Branch("mcneutrino_theta",                &mcneutrino_theta);
 
     // MC PARTICLE
     fParticleTree = new TTree("MCParticle","MC Particle Tree from Output of LArG4");
@@ -341,24 +440,14 @@ namespace wc {
     fParticleTree->Branch("mcparticle_statusCode",     &mcparticle_statusCode);
     fParticleTree->Branch("mcparticle_pdg",            &mcparticle_pdg);
     fParticleTree->Branch("mcparticle_mother",         &mcparticle_mother);
-    fmcparticle_polarization = new TObjArray();
-    fmcparticle_polarization->SetOwner(kTRUE);
-    fParticleTree->Branch("mcparticle_polarization",   &fmcparticle_polarization); 
     fParticleTree->Branch("mcparticle_process",        &mcparticle_process);
     fParticleTree->Branch("mcparticle_endProcess",     &mcparticle_endProcess);           
     fParticleTree->Branch("mcparticle_ndaughters",     &mcparticle_ndaughters);
     fParticleTree->Branch("mcparticle_daughterId",     &mcparticle_daughterId);
     fParticleTree->Branch("mcparticle_ntrajpts",       &mcparticle_ntrajpts);
-    fParticleTree->Branch("mcparticle_startXYZT",      &mcparticle_startXYZT, "mcparticle_startXYZT[Nmcparticle][4]");
-    fParticleTree->Branch("mcparticle_endXYZT",        &mcparticle_endXYZT, "mcparticle_endXYZT[Nmcparticle][4]");
-    fParticleTree->Branch("mcparticle_startMomentum",  &mcparticle_startMomentum, "mcparticle_startMomentum[Nmcparticle][4]");
-    fParticleTree->Branch("mcparticle_endMomentum",    &mcparticle_endMomentum, "mcparticle_endMomentum[Nmcparticle][4]");
-    fmcparticle_position = new TObjArray();
-    fmcparticle_position->SetOwner(kTRUE);
-    fParticleTree->Branch("mcparticle_position",       &fmcparticle_position);
-    fParticleTree->Branch("mcparticle_vx",             &mcparticle_vx);
-    fParticleTree->Branch("mcparticle_vy",             &mcparticle_vy);
-    fParticleTree->Branch("mcparticle_vz",             &mcparticle_vz);
+    fParticleTree->Branch("mcparticle_x",              &mcparticle_x);
+    fParticleTree->Branch("mcparticle_y",              &mcparticle_y);
+    fParticleTree->Branch("mcparticle_z",              &mcparticle_z);
     fParticleTree->Branch("mcparticle_t",              &mcparticle_t);
     fParticleTree->Branch("mcparticle_px",             &mcparticle_px);
     fParticleTree->Branch("mcparticle_py",             &mcparticle_py);
@@ -375,17 +464,14 @@ namespace wc {
     fParticleTree->Branch("mcparticle_endPY",          &mcparticle_endPY);
     fParticleTree->Branch("mcparticle_endPZ",          &mcparticle_endPZ);
     fParticleTree->Branch("mcparticle_endE",           &mcparticle_endE);
-    fmcparticle_Gvtx = new TObjArray();
-    fmcparticle_Gvtx->SetOwner(kTRUE);
-    fParticleTree->Branch("mcparticle_Gvtx",           &fmcparticle_Gvtx);
-    fParticleTree->Branch("mcparticle_Gvx",            &mcparticle_Gvx);
-    fParticleTree->Branch("mcparticle_Gvy",            &mcparticle_Gvy);
-    fParticleTree->Branch("mcparticle_Gvz",            &mcparticle_Gvz);
-    fParticleTree->Branch("mcparticle_Gvt",            &mcparticle_Gvt);
-    fParticleTree->Branch("mcparticle_firsttDaughter", &mcparticle_firstDaughter);
-    fParticleTree->Branch("mcparticle_lastDaughter",   &mcparticle_lastDaughter);
+    fParticleTree->Branch("mcparticle_GvtxX",          &mcparticle_GvtxX);
+    fParticleTree->Branch("mcparticle_GvtxY",          &mcparticle_GvtxY);
+    fParticleTree->Branch("mcparticle_GvtxZ",          &mcparticle_GvtxZ);
+    fParticleTree->Branch("mcparticle_GvtxPX",         &mcparticle_GvtxPX);
+    fParticleTree->Branch("mcparticle_GvtxPY",         &mcparticle_GvtxPY);
+    fParticleTree->Branch("mcparticle_GvtxPZ",         &mcparticle_GvtxPZ);
+    fParticleTree->Branch("mcparticle_GvtxE",          &mcparticle_GvtxE);
     fParticleTree->Branch("mcparticle_rescatter",      &mcparticle_rescatter);
-    // trajectory
     fParticleTree->Branch("mcparticle_weight",         &mcparticle_weight);
 
     // MC TRACK
@@ -400,88 +486,124 @@ namespace wc {
     fTrackTree->Branch("mctrack_process",           &mctrack_process);
     fTrackTree->Branch("mctrack_motherProcess",     &mctrack_motherProcess);
     fTrackTree->Branch("mctrack_ancestorProcess",   &mctrack_ancestorProcess);
-    fmctrack_startPosition = new TObjArray();
-    fmctrack_startPosition->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_startPosition",     &fmctrack_startPosition);
-    fmctrack_motherStartPosition = new TObjArray();
-    fmctrack_motherStartPosition->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_motherStartPosition", &fmctrack_motherStartPosition);
-    fmctrack_ancestorStartPosition = new TObjArray();
-    fmctrack_ancestorStartPosition->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_ancestorStartPosition", &fmctrack_ancestorStartPosition);
-    fmctrack_endPosition = new TObjArray();
-    fmctrack_endPosition->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_endPosition",       &fmctrack_endPosition);
-    fmctrack_motherEndPosition = new TObjArray();
-    fmctrack_motherEndPosition->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_motherEndPosition", &fmctrack_motherEndPosition);
-    fmctrack_ancestorEndPosition = new TObjArray();
-    fmctrack_ancestorEndPosition->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_ancestorEndPosition", &fmctrack_ancestorEndPosition);
-    fmctrack_startMomentum = new TObjArray();
-    fmctrack_startMomentum->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_startMomentum",     &fmctrack_startMomentum);
-    fmctrack_motherStartMomentum = new TObjArray();
-    fmctrack_motherStartMomentum->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_motherStartMomentum", &fmctrack_motherStartMomentum);
-    fmctrack_ancestorStartMomentum = new TObjArray();
-    fmctrack_ancestorStartMomentum->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_ancestorStartMomentum", &fmctrack_ancestorStartMomentum);
-    fmctrack_endMomentum = new TObjArray();
-    fmctrack_endMomentum->SetOwner(kTRUE);  
-    fTrackTree->Branch("mctrack_endMomentum",       &fmctrack_endMomentum);
-    fmctrack_motherEndMomentum = new TObjArray();
-    fmctrack_motherEndMomentum->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_motherEndMomentum", &fmctrack_motherEndMomentum);
-    fmctrack_ancestorEndMomentum = new TObjArray();
-    fmctrack_ancestorEndMomentum->SetOwner(kTRUE);
-    fTrackTree->Branch("mctrack_ancestorEndMomentum", &fmctrack_ancestorEndMomentum);
-    fTrackTree->Branch("mctrack_dQdx",             &mctrack_dQdx);
-    fTrackTree->Branch("mctrack_dEdx",             &mctrack_dEdx);
+    fTrackTree->Branch("mctrack_startX",            &mctrack_startX);
+    fTrackTree->Branch("mctrack_startY",            &mctrack_startY);
+    fTrackTree->Branch("mctrack_startZ",            &mctrack_startZ);
+    fTrackTree->Branch("mctrack_startT",            &mctrack_startT);
+    fTrackTree->Branch("mctrack_motherStartX",      &mctrack_motherStartX);
+    fTrackTree->Branch("mctrack_motherStartY",      &mctrack_motherStartY);
+    fTrackTree->Branch("mctrack_motherStartZ",      &mctrack_motherStartZ);
+    fTrackTree->Branch("mctrack_motherStartT",      &mctrack_motherStartT);
+    fTrackTree->Branch("mctrack_ancestorStartX",    &mctrack_ancestorStartX);
+    fTrackTree->Branch("mctrack_ancestorStartY",    &mctrack_ancestorStartY);
+    fTrackTree->Branch("mctrack_ancestorStartZ",    &mctrack_ancestorStartZ);
+    fTrackTree->Branch("mctrack_ancestorStartT",    &mctrack_ancestorStartT);
+    fTrackTree->Branch("mctrack_endX",              &mctrack_endX);
+    fTrackTree->Branch("mctrack_endY",              &mctrack_endY);
+    fTrackTree->Branch("mctrack_endZ",              &mctrack_endZ);
+    fTrackTree->Branch("mctrack_endT",              &mctrack_endT);
+    fTrackTree->Branch("mctrack_motherEndX",        &mctrack_motherEndX);
+    fTrackTree->Branch("mctrack_motherEndY",        &mctrack_motherEndY);
+    fTrackTree->Branch("mctrack_motherEndZ",        &mctrack_motherEndZ);
+    fTrackTree->Branch("mctrack_motherEndT",        &mctrack_motherEndT);
+    fTrackTree->Branch("mctrack_ancestorEndX",      &mctrack_ancestorEndX);
+    fTrackTree->Branch("mctrack_ancestorEndY",      &mctrack_ancestorEndY);
+    fTrackTree->Branch("mctrack_ancestorEndZ",      &mctrack_ancestorEndZ);
+    fTrackTree->Branch("mctrack_ancestorEndT",      &mctrack_ancestorEndT);
+    fTrackTree->Branch("mctrack_startPX",           &mctrack_startPX);
+    fTrackTree->Branch("mctrack_startPY",           &mctrack_startPY);
+    fTrackTree->Branch("mctrack_startPZ",           &mctrack_startPZ);
+    fTrackTree->Branch("mctrack_startE",            &mctrack_startE);
+    fTrackTree->Branch("mctrack_motherStartPX",     &mctrack_motherStartPX);
+    fTrackTree->Branch("mctrack_motherStartPY",     &mctrack_motherStartPY);
+    fTrackTree->Branch("mctrack_motherStartPZ",     &mctrack_motherStartPZ);
+    fTrackTree->Branch("mctrack_motherStartE",      &mctrack_motherStartE);
+    fTrackTree->Branch("mctrack_ancestorStartPX",   &mctrack_ancestorStartPX);
+    fTrackTree->Branch("mctrack_ancestorStartPY",   &mctrack_ancestorStartPY);
+    fTrackTree->Branch("mctrack_ancestorStartPZ",   &mctrack_ancestorStartPZ);
+    fTrackTree->Branch("mctrack_ancestorStartE",    &mctrack_ancestorStartE);
+    fTrackTree->Branch("mctrack_endPX",             &mctrack_endPX);
+    fTrackTree->Branch("mctrack_endPY",             &mctrack_endPY);
+    fTrackTree->Branch("mctrack_endPZ",             &mctrack_endPZ);
+    fTrackTree->Branch("mctrack_endE",              &mctrack_endE);
+    fTrackTree->Branch("mctrack_motherEndPX",       &mctrack_motherEndPX);
+    fTrackTree->Branch("mctrack_motherEndPY",       &mctrack_motherEndPY);
+    fTrackTree->Branch("mctrack_motherEndPZ",       &mctrack_motherEndPZ);
+    fTrackTree->Branch("mctrack_motherEndE",        &mctrack_motherEndE);
+    fTrackTree->Branch("mctrack_ancestorEndPX",     &mctrack_ancestorEndPX);
+    fTrackTree->Branch("mctrack_ancestorEndPY",     &mctrack_ancestorEndPY);
+    fTrackTree->Branch("mctrack_ancestorEndPZ",     &mctrack_ancestorEndPZ);
+    fTrackTree->Branch("mctrack_ancestorEndE",      &mctrack_ancestorEndE);
 
     // MC SHOWER
     fShowerTree = new TTree("MCShower","MC Shower Tree from Output of LArG4");
-    fShowerTree->Branch("Nmcshower",               &Nmcshower);
-    fShowerTree->Branch("mcshower_pdg",            &mcshower_pdg);
-    fShowerTree->Branch("mcshower_motherPdg",      &mcshower_motherPdg);
-    fShowerTree->Branch("mcshower_ancestorPdg",    &mcshower_ancestorPdg);
-    fShowerTree->Branch("mcshower_id",             &mcshower_id);
-    fShowerTree->Branch("mcshower_motherId",       &mcshower_motherId);
-    fShowerTree->Branch("mcshower_ancestorId",     &mcshower_ancestorId);
-    fShowerTree->Branch("mcshower_process",        &mcshower_process);
-    fShowerTree->Branch("mcshower_motherProcess",  &mcshower_motherProcess);
-    fShowerTree->Branch("mcshower_ancestorProcess", &mcshower_ancestorProcess);
-    fmcshower_start = new TObjArray();
-    fmcshower_start->SetOwner(kTRUE);
-    fShowerTree->Branch("mcshower_start",          &fmcshower_start);
-    fmcshower_motherStart = new TObjArray();
-    fmcshower_motherStart->SetOwner(kTRUE);
-    fShowerTree->Branch("mcshower_motherStart",    &fmcshower_motherStart);
-    fmcshower_ancestorStart = new TObjArray();
-    fmcshower_ancestorStart->SetOwner(kTRUE);
-    fShowerTree->Branch("mcshower_ancestorStart",  &fmcshower_ancestorStart);
-    fmcshower_end = new TObjArray();
-    fmcshower_end->SetOwner(kTRUE);
-    fShowerTree->Branch("mcshower_end",            &fmcshower_end);
-    fmcshower_motherEnd = new TObjArray();
-    fmcshower_motherEnd->SetOwner(kTRUE);
-    fShowerTree->Branch("mcshower_motherEnd",      &fmcshower_motherEnd);
-    fmcshower_ancestorEnd = new TObjArray();
-    fmcshower_ancestorEnd->SetOwner(kTRUE);
-    fShowerTree->Branch("mcshower_ancestorEnd",    &fmcshower_ancestorEnd);
-    fmcshower_detprofilePos = new TObjArray();
-    fmcshower_detprofilePos->SetOwner(kTRUE);
-    fShowerTree->Branch("mcshower_detprofilePos",  &fmcshower_detprofilePos);
-    fmcshower_detprofileMom = new TObjArray();
-    fmcshower_detprofileMom->SetOwner(kTRUE);
-    fShowerTree->Branch("mcshower_detprofileMom",  &fmcshower_detprofileMom);
-    fShowerTree->Branch("mcshower_daughterTrackID", &mcshower_daughterTrackID);
-    fShowerTree->Branch("mcshower_charge",         &mcshower_charge);
-    fShowerTree->Branch("mcshower_dQdx",           &mcshower_dQdx);
-    fShowerTree->Branch("mcshower_dEdx",           &mcshower_dEdx);
-    fmcshower_startDir = new TObjArray();
-    fmcshower_startDir->SetOwner(kTRUE);
-    fShowerTree->Branch("mcshower_startDir",       &fmcshower_startDir);
+    fShowerTree->Branch("Nmcshower",                  &Nmcshower);
+    fShowerTree->Branch("mcshower_pdg",               &mcshower_pdg);
+    fShowerTree->Branch("mcshower_motherPdg",         &mcshower_motherPdg);
+    fShowerTree->Branch("mcshower_ancestorPdg",       &mcshower_ancestorPdg);
+    fShowerTree->Branch("mcshower_id",                &mcshower_id);
+    fShowerTree->Branch("mcshower_motherId",          &mcshower_motherId);
+    fShowerTree->Branch("mcshower_ancestorId",        &mcshower_ancestorId);
+    fShowerTree->Branch("mcshower_process",           &mcshower_process);
+    fShowerTree->Branch("mcshower_motherProcess",     &mcshower_motherProcess);
+    fShowerTree->Branch("mcshower_ancestorProcess",   &mcshower_ancestorProcess);
+    fShowerTree->Branch("mcshower_startX",            &mcshower_startX);
+    fShowerTree->Branch("mcshower_startY",            &mcshower_startY);
+    fShowerTree->Branch("mcshower_startZ",            &mcshower_startZ);
+    fShowerTree->Branch("mcshower_startT",            &mcshower_startT);
+    fShowerTree->Branch("mcshower_motherStartX",      &mcshower_motherStartX);
+    fShowerTree->Branch("mcshower_motherStartY",      &mcshower_motherStartY);
+    fShowerTree->Branch("mcshower_motherStartZ",      &mcshower_motherStartZ);
+    fShowerTree->Branch("mcshower_motherStartT",      &mcshower_motherStartT);
+    fShowerTree->Branch("mcshower_ancestorStartX",    &mcshower_ancestorStartX);
+    fShowerTree->Branch("mcshower_ancestorStartY",    &mcshower_ancestorStartY);
+    fShowerTree->Branch("mcshower_ancestorStartZ",    &mcshower_ancestorStartZ);
+    fShowerTree->Branch("mcshower_ancestorStartT",    &mcshower_ancestorStartT);
+    fShowerTree->Branch("mcshower_endX",              &mcshower_endX);
+    fShowerTree->Branch("mcshower_endY",              &mcshower_endY);
+    fShowerTree->Branch("mcshower_endZ",              &mcshower_endZ);
+    fShowerTree->Branch("mcshower_endT",              &mcshower_endT);
+    fShowerTree->Branch("mcshower_motherEndX",        &mcshower_motherEndX);
+    fShowerTree->Branch("mcshower_motherEndY",        &mcshower_motherEndY);
+    fShowerTree->Branch("mcshower_motherEndZ",        &mcshower_motherEndZ);
+    fShowerTree->Branch("mcshower_motherEndT",        &mcshower_motherEndT);
+    fShowerTree->Branch("mcshower_ancestorEndX",      &mcshower_ancestorEndX);
+    fShowerTree->Branch("mcshower_ancestorEndY",      &mcshower_ancestorEndY);
+    fShowerTree->Branch("mcshower_ancestorEndZ",      &mcshower_ancestorEndZ);
+    fShowerTree->Branch("mcshower_ancestorEndT",      &mcshower_ancestorEndT);
+    fShowerTree->Branch("mcshower_startPX",           &mcshower_startPX);
+    fShowerTree->Branch("mcshower_startPY",           &mcshower_startPY);
+    fShowerTree->Branch("mcshower_startPZ",           &mcshower_startPZ);
+    fShowerTree->Branch("mcshower_startE",            &mcshower_startE);
+    fShowerTree->Branch("mcshower_motherStartPX",     &mcshower_motherStartPX);
+    fShowerTree->Branch("mcshower_motherStartPY",     &mcshower_motherStartPY);
+    fShowerTree->Branch("mcshower_motherStartPZ",     &mcshower_motherStartPZ);
+    fShowerTree->Branch("mcshower_motherStartE",      &mcshower_motherStartE);
+    fShowerTree->Branch("mcshower_ancestorStartPX",   &mcshower_ancestorStartPX);
+    fShowerTree->Branch("mcshower_ancestorStartPY",   &mcshower_ancestorStartPY);
+    fShowerTree->Branch("mcshower_ancestorStartPZ",   &mcshower_ancestorStartPZ);
+    fShowerTree->Branch("mcshower_ancestorStartE",    &mcshower_ancestorStartE);
+    fShowerTree->Branch("mcshower_endPX",             &mcshower_endPX);
+    fShowerTree->Branch("mcshower_endPY",             &mcshower_endPY);
+    fShowerTree->Branch("mcshower_endPZ",             &mcshower_endPZ);
+    fShowerTree->Branch("mcshower_endE",              &mcshower_endE);
+    fShowerTree->Branch("mcshower_motherEndPX",       &mcshower_motherEndPX);
+    fShowerTree->Branch("mcshower_motherEndPY",       &mcshower_motherEndPY);
+    fShowerTree->Branch("mcshower_motherEndPZ",       &mcshower_motherEndPZ);
+    fShowerTree->Branch("mcshower_motherEndE",        &mcshower_motherEndE);
+    fShowerTree->Branch("mcshower_ancestorEndPX",     &mcshower_ancestorEndPX);
+    fShowerTree->Branch("mcshower_ancestorEndPY",     &mcshower_ancestorEndPY);
+    fShowerTree->Branch("mcshower_ancestorEndPZ",     &mcshower_ancestorEndPZ);
+    fShowerTree->Branch("mcshower_ancestorEndE",      &mcshower_ancestorEndE);
+    fShowerTree->Branch("mcshower_detProfileX",       &mcshower_detProfileX);
+    fShowerTree->Branch("mcshower_detProfileY",       &mcshower_detProfileY);
+    fShowerTree->Branch("mcshower_detProfileZ",       &mcshower_detProfileZ);
+    fShowerTree->Branch("mcshower_detProfileT",       &mcshower_detProfileT);
+    fShowerTree->Branch("mcshower_detProfilePX",      &mcshower_detProfilePX);
+    fShowerTree->Branch("mcshower_detProfilePY",      &mcshower_detProfilePY);
+    fShowerTree->Branch("mcshower_detProfilePZ",      &mcshower_detProfilePZ);
+    fShowerTree->Branch("mcshower_detProfileE",       &mcshower_detProfileE);
+    fShowerTree->Branch("mcshower_dEdx",              &mcshower_dEdx);
 
     // SIM CHANNEL
     //fSimChTree = new TTree("SimChannel","SimChannel Tree from Output of LArG4");
@@ -517,15 +639,16 @@ namespace wc {
   //-------------------------------------------------------------------
   void CellTreeTruth::beginJob()
   {
+    std::cout << "Begin job" << std::endl;
   }
 
   //-------------------------------------------------------------------
   void CellTreeTruth::endJob()
   {
+    std::cout << "End job" << std::endl;
     TDirectory* tmpDir = gDirectory;
     fOutFile->cd("/Event");
     fEventTree->Write();
-    if(fSaveMCTruth == true) { fTrueTree->Write(); }
     if(fSaveMCNeutrino == true) { fNeutrinoTree->Write(); }
     if(fSaveMCParticle == true) { fParticleTree->Write(); }
     if(fSaveMCTrack == true) { fTrackTree->Write(); }
@@ -539,12 +662,14 @@ namespace wc {
   //-------------------------------------------------------------------
   void CellTreeTruth::beginRun(const art::Run&)
   {
+    std::cout << "Begin run" << std::endl;
     mf::LogInfo("CellTreeTruth") << "begin run";
   }
 
   //-------------------------------------------------------------------
   void CellTreeTruth::analyze(const art::Event& event)
   {
+    std::cout << "Analyze" << std::endl;
     reset();
 
     fRun = event.run();
@@ -556,7 +681,6 @@ namespace wc {
     processSimChannel(event); 
     fEventTree->Fill();
 
-    if(fSaveMCTruth == true) { processMCTruth(event); fTrueTree->Fill(); }
     if(fSaveMCNeutrino == true) { processMCNeutrino(event); fNeutrinoTree->Fill(); }
     if(fSaveMCParticle == true) { processMCParticle(event); fParticleTree->Fill(); }
     if(fSaveMCTrack == true) { processMCTrack(event); fTrackTree->Fill(); }
@@ -567,70 +691,85 @@ namespace wc {
   //-------------------------------------------------------------------
   void CellTreeTruth::reset()
   {
+    std::cout << "Reset" << std::endl;
     if(fSaveMCNeutrino == true){
-    mcneutrino_ccnc.clear();
-    mcneutrino_mode.clear();
-    mcneutrino_interactionType.clear();
-    mcneutrino_target.clear();
-    mcneutrino_hitNuc.clear();
-    mcneutrino_hitQuark.clear();
-    mcneutrino_w.clear();
-    mcneutrino_x.clear();
-    mcneutrino_y.clear();
-    mcneutrino_qSqr.clear();
-    mcneutrino_pt.clear();
-    mcneutrino_theta.clear();
+      mcneutrino_nuStatus.clear();
+      mcneutrino_nuTrackId.clear();
+      mcneutrino_nuPdg.clear();
+      mcneutrino_nuMother.clear();
+      mcneutrino_nuProcess.clear();
+      mcneutrino_nuEndProcess.clear();
+      mcneutrino_nuMass.clear();
+      mcneutrino_nuWeight.clear();
+      mcneutrino_nuGvtxX.clear();
+      mcneutrino_nuGvtxY.clear();
+      mcneutrino_nuGvtxZ.clear();
+      mcneutrino_nuRescatter.clear();
+      mcneutrino_leptonStatus.clear();
+      mcneutrino_leptonTrackId.clear();
+      mcneutrino_leptonPdg.clear();
+      mcneutrino_leptonMother.clear();
+      mcneutrino_leptonProcess.clear();
+      mcneutrino_leptonEndProcess.clear();
+      mcneutrino_leptonMass.clear();
+      mcneutrino_leptonWeight.clear();
+      mcneutrino_leptonGvtxX.clear();
+      mcneutrino_leptonGvtxY.clear();
+      mcneutrino_leptonGvtxZ.clear();
+      mcneutrino_leptonRescatter.clear();
+      mcneutrino_ccnc.clear();
+      mcneutrino_mode.clear();
+      mcneutrino_interactionType.clear();
+      mcneutrino_target.clear();
+      mcneutrino_hitNuc.clear();
+      mcneutrino_hitQuark.clear();
+      mcneutrino_w.clear();
+      mcneutrino_x.clear();
+      mcneutrino_y.clear();
+      mcneutrino_qSqr.clear();
+      mcneutrino_pt.clear();
+      mcneutrino_theta.clear();
     }
 
     if(fSaveMCParticle == true){
-    mcparticle_id.clear();
-    mcparticle_statusCode.clear();
-    mcparticle_pdg.clear();
-    mcparticle_mother.clear();
-    fmcparticle_polarization->Clear();
-    mcparticle_process.clear();
-    mcparticle_endProcess.clear();
-    mcparticle_ndaughters.clear();
-    mcparticle_daughterId.clear();
-    mcparticle_ntrajpts.clear();
-    Nmcparticle = 0;
-    for(int i=0; i<MAX_TRACKS; i++){
-      for(int j=0; j<4; j++){
-	mcparticle_startXYZT[i][j] = 0;
-	mcparticle_endXYZT[i][j] = 0;
-	mcparticle_startMomentum[i][j] = 0;
-	mcparticle_endMomentum[i][j] = 0;
-      }
-    }
-    fmcparticle_position->Clear();
-    mcparticle_vx.clear();
-    mcparticle_vy.clear();
-    mcparticle_vz.clear();
-    mcparticle_t.clear();
-    mcparticle_px.clear();
-    mcparticle_py.clear();
-    mcparticle_pz.clear();
-    mcparticle_e.clear();
-    mcparticle_p.clear();
-    mcparticle_pt.clear();
-    mcparticle_endX.clear();
-    mcparticle_endY.clear();
-    mcparticle_endZ.clear();
-    mcparticle_endT.clear();
-    mcparticle_mass.clear();
-    mcparticle_endPX.clear();
-    mcparticle_endPY.clear();
-    mcparticle_endPZ.clear();
-    mcparticle_endE.clear();
-    fmcparticle_Gvtx->Clear();
-    mcparticle_Gvx.clear();
-    mcparticle_Gvy.clear();
-    mcparticle_Gvz.clear();
-    mcparticle_Gvt.clear();
-    mcparticle_firstDaughter.clear();
-    mcparticle_lastDaughter.clear();
-    mcparticle_rescatter.clear();
-    mcparticle_weight.clear();
+      Nmcparticle = 0;    
+      mcparticle_id.clear();
+      mcparticle_statusCode.clear();
+      mcparticle_pdg.clear();
+      mcparticle_mother.clear();
+      mcparticle_process.clear();
+      mcparticle_endProcess.clear();
+      mcparticle_ndaughters.clear();
+      mcparticle_daughterId.clear();
+      mcparticle_ntrajpts.clear();
+      mcparticle_x.clear();
+      mcparticle_y.clear();
+      mcparticle_z.clear();
+      mcparticle_t.clear();
+      mcparticle_px.clear();
+      mcparticle_py.clear();
+      mcparticle_pz.clear();
+      mcparticle_e.clear();
+      mcparticle_p.clear();
+      mcparticle_pt.clear();
+      mcparticle_endX.clear();
+      mcparticle_endY.clear();
+      mcparticle_endZ.clear();
+      mcparticle_endT.clear();
+      mcparticle_mass.clear();
+      mcparticle_endPX.clear();
+      mcparticle_endPY.clear();
+      mcparticle_endPZ.clear();
+      mcparticle_endE.clear();
+      mcparticle_GvtxX.clear();
+      mcparticle_GvtxY.clear();
+      mcparticle_GvtxZ.clear();
+      mcparticle_GvtxPX.clear();
+      mcparticle_GvtxPY.clear();
+      mcparticle_GvtxPZ.clear();
+      mcparticle_GvtxE.clear();
+      mcparticle_rescatter.clear();
+      mcparticle_weight.clear();
     }
 
     if(fSaveMCTrack == true){
@@ -643,20 +782,54 @@ namespace wc {
     mctrack_process.clear();
     mctrack_motherProcess.clear();
     mctrack_ancestorProcess.clear();
-    fmctrack_startPosition->Clear();
-    fmctrack_motherStartPosition->Clear();
-    fmctrack_ancestorStartPosition->Clear();
-    fmctrack_endPosition->Clear();
-    fmctrack_motherEndPosition->Clear();
-    fmctrack_ancestorEndPosition->Clear();
-    fmctrack_startMomentum->Clear();
-    fmctrack_motherStartMomentum->Clear();
-    fmctrack_ancestorStartMomentum->Clear();
-    fmctrack_endMomentum->Clear();
-    fmctrack_motherEndMomentum->Clear();
-    fmctrack_ancestorEndMomentum->Clear();
-    mctrack_dQdx.clear();
-    mctrack_dEdx.clear();
+    mctrack_startX.clear();
+    mctrack_startY.clear();
+    mctrack_startZ.clear();
+    mctrack_startT.clear();
+    mctrack_motherStartX.clear();
+    mctrack_motherStartY.clear();
+    mctrack_motherStartZ.clear();
+    mctrack_motherStartT.clear();
+    mctrack_ancestorStartX.clear();
+    mctrack_ancestorStartY.clear();
+    mctrack_ancestorStartZ.clear();
+    mctrack_ancestorStartT.clear();
+    mctrack_endX.clear();
+    mctrack_endY.clear();
+    mctrack_endZ.clear();
+    mctrack_endT.clear();
+    mctrack_motherEndX.clear();
+    mctrack_motherEndY.clear();
+    mctrack_motherEndZ.clear();
+    mctrack_motherEndT.clear();
+    mctrack_ancestorEndX.clear();
+    mctrack_ancestorEndY.clear();
+    mctrack_ancestorEndZ.clear();
+    mctrack_ancestorEndT.clear();
+    mctrack_startPX.clear();
+    mctrack_startPY.clear();
+    mctrack_startPZ.clear();
+    mctrack_startE.clear();
+    mctrack_motherStartPX.clear();
+    mctrack_motherStartPY.clear();
+    mctrack_motherStartPZ.clear();
+    mctrack_motherStartE.clear();
+    mctrack_ancestorStartPX.clear();
+    mctrack_ancestorStartPY.clear();
+    mctrack_ancestorStartPZ.clear();
+    mctrack_ancestorStartE.clear();
+    mctrack_endPX.clear();
+    mctrack_endPY.clear();
+    mctrack_endPZ.clear();
+    mctrack_endE.clear();
+    mctrack_motherEndPX.clear();
+    mctrack_motherEndPY.clear();
+    mctrack_motherEndPZ.clear();
+    mctrack_motherEndE.clear();
+    mctrack_ancestorEndPX.clear();
+    mctrack_ancestorEndPY.clear();
+    mctrack_ancestorEndPZ.clear();
+    mctrack_ancestorEndE.clear();
     }
 
     if(fSaveMCShower == true){
@@ -669,19 +842,63 @@ namespace wc {
     mcshower_process.clear();
     mcshower_motherProcess.clear();
     mcshower_ancestorProcess.clear();
-    fmcshower_start->Clear();
-    fmcshower_motherStart->Clear();
-    fmcshower_ancestorStart->Clear();
-    fmcshower_end->Clear();
-    fmcshower_motherEnd->Clear();
-    fmcshower_ancestorEnd->Clear();
-    fmcshower_detprofilePos->Clear();
-    fmcshower_detprofileMom->Clear();
-    mcshower_daughterTrackID.clear();
-    mcshower_charge.clear();
-    mcshower_dQdx.clear();
+    mcshower_startX.clear();
+    mcshower_startY.clear();
+    mcshower_startZ.clear();
+    mcshower_startT.clear();
+    mcshower_motherStartX.clear();
+    mcshower_motherStartY.clear();
+    mcshower_motherStartZ.clear();
+    mcshower_motherStartT.clear();
+    mcshower_ancestorStartX.clear();
+    mcshower_ancestorStartY.clear();
+    mcshower_ancestorStartZ.clear();
+    mcshower_ancestorStartT.clear();
+    mcshower_endX.clear();
+    mcshower_endY.clear();
+    mcshower_endZ.clear();
+    mcshower_endT.clear();
+    mcshower_motherEndX.clear();
+    mcshower_motherEndY.clear();
+    mcshower_motherEndZ.clear();
+    mcshower_motherEndT.clear();
+    mcshower_ancestorEndX.clear();
+    mcshower_ancestorEndY.clear();
+    mcshower_ancestorEndZ.clear();
+    mcshower_ancestorEndT.clear();
+    mcshower_startPX.clear();
+    mcshower_startPY.clear();
+    mcshower_startPZ.clear();
+    mcshower_startE.clear();
+    mcshower_motherStartPX.clear();
+    mcshower_motherStartPY.clear();
+    mcshower_motherStartPZ.clear();
+    mcshower_motherStartE.clear();
+    mcshower_ancestorStartPX.clear();
+    mcshower_ancestorStartPY.clear();
+    mcshower_ancestorStartPZ.clear();
+    mcshower_ancestorStartE.clear();
+    mcshower_endPX.clear();
+    mcshower_endPY.clear();
+    mcshower_endPZ.clear();
+    mcshower_endE.clear();
+    mcshower_motherEndPX.clear();
+    mcshower_motherEndPY.clear();
+    mcshower_motherEndPZ.clear();
+    mcshower_motherEndE.clear();
+    mcshower_ancestorEndPX.clear();
+    mcshower_ancestorEndPY.clear();
+    mcshower_ancestorEndPZ.clear();
+    mcshower_ancestorEndE.clear();
+    mcshower_detProfileX.clear();
+    mcshower_detProfileY.clear();
+    mcshower_detProfileZ.clear();
+    mcshower_detProfileT.clear();
+    mcshower_detProfilePX.clear();
+    mcshower_detProfilePY.clear();
+    mcshower_detProfilePZ.clear();
+    mcshower_detProfileE.clear();
     mcshower_dEdx.clear();
-    fmcshower_startDir->Clear();
     }
 
     //if(fSaveSimChannel == true){
@@ -710,49 +927,65 @@ namespace wc {
   }
 
   //-------------------------------------------------------------------
-  void CellTreeTruth::processMCTruth(const art::Event& event)
-  {
-    art::Handle<std::vector<simb::MCTruth> > truthHandle;
-    if(! event.getByLabel(fMCTruthLabel, truthHandle)){
-      cout << "WARNING: no label " << fMCTruthLabel << endl;
-    }
-    std::vector<art::Ptr<simb::MCTruth> > truth;
-    art::fill_ptr_vector(truth, truthHandle); 
-
-    Nmctruth = (int)truth.size();
-  }
 
   //-------------------------------------------------------------------
   void CellTreeTruth::processMCNeutrino(const art::Event& event)
   {
-    art::Handle<std::vector<simb::MCNeutrino> > neutrinoHandle;
-    if(! event.getByLabel(fMCNeutrinoLabel, neutrinoHandle)){
-      cout << "WARNING: no label " << fMCNeutrinoLabel << endl;
-    }
-    std::vector<art::Ptr<simb::MCNeutrino> > neutrinos;
-    art::fill_ptr_vector(neutrinos, neutrinoHandle);
+    std::cout << "Process MCNeutrion" << std::endl;
+    art::Handle< std::vector<simb::MCTruth> > mctruthHandle;
+    event.getByLabel(fMCNeutrinoLabel, mctruthHandle);
+    std::vector<art::Ptr<simb::MCTruth> > mclist;
+    art::fill_ptr_vector(mclist, mctruthHandle);
+    art::Ptr<simb::MCTruth> mctruth;
 
-    Nmcneutrino = (int)neutrinos.size();
-    for(auto const& neutrino : neutrinos){
-      mcneutrino_ccnc.push_back(neutrino->CCNC());
-      mcneutrino_mode.push_back(neutrino->Mode());
-      mcneutrino_interactionType.push_back(neutrino->InteractionType());
-      mcneutrino_target.push_back(neutrino->Target());
-      mcneutrino_hitNuc.push_back(neutrino->HitNuc());
-      mcneutrino_hitQuark.push_back(neutrino->HitQuark());
-      mcneutrino_w.push_back(neutrino->W());
-      mcneutrino_x.push_back(neutrino->X());
-      mcneutrino_y.push_back(neutrino->Y());
-      mcneutrino_qSqr.push_back(neutrino->QSqr());
-      mcneutrino_pt.push_back(neutrino->Pt());
-      mcneutrino_theta.push_back(neutrino->Theta());
+    if(mclist.size() > 0){
+      mctruth = mclist.at(0);
+      simb::MCNeutrino nu = mctruth->GetNeutrino();
+      //### neutrino ###                                                                                                                                                        
+      mcneutrino_nuStatus.push_back(nu.Nu().StatusCode());
+      mcneutrino_nuTrackId.push_back(nu.Nu().TrackId());
+      mcneutrino_nuPdg.push_back(nu.Nu().PdgCode());
+      mcneutrino_nuMother.push_back(nu.Nu().Mother());
+      mcneutrino_nuProcess.push_back(nu.Nu().Process());
+      mcneutrino_nuEndProcess.push_back(nu.Nu().EndProcess());
+      mcneutrino_nuMass.push_back(nu.Nu().Mass());
+      mcneutrino_nuWeight.push_back(nu.Nu().Weight());
+      mcneutrino_nuGvtxX.push_back(nu.Nu().GetGvtx().X());
+      mcneutrino_nuGvtxY.push_back(nu.Nu().GetGvtx().Y());
+      mcneutrino_nuGvtxZ.push_back(nu.Nu().GetGvtx().Z());
+      mcneutrino_nuRescatter.push_back(nu.Nu().Rescatter());
+      //### lepton ###                                                                                                                                                           
+      mcneutrino_leptonStatus.push_back(nu.Lepton().StatusCode());
+      mcneutrino_leptonTrackId.push_back(nu.Lepton().TrackId());
+      mcneutrino_leptonPdg.push_back(nu.Lepton().PdgCode());
+      mcneutrino_leptonMother.push_back(nu.Lepton().Mother());
+      mcneutrino_leptonProcess.push_back(nu.Lepton().Process());
+      mcneutrino_leptonEndProcess.push_back(nu.Lepton().EndProcess());
+      mcneutrino_leptonMass.push_back(nu.Lepton().Mass());
+      mcneutrino_leptonWeight.push_back(nu.Lepton().Weight());
+      mcneutrino_leptonGvtxX.push_back(nu.Lepton().GetGvtx().X());
+      mcneutrino_leptonGvtxY.push_back(nu.Lepton().GetGvtx().Y());
+      mcneutrino_leptonGvtxZ.push_back(nu.Lepton().GetGvtx().Z());
+      mcneutrino_leptonRescatter.push_back(nu.Lepton().Rescatter());
+      //### other ###                                   
+      mcneutrino_mode.push_back(nu.Mode());
+      mcneutrino_interactionType.push_back(nu.InteractionType());
+      mcneutrino_target.push_back(nu.Target());
+      mcneutrino_hitNuc.push_back(nu.HitNuc());
+      mcneutrino_hitQuark.push_back(nu.HitQuark());
+      mcneutrino_w.push_back(nu.W());
+      mcneutrino_x.push_back(nu.X());
+      mcneutrino_y.push_back(nu.Y());
+      mcneutrino_qSqr.push_back(nu.QSqr());
+      mcneutrino_pt.push_back(nu.Pt());
+      mcneutrino_theta.push_back(nu.Theta());
     }
   }
 
   //-------------------------------------------------------------------
   void CellTreeTruth::processMCParticle(const art::Event& event)
   {
-   
+    std::cout << "Process MCParticle" << std::endl;
     art::Handle<std::vector<simb::MCParticle> > particleHandle;
     if(! event.getByLabel(fMCParticleLabel, particleHandle)){
       cout << "WARNING: no label " << fMCParticleLabel << endl;
@@ -762,16 +995,12 @@ namespace wc {
     std::vector<art::Ptr<simb::MCParticle> > particles;
     art::fill_ptr_vector(particles, particleHandle);
    
-    //    Nmcparticle = (int)particles.size();
     int i=0; // track index in saved MCParticles
     for(auto const& particle : particles){
       mcparticle_id.push_back(particle->TrackId());
       mcparticle_statusCode.push_back(particle->StatusCode());
       mcparticle_pdg.push_back(particle->PdgCode());
       mcparticle_mother.push_back(particle->Mother());
-      TClonesArray *Lpolarization = new TClonesArray("TVector3",0);
-      new ((*Lpolarization)[0]) TVector3(particle->Polarization());
-      fmcparticle_polarization->Add(Lpolarization);
       mcparticle_process.push_back(particle->Process());
       mcparticle_endProcess.push_back(particle->EndProcess());
       mcparticle_ndaughters.push_back(particle->NumberDaughters());
@@ -780,9 +1009,9 @@ namespace wc {
       }
       mcparticle_ntrajpts.push_back(particle->NumberTrajectoryPoints());
       for(int b=0; b<(int)particle->NumberTrajectoryPoints(); b++){
-	mcparticle_vx.push_back(particle->Vx(b));
-	mcparticle_vy.push_back(particle->Vy(b));
-	mcparticle_vz.push_back(particle->Vz(b));
+	mcparticle_x.push_back(particle->Vx(b));
+	mcparticle_y.push_back(particle->Vy(b));
+	mcparticle_z.push_back(particle->Vz(b));
 	mcparticle_t.push_back(particle->T(b));
 	mcparticle_px.push_back(particle->Px(b));
 	mcparticle_py.push_back(particle->Py(b));
@@ -790,28 +1019,6 @@ namespace wc {
 	mcparticle_e.push_back(particle->E(b));
 	mcparticle_p.push_back(particle->P(b));
 	mcparticle_pt.push_back(particle->Pt(b));
-      }
-
-      size_t numberTrajectoryPoints = particle->NumberTrajectoryPoints();
-      int last = numberTrajectoryPoints - 1;
-      const TLorentzVector& positionStart = particle->Position(0);
-      const TLorentzVector& positionEnd = particle->Position(last);
-      const TLorentzVector& momentumStart = particle->Momentum(0);
-      const TLorentzVector& momentumEnd = particle->Momentum(last);
-      positionStart.GetXYZT(mcparticle_startXYZT[i]);
-      positionEnd.GetXYZT(mcparticle_endXYZT[i]);
-      momentumStart.GetXYZT(mcparticle_startMomentum[i]);
-      momentumEnd.GetXYZT(mcparticle_endMomentum[i]);
-
-      TClonesArray *Lposition = new TClonesArray("TLorentzVector",numberTrajectoryPoints);
-      for(unsigned int j=0; j<numberTrajectoryPoints; j++){
-	new ((*Lposition)[j]) TLorentzVector(particle->Position(j));
-      }
-      fmcparticle_position->Add(Lposition);
-      i++;
-      if(i == MAX_TRACKS){
-	cout << "WARNING: # tracks exceeds MAX_TRACKS " << MAX_TRACKS << endl;
-	break;
       }
       mcparticle_endX.push_back(particle->EndX());
       mcparticle_endY.push_back(particle->EndY());
@@ -822,18 +1029,14 @@ namespace wc {
       mcparticle_endPY.push_back(particle->EndPy());
       mcparticle_endPZ.push_back(particle->EndPz());
       mcparticle_endE.push_back(particle->EndE()); 
-
-      TClonesArray *LGvtx = new TClonesArray("TLorentzVector",1);
-      new ((*LGvtx)[0]) TLorentzVector(particle->GetGvtx());
-      fmcparticle_Gvtx->Add(LGvtx);
-      mcparticle_Gvx.push_back(particle->Gvx());
-      mcparticle_Gvy.push_back(particle->Gvy());
-      mcparticle_Gvz.push_back(particle->Gvz());
-      mcparticle_Gvt.push_back(particle->Gvt());
-      //mcparticle_firstDaughter.push_back(particle->FirstDaughter());
-      //mcparticle_lastDaughter.push_back(particle->LastDaughter()); // -->(first/last daughter) failure
+      mcparticle_GvtxX.push_back(particle->GetGvtx().X());
+      mcparticle_GvtxY.push_back(particle->GetGvtx().Y());
+      mcparticle_GvtxZ.push_back(particle->GetGvtx().Z());
+      mcparticle_GvtxPX.push_back(particle->GetGvtx().Px());
+      mcparticle_GvtxPY.push_back(particle->GetGvtx().Py());
+      mcparticle_GvtxPZ.push_back(particle->GetGvtx().Pz());
+      mcparticle_GvtxE.push_back(particle->GetGvtx().Energy());
       mcparticle_rescatter.push_back(particle->Rescatter());
-      // trajectory
       mcparticle_weight.push_back(particle->Weight());
     } 
     Nmcparticle = i;
@@ -842,6 +1045,7 @@ namespace wc {
   //-------------------------------------------------------------------
   void CellTreeTruth::processMCTrack(const art::Event& event)
   {
+    std::cout << "Process MCTrack" << std::endl;
     art::Handle< std::vector<sim::MCTrack> > trackHandle;
     if(! event.getByLabel(fMCTrackLabel, trackHandle)){
       cout << "WARNING: no label " << fMCTrackLabel << endl;
@@ -856,59 +1060,67 @@ namespace wc {
       mctrack_pdg.push_back(track->PdgCode());
       mctrack_id.push_back(track->TrackID());
       mctrack_process.push_back(track->Process());
-      TClonesArray *LstartP = new TClonesArray("TLorentzVector",1);
-      new ((*LstartP)[0]) TLorentzVector(track->Start().Position());
-      fmctrack_startPosition->Add(LstartP);
-      TClonesArray *LendP = new TClonesArray("TLorentzVector",1);
-      new ((*LendP)[0]) TLorentzVector(track->End().Position());
-      fmctrack_endPosition->Add(LendP);
-      TClonesArray *LstartM = new TClonesArray("TLorentzVector",1);
-      new ((*LstartM)[0]) TLorentzVector(track->Start().Momentum());
-      fmctrack_startMomentum->Add(LstartM);
-      TClonesArray *LendM = new TClonesArray("TLorentzVector",1);
-      new ((*LendM)[0]) TLorentzVector(track->End().Momentum());
-      fmctrack_endMomentum->Add(LendM);
-      mctrack_dQdx.push_back(track->dQdx());
-      mctrack_dEdx.push_back(track->dEdx());
       mctrack_motherPdg.push_back(track->MotherPdgCode());
       mctrack_motherId.push_back(track->MotherTrackID());
       mctrack_motherProcess.push_back(track->MotherProcess());
-
-      TClonesArray *LmomstartP = new TClonesArray("TLorentzVector",1);
-      new ((*LmomstartP)[0]) TLorentzVector(track->MotherStart().Position());
-      fmctrack_motherStartPosition->Add(LmomstartP);
-      TClonesArray *LmomendP = new TClonesArray("TLorentzVector",1);
-      new ((*LmomendP)[0]) TLorentzVector(track->MotherEnd().Position());
-      fmctrack_motherEndPosition->Add(LmomendP);
-      TClonesArray *LmomstartM = new TClonesArray("TLorentzVector",1);
-      new ((*LmomstartM)[0]) TLorentzVector(track->MotherStart().Momentum());
-      fmctrack_motherStartMomentum->Add(LmomstartM);
-      TClonesArray *LmomendM = new TClonesArray("TLorentzVector",1);
-      new ((*LmomendM)[0]) TLorentzVector(track->MotherEnd().Momentum());
-      fmctrack_motherEndMomentum->Add(LmomendM);
-
       mctrack_ancestorPdg.push_back(track->AncestorPdgCode());
       mctrack_ancestorId.push_back(track->AncestorTrackID());
       mctrack_ancestorProcess.push_back(track->AncestorProcess());
-      TClonesArray *LancstartP = new TClonesArray("TLorentzVector",1);
-      new ((*LancstartP)[0]) TLorentzVector(track->AncestorStart().Position());
-      fmctrack_ancestorStartPosition->Add(LancstartP);
-      TClonesArray *LancendP = new TClonesArray("TLorentzVector",1);
-      new ((*LancendP)[0]) TLorentzVector(track->AncestorEnd().Position());
-      fmctrack_ancestorEndPosition->Add(LancendP);
-      TClonesArray *LancstartM = new TClonesArray("TLorentzVector",1);
-      new ((*LancstartM)[0]) TLorentzVector(track->AncestorStart().Momentum());
-      fmctrack_ancestorStartMomentum->Add(LancstartM);
-      TClonesArray *LancendM = new TClonesArray("TLorentzVector",1);
-      new ((*LancendM)[0]) TLorentzVector(track->AncestorEnd().Momentum());
-      fmctrack_ancestorEndMomentum->Add(LancendM);         
-      
+      mctrack_startX.push_back(track->Start().Position().X());
+      mctrack_startY.push_back(track->Start().Position().Y());
+      mctrack_startZ.push_back(track->Start().Position().Z());
+      mctrack_startT.push_back(track->Start().Position().T());
+      mctrack_motherStartX.push_back(track->MotherStart().Position().X());
+      mctrack_motherStartY.push_back(track->MotherStart().Position().Y());
+      mctrack_motherStartZ.push_back(track->MotherStart().Position().Z());
+      mctrack_motherStartT.push_back(track->MotherStart().Position().T());
+      mctrack_ancestorStartX.push_back(track->AncestorStart().Position().X());
+      mctrack_ancestorStartY.push_back(track->AncestorStart().Position().Y());
+      mctrack_ancestorStartZ.push_back(track->AncestorStart().Position().Z());
+      mctrack_ancestorStartT.push_back(track->AncestorStart().Position().T());
+      mctrack_endX.push_back(track->End().Position().X());
+      mctrack_endY.push_back(track->End().Position().Y());
+      mctrack_endZ.push_back(track->End().Position().Z());
+      mctrack_endT.push_back(track->End().Position().T());
+      mctrack_motherEndX.push_back(track->MotherEnd().Position().X());
+      mctrack_motherEndY.push_back(track->MotherEnd().Position().Y());
+      mctrack_motherEndZ.push_back(track->MotherEnd().Position().Z());
+      mctrack_motherEndT.push_back(track->MotherEnd().Position().T());
+      mctrack_ancestorEndX.push_back(track->AncestorEnd().Position().X());
+      mctrack_ancestorEndY.push_back(track->AncestorEnd().Position().Y());
+      mctrack_ancestorEndZ.push_back(track->AncestorEnd().Position().Z());
+      mctrack_ancestorEndT.push_back(track->AncestorEnd().Position().T());
+      mctrack_startPX.push_back(track->Start().Momentum().Px());
+      mctrack_startPY.push_back(track->Start().Momentum().Py());
+      mctrack_startPZ.push_back(track->Start().Momentum().Pz());
+      mctrack_startE.push_back(track->Start().Momentum().E());
+      mctrack_motherStartPX.push_back(track->MotherStart().Momentum().Px());
+      mctrack_motherStartPY.push_back(track->MotherStart().Momentum().Py());
+      mctrack_motherStartPZ.push_back(track->MotherStart().Momentum().Pz());
+      mctrack_motherStartE.push_back(track->MotherStart().Momentum().E());
+      mctrack_ancestorStartPX.push_back(track->AncestorStart().Momentum().Px());
+      mctrack_ancestorStartPY.push_back(track->AncestorStart().Momentum().Py());
+      mctrack_ancestorStartPZ.push_back(track->AncestorStart().Momentum().Pz());
+      mctrack_ancestorStartE.push_back(track->AncestorStart().Momentum().E());
+      mctrack_endPX.push_back(track->End().Momentum().Px());
+      mctrack_endPY.push_back(track->End().Momentum().Py());
+      mctrack_endPZ.push_back(track->End().Momentum().Pz());
+      mctrack_endE.push_back(track->End().Momentum().E());
+      mctrack_motherEndPX.push_back(track->MotherEnd().Momentum().Px());
+      mctrack_motherEndPY.push_back(track->MotherEnd().Momentum().Py());
+      mctrack_motherEndPZ.push_back(track->MotherEnd().Momentum().Pz());
+      mctrack_motherEndE.push_back(track->MotherEnd().Momentum().E());
+      mctrack_ancestorEndPX.push_back(track->AncestorEnd().Momentum().Px());
+      mctrack_ancestorEndPY.push_back(track->AncestorEnd().Momentum().Py());
+      mctrack_ancestorEndPZ.push_back(track->AncestorEnd().Momentum().Pz());
+      mctrack_ancestorEndE.push_back(track->AncestorEnd().Momentum().E());      
     }
   }
   
   //-------------------------------------------------------------------
   void CellTreeTruth::processMCShower(const art::Event& event)
   {
+    std::cout << "Process MCShower" << std::endl;
     art::Handle< std::vector<sim::MCShower> > showerHandle;
     if(! event.getByLabel(fMCShowerLabel, showerHandle)){
       cout << "WARNING: no label " << fMCShowerLabel << endl;
@@ -919,51 +1131,79 @@ namespace wc {
     
     Nmcshower = (int)showers.size();
     for(auto const& shower : showers){
-      // origin
       mcshower_pdg.push_back(shower->PdgCode());
       mcshower_id.push_back(shower->TrackID());
       mcshower_process.push_back(shower->Process());
-      TClonesArray *Lstart = new TClonesArray("TLorentzVector",1);
-      new ((*Lstart)[0]) TLorentzVector(shower->Start().Position());
-      fmcshower_start->Add(Lstart);
-      TClonesArray *Lend = new TClonesArray("TLorentzVector",1);
-      new ((*Lend)[0]) TLorentzVector(shower->End().Position());
-      fmcshower_end->Add(Lend);
-      mcshower_dQdx.push_back(shower->dQdx());
-      mcshower_dEdx.push_back(shower->dEdx());
-      TClonesArray *Lsd = new TClonesArray("TVector3",1);
-      new ((*Lsd)[0]) TVector3(shower->StartDir());
-      fmcshower_startDir->Add(Lsd);
-      TClonesArray *LdpPos = new TClonesArray("TLorentzVector", 1);
-      new ((*LdpPos)[0]) TLorentzVector(shower->DetProfile().Position());
-      fmcshower_detprofilePos->Add(LdpPos);
-      TClonesArray *LdpMom = new TClonesArray("TLorentzVector", 1);
-      new ((*LdpMom)[0]) TLorentzVector(shower->DetProfile().Momentum());
-      fmcshower_detprofileMom->Add(LdpMom);
       mcshower_motherPdg.push_back(shower->MotherPdgCode());
       mcshower_motherId.push_back(shower->MotherTrackID());
       mcshower_motherProcess.push_back(shower->MotherProcess());
-      TClonesArray *Lmomstart = new TClonesArray("TLorentzVector",1);
-      new ((*Lmomstart)[0]) TLorentzVector(shower->MotherStart().Position());
-      fmcshower_motherStart->Add(Lmomstart);
-      TClonesArray *Lmomend = new TClonesArray("TLorentzVector",1);
-      new ((*Lmomend)[0]) TLorentzVector(shower->MotherEnd().Position());
-      fmcshower_motherEnd->Add(Lmomend);
       mcshower_ancestorPdg.push_back(shower->AncestorPdgCode());
       mcshower_ancestorId.push_back(shower->AncestorTrackID());
       mcshower_ancestorProcess.push_back(shower->AncestorProcess());
-      TClonesArray *Lancstart = new TClonesArray("TLorentzVector",1);
-      new ((*Lancstart)[0]) TLorentzVector(shower->AncestorStart().Position());
-      fmcshower_ancestorStart->Add(Lancstart);
-      TClonesArray *Lancend = new TClonesArray("TLorentzVector",1);
-      new ((*Lancend)[0]) TLorentzVector(shower->AncestorEnd().Position());
-      fmcshower_ancestorEnd->Add(Lancend);
+      mcshower_startX.push_back(shower->Start().Position().X());
+      mcshower_startY.push_back(shower->Start().Position().Y());
+      mcshower_startZ.push_back(shower->Start().Position().Z());
+      mcshower_startT.push_back(shower->Start().Position().T());
+      mcshower_motherStartX.push_back(shower->MotherStart().Position().X());
+      mcshower_motherStartY.push_back(shower->MotherStart().Position().Y());
+      mcshower_motherStartZ.push_back(shower->MotherStart().Position().Z());
+      mcshower_motherStartT.push_back(shower->MotherStart().Position().T());
+      mcshower_ancestorStartX.push_back(shower->AncestorStart().Position().X());
+      mcshower_ancestorStartY.push_back(shower->AncestorStart().Position().Y());
+      mcshower_ancestorStartZ.push_back(shower->AncestorStart().Position().Z());
+      mcshower_ancestorStartT.push_back(shower->AncestorStart().Position().T());
+      mcshower_endX.push_back(shower->End().Position().X());
+      mcshower_endY.push_back(shower->End().Position().Y());
+      mcshower_endZ.push_back(shower->End().Position().Z());
+      mcshower_endT.push_back(shower->End().Position().T());
+      mcshower_motherEndX.push_back(shower->MotherEnd().Position().X());
+      mcshower_motherEndY.push_back(shower->MotherEnd().Position().Y());
+      mcshower_motherEndZ.push_back(shower->MotherEnd().Position().Z());
+      mcshower_motherEndT.push_back(shower->MotherEnd().Position().T());
+      mcshower_ancestorEndX.push_back(shower->AncestorEnd().Position().X());
+      mcshower_ancestorEndY.push_back(shower->AncestorEnd().Position().Y());
+      mcshower_ancestorEndZ.push_back(shower->AncestorEnd().Position().Z());
+      mcshower_ancestorEndT.push_back(shower->AncestorEnd().Position().T());
+      mcshower_startPX.push_back(shower->Start().Momentum().Px());
+      mcshower_startPY.push_back(shower->Start().Momentum().Py());
+      mcshower_startPZ.push_back(shower->Start().Momentum().Pz());
+      mcshower_startE.push_back(shower->Start().Momentum().E());
+      mcshower_motherStartPX.push_back(shower->MotherStart().Momentum().Px());
+      mcshower_motherStartPY.push_back(shower->MotherStart().Momentum().Py());
+      mcshower_motherStartPZ.push_back(shower->MotherStart().Momentum().Pz());
+      mcshower_motherStartE.push_back(shower->MotherStart().Momentum().E());
+      mcshower_ancestorStartPX.push_back(shower->AncestorStart().Momentum().Px());
+      mcshower_ancestorStartPY.push_back(shower->AncestorStart().Momentum().Py());
+      mcshower_ancestorStartPZ.push_back(shower->AncestorStart().Momentum().Pz());
+      mcshower_ancestorStartE.push_back(shower->AncestorStart().Momentum().E());
+      mcshower_endPX.push_back(shower->End().Momentum().Px());
+      mcshower_endPY.push_back(shower->End().Momentum().Py());
+      mcshower_endPZ.push_back(shower->End().Momentum().Pz());
+      mcshower_endE.push_back(shower->End().Momentum().E());
+      mcshower_motherEndPX.push_back(shower->MotherEnd().Momentum().Px());
+      mcshower_motherEndPY.push_back(shower->MotherEnd().Momentum().Py());
+      mcshower_motherEndPZ.push_back(shower->MotherEnd().Momentum().Pz());
+      mcshower_motherEndE.push_back(shower->MotherEnd().Momentum().E());
+      mcshower_ancestorEndPX.push_back(shower->AncestorEnd().Momentum().Px());
+      mcshower_ancestorEndPY.push_back(shower->AncestorEnd().Momentum().Py());
+      mcshower_ancestorEndPZ.push_back(shower->AncestorEnd().Momentum().Pz());
+      mcshower_ancestorEndE.push_back(shower->AncestorEnd().Momentum().E());
+      mcshower_detProfileX.push_back(shower->DetProfile().Position().X());
+      mcshower_detProfileY.push_back(shower->DetProfile().Position().Y());
+      mcshower_detProfileZ.push_back(shower->DetProfile().Position().Z());
+      mcshower_detProfileT.push_back(shower->DetProfile().Position().T());
+      mcshower_detProfilePX.push_back(shower->DetProfile().Momentum().Px());
+      mcshower_detProfilePY.push_back(shower->DetProfile().Momentum().Py());
+      mcshower_detProfilePZ.push_back(shower->DetProfile().Momentum().Pz());
+      mcshower_detProfileE.push_back(shower->DetProfile().Momentum().E());
+      mcshower_dEdx.push_back(shower->dEdx());
     }
   }  
 
   //---------------------------------------------------------------------
   void CellTreeTruth::processSimChannel(const art::Event& event)
   {
+    std::cout << "Process SimChannel" << std::endl;
     art::Handle< std::vector<sim::SimChannel> > simchannelHandle;
     if(! event.getByLabel(fSimChannelLabel, simchannelHandle)){
       cout << "WARNING: no label " << fSimChannelLabel << endl;
@@ -998,6 +1238,7 @@ namespace wc {
   //----------------------------------------------------------------------          
   void CellTreeTruth::processOpFlash( const art::Event& event)
   {
+    std::cout << "Process OpFlash" << std::endl;
     art::Handle<std::vector<recob::OpFlash> > flash_handle;
     if(! event.getByLabel(fOpFlashLabel, flash_handle)){
       cout << "WARNING: no label " << fOpFlashLabel << endl;

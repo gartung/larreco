@@ -27,13 +27,11 @@ physics:
     WireCell:
     {
       module_type:      "CellTreeTruth"
-      saveMCTruth:	false
-      saveMCNeutrino:   false
+      saveMCNeutrino:   true
       saveMCParticle:	true
       saveMCTrack: 	true
       saveMCShower:	true
       saveOpFlash:	true
-      MCTruthLabel:	"generator"
       MCNeutrinoLabel:  "generator"
       MCParticleLabel:	"largeant"
       MCTrackLabel:     "mcreco"
@@ -42,7 +40,7 @@ physics:
       OpFlashLabel:	"simpleFlashBeam"
 
       opMultPEThresh:	5	
-      outFile:		"celltreetruth.root"
+      outFile:		"output_celltreetruth.root"
     }
   }
   analysis: [ WireCell ]
