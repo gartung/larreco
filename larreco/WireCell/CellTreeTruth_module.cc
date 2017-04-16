@@ -100,9 +100,13 @@ namespace wc {
     vector<string> mcneutrino_nuEndProcess;
     vector<double> mcneutrino_nuMass;
     vector<double> mcneutrino_nuWeight;
-    vector<double> mcneutrino_nuGvtxX;
-    vector<double> mcneutrino_nuGvtxY;
-    vector<double> mcneutrino_nuGvtxZ;
+    vector<double> mcneutrino_nuVertexX;
+    vector<double> mcneutrino_nuVertexY;
+    vector<double> mcneutrino_nuVertexZ;
+    vector<double> mcneutrino_nuEnergy;
+    //vector<double> mcneutrino_nuGvtxX;
+    //vector<double> mcneutrino_nuGvtxY;
+    //vector<double> mcneutrino_nuGvtxZ;
     vector<int> mcneutrino_nuRescatter;
     vector<int> mcneutrino_leptonStatus;
     vector<int> mcneutrino_leptonTrackId;
@@ -112,9 +116,13 @@ namespace wc {
     vector<string> mcneutrino_leptonEndProcess;
     vector<double> mcneutrino_leptonMass;
     vector<double> mcneutrino_leptonWeight;
-    vector<double> mcneutrino_leptonGvtxX;
-    vector<double> mcneutrino_leptonGvtxY;
-    vector<double> mcneutrino_leptonGvtxZ;
+    vector<double> mcneutrino_leptonVertexX;
+    vector<double> mcneutrino_leptonVertexY;
+    vector<double> mcneutrino_leptonVertexZ;
+    vector<double> mcneutrino_leptonEnergy;
+    //vector<double> mcneutrino_leptonGvtxX;
+    //vector<double> mcneutrino_leptonGvtxY;
+    //vector<double> mcneutrino_leptonGvtxZ;
     vector<int> mcneutrino_leptonRescatter;
     vector<int> mcneutrino_ccnc;
     vector<int> mcneutrino_mode;
@@ -404,9 +412,13 @@ namespace wc {
     fNeutrinoTree->Branch("mcneutrino_nuEndProcess",         &mcneutrino_nuEndProcess);
     fNeutrinoTree->Branch("mcneutrino_nuMass",               &mcneutrino_nuMass);
     fNeutrinoTree->Branch("mcneutrino_nuWeight",             &mcneutrino_nuWeight);
-    fNeutrinoTree->Branch("mcneutrino_nuGvtxX",              &mcneutrino_nuGvtxX);
-    fNeutrinoTree->Branch("mcneutrino_nuGvtxY",              &mcneutrino_nuGvtxY);
-    fNeutrinoTree->Branch("mcneutrino_nuGvtxZ",              &mcneutrino_nuGvtxZ);
+    fNeutrinoTree->Branch("mcneutrino_nuVertexX",            &mcneutrino_nuVertexX);
+    fNeutrinoTree->Branch("mcneutrino_nuVertexY",            &mcneutrino_nuVertexY);
+    fNeutrinoTree->Branch("mcneutrino_nuVertexZ",            &mcneutrino_nuVertexZ);
+    fNeutrinoTree->Branch("mcneutrino_nuEnergy",             &mcneutrino_nuEnergy);     
+    //fNeutrinoTree->Branch("mcneutrino_nuGvtxX",              &mcneutrino_nuGvtxX);
+    //fNeutrinoTree->Branch("mcneutrino_nuGvtxY",              &mcneutrino_nuGvtxY);
+    //fNeutrinoTree->Branch("mcneutrino_nuGvtxZ",              &mcneutrino_nuGvtxZ);
     fNeutrinoTree->Branch("mcneutrino_nuRescatter",          &mcneutrino_nuRescatter);
     fNeutrinoTree->Branch("mcneutrino_leptonStatus",         &mcneutrino_leptonStatus);
     fNeutrinoTree->Branch("mcneutrino_leptonTrackId",        &mcneutrino_leptonTrackId);
@@ -416,9 +428,13 @@ namespace wc {
     fNeutrinoTree->Branch("mcneutrino_leptonEndProcess",     &mcneutrino_leptonEndProcess);
     fNeutrinoTree->Branch("mcneutrino_leptonMass",           &mcneutrino_leptonMass);
     fNeutrinoTree->Branch("mcneutrino_leptonWeight",         &mcneutrino_leptonWeight);
-    fNeutrinoTree->Branch("mcneutrino_leptonGvtxX",          &mcneutrino_leptonGvtxX);
-    fNeutrinoTree->Branch("mcneutrino_leptonGvtxY",          &mcneutrino_leptonGvtxY);
-    fNeutrinoTree->Branch("mcneutrino_leptonGvtxZ",          &mcneutrino_leptonGvtxZ);
+    fNeutrinoTree->Branch("mcneutrino_leptonVertexX",        &mcneutrino_leptonVertexX);
+    fNeutrinoTree->Branch("mcneutrino_leptonVertexY",        &mcneutrino_leptonVertexY);
+    fNeutrinoTree->Branch("mcneutrino_leptonVertexZ",        &mcneutrino_leptonVertexZ);
+    fNeutrinoTree->Branch("mcneutrino_leptonEnergy",         &mcneutrino_leptonEnergy); 
+    //fNeutrinoTree->Branch("mcneutrino_leptonGvtxX",          &mcneutrino_leptonGvtxX);
+    //fNeutrinoTree->Branch("mcneutrino_leptonGvtxY",          &mcneutrino_leptonGvtxY);
+    //fNeutrinoTree->Branch("mcneutrino_leptonGvtxZ",          &mcneutrino_leptonGvtxZ);
     fNeutrinoTree->Branch("mcneutrino_leptonRescatter",      &mcneutrino_leptonRescatter);
     fNeutrinoTree->Branch("mcneutrino_ccnc",                 &mcneutrino_ccnc);
     fNeutrinoTree->Branch("mcneutrino_mode",                 &mcneutrino_mode);
@@ -701,9 +717,13 @@ namespace wc {
       mcneutrino_nuEndProcess.clear();
       mcneutrino_nuMass.clear();
       mcneutrino_nuWeight.clear();
-      mcneutrino_nuGvtxX.clear();
-      mcneutrino_nuGvtxY.clear();
-      mcneutrino_nuGvtxZ.clear();
+      mcneutrino_nuVertexX.clear();
+      mcneutrino_nuVertexY.clear();
+      mcneutrino_nuVertexZ.clear();
+      mcneutrino_nuEnergy.clear(); 
+      //mcneutrino_nuGvtxX.clear();
+      //mcneutrino_nuGvtxY.clear();
+      //mcneutrino_nuGvtxZ.clear();
       mcneutrino_nuRescatter.clear();
       mcneutrino_leptonStatus.clear();
       mcneutrino_leptonTrackId.clear();
@@ -713,9 +733,13 @@ namespace wc {
       mcneutrino_leptonEndProcess.clear();
       mcneutrino_leptonMass.clear();
       mcneutrino_leptonWeight.clear();
-      mcneutrino_leptonGvtxX.clear();
-      mcneutrino_leptonGvtxY.clear();
-      mcneutrino_leptonGvtxZ.clear();
+      mcneutrino_leptonVertexX.clear();
+      mcneutrino_leptonVertexY.clear();
+      mcneutrino_leptonVertexZ.clear();
+      mcneutrino_leptonEnergy.clear();       
+      //mcneutrino_leptonGvtxX.clear();
+      //mcneutrino_leptonGvtxY.clear();
+      //mcneutrino_leptonGvtxZ.clear();
       mcneutrino_leptonRescatter.clear();
       mcneutrino_ccnc.clear();
       mcneutrino_mode.clear();
@@ -941,7 +965,7 @@ namespace wc {
     if(mclist.size() > 0){
       mctruth = mclist.at(0);
       simb::MCNeutrino nu = mctruth->GetNeutrino();
-      //### neutrino ###                                                                                                                                                        
+      //### neutrino ###                                               
       mcneutrino_nuStatus.push_back(nu.Nu().StatusCode());
       mcneutrino_nuTrackId.push_back(nu.Nu().TrackId());
       mcneutrino_nuPdg.push_back(nu.Nu().PdgCode());
@@ -950,11 +974,15 @@ namespace wc {
       mcneutrino_nuEndProcess.push_back(nu.Nu().EndProcess());
       mcneutrino_nuMass.push_back(nu.Nu().Mass());
       mcneutrino_nuWeight.push_back(nu.Nu().Weight());
-      mcneutrino_nuGvtxX.push_back(nu.Nu().GetGvtx().X());
-      mcneutrino_nuGvtxY.push_back(nu.Nu().GetGvtx().Y());
-      mcneutrino_nuGvtxZ.push_back(nu.Nu().GetGvtx().Z());
+      mcneutrino_nuVertexX.push_back(nu.Nu().Vx());
+      mcneutrino_nuVertexY.push_back(nu.Nu().Vy());
+      mcneutrino_nuVertexZ.push_back(nu.Nu().Vz());
+      mcneutrino_nuEnergy.push_back(nu.Nu().E()); 
+      //mcneutrino_nuGvtxX.push_back(nu.Nu().GetGvtx().X());
+      //mcneutrino_nuGvtxY.push_back(nu.Nu().GetGvtx().Y());
+      //mcneutrino_nuGvtxZ.push_back(nu.Nu().GetGvtx().Z());
       mcneutrino_nuRescatter.push_back(nu.Nu().Rescatter());
-      //### lepton ###                                                                                                                                                           
+      //### lepton ###                                                
       mcneutrino_leptonStatus.push_back(nu.Lepton().StatusCode());
       mcneutrino_leptonTrackId.push_back(nu.Lepton().TrackId());
       mcneutrino_leptonPdg.push_back(nu.Lepton().PdgCode());
@@ -963,9 +991,13 @@ namespace wc {
       mcneutrino_leptonEndProcess.push_back(nu.Lepton().EndProcess());
       mcneutrino_leptonMass.push_back(nu.Lepton().Mass());
       mcneutrino_leptonWeight.push_back(nu.Lepton().Weight());
-      mcneutrino_leptonGvtxX.push_back(nu.Lepton().GetGvtx().X());
-      mcneutrino_leptonGvtxY.push_back(nu.Lepton().GetGvtx().Y());
-      mcneutrino_leptonGvtxZ.push_back(nu.Lepton().GetGvtx().Z());
+      mcneutrino_leptonVertexX.push_back(nu.Lepton().Vx());
+      mcneutrino_leptonVertexY.push_back(nu.Lepton().Vy());
+      mcneutrino_leptonVertexZ.push_back(nu.Lepton().Vz());
+      mcneutrino_leptonEnergy.push_back(nu.Lepton().E()); 
+      //mcneutrino_leptonGvtxX.push_back(nu.Lepton().GetGvtx().X());
+      //mcneutrino_leptonGvtxY.push_back(nu.Lepton().GetGvtx().Y());
+      //mcneutrino_leptonGvtxZ.push_back(nu.Lepton().GetGvtx().Z());
       mcneutrino_leptonRescatter.push_back(nu.Lepton().Rescatter());
       //### other ###                                   
       mcneutrino_mode.push_back(nu.Mode());
