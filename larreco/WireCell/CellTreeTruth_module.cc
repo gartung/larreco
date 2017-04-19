@@ -74,7 +74,8 @@ namespace wc {
     void processMCTrack(const art::Event& evt);
     void processMCShower(const art::Event& evt);
     void processSimChannel(const art::Event& evt);
-    void processOpFlash(const art::Event& evt);
+    void processBeamOpFlash(const art::Event& evt);
+    void processCosmicOpFlash(const art::Event& evt);
 
   private:
 
@@ -328,16 +329,27 @@ namespace wc {
     vector<float> simchannel_y;
     vector<float> simchannel_z; 
 
-    // OPFLASH
-    bool fSaveOpFlash;
-    std::string fOpFlashLabel;
-    TTree *fOpFlashTree;
-    float opMultPEThresh; // fhicl param
-    int of_nFlash;
-    vector<float> of_t;
-    vector<float> of_peTotal;
-    vector<int> of_multiplicity;
-    TClonesArray *fPEperOpDet;
+    // OPFLASH --- BEAM
+    bool fBeamSaveOpFlash;
+    std::string fBeamOpFlashLabel;
+    TTree *fBeamOpFlashTree;
+    float opBeamMultPEThresh; // fhicl param
+    int ofBeam_nFlash;
+    vector<float> ofBeam_t;
+    vector<float> ofBeam_peTotal;
+    vector<int> ofBeam_multiplicity;
+    TClonesArray *fBeamPEperOpDet;
+
+    // OPFLASH --- COSMIC
+    bool fCosmicSaveOpFlash;
+    std::string fCosmicOpFlashLabel;
+    TTree *fCosmicOpFlashTree;
+    float opCosmicMultPEThresh; // fhicl param
+    int ofCosmic_nFlash;
+    vector<float> ofCosmic_t;
+    vector<float> ofCosmic_peTotal;
+    vector<int> ofCosmic_multiplicity;
+    TClonesArray *fCosmicPEperOpDet;
 
     art::ServiceHandle<geo::Geometry> fGeometry;
 
@@ -370,18 +382,21 @@ namespace wc {
     fMCTrackLabel = p.get<std::string>("MCTrackLabel");
     fMCShowerLabel = p.get<std::string>("MCShowerLabel");
     fSimChannelLabel = p.get<std::string>("SimChannelLabel");
-    fOpFlashLabel = p.get<std::string>("OpFlashLabel");
+    fBeamOpFlashLabel = p.get<std::string>("BeamOpFlashLabel");
+    fCosmicOpFlashLabel = p.get<std::string>("CosmicOpFlashLabel");
 
     fSaveMCNeutrino = p.get<bool>("saveMCNeutrino");
     fSaveMCParticle = p.get<bool>("saveMCParticle");
     fSaveMCTrack = p.get<bool>("saveMCTrack");
     fSaveMCShower = p.get<bool>("saveMCShower");
     //fSaveSimChannel = p.get<bool>("saveSimChannel");
-    fSaveOpFlash = p.get<bool>("saveOpFlash");
+    fBeamSaveOpFlash = p.get<bool>("saveBeamOpFlash");
+    fCosmicSaveOpFlash = p.get<bool>("saveCosmicOpFlash");
    
     fOutFileName = p.get<std::string>("outFile");
 
-    opMultPEThresh   = p.get<float>("opMultPEThresh");
+    opBeamMultPEThresh   = p.get<float>("opBeamMultPEThresh");
+    opCosmicMultPEThresh   = p.get<float>("opCosmicMultPEThresh");
   }
 
   //-------------------------------------------------------------------
@@ -634,14 +649,23 @@ namespace wc {
     fEventTree->Branch("simide_y",              &simchannel_y);
     fEventTree->Branch("simide_z",              &simchannel_z);
 
-    // OPFLASH
-    fOpFlashTree = new TTree("OpFlash","Reco OpFlash Tree");
-    fOpFlashTree->Branch("of_nFlash", &of_nFlash);
-    fOpFlashTree->Branch("of_t", &of_t);                              
-    fOpFlashTree->Branch("of_peTotal", &of_peTotal);                     
-    fOpFlashTree->Branch("of_multiplicity", &of_multiplicity);            
-    fPEperOpDet = new TClonesArray("TH1F");
-    fOpFlashTree->Branch("pe_opdet", &fPEperOpDet, 256000, 0);
+    // OPFLASH --- BEAM ---
+    fBeamOpFlashTree = new TTree("BeamOpFlash","Reco Beam OpFlash Tree");
+    fBeamOpFlashTree->Branch("ofBeam_nFlash", &ofBeam_nFlash);
+    fBeamOpFlashTree->Branch("ofBeam_t", &ofBeam_t);                              
+    fBeamOpFlashTree->Branch("ofBeam_peTotal", &ofBeam_peTotal);                     
+    fBeamOpFlashTree->Branch("ofBeam_multiplicity", &ofBeam_multiplicity);            
+    fBeamPEperOpDet = new TClonesArray("TH1F");
+    fBeamOpFlashTree->Branch("Beam_pe_opdet", &fBeamPEperOpDet, 256000, 0);
+
+    // OPFLASH --- COSMIC ---
+    fCosmicOpFlashTree = new TTree("CosmicOpFlash","Reco Cosmic OpFlash Tree");
+    fCosmicOpFlashTree->Branch("ofCosmic_nFlash", &ofCosmic_nFlash);
+    fCosmicOpFlashTree->Branch("ofCosmic_t", &ofCosmic_t);                              
+    fCosmicOpFlashTree->Branch("ofCosmic_peTotal", &ofCosmic_peTotal);                     
+    fCosmicOpFlashTree->Branch("ofCosmic_multiplicity", &ofCosmic_multiplicity);            
+    fCosmicPEperOpDet = new TClonesArray("TH1F");
+    fCosmicOpFlashTree->Branch("Cosmic_pe_opdet", &fCosmicPEperOpDet, 256000, 0);
 
     // dummy variables not used
     fEventTree->Branch("calib_nChannel", &fCalib_nChannel);           
@@ -670,7 +694,8 @@ namespace wc {
     if(fSaveMCTrack == true) { fTrackTree->Write(); }
     if(fSaveMCShower == true) { fShowerTree->Write(); }
     //if(fSaveSimChannel == true) { fSimChTree->Write(); }
-    if(fSaveOpFlash == true) { fOpFlashTree->Write(); }
+    if(fBeamSaveOpFlash == true) { fBeamOpFlashTree->Write(); }
+    if(fCosmicSaveOpFlash == true) { fCosmicOpFlashTree->Write(); }
     gDirectory = tmpDir;
     fOutFile->Close();
   }
@@ -701,7 +726,8 @@ namespace wc {
     if(fSaveMCParticle == true) { processMCParticle(event); fParticleTree->Fill(); }
     if(fSaveMCTrack == true) { processMCTrack(event); fTrackTree->Fill(); }
     if(fSaveMCShower == true) { processMCShower(event); fShowerTree->Fill(); }
-    if(fSaveOpFlash == true) { processOpFlash(event); fOpFlashTree->Fill(); }
+    if(fBeamSaveOpFlash == true) { processBeamOpFlash(event); fBeamOpFlashTree->Fill(); }
+    if(fCosmicSaveOpFlash == true) { processCosmicOpFlash(event); fCosmicOpFlashTree->Fill(); }
   }
 
   //-------------------------------------------------------------------
@@ -938,11 +964,18 @@ namespace wc {
     simchannel_z.clear();
     //}
 
-    if(fSaveOpFlash == true){
-      of_t.clear();
-      of_peTotal.clear();
-      of_multiplicity.clear();
-      fPEperOpDet->Delete();
+    if(fBeamSaveOpFlash == true){
+      ofBeam_t.clear();
+      ofBeam_peTotal.clear();
+      ofBeam_multiplicity.clear();
+      fBeamPEperOpDet->Delete();
+    }
+
+    if(fCosmicSaveOpFlash == true){
+      ofCosmic_t.clear();
+      ofCosmic_peTotal.clear();
+      ofCosmic_multiplicity.clear();
+      fCosmicPEperOpDet->Delete();
     }
 
     // dummy variables not used
@@ -1268,34 +1301,67 @@ namespace wc {
   }
 
   //----------------------------------------------------------------------          
-  void CellTreeTruth::processOpFlash( const art::Event& event)
+  void CellTreeTruth::processBeamOpFlash( const art::Event& event)
   {
-    std::cout << "Process OpFlash" << std::endl;
+    std::cout << "Process Beam OpFlash" << std::endl;
     art::Handle<std::vector<recob::OpFlash> > flash_handle;
-    if(! event.getByLabel(fOpFlashLabel, flash_handle)){
-      cout << "WARNING: no label " << fOpFlashLabel << endl;
+    if(! event.getByLabel(fBeamOpFlashLabel, flash_handle)){
+      cout << "WARNING: no label " << fBeamOpFlashLabel << endl;
       return;
     }
     std::vector<art::Ptr<recob::OpFlash> > flashes;
     art::fill_ptr_vector(flashes, flash_handle);
-    of_nFlash = (int)flashes.size();
+    ofBeam_nFlash = (int)flashes.size();
 
     int a=0;
     int nOpDet = fGeometry->NOpDets();
 
     for(auto const& flash: flashes){
-      of_t.push_back(flash->Time());
-      of_peTotal.push_back(flash->TotalPE());
-      TH1F *h = new ((*fPEperOpDet)[a]) TH1F("","",nOpDet,0,nOpDet);
+      ofBeam_t.push_back(flash->Time());
+      ofBeam_peTotal.push_back(flash->TotalPE());
+      TH1F *h = new ((*fBeamPEperOpDet)[a]) TH1F("","",nOpDet,0,nOpDet);
 
       int mult = 0;
       for(int i=0; i<nOpDet; ++i){
-        if(flash->PE(i) >= opMultPEThresh){
+        if(flash->PE(i) >= opBeamMultPEThresh){
           mult++;
         }
         h->SetBinContent(i, flash->PE(i));
       }
-      of_multiplicity.push_back(mult);
+      ofBeam_multiplicity.push_back(mult);
+      a++;
+    }
+  }
+
+  //----------------------------------------------------------------------
+void CellTreeTruth::processCosmicOpFlash( const art::Event& event)
+  {
+    std::cout << "Process Cosmic OpFlash" << std::endl;
+    art::Handle<std::vector<recob::OpFlash> > flash_handle;
+    if(! event.getByLabel(fCosmicOpFlashLabel, flash_handle)){
+      cout << "WARNING: no label " << fCosmicOpFlashLabel << endl;
+      return;
+    }
+    std::vector<art::Ptr<recob::OpFlash> > flashes;
+    art::fill_ptr_vector(flashes, flash_handle);
+    ofCosmic_nFlash = (int)flashes.size();
+
+    int a=0;
+    int nOpDet = fGeometry->NOpDets();
+
+    for(auto const& flash: flashes){
+      ofCosmic_t.push_back(flash->Time());
+      ofCosmic_peTotal.push_back(flash->TotalPE());
+      TH1F *h = new ((*fCosmicPEperOpDet)[a]) TH1F("","",nOpDet,0,nOpDet);
+
+      int mult = 0;
+      for(int i=0; i<nOpDet; ++i){
+        if(flash->PE(i) >= opCosmicMultPEThresh){
+          mult++;
+        }
+        h->SetBinContent(i, flash->PE(i));
+      }
+      ofCosmic_multiplicity.push_back(mult);
       a++;
     }
   }
