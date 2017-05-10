@@ -58,18 +58,26 @@ physics: {
   filters:  {}
 
   analyzers: {
-    trajmcsntuple: {	
+    trajmcsntupleCosmic: {
       module_label: TrajectoryMCSNtuple
       module_type:  TrajectoryMCSNtuple
       inputs: {
       	   inputLabel: pandoraCosmic
       }
       mcsfitter: {@table::mcsfitproducer.fitter}
-    } # trajmcsntuple
+    } # trajmcsntupleCosmic
+    trajmcsntupleNu: {
+      module_label: TrajectoryMCSNtuple
+      module_type:  TrajectoryMCSNtuple
+      inputs: {
+           inputLabel: pandoraNu
+      }
+      mcsfitter: {@table::mcsfitproducer.fitter}
+    } # trajmcsntupleNu
   }
 
-  ana: [ trajmcsntuple ]
-  pro:  [ pandoraCosmicMCSFitMu, pandoraCosmicMCSFitP ] #pandoraNuMCSFitP, pandoraNuMCSFitMu, 
+  ana: [ trajmcsntupleCosmic, trajmcsntupleNu ]
+  pro:  [ pandoraNuMCSFitP, pandoraNuMCSFitMu, pandoraCosmicMCSFitMu, pandoraCosmicMCSFitP ]
 
   trigger_paths: [ pro, ana ]
 
