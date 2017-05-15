@@ -1,6 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // Class:       PMAlgTracking
-// Author:      D.Stefan (Dorota.Stefan@ncbj.gov.pl) and R.Sulej (Robert.Sulej@cern.ch), June 2016
+// Author:      D.Stefan (Dorota.Stefan@ncbj.gov.pl),
+//              R.Sulej (Robert.Sulej@cern.ch),
+//              L.Whitehead (leigh.howard.whitehead@cern.ch), June 2016
 //
 // Single track reconstruction toolkit based on Projection Matching Algorithm. Uses cluster collections
 // to find single tracks (modularized version of our original code).
@@ -32,6 +34,7 @@
 
 #include "larreco/RecoAlg/PMAlg/PmaTrkCandidate.h"
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
+#include "larreco/RecoAlg/PMAlgCosmicTagger.h"
 #include "larreco/RecoAlg/PMAlgVertexing.h"
 #include "larreco/RecoAlg/PMAlgStitching.h"
 
@@ -42,7 +45,7 @@ namespace pma
 {
 	typedef std::map< size_t, pma::TrkCandidateColl > tpc_track_map;
 
-	recob::Track convertFrom(const pma::Track3D& src, unsigned int tidx);
+	recob::Track convertFrom(const pma::Track3D& src, unsigned int tidx, int pdg = 0);
 
 	class PMAlgTrackingBase;
 	class PMAlgFitter;
@@ -156,6 +159,11 @@ public:
 			Comment("min. cluster size used to start building a track in the 2nd pass")
 		};
 
+		fhicl::Atom<float> TrackLikeThreshold {
+			Name("TrackLikeThreshold"),
+			Comment("Threshold for track-like recognition")
+		};
+
 		fhicl::Atom<bool> RunVertexing {
 			Name("RunVertexing"),
 			Comment("find vertices from PFP hierarchy, join with tracks, reoptimize track-vertex structure")
@@ -227,37 +235,13 @@ public:
 		const pma::ProjectionMatchingAlg::Config& pmalgConfig,
 		const pma::PMAlgTracker::Config& pmalgTrackerConfig,
 		const pma::PMAlgVertexing::Config& pmvtxConfig,
-		const pma::PMAlgStitching::Config& pmstitchConfig) :
-
-		PMAlgTrackingBase(allhitlist, pmalgConfig, pmvtxConfig),
-
-		fMinSeedSize1stPass(pmalgTrackerConfig.MinSeedSize1stPass()),
-		fMinSeedSize2ndPass(pmalgTrackerConfig.MinSeedSize2ndPass()),
-		fMinTwoViewFraction(pmalgConfig.MinTwoViewFraction()),
-
-		fFlipToBeam(pmalgTrackerConfig.FlipToBeam()),
-		fFlipDownward(pmalgTrackerConfig.FlipDownward()),
-		fAutoFlip_dQdx(pmalgTrackerConfig.AutoFlip_dQdx()),
-
-		fMergeWithinTPC(pmalgTrackerConfig.MergeWithinTPC()),
-		fMergeTransverseShift(pmalgTrackerConfig.MergeTransverseShift()),
-		fMergeAngle(pmalgTrackerConfig.MergeAngle()),
-
-		fStitchBetweenTPCs(pmalgTrackerConfig.StitchBetweenTPCs()),
-		fStitchDistToWall(pmalgTrackerConfig.StitchDistToWall()),
-		fStitchTransverseShift(pmalgTrackerConfig.StitchTransverseShift()),
-		fStitchAngle(pmalgTrackerConfig.StitchAngle()),
-
-		fMatchT0inAPACrossing(pmalgTrackerConfig.MatchT0inAPACrossing()),
-		fMatchT0inCPACrossing(pmalgTrackerConfig.MatchT0inCPACrossing()),
-    fStitcher(pmstitchConfig),
-
-		fRunVertexing(pmalgTrackerConfig.RunVertexing()),
-
-		fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
-	{}
+		const pma::PMAlgStitching::Config& pmstitchConfig,
+		const pma::PMAlgCosmicTagger::Config& pmtaggerConfig);
 
 	void init(const art::FindManyP< recob::Hit > & hitsFromClusters);
+
+    void init(const art::FindManyP< recob::Hit > & hitsFromClusters,
+        const std::vector< float > & trackLike);
 
 	void init(const art::FindManyP< recob::Hit > & hitsFromClusters,
 		const art::FindManyP< recob::Hit > & hitsFromEmParts);
@@ -329,15 +313,18 @@ private:
 	}
 
 	std::vector< std::vector< art::Ptr<recob::Hit> > > fCluHits;
+	std::vector< float > fCluWeights;
 
-	/// these guys are temporary states, to be moved to function calls
-	std::vector< size_t > used_clusters, initial_clusters;
-	mutable std::map< unsigned int, std::vector<size_t> > tried_clusters;
+	/// --------------------------------------------------------------
+	std::vector< size_t > fUsedClusters, fInitialClusters;
+	mutable std::map< unsigned int, std::vector<size_t> > fTriedClusters;
+	std::vector< geo::View_t > fAvailableViews;
 	/// --------------------------------------------------------------
 
 	// ******************** fcl parameters **********************
 	size_t fMinSeedSize1stPass;  // min. cluster size used to start building a track in the 1st pass
 	size_t fMinSeedSize2ndPass;  // min. cluster size used to start building a track in the 2nd pass
+	float  fTrackLikeThreshold;  // trk-like threshold on cnn output
 	double fMinTwoViewFraction;
 
 	bool fFlipToBeam;            // set the track direction to increasing Z values
@@ -348,6 +335,9 @@ private:
 	double fMergeTransverseShift;  //   - max. transverse displacement [cm] between tracks
 	double fMergeAngle;            //   - max. angle [degree] between tracks (nearest segments)
 
+    pma::PMAlgCosmicTagger fCosmicTagger; // cosmic tagger alg
+    bool fTagCosmicTracks;         // do any tagging of cosmic rays (simple or of tagger flags)
+
 	bool fStitchBetweenTPCs;       // stitch between TPCs; finds tracks best matching by angle, with limits:
 	double fStitchDistToWall;      //   - max. track endpoint distance [cm] to TPC boundary
 	double fStitchTransverseShift; //   - max. transverse displacement [cm] between tracks
@@ -356,12 +346,12 @@ private:
 	bool fMatchT0inAPACrossing;    // match T0 of APA-crossing tracks using PMAlgStitcher
 	bool fMatchT0inCPACrossing;    // match T0 of CPA-crossing tracks using PMAlgStitcher
 
-  pma::PMAlgStitching fStitcher;
+    pma::PMAlgStitching fStitcher;
 
 	bool fRunVertexing;          // run vertex finding
 
 	// *********************** services *************************
-	art::ServiceHandle< geo::Geometry > fGeom;
+	geo::GeometryCore const* fGeom;
 	const detinfo::DetectorProperties* fDetProp;
 };
 
