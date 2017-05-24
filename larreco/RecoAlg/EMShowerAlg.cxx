@@ -1260,12 +1260,14 @@ recob::Shower shower::EMShowerAlg::MakeShower(const art::PtrVector<recob::Hit>& 
     //std::cout<<pmatrack->size()<<std::endl;
     //pma::Track3D* pmatrack = fProjectionMatchingAlg.buildSegment(alltrackhits);
     std::vector<TVector3> spts;
-    double xshift = pmatrack->GetXShift();
-    bool has_shift = (xshift != 0.0);
+
+//  points are shifted now by tracking code, commented out shifts here
+//    double xshift = pmatrack->GetXShift();
+//    bool has_shift = (xshift != 0.0);
     for (size_t i = 0; i<pmatrack->size(); ++i){
       if ((*pmatrack)[i]->IsEnabled()){
 	TVector3 p3d = (*pmatrack)[i]->Point3D();
-	if (has_shift) p3d.SetX(p3d.X() + xshift);
+//	if (has_shift) p3d.SetX(p3d.X() + xshift);
 	//std::cout<<p3d.X()<<" "<<p3d.Y()<<" "<<p3d.Z()<<std::endl;
 	spts.push_back(p3d);
       }
@@ -2114,7 +2116,13 @@ TVector2 shower::EMShowerAlg::Project3DPointOntoPlane(const TVector3& point, int
 
   // Construct wire ID for this point projected onto the plane
   geo::PlaneID planeID = geo::PlaneID(cryostat, tpc, plane);
-  geo::WireID wireID = fGeom->NearestWireID(point, planeID);
+  geo::WireID wireID;
+  try{
+    wireID = fGeom->NearestWireID(point, planeID);
+  }
+  catch(geo::InvalidWireError const& e) {
+    wireID = e.suggestedWireID(); // pick the closest valid wire
+  }
 
   wireTickPos = TVector2(GlobalWire(wireID),
                          fDetProp->ConvertXToTicks(point.X(), planeID));
