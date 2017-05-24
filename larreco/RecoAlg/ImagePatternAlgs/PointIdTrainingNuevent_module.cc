@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Class:       PointIdTrainingNuevent
-// Author:      P.Plonski, R.Sulej (Robert.Sulej@cern.ch), D.Stefan, May 2016
+// Author:      P.Plonski, R.Sulej (Robert.Sulej@cern.ch), D.Stefan (Dorota.Stefan@cern.ch), May 2016
 //
 // Training data for PointIdAlg
 //
@@ -26,6 +26,8 @@
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "art/Framework/Services/Optional/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "fhiclcpp/types/Atom.h"
 #include "fhiclcpp/types/Table.h"
@@ -36,6 +38,10 @@
 #include <string>
 #include <cmath>
 #include <fstream>
+
+#include "TTree.h"
+#include "TH2I.h" // PDG+vertex info map
+#include "TH2F.h" // ADC and deposit maps
 
 namespace nnet	 {
 
@@ -69,6 +75,11 @@ namespace nnet	 {
 			Name("OutTextFilePath"),
 			Comment("...")
 		};
+		
+		fhicl::Atom<bool> DumpToRoot {
+			Name("DumpToRoot"),
+			Comment("Dump to ROOT histogram file (replaces the text files)")
+		};
 
 		fhicl::Atom<double> FidVolCut {
 			Name("FidVolCut"),
@@ -79,35 +90,58 @@ namespace nnet	 {
 			Name("SelectedView"),
 			Comment("...")
 		};
+		
+		fhicl::Atom<bool> Crop {
+		Name("Crop"),
+		Comment("...")
+		};
     };
     using Parameters = art::EDAnalyzer::Table<Config>;
 
     explicit PointIdTrainingNuevent(Parameters const& config);
+    
+    virtual void beginJob() override;
 
     virtual void analyze(const art::Event& event) override;
 
   private:
+  	void ResetVars();
   
   	bool PrepareEv(const art::Event& event);
   	bool InsideFidVol(TVector3 const & pvtx) const;
   	void CorrOffset(TVector3& vec, const simb::MCParticle& particle);
   	
+  	
+  	
 	TVector2 GetProjVtx(TVector3 const & vtx3d, const size_t cryo, const size_t tpc, const size_t plane) const;
 
     nnet::TrainingDataAlg fTrainingDataAlg;
+    art::InputTag fGenieGenLabel;
+    std::string fOutTextFilePath;
+		bool fDumpToRoot;
 
-	art::InputTag fGenieGenLabel;
-	std::string fOutTextFilePath;
+	
 
 	std::vector<int> fSelectedView;
 
+	TTree *fTree;
 	int fEvent;     ///< number of the event being processed
 	int fRun;       ///< number of the run being processed
 	int fSubRun;    ///< number of the sub-run being processed
+	
+	bool fCrop;
 		
 	double fFidVolCut;
 	
 	NUVTX fPointid;
+	int fCryo;
+	int fTpc;
+	int fView;
+	int fPdg;
+	int fInteraction;
+	float fPosX;
+	float fPosY;
+
 
 	geo::GeometryCore const* fGeometry;
   };
@@ -117,11 +151,31 @@ namespace nnet	 {
 	fTrainingDataAlg(config().TrainingDataAlg()),
 	fGenieGenLabel(config().GenModuleLabel()),
 	fOutTextFilePath(config().OutTextFilePath()),
+	fDumpToRoot(config().DumpToRoot()),
 	fSelectedView(config().SelectedView()),
+	fCrop(config().Crop()),
 	fFidVolCut(config().FidVolCut())
   {
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());
   }
+  
+  //-----------------------------------------------------------------------
+  void PointIdTrainingNuevent::beginJob()
+	{
+		// access art's TFileService, which will handle creating and writing hists
+		art::ServiceHandle<art::TFileService> tfs;
+
+		fTree = tfs->make<TTree>("nu vertex","nu vertex tree");
+		fTree->Branch("fRun", &fRun, "fRun/I");
+		fTree->Branch("fEvent", &fEvent, "fEvent/I");
+		fTree->Branch("fCryo", &fCryo, "fCryo/I");
+		fTree->Branch("fTpc", &fTpc, "fTpc/I");
+		fTree->Branch("fView", &fView, "fView/I");
+		fTree->Branch("fPdg", &fPdg, "fPdg/I");
+		fTree->Branch("fInteraction", &fInteraction, "fInteraction/I");
+		fTree->Branch("fPosX", &fPosX, "fPosX/F");
+		fTree->Branch("fPosY", &fPosY, "fPosY/F");
+	}
   
   //-----------------------------------------------------------------------
   bool PointIdTrainingNuevent::PrepareEv(const art::Event& event)
@@ -167,6 +221,9 @@ namespace nnet	 {
 				fPointid.cryo = cryo;
 				fPointid.tpc = tpc;
 				
+				fCryo = cryo;
+			  fTpc = tpc;
+				
 				return true;	
 			}
 			else {return false;}
@@ -182,6 +239,7 @@ namespace nnet	 {
     fEvent  = event.id().event(); 
     fRun    = event.run();
     fSubRun = event.subRun();
+    ResetVars();
     
     if (PrepareEv(event))
     {
@@ -203,43 +261,99 @@ namespace nnet	 {
 		fout_nuin.open(ss1.str() + ".nuin");
 
 		fTrainingDataAlg.setEventData(event, fSelectedView[v], fPointid.tpc, fPointid.cryo);
-
-		for (size_t w = 0; w < fTrainingDataAlg.NWires(); ++w)
+		
+		unsigned int w0, w1, d0, d1;
+		if (fCrop)
 		{
-			auto const & raw = fTrainingDataAlg.wireData(w);
-			for (auto f : raw)
-			{
-				fout_raw << f << " ";
-			}
-			fout_raw << std::endl;
-
-			auto const & edep = fTrainingDataAlg.wireEdep(w);
-			for (auto f : edep)
-			{
-				fout_deposit << f << " ";
-			}
-			fout_deposit << std::endl;
-
-			auto const & pdg = fTrainingDataAlg.wirePdg(w);
-			for (auto f : pdg)
-			{
-				fout_pdg << f << " ";
-			}
-			fout_pdg << std::endl;
+			if (fTrainingDataAlg.findCrop(0.004F, w0, w1, d0, d1))
+      {
+      	std::cout << "   crop: " << w0 << " " << w1 << " " << d0 << " " << d1 << std::endl;
+      }
+      else
+      {
+       	std::cout << "   skip empty tpc:" << fPointid.tpc << " / view:" << fSelectedView[v] << std::endl;
+        continue;
+      }
 		}
+		else
+		{
+			w0 = 0;
+      w1 = fTrainingDataAlg.NWires();
+      d0 = 0;
+      d1 = fTrainingDataAlg.NScaledDrifts();
+		}
+		
+		if (fDumpToRoot)
+    {
+    	std::ostringstream ss1;
+	    ss1 << "raw_" << os.str() << "_tpc_" << fPointid.tpc << "_view_" << fSelectedView[v]; // TH2's name
 
-		fout_nuin << fPointid.interaction << " " << fPointid.nupdg 
-			<< " " << fPointid.position[v].X() << " " << fPointid.position[v].Y() << std::endl;
+     	art::ServiceHandle<art::TFileService> tfs;
+      TH2F* rawHist = tfs->make<TH2F>((ss1.str() + "_raw").c_str(), "ADC", w1 - w0, w0, w1, d1 - d0, d0, d1);
+      TH2F* depHist = tfs->make<TH2F>((ss1.str() + "_deposit").c_str(), "Deposit", w1 - w0, w0, w1, d1 - d0, d0, d1);
+      TH2I* pdgHist = tfs->make<TH2I>((ss1.str() + "_pdg").c_str(), "PDG", w1 - w0, w0, w1, d1 - d0, d0, d1);
 
-		fout_raw.close();
-		fout_deposit.close();
-		fout_pdg.close();
-		fout_nuin.close();
+      for (size_t w = w0; w < w1; ++w)
+      {
+     		auto const & raw = fTrainingDataAlg.wireData(w);
+        for (size_t d = d0; d < d1; ++d) { rawHist->Fill(w, d, raw[d]); }
+
+		    auto const & edep = fTrainingDataAlg.wireEdep(w);
+		    for (size_t d = d0; d < d1; ++d) { depHist->Fill(w, d, edep[d]); }
+
+		    auto const & pdg = fTrainingDataAlg.wirePdg(w);
+		    for (size_t d = d0; d < d1; ++d) { pdgHist->Fill(w, d, pdg[d]); }
+       }
+       
+      fPdg = fPointid.nupdg;
+			fInteraction = fPointid.interaction;
+			  
+			fPosX = fPointid.position[v].X();
+			fPosY = fPointid.position[v].Y();
+			
+			fTree->Fill();
+    }
+    else
+    {
+
+			for (size_t w = w0; w < w1; ++w)
+			{
+				auto const & raw = fTrainingDataAlg.wireData(w);
+				for (size_t d = d0; d < d1; ++d)
+				{
+					fout_raw << raw[d] << " ";
+				}
+				fout_raw << std::endl;
+
+				auto const & edep = fTrainingDataAlg.wireEdep(w);
+				for (size_t d = d0; d < d1; ++d)
+				{
+					fout_deposit << edep[d] << " ";
+				}
+				fout_deposit << std::endl;
+
+				auto const & pdg = fTrainingDataAlg.wirePdg(w);
+				for (size_t d = d0; d < d1; ++d)
+				{
+					fout_pdg << pdg[d] << " ";
+				}
+				fout_pdg << std::endl;
+			}
+		
+
+			fout_nuin << fPointid.interaction << " " << fPointid.nupdg 
+				<< " " << fPointid.position[v].X() << " " << fPointid.position[v].Y() << std::endl;
+
+			fout_raw.close();
+			fout_deposit.close();
+			fout_pdg.close();
+			fout_nuin.close(); 
+		}
 	}
 	
-     }
+ }
 
-  } // Raw2DRegionID::analyze()
+} // Raw2DRegionID::analyze()
   
   //-----------------------------------------------------------------------
   void PointIdTrainingNuevent::CorrOffset(TVector3& vec, const simb::MCParticle& particle)
@@ -309,6 +423,16 @@ namespace nnet	 {
 	return vtxwd;
   }
 
+	void PointIdTrainingNuevent::ResetVars()
+	{
+		fCryo = 0;
+		fTpc = 0;
+		fView = 0;
+		fPdg = 0;
+		fInteraction = 0;
+		fPosX = 0.0;
+		fPosY = 0.0;
+	}
 
   DEFINE_ART_MODULE(PointIdTrainingNuevent)
 }
