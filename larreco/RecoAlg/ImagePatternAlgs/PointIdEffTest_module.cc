@@ -122,7 +122,9 @@ private:
 	int fRun, fEvent;
     float fMcDepEM, fMcDepTrack, fMcFractionEM;
     float fHitEM_0p5, fHitTrack_0p5, fHitMichel_0p5, fHitMcFractionEM;
-    float fHitMichel_out, fHitNotMichel_out;
+    float fHitEM_mc, fpEM;
+    float fHitMichel_mc, fpMichel_hit, fpMichel_cl;
+    float fOutTrk, fOutEM, fOutNone;
     float fHitEM_0p85, fHitTrack_0p85;
     float fTotHit, fCleanHit;
 
@@ -135,7 +137,7 @@ private:
 	int fMcPid;
 	int fClSize;
 	int fPure;
-	double fPidValue;
+	float fPidValue; // P(track-like)
 	
 
 	int fTrkOk[100], fTrkBad[100];
@@ -158,9 +160,6 @@ private:
 	art::InputTag fSimulationProducerLabel;
 	art::InputTag fNNetModuleLabel;
 	bool fSaveHitsFile;
-	
-	double fpMichel;
-	double fpMichel_cl;
 };
 
 } // namespace nnet
@@ -216,16 +215,21 @@ void nnet::PointIdEffTest::beginJob()
 	fClusterTree = tfs->make<TTree>("cluster","clusters info");
 	fClusterTree->Branch("fMcPid", &fMcPid, "fMcPid/I");
 	fClusterTree->Branch("fClSize", &fClSize, "fClSize/I");
-	fClusterTree->Branch("fPidValue", &fPidValue, "fPidValue/D");
-	fClusterTree->Branch("fpMichel_cl", &fpMichel_cl, "fpMichel_cl/D");
+	fClusterTree->Branch("fPidValue", &fPidValue, "fPidValue/F");
+	fClusterTree->Branch("fpMichel_cl", &fpMichel_cl, "fpMichel_cl/F");
 
     fHitTree = tfs->make<TTree>("hits","hits info");
     fHitTree->Branch("fRun", &fRun, "fRun/I");
     fHitTree->Branch("fEvent", &fEvent, "fEvent/I");
-    fHitTree->Branch("fHitMichel_out", &fHitMichel_out, "fHitMichel_out/F");
-    fHitTree->Branch("fHitNotMichel_out", &fHitNotMichel_out, "fHitNotMichel_out/F");
-		fHitTree->Branch("fpMichel", &fpMichel, "fpMichel/D");
-		
+    fHitTree->Branch("fHitEM_mc", &fHitEM_mc, "fHitEM_mc/F");
+    fHitTree->Branch("fpEM", &fpEM, "fpEM/F");
+    fHitTree->Branch("fPidValue", &fPidValue, "fPidValue/F");
+    fHitTree->Branch("fHitMichel_mc", &fHitMichel_mc, "fHitMichel_mc/F");
+    fHitTree->Branch("fpMichel_hit", &fpMichel_hit, "fpMichel_hit/F");
+    fHitTree->Branch("fOutTrk", &fOutTrk, "fOutTrk/F");
+    fHitTree->Branch("fOutEM", &fOutEM, "fOutEM/F");
+    fHitTree->Branch("fOutNone", &fOutNone, "fOutNone/F");
+
 	if (fSaveHitsFile) fHitsOutFile.open("hits_pid.prn");
 
     fNone = 0; fTotal = 0;
@@ -272,9 +276,6 @@ void nnet::PointIdEffTest::cleanup(void)
     fHitMichel_0p5 = 0;
     fHitMcFractionEM = 0;
     fTotHit = 0; fCleanHit = 0;
-    
-    fpMichel = 0; 
-    fpMichel_cl = 0;
 
     for (size_t i = 0; i < 100; ++i)
     {
@@ -446,15 +447,14 @@ int nnet::PointIdEffTest::testCNN(
 {
 	fClSize = hits.size();
 
+    std::unordered_map<int, int> mcHitPid;
+
 	fPidValue = 0;
 	double p_trk_or_sh = cnn_out[0] + cnn_out[1];
 	if (p_trk_or_sh > 0) { fPidValue = cnn_out[0] / p_trk_or_sh; }
 
-  double p_michel = 0;
-  if (MVA_LENGTH == 4) 
-  { 
-		fpMichel_cl = cnn_out[2]; 
-  }
+    double p_michel = 0;
+    if (MVA_LENGTH == 4) { fpMichel_cl = cnn_out[2]; }
 
 	double totEnSh = 0, totEnTrk = 0, totEnMichel = 0;
 	for (auto const & hit: hits)
@@ -465,11 +465,10 @@ int nnet::PointIdEffTest::testCNN(
 		double hitEn = 0, hitEnSh = 0, hitEnTrk = 0, hitEnMichel = 0;
         
 		auto const & vout = hit_outs[hit.key()];
-		if (MVA_LENGTH == 4)
-		{
-    	p_michel = vout[2];
-    }
-       
+		fOutTrk = vout[0]; fOutEM = vout[1];
+		if (MVA_LENGTH == 4) { p_michel = vout[2]; fOutNone = vout[3]; }
+		else { fOutNone = vout[2]; }
+
 		for (auto const & channel : channels)
 		{
 			if (channel.Channel() != hitChannelNumber) continue;
@@ -504,18 +503,15 @@ int nnet::PointIdEffTest::testCNN(
 							    else hitEnTrk += energy;
 
 							    if (pdg == 11) // electron, check if it is Michel
-                  {
-                  	auto msearch = fParticleMap.find(particle.Mother());
-	    					    if (msearch != fParticleMap.end())
-	    					    {
-	    					    	auto const & mother = *((*msearch).second);
-	    		            if (isMuonDecaying(mother, fParticleMap))
-	    		            {
-	    		            	hitEnMichel += energy;
-	    		            }
-	    					    }
-                  }
-               }
+                                {
+                  	                auto msearch = fParticleMap.find(particle.Mother());
+	    					        if (msearch != fParticleMap.end())
+	    					        {
+	    					    	    auto const & mother = *((*msearch).second);
+	    		                        if (isMuonDecaying(mother, fParticleMap)) { hitEnMichel += energy; }
+	    					        }
+                                }
+                            }
 							else { mf::LogWarning("TrainingDataAlg") << "PARTICLE NOT FOUND"; }
 						}
 					}
@@ -540,6 +536,12 @@ int nnet::PointIdEffTest::testCNN(
 		    fHitTrack_0p5 += hitAdc;
 		    hitPidMc_0p5 = nnet::PointIdEffTest::kTrack;
 		}
+		mcHitPid[hit.key()] = hitPidMc_0p5;
+		auto const & hout = hit_outs[hit.key()];
+	    fpEM = 0;
+        float hit_trk_or_sh = hout[0] + hout[1]; // 0:trk, 1:em, can also get index by name
+        if (hit_trk_or_sh > 0) fpEM = hout[1] / hit_trk_or_sh;
+		fHitEM_mc = hitEnSh / (hitEnSh + hitEnTrk);
 
         int hitPidMc_0p85 = -1;
         double hitDep = hitEnSh + hitEnTrk;
@@ -555,18 +557,15 @@ int nnet::PointIdEffTest::testCNN(
 		}
 
 
-    bool mcMichel = false;
-    fHitMichel_out = -1; fHitNotMichel_out = -1;
-        
-    fpMichel = p_michel;
-    if (hitEnMichel > 0.5 * hitEn)
-    {
-      fHitMichel_0p5 += hitAdc; mcMichel = true;
-    	fHitMichel_out = p_michel;
-    }
-    else { fHitNotMichel_out = p_michel; }
+        bool mcMichel = false;
+        fpMichel_hit = p_michel;
+        fHitMichel_mc = hitEnMichel / hitEn;
+        if (fHitMichel_mc > 0.5)
+        {
+            fHitMichel_0p5 += hitAdc; mcMichel = true;
+        }
 
-    fHitTree->Fill();
+        fHitTree->Fill();
 
 		for (size_t i = 0; i < 100; ++i)
 		{
@@ -662,7 +661,7 @@ int nnet::PointIdEffTest::testCNN(
 			fHitsOutFile << fRun << " " << fEvent << " "
 				<< h->WireID().TPC  << " " << h->WireID().Wire << " " << h->PeakTime() << " "
 				<< h->SummedADC() * fCalorimetryAlg.LifetimeCorrection(h->PeakTime()) << " "
-				<< fMcPid << " " << fPidValue << " " << hitPidValue;
+				<< mcHitPid[h.key()] << " " << fPidValue << " " << hitPidValue;
 
 			if (MVA_LENGTH == 4)
 			{

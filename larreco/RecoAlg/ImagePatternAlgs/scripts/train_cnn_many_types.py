@@ -1,3 +1,8 @@
+import keras
+if keras.__version__[0] > 1:
+    print 'Please use Keras 1.x.x API due to matrix shape constraints in LArSoft interface'
+    quit()
+
 import numpy as np
 np.random.seed(2017)  # for reproducibility
 from keras.datasets import mnist
@@ -84,6 +89,9 @@ for dirname in subdirs:
         else:
             X_test = np.concatenate((X_test, dataX))
             Y_test = np.concatenate((Y_test, dataY))
+
+dataX = None
+dataY = None
 
 print 'Train', X_train.shape, 'test', X_test.shape
 

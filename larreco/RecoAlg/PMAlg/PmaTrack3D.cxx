@@ -1351,7 +1351,7 @@ pma::Track3D* pma::Track3D::Split(size_t idx, bool try_start_at_idx)
 
 	pma::Node3D* n = 0;
 	pma::Track3D* t0 = new pma::Track3D();
-	t0->fT0 = fT0;
+	t0->fT0 = fT0; t0->fTag = fTag;
 
 	for (size_t i = 0; i < idx; ++i)
 	{
@@ -1766,19 +1766,6 @@ double pma::Track3D::GetMse(unsigned int view) const
 
 	if (nEnabledHits) return sumMse / nEnabledHits;
 	else return 0.0;
-}
-
-double pma::Track3D::GetMeanAng(void) const
-{
-	if (fNodes.size() > 2)
-	{
-		double a = 0.0;
-		for (size_t i = 1; i < fNodes.size() - 1; i++)
-			a += acos(fNodes[i]->SegmentCos());
-
-		return a / (fNodes.size() - 2);
-	}
-	else return TMath::Pi();
 }
 
 double pma::Track3D::GetObjFunction(float penaltyFactor) const
