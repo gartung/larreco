@@ -27,7 +27,7 @@
 
 nnet::DataProviderAlg::DataProviderAlg(const Config& config) :
 	fCryo(9999), fTPC(9999), fView(9999),
-	fNWires(0), fNDrifts(0), fNScaledDrifts(0),
+	fNWires(0), fNDrifts(0), fNScaledDrifts(0), fNCachedDrifts(0),
 	fDownscaleMode(nnet::DataProviderAlg::kMax), fDriftWindow(10),
 	fCalorimetryAlg(config.CalorimetryAlg()),
 	fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()),
@@ -64,6 +64,8 @@ void nnet::DataProviderAlg::reconfigure(const Config& config)
 	}
 
 	fDriftWindow = config.DriftWindow();
+	fDownscaleFullView = config.DownscaleFullView();
+	fDriftWindowInv = 1.0 / fDriftWindow;
 
 	std::string mode_str = config.DownscaleFn();
 	if (mode_str == "maxpool")      fDownscaleMode = nnet::DataProviderAlg::kMax;
@@ -83,94 +85,108 @@ void nnet::DataProviderAlg::reconfigure(const Config& config)
 
 void nnet::DataProviderAlg::resizeView(size_t wires, size_t drifts)
 {
-	fNWires = wires; fNDrifts = drifts;
-	fNScaledDrifts = drifts / fDriftWindow;
+    fNWires = wires; fNDrifts = drifts;
+    fNScaledDrifts = drifts / fDriftWindow;
 
-	fWireChannels.resize(wires);
-	std::fill(fWireChannels.begin(), fWireChannels.end(), raw::InvalidChannelID);
+    if (fDownscaleFullView) { fNCachedDrifts = fNScaledDrifts; }
+    else { fNCachedDrifts = fNDrifts; }
 
-	fWireDriftData.resize(wires);
-	for (auto & w : fWireDriftData)
-	{
-		w.resize(fNScaledDrifts);
-		std::fill(w.begin(), w.end(), 0.0F);
-	}
+    fWireChannels.resize(wires);
+    std::fill(fWireChannels.begin(), fWireChannels.end(), raw::InvalidChannelID);
+
+    fWireDriftData.resize(wires);
+    for (auto & w : fWireDriftData)
+    {
+    	w.resize(fNCachedDrifts);
+    	std::fill(w.begin(), w.end(), 0.0F);
+    }
+
+    fLifetimeCorrFactors.resize(fNDrifts);
+    for (size_t t = 0; t < fNDrifts; ++t)
+    {
+        fLifetimeCorrFactors[t] = fCalorimetryAlg.LifetimeCorrection(t);
+    }
 }
 // ------------------------------------------------------
 
-void nnet::DataProviderAlg::downscaleMax(std::vector<float> & dst, std::vector<float> const & adc) const
+void nnet::DataProviderAlg::downscaleMax(std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) const
 {
 	for (size_t i = 0; i < dst.size(); ++i)
 	{
-		size_t i0 = i * fDriftWindow;
-		size_t i1 = (i + 1) * fDriftWindow;
+		size_t k0 = i * fDriftWindow;
+		size_t k1 = (i + 1) * fDriftWindow;
 
-		float max_adc = scaleAdcSample(adc[i0] * fCalorimetryAlg.LifetimeCorrection(i0));
-		for (size_t k = i0 + 1; k < i1; ++k)
+		float max_adc = adc[k0] * fLifetimeCorrFactors[k0 + tick0];
+		for (size_t k = k0 + 1; k < k1; ++k)
 		{
-			float ak = scaleAdcSample(adc[k] * fCalorimetryAlg.LifetimeCorrection(k));
+			float ak = adc[k] * fLifetimeCorrFactors[k + tick0];
 			if (ak > max_adc) max_adc = ak;
 		}
 
-		dst[i] = max_adc;
+		dst[i] = scaleAdcSample(max_adc);
 	}
 }
 
-void nnet::DataProviderAlg::downscaleMaxMean(std::vector<float> & dst, std::vector<float> const & adc) const
+void nnet::DataProviderAlg::downscaleMaxMean(std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) const
 {
 	for (size_t i = 0; i < dst.size(); ++i)
 	{
-		size_t i0 = i * fDriftWindow;
-		size_t i1 = (i + 1) * fDriftWindow;
+		size_t k0 = i * fDriftWindow;
+		size_t k1 = (i + 1) * fDriftWindow;
 
-		size_t max_idx = i0;
-		float max_adc = scaleAdcSample(adc[i0] * fCalorimetryAlg.LifetimeCorrection(i0));
-		for (size_t k = i0 + 1; k < i1; ++k)
+		size_t max_idx = k0;
+		float max_adc = adc[k0] * fLifetimeCorrFactors[k0 + tick0];
+		for (size_t k = k0 + 1; k < k1; ++k)
 		{
-			float ak = scaleAdcSample(adc[k] * fCalorimetryAlg.LifetimeCorrection(k));
+			float ak = adc[k] * fLifetimeCorrFactors[k + tick0];
 			if (ak > max_adc) { max_adc = ak; max_idx = k; }
 		}
 
 		size_t n = 1;
-		if (max_idx > 0) { max_adc += scaleAdcSample(adc[max_idx - 1] * fCalorimetryAlg.LifetimeCorrection(max_idx - 1)); n++; }
-		if (max_idx + 1 < adc.size()) { max_adc += scaleAdcSample(adc[max_idx + 1] * fCalorimetryAlg.LifetimeCorrection(max_idx + 1)); n++; }
+		if (max_idx > 0) { max_adc += adc[max_idx - 1] * fLifetimeCorrFactors[max_idx - 1 + tick0]; n++; }
+		if (max_idx + 1 < adc.size()) { max_adc += adc[max_idx + 1] * fLifetimeCorrFactors[max_idx + 1 + tick0]; n++; }
 
-		dst[i] = max_adc / n;
+		dst[i] = scaleAdcSample(max_adc / n);
 	}
 }
 
-void nnet::DataProviderAlg::downscaleMean(std::vector<float> & dst, std::vector<float> const & adc) const
+void nnet::DataProviderAlg::downscaleMean(std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) const
 {
 	for (size_t i = 0; i < dst.size(); ++i)
 	{
-		size_t i0 = i * fDriftWindow;
-		size_t i1 = (i + 1) * fDriftWindow;
+		size_t k0 = i * fDriftWindow;
+		size_t k1 = (i + 1) * fDriftWindow;
 
 		float sum_adc = 0;
-		for (size_t k = i0; k < i1; ++k)
+		for (size_t k = k0; k < k1; ++k)
 		{
-			sum_adc += scaleAdcSample(adc[k] * fCalorimetryAlg.LifetimeCorrection(k));
+			sum_adc += adc[k] * fLifetimeCorrFactors[k + tick0];
 		}
 
-		dst[i] = sum_adc / fDriftWindow;
+		if (sum_adc != 0) { dst[i] = scaleAdcSample(sum_adc * fDriftWindowInv); }
+		else { dst[i] = 0; }
 	}
 }
 
 bool nnet::DataProviderAlg::setWireData(std::vector<float> const & adc, size_t wireIdx)
 {
-	if ((wireIdx >= fWireDriftData.size()) ||
-	    (adc.size() / fDriftWindow > fNScaledDrifts)) return false;
+   	if (wireIdx >= fWireDriftData.size()) return false;
+   	auto & wData = fWireDriftData[wireIdx];
 
-	auto & wData = fWireDriftData[wireIdx];
-
-	switch (fDownscaleMode)
-	{
-		case nnet::DataProviderAlg::kMax:     downscaleMax(wData, adc);     break;
-		case nnet::DataProviderAlg::kMaxMean: downscaleMaxMean(wData, adc); break;
-		case nnet::DataProviderAlg::kMean:    downscaleMean(wData, adc);    break;
-		default: return false;
-	}
-	return true;
+    if (fDownscaleFullView)
+    {
+        if (adc.size() / fDriftWindow <= fNCachedDrifts) { return downscale(wData, adc); }
+        else { return false; }
+    }
+    else
+    {
+        if (adc.size() <= fNCachedDrifts) // copy ADC's, no downsampling nor scaling
+        {
+            for (size_t i = 0; i < adc.size(); ++i) { wData[i] = adc[i]; }
+        }
+        else { return false; }
+    }
+    return true;
 }
 // ------------------------------------------------------
 
@@ -184,6 +200,7 @@ bool nnet::DataProviderAlg::setWireDriftData(const std::vector<recob::Wire> & wi
 
 	resizeView(nwires, ndrifts);
 
+    bool allWrong = true;
     for (auto const & wire : wires)
 	{
 		auto wireChannelNumber = wire.Channel();
@@ -198,19 +215,26 @@ bool nnet::DataProviderAlg::setWireDriftData(const std::vector<recob::Wire> & wi
 			    auto adc = wire.Signal();
 			    if (adc.size() < ndrifts)
 			    {
-			    	mf::LogError("DataProviderAlg") << "Wire ADC vector size lower than NumberTimeSamples.";
-			    	return false;
+			    	mf::LogWarning("DataProviderAlg") << "Wire ADC vector size lower than NumberTimeSamples.";
+			    	continue; // not critical, maybe other wires are OK, so continue
 			    }
 
 			    if (!setWireData(adc, w_idx))
 			    {
-			    	mf::LogError("DataProviderAlg") << "Wire data not set.";
-			    	return false;
+			    	mf::LogWarning("DataProviderAlg") << "Wire data not set.";
+			    	continue; // also not critical, try to set other wires
 			    }
 
 			    fWireChannels[w_idx] = wireChannelNumber;
+			    allWrong = false;
 			}
 		}
+	}
+	if (allWrong)
+	{
+	    mf::LogError("DataProviderAlg") << "Wires data not set in the cryo:"
+	        << cryo << " tpc:" << tpc << " plane:" << view << " (skip this plane)";
+	    return false;
 	}
 	
     applyBlur();
@@ -260,13 +284,14 @@ void nnet::DataProviderAlg::addWhiteNoise()
 {
     if (fNoiseSigma == 0) return;
 
-    double effectiveSigma = scaleAdcSample(fNoiseSigma) / fDriftWindow;
+    double effectiveSigma = scaleAdcSample(fNoiseSigma);
+    if (fDownscaleFullView) effectiveSigma /= fDriftWindow;
 
     CLHEP::RandGauss gauss(fRndEngine);
-    std::vector<double> noise(fNScaledDrifts);
+    std::vector<double> noise(fNCachedDrifts);
     for (auto & wire : fWireDriftData)
     {
-        gauss.fireArray(fNScaledDrifts, noise.data(), 0., effectiveSigma);
+        gauss.fireArray(fNCachedDrifts, noise.data(), 0., effectiveSigma);
         for (size_t d = 0; d < wire.size(); ++d)
         {
             wire[d] += noise[d];
@@ -279,7 +304,8 @@ void nnet::DataProviderAlg::addCoherentNoise()
 {
     if (fCoherentSigma == 0) return;
 
-    double effectiveSigma = scaleAdcSample(fCoherentSigma) / fDriftWindow;
+    double effectiveSigma = scaleAdcSample(fCoherentSigma);
+    if (fDownscaleFullView) effectiveSigma /= fDriftWindow;
 
     CLHEP::RandGauss gauss(fRndEngine);
     std::vector<double> amps1(fWireDriftData.size());
@@ -288,13 +314,13 @@ void nnet::DataProviderAlg::addCoherentNoise()
     gauss.fireArray(amps2.size(), amps2.data(), 1., 0.1); // 10% group-group ampl. variation
 
     double group_amp = 1.0;
-    std::vector<double> noise(fNScaledDrifts);
+    std::vector<double> noise(fNCachedDrifts);
     for (size_t w = 0; w < fWireDriftData.size(); ++w)
     {
         if ((w & 31) == 0)
         {
             group_amp = amps2[w >> 5]; // div by 32
-            gauss.fireArray(fNScaledDrifts, noise.data(), 0., effectiveSigma);
+            gauss.fireArray(fNCachedDrifts, noise.data(), 0., effectiveSigma);
         } // every 32 wires
 
         auto & wire = fWireDriftData[w];
@@ -503,51 +529,6 @@ float nnet::PointIdAlg::predictIdValue(unsigned int wire, float drift, size_t ou
 }
 // ------------------------------------------------------
 
-float nnet::PointIdAlg::predictIdValue(std::vector< art::Ptr<recob::Hit> > const & hits, size_t outIdx) const
-{
-	double pmin = 1.0e-6, pmax = 1.0 - pmin;
-	double log_pmin = log(pmin), log_pmax = log(pmax);
-	double totarea = 0.0;
-	size_t nhits = 0;
-
-	double resultA = 0.0, resultB = 0.0;
-
-	for (auto const & h : hits)
-	{
-		unsigned int wire = h->WireID().Wire;
-		float drift = h->PeakTime();
-
-		if (!isInsideFiducialRegion(wire, drift)) continue;
-
-		double area = 1.0; //h->SummedADC();
-
-		double voutA = predictIdValue(wire, drift);
-		double voutB = 1.0 - voutA;
-
-		if (voutA < pmin) { voutA = log_pmin; voutB = log_pmax; }
-		else if (voutA > pmax) { voutA = log_pmax; voutB = log_pmin; }
-		else { voutA = log(voutA); voutB = log(voutB); }
-
-		resultA += area * voutA;
-		resultB += area * voutB;
-
-		totarea += area;
-		nhits++;
-	}
-
-	if (nhits)
-	{
-		resultA = exp(resultA / totarea);
-		resultB = exp(resultB / totarea);
-
-		resultA = resultA / (resultA + resultB);
-	}
-	else resultA = 0.5;
-
-	return (float)resultA;
-}
-// ------------------------------------------------------
-
 std::vector<float> nnet::PointIdAlg::predictIdVector(unsigned int wire, float drift) const
 {
 	std::vector<float> result(NClasses(), 0);
@@ -575,59 +556,8 @@ std::vector<float> nnet::PointIdAlg::predictIdVector(unsigned int wire, float dr
 }
 // ------------------------------------------------------
 
-std::vector<float> nnet::PointIdAlg::predictIdVector(std::vector< art::Ptr<recob::Hit> > const & hits) const
-{
-	std::vector<float> result(NClasses(), 0);
-	if (result.empty()) return result;
-
-	double pmin = 1.0e-6, pmax = 1.0 - pmin;
-	double log_pmin = log(pmin), log_pmax = log(pmax);
-	double totarea = 0.0;
-	size_t nhits = 0;
-
-	for (auto const & h : hits)
-	{
-		unsigned int wire = h->WireID().Wire;
-		float drift = h->PeakTime();
-
-		if (!isInsideFiducialRegion(wire, drift)) continue;
-
-		double area = 1.0; // h->SummedADC();
-
-		auto vout = predictIdVector(wire, drift);
-		for (size_t i = 0; i < vout.size(); ++i)
-		{
-			if (vout[i] < pmin) vout[i] = log_pmin;
-			else if (vout[i] > pmax) vout[i] = log_pmax;
-			else vout[i] = log(vout[i]);
-
-			result[i] += area * vout[i];
-		}
-		totarea += area;
-		nhits++;
-	}
-
-	if (nhits)
-	{
-		double totp = 0.0;
-		for (size_t i = 0; i < result.size(); ++i)
-		{
-			result[i] = exp(result[i] / totarea);
-			totp += result[i];
-		}
-		for (size_t i = 0; i < result.size(); ++i)
-		{
-			result[i] /= totp;
-		}
-	}
-	else std::fill(result.begin(), result.end(), 1.0 / result.size());
-
-	return result;
-}
-// ------------------------------------------------------
-
 // MUST give the same result as get_patch() in scripts/utils.py
-bool nnet::PointIdAlg::bufferPatch(size_t wire, float drift) const
+bool nnet::PointIdAlg::patchFromDownsampledView(size_t wire, float drift) const
 {
 	size_t sd = (size_t)(drift / fDriftWindow);
 	if ((fCurrentWireIdx == wire) && (fCurrentScaledDrift == sd))
@@ -669,6 +599,52 @@ bool nnet::PointIdAlg::bufferPatch(size_t wire, float drift) const
 		{
 			std::fill(dst.begin(), dst.end(), 0);
 		}
+	}
+
+	return true;
+}
+
+bool nnet::PointIdAlg::patchFromOriginalView(size_t wire, float drift) const
+{
+	fCurrentWireIdx = wire;
+	fCurrentScaledDrift = drift;
+
+    int dsize = fDriftWindow * fPatchSizeD;
+	int halfSizeW = fPatchSizeW / 2;
+	int halfSizeD = dsize / 2;
+
+	int w0 = fCurrentWireIdx - halfSizeW;
+	int w1 = fCurrentWireIdx + halfSizeW;
+
+	int d0 = fCurrentScaledDrift - halfSizeD;
+	int d1 = fCurrentScaledDrift + halfSizeD;
+
+    std::vector<float> tmp(dsize);
+    int wsize = fWireDriftData.size();
+	for (int w = w0, wpatch = 0; w < w1; ++w, ++wpatch)
+	{
+		if ((w >= 0) && (w < wsize))
+		{
+			auto & src = fWireDriftData[w];
+			int src_size = src.size();
+			for (int d = d0, dpatch = 0; d < d1; ++d, ++dpatch)
+			{
+				if ((d >= 0) && (d < src_size))
+				{
+					tmp[dpatch] = src[d];
+				}
+				else
+				{
+					tmp[dpatch] = 0;
+				}
+			}
+		}
+		else
+		{
+			std::fill(tmp.begin(), tmp.end(), 0);
+		}
+
+        downscale(fWireDriftPatch[wpatch], tmp, d0);
 	}
 
 	return true;
@@ -751,14 +727,14 @@ void nnet::TrainingDataAlg::resizeView(size_t wires, size_t drifts)
 	fWireDriftEdep.resize(wires);
 	for (auto & w : fWireDriftEdep)
 	{
-		w.resize(fNScaledDrifts);
+		w.resize(fNCachedDrifts);
 		std::fill(w.begin(), w.end(), 0.0F);
 	}
 
 	fWireDriftPdg.resize(wires);
 	for (auto & w : fWireDriftPdg)
 	{
-		w.resize(fNScaledDrifts);
+		w.resize(fNCachedDrifts);
 		std::fill(w.begin(), w.end(), 0);
 	}
 }
@@ -767,17 +743,20 @@ void nnet::TrainingDataAlg::resizeView(size_t wires, size_t drifts)
 bool nnet::TrainingDataAlg::setWireEdepsAndLabels(
 	std::vector<float> const & edeps, std::vector<int> const & pdgs, size_t wireIdx)
 {
-	if ((wireIdx >= fWireDriftEdep.size()) ||
-	    (edeps.size() != pdgs.size()) ||
-	    (edeps.size() / fDriftWindow > fNScaledDrifts)) return false;
+	if ((wireIdx >= fWireDriftEdep.size()) || (edeps.size() != pdgs.size())) { return false; }
+
+	size_t dstep = 1;
+	if (fDownscaleFullView) { dstep = fDriftWindow; }
+
+	if (edeps.size() / dstep > fNCachedDrifts) { return false; }
 
 	auto & wEdep = fWireDriftEdep[wireIdx];
 	auto & wPdg = fWireDriftPdg[wireIdx];
 
-	for (size_t i = 0; i < fNScaledDrifts; ++i)
+	for (size_t i = 0; i < fNCachedDrifts; ++i)
 	{
-		size_t i0 = i * fDriftWindow;
-		size_t i1 = (i + 1) * fDriftWindow;
+		size_t i0 = i * dstep;
+		size_t i1 = (i + 1) * dstep;
 
 		int best_pdg = pdgs[i0] & nnet::TrainingDataAlg::kPdgMask;
 		int vtx_flags = pdgs[i0] & nnet::TrainingDataAlg::kVtxMask;
@@ -806,22 +785,33 @@ bool nnet::TrainingDataAlg::setWireEdepsAndLabels(
 }
 // ------------------------------------------------------
 
-nnet::TrainingDataAlg::WireDrift nnet::TrainingDataAlg::getProjection(double x, double y, double z, unsigned int view) const
+nnet::TrainingDataAlg::WireDrift nnet::TrainingDataAlg::getProjection(const TLorentzVector& tvec, unsigned int view) const
 {
+	auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 	nnet::TrainingDataAlg::WireDrift wd;
-	wd.Wire = 0; wd.Drift = 0; wd.TPC = -1;
+	wd.Wire = 0; wd.Drift = 0; wd.TPC = -1; wd.Cryo = -1;
 
     try
     {
-    	double vtx[3] = {x, y, z};
+    	double vtx[3] = {tvec.X(), tvec.Y(), tvec.Z()};
 	    if (fGeometry->FindTPCAtPosition(vtx).isValid)
 	    {
-	    	unsigned int cryo = fGeometry->FindCryostatAtPosition(vtx);
-	    	unsigned int tpc = fGeometry->FindTPCAtPosition(vtx).TPC;
+	    	geo::TPCID tpcid = fGeometry->FindTPCAtPosition(vtx);
+	    	unsigned int tpc = tpcid.TPC, cryo = tpcid.Cryostat;
 
+	    	// correct for the time offset
+	    	float dx = tvec.T() * 1.e-3 * detprop->DriftVelocity();
+	    	int driftDir = fGeometry->TPC(tpcid).DetectDriftDirection();
+			if (driftDir == 1) { dx *= -1; }
+			else if (driftDir != -1)
+			{
+			    throw cet::exception("nnet::TrainingDataAlg") << "drift direction is not X." << std::endl;
+			}
+			vtx[0] = tvec.X() + dx;
+				
 	    	wd.Wire = fGeometry->NearestWire(vtx, view, tpc, cryo);
-	    	wd.Drift = fDetProp->ConvertXToTicks(x, view, tpc, cryo);
-	    	wd.TPC = tpc;
+	    	wd.Drift = fDetProp->ConvertXToTicks(vtx[0], view, tpc, cryo);
+	    	wd.TPC = tpc; wd.Cryo = cryo;
 	    }
 	}
 	catch (const geo::InvalidWireIDError & e)
@@ -835,6 +825,65 @@ nnet::TrainingDataAlg::WireDrift nnet::TrainingDataAlg::getProjection(double x, 
 	return wd;
 }
 // ------------------------------------------------------
+
+bool nnet::TrainingDataAlg::isElectronEnd(const simb::MCParticle & particle,
+    const std::unordered_map< int, const simb::MCParticle* > & particleMap) const
+{
+    const float minElectronLength2 = 2.5*2.5;
+    const float maxDeltaLength2 = 0.15*0.15;
+
+    int pdg = abs(particle.PdgCode());
+	if (pdg != 11) return false; // should be applied only to electrons
+
+	size_t nSec = particle.NumberDaughters();
+	for (size_t d = 0; d < nSec; ++d)
+	{
+		auto d_search = particleMap.find(particle.Daughter(d));
+		if (d_search != particleMap.end())
+		{
+			auto const & daughter = *((*d_search).second);
+			int d_pdg = abs(daughter.PdgCode());
+			if (d_pdg != 22) { return false; } // not the end of the shower
+		}
+	}
+
+    float trkLength2 = 0;
+	auto const * p = &particle;
+	bool branching = false;
+	while (!branching)
+	{
+        trkLength2 += particleRange2(*p);
+        auto m_search = particleMap.find(p->Mother());
+		if (m_search != particleMap.end())
+        {
+			p = (*m_search).second;
+			int m_pdg = abs(p->PdgCode());
+			if (m_pdg == 11)
+			{
+			    nSec = p->NumberDaughters();
+			    size_t ne = 0;
+			    for (size_t d = 0; d < nSec; ++d)
+			    {
+			        auto d_search = particleMap.find(p->Daughter(d));
+			        if (d_search != particleMap.end())
+			        {
+			            auto const & daughter = *((*d_search).second);
+			            int d_pdg = abs(daughter.PdgCode());
+			            if (d_pdg == 11)
+			            {
+                        	if (particleRange2(daughter) > maxDeltaLength2) { ne++; }
+			            }
+			        }
+			    }
+			    if (ne > 1) { branching = true; }
+			}
+			else break;
+        }
+        else break;
+    }
+
+    return (trkLength2 > minElectronLength2);
+}
 
 bool nnet::TrainingDataAlg::isMuonDecaying(const simb::MCParticle & particle,
     const std::unordered_map< int, const simb::MCParticle* > & particleMap) const
@@ -867,6 +916,7 @@ void nnet::TrainingDataAlg::collectVtxFlags(
 	const std::unordered_map< int, const simb::MCParticle* > & particleMap,
 	unsigned int view) const
 {
+	std::cout << "collectVtxFlags" << std::endl;
 	for (auto const & p : particleMap)
 	{
 		auto const & particle = *p.second;
@@ -889,8 +939,16 @@ void nnet::TrainingDataAlg::collectVtxFlags(
 				}
 				break;
 
+			case 11:   // e+/-
+			    if (isElectronEnd(particle, particleMap))
+			    {
+			        flagsEnd = nnet::TrainingDataAlg::kElectronEnd;
+			    }
+				break;
+
+
 			case 13:   // mu+/-
-			    if (nnet::TrainingDataAlg::isMuonDecaying(particle, particleMap))
+			    if (isMuonDecaying(particle, particleMap))
 			    {
 			        //std::cout << "---> mu decay to electron" << std::endl;
 			        flagsEnd = nnet::TrainingDataAlg::kDecay;
@@ -1003,11 +1061,18 @@ void nnet::TrainingDataAlg::collectVtxFlags(
 
 			default: continue;
 		}
+		
+		if (particle.Process() == "primary")
+		{
+			flagsStart |= nnet::TrainingDataAlg::kNuPri;
+		}
+		
+		
 		if (flagsStart != nnet::TrainingDataAlg::kNone)
 		{
-			auto wd = getProjection(particle.Vx(), particle.Vy(), particle.Vz(), view);
+			auto wd = getProjection(particle.Position(), view);
 			
-			if (wd.TPC == (int)fTPC)
+			if ((wd.TPC == (int)fTPC) && (wd.Cryo == (int)fCryo))
 			{
 				wireToDriftToVtxFlags[wd.Wire][wd.Drift] |= flagsStart;
 				// std::cout << "---> flagsStart:" << flagsStart << " view:" << view << " wire:" << wd.Wire << " drift:" << wd.Drift << std::endl;
@@ -1016,11 +1081,13 @@ void nnet::TrainingDataAlg::collectVtxFlags(
 		}
 		if (flagsEnd != nnet::TrainingDataAlg::kNone)
 		{
-			auto wd = getProjection(particle.EndX(), particle.EndY(), particle.EndZ(), view);
-			if (wd.TPC == (int)fTPC)
+			auto wd = getProjection(particle.EndPosition(), view);
+			if ((wd.TPC == (int)fTPC) && (wd.Cryo == (int)fCryo))
 			{
+			    //if (flagsEnd == nnet::TrainingDataAlg::kElectronEnd) { std::cout << "---> clear electron endpoint" << std::endl; }
 				wireToDriftToVtxFlags[wd.Wire][wd.Drift] |= flagsEnd;
-				// std::cout << "---> flagsEnd:" << flagsEnd << " view:" << view << " wire:" << wd.Wire << " drift:" << wd.Drift << std::endl;
+				//if (flagsEnd == nnet::TrainingDataAlg::kElectronEnd)
+				//    std::cout << "---> flagsEnd:" << flagsEnd << " view:" << view << " wire:" << wd.Wire << " drift:" << wd.Drift << std::endl;
 			}
 			// else std::cout << "---> not in current TPC" << std::endl;
 		}
@@ -1222,8 +1289,9 @@ bool nnet::TrainingDataAlg::setEventData(const art::Event& event,
 		auto wireChannelNumber = fWireChannels[widx];
 		if (wireChannelNumber == raw::InvalidChannelID) continue;
 
-		std::vector< float > labels_deposit(fNDrifts, 0);  // full-drift-length buffers
-		std::vector< int > labels_pdg(fNDrifts, 0);
+		std::vector< float > labels_deposit(fNDrifts, 0);         // full-drift-length buffers,
+		std::vector< int > labels_pdg(labels_deposit.size(), 0);  // both of the same size,
+		int labels_size = labels_deposit.size();                  // cached as int for comparisons below
 
 		std::map< int, std::map< int, double > > timeToTrackToCharge;
 		for (auto const & channel : *simChannelHandle)
@@ -1268,17 +1336,28 @@ bool nnet::TrainingDataAlg::setEventData(const art::Event& event,
 					    auto const & particle = *((*search).second);
 					    pdg = abs(particle.PdgCode());
 
-                        if (pdg == 11) // electron, check if it is Michel
-                        {
-                            auto msearch = particleMap.find(particle.Mother());
-	    					if (msearch != particleMap.end())
-	    					{
-	    					    auto const & mother = *((*msearch).second);
+                        auto msearch = particleMap.find(particle.Mother());
+	    				if (msearch != particleMap.end())
+	    				{
+	    				    auto const & mother = *((*msearch).second);
+                            if (pdg == 11) // electron, check if it is Michel or primary electron
+                            {
 	    		                if (nnet::TrainingDataAlg::isMuonDecaying(mother, particleMap))
 	    		                {
                 			        pdg |= nnet::TrainingDataAlg::kMichel; // tag Michel
 	    		                }
-	    					}
+	    		                else if (mother.Mother() < 0)
+	    		                {
+	    		                    pdg |= nnet::TrainingDataAlg::kPriEl; // tag primary
+	    		                }
+                            }
+                            else if (pdg == 13) // muon, check if primary
+                            {
+                                if (mother.Mother() < 0)
+                                {
+                                    pdg |= nnet::TrainingDataAlg::kPriMu; // tag primary
+                                }
+                            }
                         }
 					}
 
@@ -1305,18 +1384,21 @@ bool nnet::TrainingDataAlg::setEventData(const art::Event& event,
 				}			
 			}
 
-			if (ttc.first < (int)labels_deposit.size())
+			if (ttc.first < labels_size)
 			{
-			    size_t tick_idx = ttc.first + fAdcDelay;
-				if (tick_idx < labels_deposit.size()) { labels_deposit[tick_idx] = max_deposit; }
-				if (tick_idx < labels_pdg.size()) { labels_pdg[tick_idx]     = max_pdg & type_pdg_mask; }
+			    int tick_idx = ttc.first + fAdcDelay;
+				if (tick_idx < labels_size)
+				{
+				    labels_deposit[tick_idx] = max_deposit;
+				    labels_pdg[tick_idx] = max_pdg & type_pdg_mask;
+				}
 			}
 		}
 
 		for (auto const & drift_flags : wireToDriftToVtxFlags[widx])
 		{
 			int drift = drift_flags.first, flags = drift_flags.second;
-			if ((drift >= 0) && (drift < (int)labels_pdg.size()))
+			if ((drift >= 0) && (drift < labels_size))
 			{
 				labels_pdg[drift] |= flags;
 			}

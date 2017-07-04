@@ -84,6 +84,11 @@ public:
 			Comment("Downsampling function")
 		};
 
+		fhicl::Atom<bool> DownscaleFullView {
+			Name("DownscaleFullView"),
+			Comment("Downsample full view (faster / lower location precision)")
+		};
+
 		fhicl::Sequence<float> BlurKernel {
 			Name("BlurKernel"),
 			Comment("Blur kernel in wire direction")
@@ -126,17 +131,31 @@ public:
 
 protected:
 	unsigned int fCryo, fTPC, fView;
-	unsigned int fNWires, fNDrifts, fNScaledDrifts;
+	unsigned int fNWires, fNDrifts, fNScaledDrifts, fNCachedDrifts;
 
 	std::vector< raw::ChannelID_t > fWireChannels;              // wire channels (may need this connection...), InvalidChannelID if not used
 	std::vector< std::vector<float> > fWireDriftData;           // 2D data for entire projection, drifts scaled down
+	std::vector<float> fLifetimeCorrFactors;                    // precalculated correction factors along full drift
 
 	EDownscaleMode fDownscaleMode;
 	size_t fDriftWindow;
+	bool fDownscaleFullView;
+	float fDriftWindowInv;
 
-	void downscaleMax(std::vector<float> & dst, std::vector<float> const & adc) const;
-	void downscaleMaxMean(std::vector<float> & dst, std::vector<float> const & adc) const;
-	void downscaleMean(std::vector<float> & dst, std::vector<float> const & adc) const;
+	void downscaleMax(std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) const;
+	void downscaleMaxMean(std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) const;
+	void downscaleMean(std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) const;
+    bool downscale(std::vector<float> & dst, std::vector<float> const & adc, size_t tick0 = 0) const
+    {
+        switch (fDownscaleMode)
+        {
+           	case nnet::DataProviderAlg::kMax:     downscaleMax(dst, adc, tick0);     break;
+           	case nnet::DataProviderAlg::kMaxMean: downscaleMaxMean(dst, adc, tick0); break;
+           	case nnet::DataProviderAlg::kMean:    downscaleMean(dst, adc, tick0);    break;
+            default: return false;
+        }
+        return true;
+    }
 
 	bool setWireData(std::vector<float> const & adc, size_t wireIdx);
 
@@ -266,11 +285,9 @@ public:
 
 	// calculate single-value prediction (2-class probability) for [wire, drift] point
 	float predictIdValue(unsigned int wire, float drift, size_t outIdx = 0) const;
-	float predictIdValue(std::vector< art::Ptr<recob::Hit> > const & hits, size_t outIdx = 0) const;
 
 	// calculate multi-class probabilities for [wire, drift] point
 	std::vector<float> predictIdVector(unsigned int wire, float drift) const;
-	std::vector<float> predictIdVector(std::vector< art::Ptr<recob::Hit> > const & hits) const;
 
 	static std::vector<float> flattenData2D(std::vector< std::vector<float> > const & patch);
 
@@ -283,11 +300,17 @@ private:
 	std::string fNNetModelFilePath;
 	nnet::ModelInterface* fNNet;
 
-	mutable std::vector< std::vector<float> > fWireDriftPatch;  // placeholder for patch around identified point
+	mutable std::vector< std::vector<float> > fWireDriftPatch;  // patch data around the identified point
 	size_t fPatchSizeW, fPatchSizeD;
 
 	mutable size_t fCurrentWireIdx, fCurrentScaledDrift;
-	bool bufferPatch(size_t wire, float drift) const;
+	bool patchFromDownsampledView(size_t wire, float drift) const;
+	bool patchFromOriginalView(size_t wire, float drift) const;
+	bool bufferPatch(size_t wire, float drift) const
+    {
+        if (fDownscaleFullView) { return patchFromDownsampledView(wire, drift); }
+        else { return patchFromOriginalView(wire, drift); }
+    }
 	void resizePatch(void);
 
 	void deleteNNet(void) { if (fNNet) delete fNNet; fNNet = 0; }
@@ -305,23 +328,26 @@ public:
         kNone     = 0,
         kPdgMask  = 0x00000FFF, // pdg code mask
         kTypeMask = 0x0000F000, // track type mask
-        kVtxMask  = 0x0FFF0000  // vertex flags, still can use 0xFFFF0000 if more vtx types needed
+        kVtxMask  = 0xFFFF0000  // vertex flags
     };
 
     enum ETrkType
     {
         kDelta  = 0x1000,      // delta electron
-        kMichel = 0x2000       // Michel electron
+        kMichel = 0x2000,      // Michel electron
+        kPriEl  = 0x4000,      // primary electron
+        kPriMu  = 0x8000       // primary muon
     };
 
 	enum EVtxId
 	{
-		kNuNC  = 0x0010000, kNuCC = 0x0020000,                      // nu interaction type
+		kNuNC  = 0x0010000, kNuCC = 0x0020000, kNuPri = 0x0040000,  // nu interaction type
 		kNuE   = 0x0100000, kNuMu = 0x0200000, kNuTau = 0x0400000,  // nu flavor
-		kHadr  = 0x1000000,    // hadronic inelastic scattering
-		kPi0   = 0x2000000,    // pi0 produced in this vertex
-		kDecay = 0x4000000,    // point of particle decay
-		kConv  = 0x8000000,    // gamma conversion
+		kHadr  = 0x1000000,       // hadronic inelastic scattering
+		kPi0   = 0x2000000,       // pi0 produced in this vertex
+		kDecay = 0x4000000,       // point of particle decay
+		kConv  = 0x8000000,       // gamma conversion
+		kElectronEnd = 0x10000000 // clear end of an electron
 	};
 
     struct Config : public nnet::DataProviderAlg::Config
@@ -393,9 +419,10 @@ private:
 		size_t Wire;
 		int Drift;
 		int TPC;
+		int Cryo;
 	};
 
-	WireDrift getProjection(double x, double y, double z, unsigned int view) const;
+	WireDrift getProjection(const TLorentzVector& tvec, unsigned int view) const;
 
 	bool setWireEdepsAndLabels(
 		std::vector<float> const & edeps,
@@ -406,6 +433,17 @@ private:
 		std::unordered_map< size_t, std::unordered_map< int, int > > & wireToDriftToVtxFlags,
 		const std::unordered_map< int, const simb::MCParticle* > & particleMap,
 		unsigned int view) const;
+
+    static float particleRange2(const simb::MCParticle & particle)
+    {
+        float dx = particle.EndX() - particle.Vx();
+        float dy = particle.EndY() - particle.Vy();
+        float dz = particle.EndZ() - particle.Vz();
+        return dx*dx + dy*dy + dz*dz;
+    }
+    bool isElectronEnd(
+        const simb::MCParticle & particle,
+        const std::unordered_map< int, const simb::MCParticle* > & particleMap) const;
 
     bool isMuonDecaying(
         const simb::MCParticle & particle,

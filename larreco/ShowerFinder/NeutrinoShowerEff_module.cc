@@ -12,6 +12,8 @@
 #include "larsim/MCCheater/BackTracker.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardata/ArtDataHelper/MVAReader.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/PFParticle.h"
 
 // Framework includes
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -69,6 +71,7 @@ namespace DUNE{
     art::InputTag fHitModuleLabel;
     art::InputTag fShowerModuleLabel;
     art::InputTag fCNNEMModuleLabel;
+
     int           fNeutrinoPDGcode;
     int	       	  fLeptonPDGcode;
     double        fMaxNeutrinoE;
@@ -226,7 +229,12 @@ namespace DUNE{
     double sh_length[MAX_SHOWERS];
     int    sh_hasPrimary_e[MAX_SHOWERS];
     double sh_Efrac_contamination[MAX_SHOWERS];
+    double sh_purity[MAX_SHOWERS];
+    double sh_completeness[MAX_SHOWERS];
     int    sh_nHits[MAX_SHOWERS];
+    int    sh_largest;
+    int    sh_pdg[MAX_SHOWERS];
+
     int    n_recoShowers;
     double sh_Efrac_best;
 
@@ -358,7 +366,7 @@ namespace DUNE{
     h_Efrac_shContamination->Sumw2();
     h_Efrac_shPurity = tfs->make<TH1D>("h_Efrac_shPurity","Efrac Lepton; Energy fraction (Purity);",60,0,1.2);
     h_Efrac_shPurity->Sumw2();
-    h_Ecomplet_lepton = tfs->make<TH1D>("h_Ecomplet_lepton","Ecomplet Lepton; Track Completeness;",60,0,1.2);
+    h_Ecomplet_lepton = tfs->make<TH1D>("h_Ecomplet_lepton","Ecomplet Lepton; Shower Completeness;",60,0,1.2);
     h_Ecomplet_lepton->Sumw2();
 
     h_HighestHitsProducedParticlePDG_NueCC= tfs->make<TH1D>("h_HighestHitsProducedParticlePDG_NueCC","PDG Code; PDG Code;",4,-0.5,3.5);//0 for undefined, 1=electron, 2=photon, 3=anything else     //Signal
@@ -369,13 +377,13 @@ namespace DUNE{
 
     h_Efrac_NueCCPurity= tfs->make<TH1D>("h_Efrac_NueCCPurity","Efrac NueCC; Energy fraction (Purity);",60,0,1.2);     //Signal
     h_Efrac_NueCCPurity->Sumw2();
-    h_Ecomplet_NueCC= tfs->make<TH1D>("h_Ecomplet_NueCC","Ecomplet NueCC; Track Completeness;",60,0,1.2);     
+    h_Ecomplet_NueCC= tfs->make<TH1D>("h_Ecomplet_NueCC","Ecomplet NueCC; Shower Completeness;",60,0,1.2);     
     h_Ecomplet_NueCC->Sumw2();
 
     
     h_Efrac_bkgPurity= tfs->make<TH1D>("h_Efrac_bkgPurity","Efrac bkg; Energy fraction (Purity);",60,0,1.2);     //Background
     h_Efrac_bkgPurity->Sumw2();
-    h_Ecomplet_bkg= tfs->make<TH1D>("h_Ecomplet_bkg","Ecomplet bkg; Track Completeness;",60,0,1.2);     
+    h_Ecomplet_bkg= tfs->make<TH1D>("h_Ecomplet_bkg","Ecomplet bkg; Shower Completeness;",60,0,1.2);     
     h_Ecomplet_bkg->Sumw2();
 
 
@@ -573,9 +581,12 @@ namespace DUNE{
       fEventTree->Branch("sh_length", &sh_length, "sh_length[n_showers]/D");
       fEventTree->Branch("sh_hasPrimary_e", &sh_hasPrimary_e, "sh_hasPrimary_e[n_showers]/I");
       fEventTree->Branch("sh_Efrac_contamination", &sh_Efrac_contamination, "sh_Efrac_contamination[n_showers]/D");
+      fEventTree->Branch("sh_purity",&sh_purity,"sh_purity[n_showers]/D");
+      fEventTree->Branch("sh_completeness",&sh_completeness,"sh_completeness[n_showers]/D");
       fEventTree->Branch("sh_Efrac_best", &sh_Efrac_best, "sh_Efrac_best/D");
       fEventTree->Branch("sh_nHits",&sh_nHits, "sh_nHits[n_showers]/I");
-      
+      fEventTree->Branch("sh_largest",&sh_largest,"sh_largest/I");
+      fEventTree->Branch("sh_pdg",&sh_pdg,"sh_pdg[n_showers]/I");
     }
 
   }
@@ -598,7 +609,7 @@ namespace DUNE{
     bool isFiducial = false;
     processEff(event, isFiducial);
     if( fSaveMCTree ){
-      if(isFiducial && MC_isCC == 1) fEventTree->Fill();
+      if(isFiducial) fEventTree->Fill();
     }
   }
   //========================================================================
@@ -699,7 +710,6 @@ namespace DUNE{
     cout<<"Found this many showers "<<n_recoShowers<<endl; 
     double Efrac_contamination= 999.0;
     double Efrac_contaminationNueCC= 999.0;
-    
 
     double Ecomplet_lepton =0.0;
     double Ecomplet_NueCC =0.0;
@@ -730,6 +740,38 @@ namespace DUNE{
 
       std::vector<art::Ptr<recob::Hit>> sh_hits = sh_hitsAll.at(i);  
 
+      if (!sh_hits.size()){
+        //no shower hits found, try pfparticle
+        // PFParticles
+        art::Handle<std::vector<recob::PFParticle> > pfpHandle;
+        std::vector<art::Ptr<recob::PFParticle> > pfps;
+        if (event.getByLabel(fShowerModuleLabel, pfpHandle))
+          art::fill_ptr_vector(pfps, pfpHandle);
+        // Clusters
+        art::Handle<std::vector<recob::Cluster> > clusterHandle;
+        std::vector<art::Ptr<recob::Cluster> > clusters;
+        if (event.getByLabel(fShowerModuleLabel, clusterHandle))
+          art::fill_ptr_vector(clusters, clusterHandle);
+        art::FindManyP<recob::PFParticle> fmps(showerHandle, event, fShowerModuleLabel);
+        art::FindManyP<recob::Cluster> fmcp(pfpHandle, event, fShowerModuleLabel);
+        art::FindManyP<recob::Hit> fmhc(clusterHandle, event, fShowerModuleLabel);
+        if (fmps.isValid()){
+          std::vector<art::Ptr<recob::PFParticle>> pfs = fmps.at(i);
+          for (size_t ipf = 0; ipf<pfs.size(); ++ipf){
+            if (fmcp.isValid()){
+              std::vector<art::Ptr<recob::Cluster>> clus = fmcp.at(pfs[ipf].key());
+              for (size_t iclu = 0; iclu<clus.size(); ++iclu){
+                if (fmhc.isValid()){
+                  std::vector<art::Ptr<recob::Hit>> hits = fmhc.at(clus[iclu].key());
+                  for (size_t ihit = 0; ihit<hits.size(); ++ihit){
+                    sh_hits.push_back(hits[ihit]);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
       //  std::cout<<" shower best plane:"<<shower->best_plane()<<" shower dEdx size:"<<shower->dEdx().size()<<std::endl;
       //for( size_t j =0; j<shower->dEdx().size(); j++) std::cout<<shower->dEdx()[j]<<" ";
 
@@ -743,15 +785,17 @@ namespace DUNE{
       truthMatcher( all_hits, sh_hits, particle, tmpEfrac_contamination,tmpEcomplet);
       //truthMatcher( all_hits, sh_hits, particle, tmpEfrac_contaminationNueCC,tmpEcompletNueCC );
        
-      
 
       sh_Efrac_contamination[i] = tmpEfrac_contamination;
+      sh_purity[i] = 1 - tmpEfrac_contamination;
+      sh_completeness[i] = tmpEcomplet;
       sh_nHits[i] = tmp_nHits; 
       sh_hasPrimary_e[i] = 0;
-       
+      sh_pdg[i] = particle->PdgCode();
 
       //Shower with highest hits       
       if( tmp_nHits > nHits ){
+        sh_largest = i;
         nHits = tmp_nHits;
         Ecomplet_NueCC =tmpEcomplet;
         Efrac_contaminationNueCC = tmpEfrac_contamination; 
@@ -1223,13 +1267,17 @@ namespace DUNE{
       sh_length[i] = -999.0;
       sh_hasPrimary_e[i] = -999.0;
       sh_Efrac_contamination[i] = -999.0;
+      sh_purity[i] = -999.0;
+      sh_completeness[i] = -999.0;
       sh_nHits[i] = -999.0;
       for( int j=0; j<3; j++){
         sh_energy[i][j] = -999.0;
         sh_MIPenergy[i][j] = -999.0;
         sh_dEdx[i][j] = -999.0;
       }
-    } 
+      sh_pdg[i] = -999;
+    }
+    sh_largest = -999;
   }
   //========================================================================
   DEFINE_ART_MODULE(NeutrinoShowerEff)
