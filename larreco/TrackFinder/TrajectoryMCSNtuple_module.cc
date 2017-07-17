@@ -126,6 +126,7 @@ private:
   double simStartDirX, simStartDirY, simStartDirZ;
   double simEndPosX, simEndPosY, simEndPosZ;
   double simEndDirX, simEndDirY, simEndDirZ;
+  std::vector<double> simMcStepPosX, simMcStepPosY, simMcStepPosZ;
   int    simID;
   std::string simProc;
   int    simIsContained;
@@ -212,6 +213,9 @@ void TrajectoryMCSNtuple::resetTree() {
   simEndDirX = -999;
   simEndDirY = -999;
   simEndDirZ = -999;
+  simMcStepPosX.clear();
+  simMcStepPosY.clear();
+  simMcStepPosZ.clear();
   simID = -999;
   simProc = "";
   simIsContained = -999;
@@ -306,6 +310,9 @@ void TrajectoryMCSNtuple::beginJob()
   tree->Branch("simEndDirX"  , &simEndDirX  , "simEndDirX/D"  );
   tree->Branch("simEndDirY"  , &simEndDirY  , "simEndDirY/D"  );
   tree->Branch("simEndDirZ"  , &simEndDirZ  , "simEndDirZ/D"  );
+  tree->Branch("simMcStepPosX"  , &simMcStepPosX  );
+  tree->Branch("simMcStepPosY"  , &simMcStepPosY  );
+  tree->Branch("simMcStepPosZ"  , &simMcStepPosZ  );
   tree->Branch("simID", &simID, "simID/I");
   tree->Branch("simProc", &simProc);
   tree->Branch("simIsContained", &simIsContained, "simIsContained/I");
@@ -470,6 +477,9 @@ void TrajectoryMCSNtuple::analyze(art::Event const & e)
     }
     //
     if (e.isRealData()==0) {
+      std::vector<double> simMcStepPosXtmp;
+      std::vector<double> simMcStepPosYtmp;
+      std::vector<double> simMcStepPosZtmp;
       for (unsigned int iMC = 0; iMC < (*simTracks)->size(); ++iMC) {
 	const sim::MCTrack& mctrack = (*simTracks)->at(iMC);
 	//
@@ -494,6 +504,9 @@ void TrajectoryMCSNtuple::analyze(art::Event const & e)
 	//
 	double mclen = 0.;
 	for (unsigned int imc=0; imc<mctrack.size(); ++imc) {
+	  simMcStepPosXtmp.push_back( mctrack[imc].X() );
+	  simMcStepPosYtmp.push_back( mctrack[imc].Y() );
+	  simMcStepPosZtmp.push_back( mctrack[imc].Z() );
 	  if (imc>0) {
 	    mclen+=sqrt( (mctrack[imc].X()-mctrack[imc-1].X())*(mctrack[imc].X()-mctrack[imc-1].X()) +
 			 (mctrack[imc].Y()-mctrack[imc-1].Y())*(mctrack[imc].Y()-mctrack[imc-1].Y()) +
@@ -515,6 +528,9 @@ void TrajectoryMCSNtuple::analyze(art::Event const & e)
 	simEndDirX = mcenddir.X();
 	simEndDirY = mcenddir.Y();
 	simEndDirZ = mcenddir.Z();
+	simMcStepPosX   = simMcStepPosXtmp;
+	simMcStepPosY   = simMcStepPosYtmp;
+	simMcStepPosZ   = simMcStepPosZtmp;
 	simID = std::abs(mctrack.PdgCode());
 	simProc = mctrack.Process();
 	simIsContained = mccontained;
