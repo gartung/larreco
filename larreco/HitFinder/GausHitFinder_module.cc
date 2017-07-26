@@ -134,6 +134,7 @@ namespace hit{
     
     TH1F* fFirstChi2;
     TH1F* fChi2;
+    TH1F* fHist_IntegralToADC;
 		
   protected: 
     
@@ -221,6 +222,7 @@ void GausHitFinder::beginJob()
     // === Hit Information for Histograms ===
     fFirstChi2	= tfs->make<TH1F>("fFirstChi2", "#chi^{2}", 10000, 0, 5000);
     fChi2	        = tfs->make<TH1F>("fChi2", "#chi^{2}", 10000, 0, 5000);
+    fHist_IntegralToADC = tfs->make<TH1F>("fHist_IntegralToADC", "Integral to ADC", 100, -1.0, 1.0);
 }
 
 //-------------------------------------------------
@@ -583,7 +585,10 @@ void GausHitFinder::produce(art::Event& evt)
                     if (!fHitFilterAlg || fHitFilterAlg->IsGoodHit(hit)) {
                         hcol.emplace_back(std::move(hit), wire, rawdigits);
                         numHits++;
+			fHist_IntegralToADC->Fill((sumADC-charge)/(charge+sumADC));
                     }
+		   
+		    
                 } // <---End loop over gaussians
                 
                 fChi2->Fill(chi2PerNDF);
