@@ -19,8 +19,9 @@ art_make(
 			larreco_RecoAlg_CMTool_CMToolApp
 			${ROOT_MATHCORE}
 			${ROOT_GENVECTOR}
+                        ${ROOT_GEOM}
 			${ROOT_BASIC_LIB_LIST}
-      larreco_RecoAlg_TCAlg
+		        larreco_RecoAlg_TCAlg
 			larreco_RecoAlg_PMAlg
                         nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
