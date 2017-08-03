@@ -3,6 +3,9 @@
 #include "reco_uboone_mcc8.fcl"
 #include "mcsfitproducer.fcl"
 
+#include "tpcneutrinoidfilter_microboone.fcl"
+#include "filters.fcl"
+
 process_name: MCSNtuple
 
 services: {
@@ -11,6 +14,16 @@ services: {
   TimeTracker: { }
 } # services
 services.MemoryPeakReporter: @erase
+
+#outputs:
+#{
+# out1:
+# {
+#    module_type: RootOutput
+#    fileName:    "test.root"
+#    outputCommands: [ "keep *" ]
+# }      
+#}
 
 physics: {
   producers: {
@@ -27,6 +40,14 @@ physics: {
     module_label: pandoraNuMCSFit
     inputs: {
           inputLabel: pandoraNu
+       }
+    }
+    #
+    pandoraNuPMAMCSFitMu: {
+    @table::mcsfitproducer
+    module_label: pandoraNuPMAMCSFit
+    inputs: {
+          inputLabel: pandoraNuPMA
        }
     }
     #
@@ -53,9 +74,24 @@ physics: {
          pIdHypothesis: 2212
         }
     }
+    #
+    pandoraNuPMAMCSFitP: {
+    @table::mcsfitproducer
+    module_label: pandoraNuPMAMCSFit
+    inputs: {
+          inputLabel: pandoraNuPMA
+       }
+    fitter: {
+    	 @table::mcsfitproducer.fitter 
+         pIdHypothesis: 2212
+        }
+    }
+    NuMuCCSelectionII:      @local::microboone_tpcNeutrinoID
   }
 
-  filters:  {}
+  filters:       { tpcneutrinoidfilter : @local::microboone_tpcneutrinoidfilter}
+
+  reco:          [ NuMuCCSelectionII, tpcneutrinoidfilter ]
 
   analyzers: {
     trajmcsntupleCosmic: {
@@ -65,6 +101,7 @@ physics: {
       	   inputLabel: pandoraCosmic
       }
       mcsfitter: {@table::mcsfitproducer.fitter}
+      #SelectEvents: [reco]
     } # trajmcsntupleCosmic
     trajmcsntupleNu: {
       module_label: TrajectoryMCSNtuple
@@ -73,12 +110,47 @@ physics: {
            inputLabel: pandoraNu
       }
       mcsfitter: {@table::mcsfitproducer.fitter}
+      #SelectEvents: [reco]
     } # trajmcsntupleNu
+    trajmcsntupleNuPMA: {
+      module_label: TrajectoryMCSNtuple
+      module_type:  TrajectoryMCSNtuple
+      inputs: {
+           inputLabel: pandoraNuPMA
+      }
+      mcsfitter: {@table::mcsfitproducer.fitter}
+      #SelectEvents: [reco]
+    } # trajmcsntupleNuPMA
   }
 
-  ana: [ trajmcsntupleCosmic, trajmcsntupleNu ]
-  pro:  [ pandoraNuMCSFitP, pandoraNuMCSFitMu, pandoraCosmicMCSFitMu, pandoraCosmicMCSFitP ]
+#  ana: [ trajmcsntupleCosmic, trajmcsntupleNu ]
+#  pro:  [ pandoraNuMCSFitP, pandoraNuMCSFitMu, pandoraCosmicMCSFitMu, pandoraCosmicMCSFitP ]
+#  ana: [ trajmcsntupleCosmic ]
+#  pro:  [ pandoraCosmicMCSFitMu, pandoraCosmicMCSFitP ]
+  ana: [ trajmcsntupleNu, trajmcsntupleNuPMA ]
+  pro:  [ pandoraNuMCSFitMu, pandoraNuMCSFitP, pandoraNuPMAMCSFitMu, pandoraNuPMAMCSFitP ]
 
-  trigger_paths: [ pro, ana ]
+  #stream1:  [out1]
+
+  trigger_paths: [ reco, pro ]
+  end_paths:     [ ana ] #, stream1
 
 } # physics
+
+# Adjust the window/offset for the reduced total frame size (9600 -> 6400 ticks)
+services.DetectorPropertiesService.NumberTimeSamples:                  6400
+services.DetectorPropertiesService.ReadOutWindowSize:                  6400
+services.DetectorClocksService.InheritClockConfig:                     false
+services.DetectorClocksService.TriggerOffsetTPC:                       -0.400e3
+
+physics.producers.NuMuCCSelectionII.NuMuCCSelectionIIAlg.Debug: 1
+physics.producers.NuMuCCSelectionII.NuMuCCSelectionIIAlg.BeamMin : 3.3 #
+physics.producers.NuMuCCSelectionII.NuMuCCSelectionIIAlg.BeamMax : 4.9 #
+
+# define the list of LArSoft modules to run through the simulate path
+
+physics.producers.NuMuCCSelectionII.NeutrinoIDAlgName:                         "NuMuCCSelectionIIAlg"
+physics.filters.tpcneutrinoidfilter.VertexModuleLabelVec:                    ["pandoraNu"]
+physics.filters.tpcneutrinoidfilter.VtxTrackAssnModuleLabelVec:              ["NuMuCCSelectionII"]
+physics.filters.tpcneutrinoidfilter.Cluster2DCosmicProducerLabel:            ""
+physics.filters.tpcneutrinoidfilter.Cluster2DCosmicClusterAssns:             ""

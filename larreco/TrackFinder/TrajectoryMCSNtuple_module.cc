@@ -15,6 +15,7 @@
 #include "art/Framework/Principal/SubRun.h"
 #include "canvas/Utilities/InputTag.h"
 #include "canvas/Persistency/Common/FindMany.h"
+#include "canvas/Persistency/Common/TriggerResults.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Services/Optional/TFileService.h"
@@ -132,6 +133,8 @@ private:
   int    simIsContained;
   int    simAndTrkSameDir;
   //
+  int passSelII;
+  //
 };
 
 void TrajectoryMCSNtuple::resetTree() {
@@ -220,6 +223,7 @@ void TrajectoryMCSNtuple::resetTree() {
   simProc = "";
   simIsContained = -999;
   simAndTrkSameDir = -999;
+  passSelII = -999;
 }
 
 void TrajectoryMCSNtuple::beginJob()
@@ -317,6 +321,7 @@ void TrajectoryMCSNtuple::beginJob()
   tree->Branch("simProc", &simProc);
   tree->Branch("simIsContained", &simIsContained, "simIsContained/I");
   tree->Branch("simAndTrkSameDir", &simAndTrkSameDir, "simAndTrkSameDir/I");
+  tree->Branch("passSelII", &passSelII, "passSelII/I");
   //
 }
 
@@ -328,14 +333,12 @@ TrajectoryMCSNtuple::~TrajectoryMCSNtuple() {}
 void TrajectoryMCSNtuple::analyze(art::Event const & e)
 {
 
+  art::ValidHandle<art::TriggerResults> filter = e.getValidHandle<art::TriggerResults>("TriggerResults");
+
   using namespace std;
   using namespace trkf;
   using namespace recob;
   using namespace recob::tracking;
-
-  run = e.run();
-  subrun = e.subRun();
-  eventid = e.event();
 
   art::ValidHandle<std::vector<sim::MCTrack> >* simTracks = 0;
   if (e.isRealData()==0) {
@@ -364,6 +367,11 @@ void TrajectoryMCSNtuple::analyze(art::Event const & e)
     std::vector<const anab::ParticleID*> pids = AssPid.at(iTrack);
     //
     resetTree();
+    //
+    passSelII = filter->at(1).accept();
+    run = e.run();
+    subrun = e.subRun();
+    eventid = e.event();
     //
     trkLength = track.Length();
     //
