@@ -5,8 +5,9 @@ art_make( LIB_LIBRARIES lardataobj_Simulation
                         nusimdata_SimulationBase
                         lardataobj_MCBase
                         lardata_Utilities
-                        lardata_DetectorInfoServices
+                        lardata_DetectorInfoServices_DetectorClocksServiceStandard_service
                         larcore_Geometry_Geometry_service
+                        larcorealg_Geometry
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -22,14 +23,16 @@ art_make( LIB_LIBRARIES lardataobj_Simulation
                         ${Boost_SYSTEM_LIBRARY}
                         ${ROOT_BASIC_LIB_LIST}
           MODULE_LIBRARIES
+                        larreco_RecoAna
                         lardataobj_Simulation
                         lardataobj_RecoBase
                         larsim_Simulation
                         nusimdata_SimulationBase
                         lardataobj_MCBase
                         lardata_Utilities
-                        lardata_DetectorInfoServices
+                        lardata_DetectorInfoServices_DetectorClocksServiceStandard_service
                         larcore_Geometry_Geometry_service
+                        larcorealg_Geometry
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
