@@ -132,7 +132,7 @@ private:
     // Other variables that will be shared between different methods.
     double                                fElectronsToGeV;       // conversion factor
 
-    std::make_unique< lar::recoana::MCParticleToPFParticle >  fMCParticleToPFParticle;
+    // std::make_unique< lar::recoana::MCParticleToPFParticle >  fMCParticleToPFParticle;
 
     // Define our output TTree here
     TTree*    fAnaTree;
@@ -152,7 +152,7 @@ TrackRecoAna::TrackRecoAna( fhicl::ParameterSet const& parameterSet )
     // Read in the parameters from the .fcl file.
     this->reconfigure( parameterSet );
 
-    fMCParticleToPFParticle = std::make_unique< lar::recoana::MCParticleToPFParticle >( fPFParticleProducerLabel, fClusterProducerLabel );
+    // fMCParticleToPFParticle = std::make_unique< lar::recoana::MCParticleToPFParticle >( fPFParticleProducerLabel, fClusterProducerLabel );
 }
 
 //-----------------------------------------------------------------------
@@ -307,31 +307,32 @@ void TrackRecoAna::analyze( const art::Event& event )
         return;
     }
 
+    auto MCParticleToPFParticle = std::make_unique< lar::recoana::MCParticleToPFParticle >( fPFParticleProducerLabel, fClusterProducerLabel );
     // our ultimate goal here are the following two maps:
     // 1) a map between a recob::Hit and the track ID (meaning MCParticle)
     // 2) a map between the trackID (MCParticle) and the hits it created
-    HitToParticleMap HitToParticle;
-    ParticleToHitMap ParticleToHit;
+    lar::recoana::MCParticleToPFParticle::HitToParticleMap HitToParticle;
+    lar::recoana::MCParticleToPFParticle::ParticleToHitMap ParticleToHit;
 
     // Recover the list of hits in stl vector form
     const std::vector< recob::Hit >& Hits = *hitHandle;
 
-    fMCParticleToPFParticle->setup( *( lar::providerFrom< detinfo::DetectorClocksService >() ),
+    MCParticleToPFParticle->setup( *( lar::providerFrom< detinfo::DetectorClocksService >() ),
                                     *( lar::providerFrom<geo::Geometry>() ) );
 
     // Build out our MCParticle <---> reco Hit maps
-    fMCParticleToPFParticle->MakeHitParticleMaps( MCHits, Hits, HitToParticle, ParticleToHit );
+    MCParticleToPFParticle->MakeHitParticleMaps( MCHits, Hits, HitToParticle, ParticleToHit );
 
     // Now define the maps relating pfparticles to tracks
-    TrackIDToPFParticleVecMap TrackIDToPFParticle;
-    PFParticleToTrackHit2DMap PFParticleToTrackHit;
+    lar::recoana::MCParticleToPFParticle::TrackIDToPFParticleVecMap TrackIDToPFParticle;
+    lar::recoana::MCParticleToPFParticle::PFParticleToTrackHit2DMap PFParticleToTrackHit;
 
     // Something to keep track of number of hits associated to a cluster
     std::map< art::Ptr< recob::PFParticle >, int > PFParticleToHitCnt;
 
     // Call the method for building out the PFParticle data structures
-    fMCParticleToPFParticle->MakePFParticleMaps( event, pfParticleHandle, HitToParticle, 
-                                                 PFParticleToTrackHit, TrackIDToPFParticle, PFParticleToHitCnt );
+    MCParticleToPFParticle->MakePFParticleMaps( event, pfParticleHandle, HitToParticle, 
+                                                PFParticleToTrackHit, TrackIDToPFParticle, PFParticleToHitCnt );
 
     this->PrepareEvent( event, ParticleToHit.size() );
 
@@ -345,7 +346,7 @@ void TrackRecoAna::analyze( const art::Event& event )
         int ParticleTrackID = particle->TrackId();
 
         // Did this mc particle leave hits in the TPC?
-        ParticleToHitMap::iterator ParticleToHitItr = ParticleToHit.find( ParticleTrackID );
+        lar::recoana::MCParticleToPFParticle::ParticleToHitMap::iterator ParticleToHitItr = ParticleToHit.find( ParticleTrackID );
 
         // Let's get the total number of reconstructed hits that are created by this MCParticle
         // Count number of hits in each view
@@ -359,15 +360,15 @@ void TrackRecoAna::analyze( const art::Event& event )
 
 
         // How many PFParticles does the MCParticle match to?
-        TrackIDToPFParticleVecMap::iterator TrackIDToPFParticleItr = TrackIDToPFParticle.find( ParticleTrackID );
-        if ( TrackIDToPFParticleItr != TrackIDToPFParticleItr.end() ) {
+        lar::recoana::MCParticleToPFParticle::TrackIDToPFParticleVecMap::iterator TrackIDToPFParticleItr = TrackIDToPFParticle.find( ParticleTrackID );
+        if ( TrackIDToPFParticleItr != TrackIDToPFParticle.end() ) {
             fNMatchedPFParticlesPerMCParticle[iMCPart] = TrackIDToPFParticleItr->second.size();
 
             // Look for the best matched PFParticle by counting hits
             // Since we have sorted the PFParticles in the TrackIDToPFParticle map, the first PFParticle is the one
             const auto& pfpart = TrackIDToPFParticleItr->second.at(0);
             fNHitsBestMatchedPFParticle[iMCPart] = PFParticleToTrackHit[pfpart].size();
-            fBestMatchedPFParticlePDGCode[iMCPart] = pfpart.PdgCode();
+            fBestMatchedPFParticlePDGCode[iMCPart] = pfpart->PdgCode();
         }
 
         // It is pointless to go through the rest of the loop if there are no hits to analyze
