@@ -91,7 +91,9 @@ public:
 private:
 
     // This method is meant to be called at the start of the event
-    void PrepareEvent( const art::Event& evt, int numColumns );
+    void PrepareEvent( const art::Event& evt );
+
+    void PrepareParticle( int numColumns );
 
     // The parameters we'll read from the .fcl file.
     std::string fSimulationProducerLabel;    //> The name of the producer that tracked simulated particles through the detector
@@ -118,7 +120,7 @@ private:
     // Int_t    fNegTrackIds;
     Int_t    fNMCParticles;
     Int_t    fNPFParticles;
-    Int_t    fNMathcedPFParticles;
+    Int_t    fNMatchedPFParticles;
 
     // MCParticle-wise information
     std::vector< Int_t >       fPDGCode;
@@ -128,6 +130,9 @@ private:
     std::vector< Int_t >       fNMatchedHitsPerMCParticle;
     std::vector< Int_t >       fNHitsBestMatchedPFParticle;
     std::vector< Int_t >       fBestMatchedPFParticlePDGCode;
+
+    std::vector< std::string > fProcNames;
+    // std::vector< std::string > fParentProcNames;
 
     // Other variables that will be shared between different methods.
     double                                fElectronsToGeV;       // conversion factor
@@ -178,7 +183,16 @@ void TrackRecoAna::beginJob()
     // fAnaTree->Branch("NegativeTrackIDs",     &fNegTrackIds,           "NegativeTrackIDs/I");
     fAnaTree->Branch("NMCParticles",         &fNMCParticles,          "NMCParticles/I");
     fAnaTree->Branch("NPFParticles",         &fNPFParticles,          "NPFParticles/I");
-    fAnaTree->Branch("NMathcedPFParticles",  &fNMathcedPFParticles,   "NMathcedPFParticles/I");
+    fAnaTree->Branch("NMatchedPFParticles",  &fNMatchedPFParticles,   "NMatchedPFParticles/I");
+
+    fRun = -1;
+    fSubRun = -1;
+    fEvent = -1;
+    fNHits = 0;
+    fNUniqueHits = 0;
+    fNMCParticles = 0;
+    fNPFParticles = 0;
+    fNMatchedPFParticles = 0;
 
     fPDGCode.resize( fMaxEntries, 0 );
     fNUniqueHitsPerMCParticle.resize( fMaxEntries, 0 );
@@ -193,6 +207,13 @@ void TrackRecoAna::beginJob()
     fAnaTree->Branch("NMatchedHitsPerMCParticle", fNMatchedHitsPerMCParticle.data(), "NMatchedHitsPerMCParticle[NMCParticles]/I");
     fAnaTree->Branch("NHitsBestMatchedPFParticle", fNHitsBestMatchedPFParticle.data(), "NHitsBestMatchedPFParticle[NMCParticles]/I");
     fAnaTree->Branch("BestMatchedPFParticlePDGCode", fBestMatchedPFParticlePDGCode.data(), "BestMatchedPFParticlePDGCode[NMCParticles]/I");
+
+    fProcNames.resize( fMaxEntries, "processname  " );
+    // fParentProcNames.resize( fMaxEntries, "processname  " );
+
+    fAnaTree->Branch("MCParticleProc",    &fProcNames);
+    // fAnaTree->Branch("MCParticleParentProc",  &fParentProcNames);
+
 }
 
 //-----------------------------------------------------------------------
@@ -210,19 +231,19 @@ void TrackRecoAna::reconfigure( fhicl::ParameterSet const& p )
 {
     // Read parameters from the .fcl file. The names in the arguments
     // to p.get<TYPE> must match names in the .fcl file.
-    fSimulationProducerLabel    = p.get< std::string >("SimulationLabel");
-    fMCHitCollectionModuleLabel = p.get< std::string >("McHitFinderLabel");
-    fPFParticleProducerLabel    = p.get< std::string >("PFParticleLabel");
-    fHitProducerLabel           = p.get< std::string >("HitLabel");
-    fClusterProducerLabel       = p.get< std::string >("ClusterLabel");
-    // fTrackProducerLabel         = p.get< std::string >("TrackProducerLabel");
-    fMaxEntries                 = p.get< int         >("MaxEntries", 300);
+    fSimulationProducerLabel    = p.get< std::string >( "SimulationLabel" );
+    fMCHitCollectionModuleLabel = p.get< std::string >( "MCHitFinderLabel" );
+    fPFParticleProducerLabel    = p.get< std::string >( "PFParticleLabel" );
+    fHitProducerLabel           = p.get< std::string >( "HitLabel" );
+    fClusterProducerLabel       = p.get< std::string >( "ClusterLabel" );
+    // fTrackProducerLabel         = p.get< std::string >( "TrackProducerLabel" );
+    fMaxEntries                 = p.get< int         >( "MaxEntries", 300 );
 
     return;
 }
 
 //-----------------------------------------------------------------------
-void TrackRecoAna::PrepareEvent( const art::Event &evt, int numColumns )
+void TrackRecoAna::PrepareEvent( const art::Event &evt )
 {
     fRun                   = evt.run();
     fEvent                 = evt.id().event();
@@ -232,8 +253,12 @@ void TrackRecoAna::PrepareEvent( const art::Event &evt, int numColumns )
     // fNNoiseHits            = 0;
     fNMCParticles          = 0;
     fNPFParticles          = 0;
-    fNMathcedPFParticles   = 0;
+    fNMatchedPFParticles   = 0;
+}
 
+//-----------------------------------------------------------------------
+void TrackRecoAna::PrepareParticle( int numColumns )
+{
     // Set the number of entries for each vector
     // But no more than the maximum requested when we started
     size_t maxEntries = numColumns < fMaxEntries ? numColumns : fMaxEntries;
@@ -244,11 +269,14 @@ void TrackRecoAna::PrepareEvent( const art::Event &evt, int numColumns )
     fNMatchedHitsPerMCParticle.assign( maxEntries, 0 );
     fNHitsBestMatchedPFParticle.assign( maxEntries, 0 );
     fBestMatchedPFParticlePDGCode.assign( maxEntries, 0 );
+    fProcNames.assign( maxEntries, "processname  " );
+    // fParentProcNames.assign( maxEntries, "processname  " );
 }
 
 //-----------------------------------------------------------------------
 void TrackRecoAna::analyze( const art::Event& event )
 {
+    this->PrepareEvent( event );
 
     // The first step is to attempt to recover the collection of MCHits that
     // we will need for doing our PFParticle to MC matching
@@ -256,7 +284,7 @@ void TrackRecoAna::analyze( const art::Event& event )
     event.getByLabel( fMCHitCollectionModuleLabel, mcHitCollectionHandle );
 
     if ( !mcHitCollectionHandle.isValid() ) {
-        mf::LogDebug("TrackRecoAna") << "===>> NO McHitColllection found.";
+        mf::LogWarning("TrackRecoAna") << "===>> NO MCHitColllection found.";
         fAnaTree->Fill();
         return;
     }
@@ -270,7 +298,7 @@ void TrackRecoAna::analyze( const art::Event& event )
 
     // no point continuing if no PFParticles
     if ( !pfParticleHandle.isValid() ) {
-        mf::LogDebug("TrackRecoAna") << "===>> NO PFParticle collection found.";
+        mf::LogWarning("TrackRecoAna") << "===>> NO PFParticle collection found.";
         fAnaTree->Fill();
         return;
     }
@@ -280,7 +308,7 @@ void TrackRecoAna::analyze( const art::Event& event )
     event.getByLabel( fSimulationProducerLabel, particleHandle );
 
     if ( !particleHandle.isValid() ) {
-        mf::LogDebug("TrackRecoAna") << "===>> NO MCParticle collection found.";
+        mf::LogWarning("TrackRecoAna") << "===>> NO MCParticle collection found.";
         fAnaTree->Fill();
         return;
     }
@@ -302,7 +330,7 @@ void TrackRecoAna::analyze( const art::Event& event )
     event.getByLabel( fHitProducerLabel, hitHandle );
 
     if ( !hitHandle.isValid() ) {
-        mf::LogDebug("TrackRecoAna") << "===>> No hit collection found.";
+        mf::LogWarning("TrackRecoAna") << "===>> No hit collection found.";
         fAnaTree->Fill();
         return;
     }
@@ -318,10 +346,16 @@ void TrackRecoAna::analyze( const art::Event& event )
     const std::vector< recob::Hit >& Hits = *hitHandle;
 
     MCParticleToPFParticle->setup( *( lar::providerFrom< detinfo::DetectorClocksService >() ),
-                                    *( lar::providerFrom<geo::Geometry>() ) );
+                                   *( lar::providerFrom<geo::Geometry>() ) );
 
     // Build out our MCParticle <---> reco Hit maps
     MCParticleToPFParticle->MakeHitParticleMaps( MCHits, Hits, HitToParticle, ParticleToHit );
+
+    mf::LogDebug("TrackRecoAna") << "Size of Hits         : " << Hits.size();
+    mf::LogDebug("TrackRecoAna") << "Size of MCParticles  : " << particleHandle->size();
+    mf::LogDebug("TrackRecoAna") << "Size of PFParticles  : " << pfParticleHandle->size();
+    mf::LogDebug("TrackRecoAna") << "Size of HitToParticle: " << HitToParticle.size();
+    mf::LogDebug("TrackRecoAna") << "Size of ParticleToHit: " << ParticleToHit.size();
 
     // Now define the maps relating pfparticles to tracks
     lar::recoana::MCParticleToPFParticle::TrackIDToPFParticleVecMap TrackIDToPFParticle;
@@ -334,16 +368,25 @@ void TrackRecoAna::analyze( const art::Event& event )
     MCParticleToPFParticle->MakePFParticleMaps( event, pfParticleHandle, HitToParticle, 
                                                 PFParticleToTrackHit, TrackIDToPFParticle, PFParticleToHitCnt );
 
-    this->PrepareEvent( event, ParticleToHit.size() );
-
+    this->PrepareParticle( ParticleToHit.size() );
 
     // Loop over MC particles
     for ( size_t iMCPart = 0; iMCPart < particleHandle->size(); ++iMCPart ) {
 
         art::Ptr< simb::MCParticle > particle( particleHandle, iMCPart );
 
+        // Process of the MC particle
+        auto Process = particle->Process();
+
+        // At the moment we only care of primary particles for the events generated by a particle gun
+        if ( Process != "primary" ) continue;
+        
+
+        fProcNames[fNMCParticles] = Process;
         // Recover the track ID, for historical reasons we call it "best"
         int ParticleTrackID = particle->TrackId();
+        mf::LogDebug("TrackRecoAna") << "Process[" << fNMCParticles << "]: " << fProcNames[fNMCParticles] 
+                                     << ": TrackID: " << ParticleTrackID << ": Mother: " << particle->Mother();
 
         // Did this mc particle leave hits in the TPC?
         lar::recoana::MCParticleToPFParticle::ParticleToHitMap::iterator ParticleToHitItr = ParticleToHit.find( ParticleTrackID );
@@ -351,10 +394,11 @@ void TrackRecoAna::analyze( const art::Event& event )
         // Let's get the total number of reconstructed hits that are created by this MCParticle
         // Count number of hits in each view
         if ( ParticleToHitItr != ParticleToHit.end() ) {
-            fNMatchedHitsPerMCParticle[iMCPart] = ParticleToHitItr->second.size();
+            fNMatchedHitsPerMCParticle[fNMCParticles] = ParticleToHitItr->second.size();
+            mf::LogDebug("TrackRecoAna") << "NMatchedHitsPerMCParticle[" << fNMCParticles << "]: " << fNMatchedHitsPerMCParticle[fNMCParticles];
 
             for ( const auto& hit : ParticleToHitItr->second ) {
-                if ( HitToParticle[hit].size() < 2 ) fNUniqueHitsPerMCParticle[iMCPart]++;
+                if ( HitToParticle[hit].size() < 2 ) fNUniqueHitsPerMCParticle[fNMCParticles]++;
             }
         }
 
@@ -362,13 +406,13 @@ void TrackRecoAna::analyze( const art::Event& event )
         // How many PFParticles does the MCParticle match to?
         lar::recoana::MCParticleToPFParticle::TrackIDToPFParticleVecMap::iterator TrackIDToPFParticleItr = TrackIDToPFParticle.find( ParticleTrackID );
         if ( TrackIDToPFParticleItr != TrackIDToPFParticle.end() ) {
-            fNMatchedPFParticlesPerMCParticle[iMCPart] = TrackIDToPFParticleItr->second.size();
+            fNMatchedPFParticlesPerMCParticle[fNMCParticles] = TrackIDToPFParticleItr->second.size();
 
             // Look for the best matched PFParticle by counting hits
             // Since we have sorted the PFParticles in the TrackIDToPFParticle map, the first PFParticle is the one
             const auto& pfpart = TrackIDToPFParticleItr->second.at(0);
-            fNHitsBestMatchedPFParticle[iMCPart] = PFParticleToTrackHit[pfpart].size();
-            fBestMatchedPFParticlePDGCode[iMCPart] = pfpart->PdgCode();
+            fNHitsBestMatchedPFParticle[fNMCParticles] = PFParticleToTrackHit[pfpart].size();
+            fBestMatchedPFParticlePDGCode[fNMCParticles] = pfpart->PdgCode();
         }
 
         // It is pointless to go through the rest of the loop if there are no hits to analyze
@@ -376,14 +420,19 @@ void TrackRecoAna::analyze( const art::Event& event )
 
         // Recover the particle's identity
         int TrackPDGCode = particle->PdgCode();
-        fPDGCode[iMCPart] = TrackPDGCode;        
+        fPDGCode[fNMCParticles] = TrackPDGCode;        
+        mf::LogDebug("TrackRecoAna") << "fPDGCode[" << fNMCParticles << "]: " << fPDGCode[fNMCParticles];
 
-        fNHits += fNMatchedHitsPerMCParticle[iMCPart];
-        fNUniqueHits += fNUniqueHitsPerMCParticle[iMCPart];
+        fNHits += fNMatchedHitsPerMCParticle[fNMCParticles];
+        fNUniqueHits += fNUniqueHitsPerMCParticle[fNMCParticles];
         // fNNoiseHits +=;
-        fNMCParticles += 1;
-        fNMathcedPFParticles += fNMatchedPFParticlesPerMCParticle[iMCPart];
+        fNMatchedPFParticles += fNMatchedPFParticlesPerMCParticle[fNMCParticles];
+        fNMCParticles++;
 
+        if ( fNMCParticles > fMaxEntries ) {
+            mf::LogWarning("TrackRecoAna") << "===>> Exceeding particle with hits count: " << fNMCParticles;
+            break;
+        }
     } // end of loop over MC particles
 
     fNPFParticles = pfParticleHandle->size();
