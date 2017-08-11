@@ -93,8 +93,6 @@ private:
     // This method is meant to be called at the start of the event
     void PrepareEvent( const art::Event& evt );
 
-    void PrepareParticle( int numColumns );
-
     // The parameters we'll read from the .fcl file.
     std::string fSimulationProducerLabel;    //> The name of the producer that tracked simulated particles through the detector
     std::string fMCHitCollectionModuleLabel; //> The name of the producer of MCHits
@@ -254,23 +252,15 @@ void TrackRecoAna::PrepareEvent( const art::Event &evt )
     fNMCParticles          = 0;
     fNPFParticles          = 0;
     fNMatchedPFParticles   = 0;
-}
 
-//-----------------------------------------------------------------------
-void TrackRecoAna::PrepareParticle( int numColumns )
-{
-    // Set the number of entries for each vector
-    // But no more than the maximum requested when we started
-    size_t maxEntries = numColumns < fMaxEntries ? numColumns : fMaxEntries;
-
-    fPDGCode.assign( maxEntries, 0 );
-    fNUniqueHitsPerMCParticle.assign( maxEntries, 0 );
-    fNMatchedPFParticlesPerMCParticle.assign( maxEntries, 0 );
-    fNMatchedHitsPerMCParticle.assign( maxEntries, 0 );
-    fNHitsBestMatchedPFParticle.assign( maxEntries, 0 );
-    fBestMatchedPFParticlePDGCode.assign( maxEntries, 0 );
-    fProcNames.assign( maxEntries, "processname  " );
-    // fParentProcNames.assign( maxEntries, "processname  " );
+    fPDGCode.assign( fMaxEntries, 0 );
+    fNUniqueHitsPerMCParticle.assign( fMaxEntries, 0 );
+    fNMatchedPFParticlesPerMCParticle.assign( fMaxEntries, 0 );
+    fNMatchedHitsPerMCParticle.assign( fMaxEntries, 0 );
+    fNHitsBestMatchedPFParticle.assign( fMaxEntries, 0 );
+    fBestMatchedPFParticlePDGCode.assign( fMaxEntries, 0 );
+    fProcNames.assign( fMaxEntries, "processname  " );
+    // fParentProcNames.assign( fMaxEntries, "processname  " );
 }
 
 //-----------------------------------------------------------------------
@@ -367,8 +357,6 @@ void TrackRecoAna::analyze( const art::Event& event )
     // Call the method for building out the PFParticle data structures
     MCParticleToPFParticle->MakePFParticleMaps( event, pfParticleHandle, HitToParticle, 
                                                 PFParticleToTrackHit, TrackIDToPFParticle, PFParticleToHitCnt );
-
-    this->PrepareParticle( ParticleToHit.size() );
 
     // Loop over MC particles
     for ( size_t iMCPart = 0; iMCPart < particleHandle->size(); ++iMCPart ) {
