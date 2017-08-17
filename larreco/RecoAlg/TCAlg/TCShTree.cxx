@@ -196,6 +196,7 @@ namespace tca {
     stv.ShowerID.clear();
     stv.IsShowerParent.clear();
     stv.StageNum.clear();
+    stv.StageName.clear();
     stv.Envelope.clear();
     stv.EnvPlane.clear();
     stv.EnvStage.clear();

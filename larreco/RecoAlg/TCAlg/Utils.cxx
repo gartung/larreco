@@ -146,13 +146,17 @@ namespace tca {
     dir.SetX(999);
     pos = {0, 0, 0};
     
-    if(itp.CTP == jtp.CTP) return false;
+    std::cout<<"RSF TP3D: CTP "<<itp.CTP<<" "<<jtp.CTP;;
+
+    if(itp.CTP == jtp.CTP) {std::cout<<" exiting TP3D..."<<std::endl; return false;}
     
     geo::PlaneID iPlnID = DecodeCTP(itp.CTP);
     geo::PlaneID jPlnID = DecodeCTP(jtp.CTP);
 
     double ix = tjs.detprop->ConvertTicksToX(itp.Pos[1] / tjs.UnitsPerTick, iPlnID);
     double jx = tjs.detprop->ConvertTicksToX(jtp.Pos[1] / tjs.UnitsPerTick, jPlnID);
+    
+    std::cout<<" pos "<<nearbyint(itp.Pos[0])<<":"<<nearbyint(itp.Pos[1]/tjs.UnitsPerTick)<<" "<<nearbyint(jtp.Pos[0])<<":"<<nearbyint(jtp.Pos[1]/tjs.UnitsPerTick)<<" x "<<ix<<" "<<jx;
 //    std::cout<<"TP3D: "<<PrintPos(tjs, itp.Pos)<<" X "<<ix<<" "<<PrintPos(tjs, jtp.Pos)<<" "<<jx<<"\n";
 
     // don't continue if the points are too far apart in X
@@ -163,6 +167,8 @@ namespace tca {
     if(!tjs.geom->HasWire(geo::WireID(iPlnID.Cryostat, iPlnID.TPC, iPlnID.Plane, iWire))) return false;
     unsigned int jWire = std::nearbyint(jtp.Pos[0]);
     if(!tjs.geom->HasWire(geo::WireID(jPlnID.Cryostat, jPlnID.TPC, jPlnID.Plane, jWire))) return false;
+
+    std::cout<<" wire "<<iWire<<" "<<jWire<<std::endl;
 
     // determine the wire orientation and offsets using WireCoordinate
     // wire = yp * OrthY + zp * OrthZ - Wire0 = cs * yp + sn * zp - wire0
@@ -233,6 +239,8 @@ namespace tca {
     // Finds matching points when there is little X difference. These are likely to be
     // a match of short Tjs
     
+    std::cout<<"RSF INSIDE FMP2!!"<<std::endl;
+
     unsigned int cstat = ms.TPCID.Cryostat;
     unsigned int tpc = ms.TPCID.TPC;
 
@@ -243,14 +251,16 @@ namespace tca {
     unsigned int jbend = 0;
     unsigned int bkk = 0;
     unsigned int kbend = 0;
-    for(unsigned short ii = 0; ii < ms.TjIDs.size() - 2; ++ii) {
+
+    std::cout<<"RSF: ms size "<<ms.TjIDs.size()<<std::endl;
+    for(unsigned short ii = 0; ii < ms.TjIDs.size() - 1; ++ii) {
       auto& itj = tjs.allTraj[ms.TjIDs[ii] - 1];
       unsigned int iplane = DecodeCTP(itj.CTP).Plane;
       for(unsigned short iend = 0; iend < 2; ++iend) {
         auto& itp = itj.Pts[itj.EndPt[iend]];
         unsigned int iwire = std::nearbyint(itp.Pos[0]);
         double ix = tjs.detprop->ConvertTicksToX(itp.Pos[1]/tjs.UnitsPerTick, iplane, ms.TPCID.TPC, ms.TPCID.Cryostat);
-        for(unsigned short jj = ii + 1; jj < ms.TjIDs.size() - 1; ++jj) {
+        for(unsigned short jj = ii + 1; jj < ms.TjIDs.size(); ++jj) {
           auto& jtj = tjs.allTraj[ms.TjIDs[jj] - 1];
           unsigned int jplane = DecodeCTP(jtj.CTP).Plane;
           for(unsigned short jend = 0; jend < 2; ++jend) {
@@ -258,6 +268,7 @@ namespace tca {
             unsigned int jwire = std::nearbyint(jtp.Pos[0]);
             double jx = tjs.detprop->ConvertTicksToX(jtp.Pos[1]/tjs.UnitsPerTick, jplane, ms.TPCID.TPC, ms.TPCID.Cryostat);
             float sep = std::abs(jx - ix);
+	    std::cout<<"RSF FMP2: ix "<<ix<<" jx "<<jx<<" sep "<<sep<<std::endl;
             if(sep > tjs.Match3DCuts[0]) continue;
             if(ms.TjIDs.size() == 2) {
               if(sep < bestsep) {
@@ -339,9 +350,11 @@ namespace tca {
         if(xpos > xhi) xhi = xpos;
       } // end
     } // ii
+    
     // the number of bins in X
     float xbinSize = tjs.Match3DCuts[0];
     unsigned short nxbins = (xhi - xlo) / xbinSize;
+    std::cout<<"RSF FMP: xlo "<<xlo<<" xhi "<<xhi<<" nxbins "<<nxbins<<std::endl;
     if(nxbins < 2) return FindMatchingPts2(tjs, ms, stps, etps, prt);
     // create X matching vectors for each Tj. Initialize with bogus Tj point indices
     std::vector<std::vector<unsigned short>> tjpt(ms.TjIDs.size(), std::vector<unsigned short>(nxbins, USHRT_MAX));

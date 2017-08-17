@@ -728,6 +728,7 @@ namespace DUNE{
 
     const simb::MCParticle *MClepton_reco = NULL; 
     int nHits =0;
+
     for(int i=0; i<n_recoShowers; i++){
       
       art::Ptr<recob::Shower> shower = showerlist[i];
@@ -789,7 +790,7 @@ namespace DUNE{
 
       truthMatcher( all_hits, sh_hits, particle, tmpEfrac_contamination,tmpEcomplet);
       //truthMatcher( all_hits, sh_hits, particle, tmpEfrac_contaminationNueCC,tmpEcompletNueCC );
-       
+      if (!particle) continue;
 
       sh_Efrac_contamination[i] = tmpEfrac_contamination;
       sh_purity[i] = 1 - tmpEfrac_contamination;
@@ -797,7 +798,7 @@ namespace DUNE{
       sh_nHits[i] = tmp_nHits; 
       sh_hasPrimary_e[i] = 0;
       sh_pdg[i] = particle->PdgCode();
-
+      
       //Shower with highest hits       
       if( tmp_nHits > nHits ){
         sh_largest = i;
@@ -933,6 +934,8 @@ namespace DUNE{
           h_Efrac_NueCCPurity->Fill(1-Efrac_contaminationNueCC);    
 	  
           h_esh_bestplane_NueCC->Fill(shower_bestplane);
+	  //make overflowed values visible
+	  if (Showerparticlededx_inbestplane > 15) Showerparticlededx_inbestplane = 14.99;
           if(showerPDGwithHighestHitsforFillingdEdX==1)//electron or positron shower
             {
               h_dEdX_electronorpositron_NueCC->Fill(Showerparticlededx_inbestplane);

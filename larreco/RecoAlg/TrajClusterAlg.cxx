@@ -2615,6 +2615,11 @@ namespace tca {
     for(unsigned short ii = 0; ii < tjs.matchVecPFPList.size(); ++ii) {
       unsigned short imv = tjs.matchVecPFPList[ii];
       auto& ms = tjs.matchVec[imv];
+      
+      std::cout<<"--------------------------------"<<std::endl;
+      std::cout<<"RSF: ms "<<ii<<" TjIDs: "; 
+      for(auto& tjID : ms.TjIDs) std::cout<<" "<<tjID;
+      std::cout<<" cnt "<<ms.Count<<std::endl;
 
       if(ms.Count == 0) continue;
       if(ms.TPCID != tpcid) continue;
@@ -2636,10 +2641,12 @@ namespace tca {
 
       std::array<std::vector<TrajPoint>, 2> endtps;
       if(!FindMatchingPts(tjs, ms, endtps[0], endtps[1], prt) || endtps[0].size() < 2 || endtps[1].size() < 2) {
+	std::cout<<"RSF: FMP failed ms "<<ii<<" endpts "<<endtps[0].size()<<" "<<endtps[1].size()<<std::endl;
         if(prt) mf::LogVerbatim("TC")<<"  FindMatchingPts failed imv "<<imv<<" stps size "<<endtps[0].size()<<" etps size "<<endtps[1].size()<<" PDGCode "<<ms.PDGCode;
         ms.Count = 0;
         continue;
       }
+      std::cout<<"RSF: ms "<<ii<<" endpts "<<endtps[0].size()<<" "<<endtps[1].size()<<std::endl;
 
       // grab the direction from the first calculation and don't let it reverse
       TVector3 prevDir = {0, 0, 0};
@@ -2648,11 +2655,14 @@ namespace tca {
         double wsum = 0;
         TVector3 psum = {0, 0, 0};
         TVector3 dsum = {0, 0, 0};
-        for(unsigned short ii = 0; ii < endtps[startend].size() - 1; ++ii) {
-          for(unsigned short jj = ii + 1; jj < endtps[startend].size(); ++jj) {
+        for(unsigned short kk = 0; kk < endtps[startend].size() - 1; ++kk) {
+          for(unsigned short jj = kk + 1; jj < endtps[startend].size(); ++jj) {
             TVector3 pos, dir;
-            if(!TrajPoint3D(tjs, endtps[startend][ii], endtps[startend][jj], pos, dir)) {
+
+            if(!TrajPoint3D(tjs, endtps[startend][kk], endtps[startend][jj], pos, dir)) {
               if(prt) mf::LogVerbatim("TC")<<"F3DEP: "<<imv<<" TrajPoint3D failed";
+	      std::cout<<"RSF: ms "<<ii<<" pos "<<pos[0]<<" "<<pos[1]<<" "<<pos[2]
+		       <<" dir "<<dir[0]<<" "<<dir[1]<<" "<<dir[2]<<std::endl;
               continue;
             }
             // ensure the position is inside the TPC, but relax the fiducial cut a bit
@@ -2688,22 +2698,25 @@ namespace tca {
               
             } // a valid direction exists
             // sum to get an average position and direction. Weight by the angle error
-            double erri = endtps[startend][ii].AngErr;
+            double erri = endtps[startend][kk].AngErr;
             if(erri == 0) erri = 0.3;
             double errj = endtps[startend][jj].AngErr;
             if(errj == 0) errj = 0.3;
             double wght = 1 / (erri * erri + errj * errj);
-            psum += wght * pos;
+	    psum += wght * pos;
             dsum += wght * dir;
             wsum += wght;
           } // jj
-        } // ii
+        } // kk
+	std::cout<<"RSF: ms "<<ii<<" psum "<<psum[0]<<" "<<psum[1]<<" "<<psum[2]
+		 <<" dsum "<<dsum[0]<<" "<<dsum[1]<<" "<<dsum[2]<<" wsum "<<wsum<<std::endl;
         if(wsum == 0) continue;
         // define the position
         for(unsigned short ixyz = 0; ixyz < 3; ++ixyz) {
           ms.XYZ[startend][ixyz] = psum[ixyz] / wsum;
           ms.Dir[startend][ixyz] = dsum[ixyz] / wsum;
         }
+	std::cout<<"RSF: ms "<<ii<<" end "<<startend<<" XYZ "<<ms.XYZ[startend][0]<<" "<<ms.XYZ[startend][1]<<" "<<ms.XYZ[startend][2]<<std::endl;
         if(ms.Dir[startend].Mag() > 0) ms.Dir[startend].SetMag(1);
       } // startend
 
@@ -2725,8 +2738,12 @@ namespace tca {
           break;
         }
       } // ixyz
+      std::cout<<"RSF: ms "<<ii<<" Dir "<<ms.Dir[0][0]<<":"<<ms.Dir[0][1]<<":"<<ms.XYZ[0][2]<<" "<<ms.Dir[1][0]<<":"<<ms.Dir[1][1]<<":"<<ms.XYZ[1][2]<<std::endl;
       // Calculate dE/dx at both ends
       FilldEdx(tjs, ms);
+      std::cout<<"RSF: ms "<<ii<<" dEdx: ";
+      for(auto& tjID : ms.TjIDs) std::cout<<" "<<tjs.allTraj[tjID - 1].dEdx[0]<<":"<<tjs.allTraj[tjID - 1].dEdx[1];
+      std::cout<<std::endl;
 
     } //ii
   } // Find3DEndPoints

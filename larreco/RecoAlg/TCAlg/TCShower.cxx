@@ -296,7 +296,7 @@ namespace tca {
       FindExternalParent("FS", tjs, cotIndex, prt);
       if (tjs.SaveShowerTree) SaveTjInfo(tjs, ss.CTP, cotIndex, "FEP");
       Trajectory& stj = tjs.allTraj[ss.ShowerTjID - 1];
-      if(prt) std::cout<<cotIndex<<" Pos "<<ss.CTP<<":"<<PrintPos(tjs, stj.Pts[1].Pos)<<" ParID "<<ss.ParentID<<" TruParID "<<ss.TruParentID<<"\n";
+      if(prt) std::cout<<cotIndex<<" Pos "<<ss.CTP<<":"<<PrintPos(tjs, stj.Pts[1].Pos)<<" ParID "<<ss.ParentID<<" TruParID "<<ss.TruParentID<<" dEdx "<<stj.dEdx[0]<<" "<<stj.dEdx[1]<<"\n";
       if(ss.ParentID == 0) FindStartChg(fcnLabel, tjs, cotIndex, prt);
     } // cotIndex
     
@@ -900,7 +900,7 @@ namespace tca {
       float tp1Sep, vx3Score;
       float fom = ParentFOM(fcnLabel, tjs, tj, useEnd, ss, tp1Sep, vx3Score, prt);
       bool skipit = true;
-      if(fom < 2 && bestFOM < 2) {
+      if(bestFOM < 1 && std::abs(bestFOM-fom) < 0.2) { // RSF
         // Consider the case where there are two good 3D matched parent candidates. Take the second one if
         // Use the one that starts farther away from the shower center
         if(tp1Sep > bestTp1Sep) skipit = false;
@@ -908,6 +908,8 @@ namespace tca {
         // best FOM > 2
         skipit = (fom > bestFOM);
       }
+      //skipit = (fom > bestFOM); //RSF replacing section above
+      //std::cout<<"RSF: bestFOM "<<bestFOM<<" FOM "<<fom<<" skipit "<<skipit<<std::endl;
       if(skipit) continue;
       bestFOM = fom;
       imTheBest = tj.ID;
@@ -1236,7 +1238,7 @@ namespace tca {
       mf::LogVerbatim myprt("TC");
       myprt<<fcnLabel;
       myprt<<" ssID "<<ss.ID;
-      myprt<<" Tj "<<tj.ID<<" Pos "<<PrintPos(tjs, ptp);
+      myprt<<" Tj "<<tj.ID<<" CTP "<<tj.CTP<<" Pos "<<PrintPos(tjs, ptp);
       myprt<<" VtxID "<<tj.VtxID[tjEnd];
       if(tj.VtxID[tjEnd] > 0) {
         VtxStore& vx2 = tjs.vtx[tj.VtxID[tjEnd] - 1];
@@ -1805,9 +1807,12 @@ namespace tca {
         std::cout<<fcnLabel<<" Found point with no charge. This shouldn't happen\n";
         exit(1);
       }
+
+
       stp1.Chg += ss.ShPts[ii].Chg;
       stp1.HitPos[0] += ss.ShPts[ii].Chg * ss.ShPts[ii].Pos[0];
       stp1.HitPos[1] += ss.ShPts[ii].Chg * ss.ShPts[ii].Pos[1];
+
     } // ii
     
     stp1.HitPos[0] /= stp1.Chg;
@@ -2093,7 +2098,8 @@ namespace tca {
     stj.Pts[0].Pos = ss.ShPts[0].Pos;
     unsigned short endPt = ss.ShPts.size()-1;
     stj.Pts[2].Pos = ss.ShPts[endPt].Pos;
-    
+
+    /*    
     // put the charge center where RotPos[0] changes sign
     for(unsigned short ipt = 0; ipt < endPt; ++ipt) {
       if(ss.ShPts[ipt].RotPos[0] * ss.ShPts[ipt + 1].RotPos[0] < 0) {
@@ -2101,7 +2107,8 @@ namespace tca {
         break;
       }
     } // spt
-    
+    */
+
     // define the angle of all the shower Tps
     for(auto& stp : stj.Pts) {
       stp.Ang = ss.Angle;
@@ -2424,6 +2431,10 @@ namespace tca {
   void DefineEnvelope(std::string inFcnLabel, TjStuff& tjs, unsigned short cotIndex, bool prt)
   {
     
+    // tempfortesting
+    prt = true;
+    // tempfortesting
+
     if(cotIndex > tjs.cots.size() - 1) return;
     
     ShowerStruct& ss = tjs.cots[cotIndex];
@@ -2452,7 +2463,7 @@ namespace tca {
     ss.Envelope[2][1] = -ss.Envelope[1][1];
     ss.Envelope[3][0] =  ss.Envelope[0][0];
     ss.Envelope[3][1] = -ss.Envelope[0][1];
-    
+
     float length = ss.Envelope[1][0] - ss.Envelope[0][0];
     float width = ss.Envelope[0][1] + ss.Envelope[1][1];
     ss.EnvelopeArea = length * width;
@@ -2477,6 +2488,7 @@ namespace tca {
       myprt<<" Area "<<(int)ss.EnvelopeArea;
       myprt<<" ChgDensity "<<ss.ChgDensity;
     }
+
     // This is the last function used to update a shower
     ss.NeedsUpdate = false;
   } // DefineEnvelope  
