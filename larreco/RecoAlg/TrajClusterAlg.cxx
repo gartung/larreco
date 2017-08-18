@@ -517,8 +517,8 @@ namespace tca {
     if(tjs.ShowerTag[0] >= 0) debug.Plane = tjs.ShowerTag[11];
     if(fDebugMode) {
       mf::LogVerbatim("TC")<<"Done in RunTrajClusterAlg";
-      PrintAllTraj("RTC", tjs, debug, USHRT_MAX, 0);
       PrintPFParticles("RTC", tjs);
+      PrintAllTraj("RTC", tjs, debug, USHRT_MAX, 0);
     }
 
     unsigned short ntj = 0;
@@ -1185,18 +1185,6 @@ namespace tca {
       // Just use the hit position as the traj position
       tp.Pos = tp.HitPos;
       if(TrajPointSeparation(work.Pts[ipt-1], tp) < 0.5) continue;
-/* This sometimes gives bogus angles. Just use the original TP angle
-      // define the direction
-      if(!MakeBareTrajPoint(tjs, work.Pts[ipt-1], tp, tpd)) continue;
-      tp.Dir = tpd.Dir;
-      tp.Ang = tpd.Ang;
-      SetAngleCode(tjs, tp);
-      if(ipt == 1) {
-        work.Pts[0].Dir = tpd.Dir;
-        work.Pts[0].Ang = tpd.Ang;
-        work.Pts[0].AngleCode = tpd.AngleCode;
-      }
-*/
       work.Pts.push_back(tp);
       SetEndPoints(tjs, work);
     }
@@ -1389,7 +1377,7 @@ namespace tca {
     if(wire < tjs.FirstWire[fPlane] || wire > tjs.LastWire[fPlane]-1) return;
     // Move the TP to this wire
     MoveTPToWire(tp, (float)wire);
-    
+
     // find the projection error to this point. Note that if this is the first
     // TP, lastPtWithUsedHits = 0, so the projection error is 0
     float dw = tp.Pos[0] - tj.Pts[lastPtWithUsedHits].Pos[0];
@@ -1402,8 +1390,8 @@ namespace tca {
     deltaCut *= fProjectionErrFactor;
     if(prt) mf::LogVerbatim("TC")<<" AddHits: calculated deltaCut "<<deltaCut;
     
-    if(deltaCut < 1) deltaCut = 1;
-    if(deltaCut > 4) deltaCut = 4;
+    if(deltaCut < 2) deltaCut = 2;
+    if(deltaCut > 3) deltaCut = 3;
 
     // TY: open it up for RevProp, since we might be following a stopping track
     if(tj.AlgMod[kRvPrp]) deltaCut *= 2;
@@ -2225,6 +2213,8 @@ namespace tca {
         tjID = stjID;
       } // inShower
       if(tjID == 0) continue;
+      short score = 1;
+      if(TjHasNiceVtx(tjs, tj, tjs.Vertex2DCuts[7])) score = 0;
       for(unsigned short ipt = tj.EndPt[0]; ipt <= tj.EndPt[1]; ++ipt) {
         auto& tp = tj.Pts[ipt];
         if(tp.Chg == 0) continue;
@@ -2243,8 +2233,6 @@ namespace tca {
         mallTraj[icnt].ctp = tp.CTP;
         mallTraj[icnt].id = tjID;
         mallTraj[icnt].npts = tj.Pts.size();
-        short score = 1;
-        if(TjHasNiceVtx(tjs, tj, tjs.Vertex2DCuts[7])) score = 0;
         mallTraj[icnt].score = score;
         mallTraj[icnt].inShower = inShower;
         // populate the sort vector
@@ -2791,7 +2779,9 @@ namespace tca {
       } // tjID
       // clobber any 2D vertices that exist between trajectories in the match list
       for(unsigned short ii = 0; ii < vtxIDs.size(); ++ii) {
-        if(vtxIDCnt[ii] > 1) MakeVertexObsolete(tjs, vtxIDs[ii], true);
+        if(vtxIDCnt[ii] > 1 && !MakeVertexObsolete(tjs, vtxIDs[ii], false)) {
+          std::cout<<"FillPFPInfo: MakeVertexObsolete refused to delete "<<vtxIDs[ii]<<". This must be a problem\n";
+        } 
       } // ii
       // Make a 3D vertex at the start of the PFParticle if one doesn't already exist
       if(ms.Vx3ID[0] == 0) {
@@ -3338,6 +3328,10 @@ namespace tca {
       mf::LogVerbatim("TC")<<"inside CheckTraj with tj.Pts.size = "<<tj.Pts.size()<<" MCSMom "<<tj.MCSMom;
     }
     
+    // See if the points at the stopping end can be included in the Tj
+    // TODO this needs development
+//    ChkStopEndPts(tjs, tj, prt);
+    
     // remove any points at the end that don't have charge
     tj.Pts.resize(tj.EndPt[1] + 1);
 
@@ -3760,6 +3754,9 @@ namespace tca {
    
     if(!tjs.UseAlg[kFillGap]) return;
     
+    
+    if(prt) mf::LogVerbatim("TC")<<"FG: Check Tj "<<tj.ID<<" from "<<PrintPos(tjs, tj.Pts[tj.EndPt[0]])<<" to "<<PrintPos(tjs, tj.Pts[tj.EndPt[1]]);
+      
     // start with the first point that has charge
     short firstPtWithChg = tj.EndPt[0];
     bool first = true;
@@ -3794,8 +3791,6 @@ namespace tca {
       // Make a bare trajectory point at firstPtWithChg that points to nextPtWithChg
       TrajPoint tp;
       if(!MakeBareTrajPoint(tjs, tj.Pts[firstPtWithChg], tj.Pts[nextPtWithChg], tp)) {
-        mf::LogVerbatim("TC")<<"FillGaps: Failure from MakeBareTrajPoint ";
-        PrintTrajectory("FG", tjs, tj, USHRT_MAX);
         fGoodTraj = false;
         return;
       }
@@ -3910,7 +3905,7 @@ namespace tca {
     // The Tj end has some other problem
     if(npts < 4) return;
     
-    // re-fit the end of the trajectory yyy
+    // re-fit the end of the trajectory
     lastTp.NTPsFit = npts;
     FitTraj(tjs, tj);
     if(prt) PrintTrajPoint("HED", tjs, ept, tj.StepDir, tj.Pass, lastTp);
