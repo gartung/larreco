@@ -128,6 +128,7 @@ private:
     std::vector< Int_t >       fNMatchedHitsPerMCParticle;
     std::vector< Int_t >       fNHitsBestMatchedPFParticle;
     std::vector< Int_t >       fBestMatchedPFParticlePDGCode;
+    std::vector< Int_t >       fBestMatchedPFParticleNHits;
 
     std::vector< std::string > fProcNames;
     // std::vector< std::string > fParentProcNames;
@@ -198,6 +199,7 @@ void TrackRecoAna::beginJob()
     fNMatchedHitsPerMCParticle.resize( fMaxEntries, 0 );
     fNHitsBestMatchedPFParticle.resize( fMaxEntries, 0 );
     fBestMatchedPFParticlePDGCode.resize( fMaxEntries, 0 );
+    fBestMatchedPFParticleNHits.resize( fMaxEntries, 0 );
 
     fAnaTree->Branch("PDGCode",              fPDGCode.data(),         "PDGCode[NMCParticles]/I");
     fAnaTree->Branch("NUniqueHitsPerMCParticle", fNUniqueHitsPerMCParticle.data(), "NUniqueHitsPerMCParticle[NMCParticles]/I");
@@ -205,6 +207,7 @@ void TrackRecoAna::beginJob()
     fAnaTree->Branch("NMatchedHitsPerMCParticle", fNMatchedHitsPerMCParticle.data(), "NMatchedHitsPerMCParticle[NMCParticles]/I");
     fAnaTree->Branch("NHitsBestMatchedPFParticle", fNHitsBestMatchedPFParticle.data(), "NHitsBestMatchedPFParticle[NMCParticles]/I");
     fAnaTree->Branch("BestMatchedPFParticlePDGCode", fBestMatchedPFParticlePDGCode.data(), "BestMatchedPFParticlePDGCode[NMCParticles]/I");
+    fAnaTree->Branch("BestMatchedPFParticleNHits", fBestMatchedPFParticleNHits.data(), "BestMatchedPFParticleNHits[NMCParticles]/I");
 
     fProcNames.resize( fMaxEntries, "processname  " );
     // fParentProcNames.resize( fMaxEntries, "processname  " );
@@ -259,6 +262,7 @@ void TrackRecoAna::PrepareEvent( const art::Event &evt )
     fNMatchedHitsPerMCParticle.assign( fMaxEntries, 0 );
     fNHitsBestMatchedPFParticle.assign( fMaxEntries, 0 );
     fBestMatchedPFParticlePDGCode.assign( fMaxEntries, 0 );
+    fBestMatchedPFParticleNHits.assign( fMaxEntries, 0 );
     fProcNames.assign( fMaxEntries, "processname  " );
     // fParentProcNames.assign( fMaxEntries, "processname  " );
 }
@@ -401,6 +405,7 @@ void TrackRecoAna::analyze( const art::Event& event )
             const auto& pfpart = TrackIDToPFParticleItr->second.at(0);
             fNHitsBestMatchedPFParticle[fNMCParticles] = PFParticleToTrackHit[pfpart].size();
             fBestMatchedPFParticlePDGCode[fNMCParticles] = pfpart->PdgCode();
+            fBestMatchedPFParticleNHits[fNMCParticles] = PFParticleToHitCnt[pfpart];
         }
 
         // It is pointless to go through the rest of the loop if there are no hits to analyze
