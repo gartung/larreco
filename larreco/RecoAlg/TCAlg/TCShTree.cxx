@@ -160,6 +160,17 @@ namespace tca {
 
   } // SaveTjInfoStuff  
 
+  void SaveAllCots(TjStuff& tjs, const CTP_t& inCTP, std::string someText) {
+    if(!tjs.SaveShowerTree) return;
+    for(unsigned short cotIndex = 0; cotIndex < tjs.cots.size(); ++cotIndex) {
+      auto& ss = tjs.cots[cotIndex];
+      if (ss.CTP != inCTP) continue;
+      if(ss.ID == 0) continue;
+      SaveTjInfo(tjs, ss.CTP, cotIndex, someText);
+    } // cotIndex 
+  } // SaveAllCots
+
+
   int GetStageNum(ShowerTreeVars& stv, std::string stageName) {
     int stageNum;
     bool existingStage = false;

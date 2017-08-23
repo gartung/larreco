@@ -273,15 +273,15 @@ namespace tca {
       prt = (inCTP == dbgCTP || dbgPlane == 3);
       if(prt) Print2DShowers("tjl", tjs, inCTP, false);
       MergeShowerChain(fcnLabel, tjs, inCTP, prt);
-      SaveAllCots(tjs, "MSC");
+      if (tjs.SaveShowerTree) SaveAllCots(tjs, inCTP, "MSC");
       if(prt) Print2DShowers("MSCo", tjs, inCTP, false);
       MergeOverlap(fcnLabel, tjs, inCTP, prt);
-      SaveAllCots(tjs, "MO");
+      if (tjs.SaveShowerTree) SaveAllCots(tjs, inCTP, "MO");
       if(prt) Print2DShowers("MO", tjs, inCTP, false);
-      SaveAllCots(tjs, "MSS");
+      if (tjs.SaveShowerTree) SaveAllCots(tjs, inCTP, "MSS");
       MergeSubShowers(fcnLabel, tjs, inCTP, prt);
       MergeNearby2DShowers(fcnLabel, tjs, inCTP, prt);
-      SaveAllCots(tjs, "MNrby");
+      if (tjs.SaveShowerTree) SaveAllCots(tjs, inCTP, "MNrby");
       if(prt) Print2DShowers("Nrby", tjs, inCTP, false);
       for(unsigned short cotIndex = 0; cotIndex < tjs.cots.size(); ++cotIndex) {
         auto& ss = tjs.cots[cotIndex];
@@ -302,7 +302,7 @@ namespace tca {
       if (tjs.SaveShowerTree) SaveTjInfo(tjs, ss.CTP, cotIndex, "FEP");
       // Add Tjs with high-score vertices inside the shower and kill those vertices
       AddTjsInsideEnvelope(fcnLabel, tjs, cotIndex, true, prt);
-      SaveAllCots(tjs, "ATj2");
+      if (tjs.SaveShowerTree) SaveTjInfo(tjs, ss.CTP, cotIndex, "ATj2");
       Trajectory& stj = tjs.allTraj[ss.ShowerTjID - 1];
       if(prt) std::cout<<cotIndex<<" Pos "<<ss.CTP<<":"<<PrintPos(tjs, stj.Pts[1].Pos)<<" ParID "<<ss.ParentID<<" TruParID "<<ss.TruParentID<<" dEdx "<<stj.dEdx[0]<<" "<<stj.dEdx[1]<<"\n";
       if(ss.ParentID == 0) FindStartChg(fcnLabel, tjs, cotIndex, prt);
@@ -341,17 +341,6 @@ namespace tca {
     return (nNewShowers > 0);
     
   } // FindShowers3D
-  
-  ////////////////////////////////////////////////
-  void SaveAllCots(TjStuff& tjs, std::string someText)
-  {
-    if(!tjs.SaveShowerTree) return;
-    for(unsigned short cotIndex = 0; cotIndex < tjs.cots.size(); ++cotIndex) {
-      auto& ss = tjs.cots[cotIndex];
-      if(ss.ID == 0) continue;
-      SaveTjInfo(tjs, ss.CTP, cotIndex, someText);
-    } // cotIndex
-  } // SaveAllCots
   
   ////////////////////////////////////////////////
   void Match2DShowers(std::string inFcnLabel, TjStuff& tjs, const geo::TPCID& tpcid, bool prt)
@@ -916,21 +905,25 @@ namespace tca {
       if(tj.AlgMod[kShwrParent]) continue;
       // Ignore short Tjs
       if(tj.Pts.size() < 5) continue;
+      if(tj.Pts.size() < 10) continue; //RSF
       unsigned short useEnd = 0;
       // Check trajectories that were split by 3D vertex matching
       if(WrongSplitTj(fcnLabel, tjs, tj, useEnd, ss, prt)) continue;
       float tp1Sep, vx3Score;
       float fom = ParentFOM(fcnLabel, tjs, tj, useEnd, ss, tp1Sep, vx3Score, prt);
       bool skipit = true;
-      //if(bestFOM < 1 && std::abs(bestFOM-fom) < 0.2) { // RSF
       if(fom < 2 && bestFOM < 2 && vx3Score > 0 && bestVx3Score > 0) {
         skipit = (tp1Sep < bestTp1Sep);
-      } else {
+      }
+      else if(fom < 1 && bestFOM < 1) {
+	skipit = (tp1Sep < bestTp1Sep);
+      }
+      else {
         // best FOM > 2
         skipit = (fom > bestFOM);
       }
       //skipit = (fom > bestFOM); //RSF replacing section above
-      //std::cout<<"RSF: bestFOM "<<bestFOM<<" FOM "<<fom<<" skipit "<<skipit<<std::endl;
+      std::cout<<"RSF: TjID "<<tj.ID<<" bestFOM "<<bestFOM<<" FOM "<<fom<<" skipit "<<skipit<<std::endl;
       if(skipit) continue;
       bestFOM = fom;
       imTheBest = tj.ID;
@@ -941,25 +934,101 @@ namespace tca {
 
     if(imTheBest < 1 || imTheBest > (int)tjs.allTraj.size()) return;
     
-    if(bestFOM > tjs.ShowerTag[8]) {
-      if(prt) mf::LogVerbatim("TC")<<fcnLabel<<" Best parent candidate FOM "<<bestFOM<<" exceeds the cut "<<tjs.ShowerTag[8];
-      // Remove an old parent?
-      if(oldParent > 0) {
-        Trajectory& oldParentTj = tjs.allTraj[oldParent-1];
-        // remove the parent flag
-        oldParentTj.AlgMod[kShwrParent] = false;
-        // remove it from the shower and update if it is attached to a high-score 3D vertex
-        if(oldParentTj.AlgMod[kTjHiVx3Score]) RemoveTj(fcnLabel, tjs, oldParent, cotIndex, true, prt);
+    // RSF addition
+    // now that you have a temporary parent trajectory, see if
+    // that extends backwards
+    float bestFOM2 = ss.ParentFOM;
+    int imTheBest2 = 0;
+    float bestTp1Sep2 = 1E6; // probably makes sense to rename this
+
+    Trajectory tjBest = tjs.allTraj[imTheBest-1];                                                 
+    unsigned short tjEndBest = FarEnd(tjs, tjBest, ss);                                           
+    unsigned short endPtBest = tjBest.EndPt[tjEndBest];                                           
+    TrajPoint& ptpBest = tjBest.Pts[endPtBest]; 
+    bestTp1Sep2 = ptpBest.Pos[0];
+
+    for(auto& tj : tjs.allTraj) {
+      if(tj.CTP != ss.CTP) continue;
+      if(tj.AlgMod[kKilled] && !tj.AlgMod[kInShower]) continue;
+      // ignore shower Tjs. Note that this also rejects parent Tjs of other showers
+      if(tj.AlgMod[kShowerTj]) continue;
+      // ignore in-shower Tjs that aren't in this shower
+      if(tj.AlgMod[kInShower] && std::find(ss.TjIDs.begin(), ss.TjIDs.end(), tj.ID) == ss.TjIDs.end()) continue;
+      // ignore existing shower parents 
+      if(tj.AlgMod[kShwrParent]) continue;
+      // Ignore short Tjs
+      if(tj.Pts.size() < 5) continue;
+      if (tj.ID == imTheBest) continue; // don't need to compare to itself
+
+      float dang = 10;
+      float dangCut = 0.15; // 0.15 works pretty well
+      unsigned short tjEndCurrent = FarEnd(tjs, tj, ss);                                            
+      TrajPoint& ptpCurrent = tj.Pts[tj.EndPt[tjEndCurrent]];                                       
+      dang = DeltaAngle(ptpBest.Ang, ptpCurrent.Ang);                                               
+      std::cout<<"RSF bestPar "<<imTheBest<<" TjID "<<tj.ID<<" dang "<<dang<<std::endl;
+      std::cout<<"RSF bestTj "<<ptpBest.Pos[0]<<":"<<ptpBest.Pos[1]/tjs.UnitsPerTick<<" ang "<<ptpBest.Ang<<std::endl;
+      std::cout<<"RSF currTj "<<ptpCurrent.Pos[0]<<":"<<ptpCurrent.Pos[1]/tjs.UnitsPerTick<<" ang "<<ptpCurrent.Ang<<std::endl;
+
+      if (dang < dangCut && ptpCurrent.Pos[0] < bestTp1Sep2) {
+	float numval = ptpCurrent.Pos[0] - ptpBest.Pos[0];
+	float denom = ptpCurrent.Pos[1]/tjs.UnitsPerTick - ptpBest.Pos[1]/tjs.UnitsPerTick;
+
+	std::cout<<"RSF angle b/w start points "<<std::atan(numval/denom)<<" best ang "<<ptpCurrent.Ang<<std::endl;
+	// ignore really short trajectories VERY HARDCODED
+	if (std::abs(ptpCurrent.Pos[0]-tj.Pts[tj.EndPt[!tjEndCurrent]].Pos[0])<8) continue;
+	// ignore trajectories that are really long
+	if (std::abs(ptpCurrent.Pos[0]-tj.Pts[tj.EndPt[!tjEndCurrent]].Pos[0])>150) continue;
+	// ignore tjs that are very far away VERY HARDCODED
+	if (std::abs(ptpCurrent.Pos[1]/tjs.UnitsPerTick - ptpBest.Pos[1]/tjs.UnitsPerTick)>500) continue;
+	// definitely want to do something like this
+	//if (std::abs(std::atan(numval/denom)-ptpBest.Ang) > 0.1) continue;
+
+	unsigned short useEnd_temp = 0;
+	float tp1Sep_temp, vx3Score_temp;
+	float fom_temp = ParentFOM(fcnLabel, tjs, tj, useEnd_temp, ss, tp1Sep_temp, vx3Score_temp, prt);
+	bestTp1Sep2 = ptpCurrent.Pos[0];
+	imTheBest2 = tj.ID;
+	bestFOM2 = fom_temp;
       }
-      ss.ParentID = 0;
-      // detach the showerTj from a vertex if one exists
-      if(prt && stj.VtxID[0] > 0) mf::LogVerbatim("TC")<<fcnLabel<<" Setting stj.VtxID[0] from "<<stj.VtxID[0]<<" to 0";
-      stj.VtxID[0] = 0;
-      return;
+    } // tj
+
+    if(imTheBest2 != 0) {
+      imTheBest = imTheBest2;
+      bestFOM = bestFOM2;
+    }
+    // RSF addition
+
+    if(bestFOM > tjs.ShowerTag[8]) { 
+      if(prt) mf::LogVerbatim("TC")<<fcnLabel<<" Best parent candidate FOM "<<bestFOM<<" exceeds the cut "<<tjs.ShowerTag[8];
     }
     
+    // I think this should be outside the loop
+    if(oldParent > 0) {                                                                             
+      Trajectory& oldParentTj = tjs.allTraj[oldParent-1];                                           
+      // remove the parent flag                                                                     
+      oldParentTj.AlgMod[kShwrParent] = false;                                                      
+      // remove it from the shower and update if it is attached to a high-score 3D vertex           
+      if(oldParentTj.AlgMod[kTjHiVx3Score]) RemoveTj(fcnLabel, tjs, oldParent, cotIndex, true, prt);
+    }
+
+    ss.ParentID = 0;
+    // detach the showerTj from a vertex if one exists
+    stj.VtxID[0] = 0;
+
+
     ss.ParentID = imTheBest;
     ss.ParentFOM = bestFOM;
+
+    Trajectory& ptj = tjs.allTraj[ss.ParentID - 1];
+    unsigned short pend = FarEnd(tjs, ptj, ss);
+    auto& ptp = ptj.Pts[ptj.EndPt[pend]];
+
+    std::cout<<"RSF dir "<<ptp.Dir[0]<<std::endl;
+    
+    // We know the parent trajecotry should be in the forward direction
+    // this assumes we trust the code above to find the right one
+    if (ptp.Dir[0] < 0) ReverseTraj(tjs, ptj);
+
     UpdateShowerWithParent(fcnLabel, tjs, cotIndex, prt);
     // do it again if Tjs were added during the update
     if(ss.NeedsUpdate) UpdateShowerWithParent(fcnLabel, tjs, cotIndex, prt);
@@ -1002,6 +1071,7 @@ namespace tca {
     Trajectory& ptj = tjs.allTraj[ss.ParentID - 1];
     // determine the appropriate start end of the parent
     unsigned short pend = FarEnd(tjs, ptj, ss);
+
     if(pend != 0 && prt) mf::LogVerbatim("TC")<<fcnLabel<<"  Parent end is not 0... Is this bad?";
     
     if(!tjs.MCPartList.empty()) {
@@ -1023,7 +1093,7 @@ namespace tca {
     auto& ptp = ptj.Pts[ptj.EndPt[pend]];
     ss.Angle = ptp.Ang;
     if(prt) mf::LogVerbatim("TC")<<fcnLabel<<"   shower angle "<<ss.Angle;
-    
+
     // determine how much space we need for the points (hits) ala FindChargeCenter
     unsigned int cnt = 0;
     for(unsigned short it = 0; it < ss.TjIDs.size(); ++it) {
@@ -1214,6 +1284,11 @@ namespace tca {
     float mom = tj.MCSMom;
     if(mom > 500) mom = 500;
     float momPull = (mom - 500) / 100;
+    //RSF could be problematic for photons
+    //float dEdx = tj.dEdx[tjEnd];
+    //if (dEdx > 15) dEdx = 15;
+    //float dEdxPull = std::abs(dEdx - 2);
+    //RSF
     // Pull due to the minimum separation between the other end of the parent Tj and the first shower Tj point.
     float tp0Sep2 = 0;
     float sep0Pull2 = 0;
@@ -1229,6 +1304,10 @@ namespace tca {
     float lenPull = (TrajLength(tj) - expectedTPSep) / expectedTPSepRMS;
     float fom = sqrt(sepPull * sepPull + deltaPull * deltaPull + dangPull * dangPull + momPull * momPull + sep0Pull2 + lenPull * lenPull);
     fom /= 6;
+    //RSF
+    //float fom = sqrt(sepPull * sepPull + deltaPull * deltaPull + dangPull * dangPull + momPull * momPull + sep0Pull2 + lenPull * lenPull + dEdxPull*dEdxPull);
+    //fom /= 7;
+    //RSF
     vx3Score = 0;
     if(tj.VtxID[tjEnd] > 0) {
       // check for a high-score 2D vertex with a high-score 3D vertex at this end.
@@ -2397,7 +2476,8 @@ namespace tca {
     
     std::string fcnLabel = inFcnLabel + ".FNTj";
     
-    float docaCut = 2 * tjs.ShowerTag[2];
+    //float docaCut = 2 * tjs.ShowerTag[2];
+    float docaCut = tjs.ShowerTag[2]; // RSF what do I want this cut to be?? see event 100348
     
     std::vector<int> ntj;
     for(auto& tj : tjs.allTraj) {
@@ -2576,7 +2656,8 @@ namespace tca {
       if(tj.MCSMom > 500) {
         float tjAngle = tj.Pts[tj.EndPt[0]].Ang;
         float dangPull = std::abs(tjAngle -ss.AngleErr) / ss.AngleErr;
-        if(dangPull > 2) continue;
+        //if(dangPull) continue;
+	if(dangPull > 2 && ss.TjIDs.size() > 10) continue; //RSF
       } // high momentum
       if(AddTj(fcnLabel, tjs, tj.ID, cotIndex, false, prt)) ++nadd;
     } // tj
