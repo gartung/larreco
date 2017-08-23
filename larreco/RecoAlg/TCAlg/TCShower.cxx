@@ -923,7 +923,7 @@ namespace tca {
         skipit = (fom > bestFOM);
       }
       //skipit = (fom > bestFOM); //RSF replacing section above
-      std::cout<<"RSF: TjID "<<tj.ID<<" bestFOM "<<bestFOM<<" FOM "<<fom<<" skipit "<<skipit<<std::endl;
+      //std::cout<<"RSF: TjID "<<tj.ID<<" bestFOM "<<bestFOM<<" FOM "<<fom<<" skipit "<<skipit<<std::endl;
       if(skipit) continue;
       bestFOM = fom;
       imTheBest = tj.ID;
@@ -965,15 +965,15 @@ namespace tca {
       unsigned short tjEndCurrent = FarEnd(tjs, tj, ss);                                            
       TrajPoint& ptpCurrent = tj.Pts[tj.EndPt[tjEndCurrent]];                                       
       dang = DeltaAngle(ptpBest.Ang, ptpCurrent.Ang);                                               
-      std::cout<<"RSF bestPar "<<imTheBest<<" TjID "<<tj.ID<<" dang "<<dang<<std::endl;
-      std::cout<<"RSF bestTj "<<ptpBest.Pos[0]<<":"<<ptpBest.Pos[1]/tjs.UnitsPerTick<<" ang "<<ptpBest.Ang<<std::endl;
-      std::cout<<"RSF currTj "<<ptpCurrent.Pos[0]<<":"<<ptpCurrent.Pos[1]/tjs.UnitsPerTick<<" ang "<<ptpCurrent.Ang<<std::endl;
+      //std::cout<<"RSF bestPar "<<imTheBest<<" TjID "<<tj.ID<<" dang "<<dang<<std::endl;
+      //std::cout<<"RSF bestTj "<<ptpBest.Pos[0]<<":"<<ptpBest.Pos[1]/tjs.UnitsPerTick<<" ang "<<ptpBest.Ang<<std::endl;
+      //std::cout<<"RSF currTj "<<ptpCurrent.Pos[0]<<":"<<ptpCurrent.Pos[1]/tjs.UnitsPerTick<<" ang "<<ptpCurrent.Ang<<std::endl;
 
       if (dang < dangCut && ptpCurrent.Pos[0] < bestTp1Sep2) {
-	float numval = ptpCurrent.Pos[0] - ptpBest.Pos[0];
-	float denom = ptpCurrent.Pos[1]/tjs.UnitsPerTick - ptpBest.Pos[1]/tjs.UnitsPerTick;
+	//float numval = ptpCurrent.Pos[0] - ptpBest.Pos[0];
+	//float denom = ptpCurrent.Pos[1]/tjs.UnitsPerTick - ptpBest.Pos[1]/tjs.UnitsPerTick;
 
-	std::cout<<"RSF angle b/w start points "<<std::atan(numval/denom)<<" best ang "<<ptpCurrent.Ang<<std::endl;
+	//std::cout<<"RSF angle b/w start points "<<std::atan(numval/denom)<<" best ang "<<ptpCurrent.Ang<<std::endl;
 	// ignore really short trajectories VERY HARDCODED
 	if (std::abs(ptpCurrent.Pos[0]-tj.Pts[tj.EndPt[!tjEndCurrent]].Pos[0])<8) continue;
 	// ignore trajectories that are really long
@@ -1023,7 +1023,7 @@ namespace tca {
     unsigned short pend = FarEnd(tjs, ptj, ss);
     auto& ptp = ptj.Pts[ptj.EndPt[pend]];
 
-    std::cout<<"RSF dir "<<ptp.Dir[0]<<std::endl;
+    //std::cout<<"RSF dir "<<ptp.Dir[0]<<std::endl;
     
     // We know the parent trajecotry should be in the forward direction
     // this assumes we trust the code above to find the right one
