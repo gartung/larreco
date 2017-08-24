@@ -87,8 +87,9 @@ namespace tca {
 	  else tjs.stv.ShowerID.at(tjIndex) = cotIndex;
         }
 
-	if (it1 == (ss.ShowerTjID - 1)) tjs.stv.IsShowerTj.back() = 1;
-
+	//if (it1 == (ss.ShowerTjID - 1)) tjs.stv.IsShowerTj.back() = 1;
+	//if (trajID == ss.ShowerTjID) tjs.stv.IsShowerTj.back() = 1;
+	if (tj1.AlgMod[kShowerTj]) tjs.stv.IsShowerTj.back() = 1;
         // check if tj is shower parent. if so, add to ttree
         // and mark parent flag	
         if (trajID == ss.ParentID) {
