@@ -222,7 +222,7 @@ namespace tca {
       CTP_t inCTP = EncodeCTP(tpcid.Cryostat, tpcid.TPC, plane);
       std::vector<std::vector<int>> tjList;
       TagShowerTjs(fcnLabel, tjs, inCTP, tjList);
-      if (tjs.SaveShowerTree) SaveTjInfo(tjs, inCTP, tjList, "TJL");
+      SaveTjInfo(tjs, inCTP, tjList, "TJL");
       if(tjList.empty()) continue;
       MergeTjList(tjList);
       bigList[plane] = tjList;
@@ -237,7 +237,7 @@ namespace tca {
       for(auto& tjl : bigList[plane]) {
         for(auto& tjID : tjl) tjs.allTraj[tjID - 1].AlgMod[kInShower] = true;
       } // tjl
-      if (tjs.SaveShowerTree) SaveTjInfo(tjs, inCTP, bigList[plane], "MTJL");
+      SaveTjInfo(tjs, inCTP, bigList[plane], "MTJL");
     } // plane
 
     for(unsigned short plane = 0; plane < TPC.Nplanes(); ++plane) {
@@ -259,11 +259,11 @@ namespace tca {
           MakeShowerObsolete(fcnLabel, tjs, cotIndex, prt);
           continue;
         }
-        if (tjs.SaveShowerTree) SaveTjInfo(tjs, inCTP, cotIndex, "DS");
+        SaveTjInfo(tjs, inCTP, cotIndex, "DS");
         // Find nearby Tjs that were not included because they had too-high
         // MCSMom, etc. This will be used to decide if showers should be merged
         AddTjsInsideEnvelope(fcnLabel, tjs, cotIndex, false, prt);
-        if (tjs.SaveShowerTree) SaveTjInfo(tjs, inCTP, cotIndex, "ATj1");
+        SaveTjInfo(tjs, inCTP, cotIndex, "ATj1");
         FindNearbyTjs(fcnLabel, tjs, cotIndex, prt);
         FindMatchingTjs(fcnLabel, tjs, cotIndex, prt);
       } // tjl
@@ -273,15 +273,15 @@ namespace tca {
       prt = (inCTP == dbgCTP || dbgPlane == 3);
       if(prt) Print2DShowers("tjl", tjs, inCTP, false);
       MergeShowerChain(fcnLabel, tjs, inCTP, prt);
-      if (tjs.SaveShowerTree) SaveAllCots(tjs, inCTP, "MSC");
+      SaveAllCots(tjs, inCTP, "MSC");
       if(prt) Print2DShowers("MSCo", tjs, inCTP, false);
       MergeOverlap(fcnLabel, tjs, inCTP, prt);
-      if (tjs.SaveShowerTree) SaveAllCots(tjs, inCTP, "MO");
+      SaveAllCots(tjs, inCTP, "MO");
       if(prt) Print2DShowers("MO", tjs, inCTP, false);
-      if (tjs.SaveShowerTree) SaveAllCots(tjs, inCTP, "MSS");
+      SaveAllCots(tjs, inCTP, "MSS");
       MergeSubShowers(fcnLabel, tjs, inCTP, prt);
       MergeNearby2DShowers(fcnLabel, tjs, inCTP, prt);
-      if (tjs.SaveShowerTree) SaveAllCots(tjs, inCTP, "MNrby");
+      SaveAllCots(tjs, inCTP, "MNrby");
       if(prt) Print2DShowers("Nrby", tjs, inCTP, false);
       for(unsigned short cotIndex = 0; cotIndex < tjs.cots.size(); ++cotIndex) {
         auto& ss = tjs.cots[cotIndex];
@@ -299,10 +299,10 @@ namespace tca {
       auto& ss = tjs.cots[cotIndex];
       if(ss.ID == 0) continue;
       FindExternalParent("FS", tjs, cotIndex, prt);
-      if (tjs.SaveShowerTree) SaveTjInfo(tjs, ss.CTP, cotIndex, "FEP");
+      SaveTjInfo(tjs, ss.CTP, cotIndex, "FEP");
       // Add Tjs with high-score vertices inside the shower and kill those vertices
       AddTjsInsideEnvelope(fcnLabel, tjs, cotIndex, true, prt);
-      if (tjs.SaveShowerTree) SaveTjInfo(tjs, ss.CTP, cotIndex, "ATj2");
+      SaveTjInfo(tjs, ss.CTP, cotIndex, "ATj2");
       Trajectory& stj = tjs.allTraj[ss.ShowerTjID - 1];
       if(prt) std::cout<<cotIndex<<" Pos "<<ss.CTP<<":"<<PrintPos(tjs, stj.Pts[1].Pos)<<" ParID "<<ss.ParentID<<" TruParID "<<ss.TruParentID<<" dEdx "<<stj.dEdx[0]<<" "<<stj.dEdx[1]<<"\n";
       if(ss.ParentID == 0) FindStartChg(fcnLabel, tjs, cotIndex, prt);
@@ -310,8 +310,11 @@ namespace tca {
     
     CheckQuality(fcnLabel, tjs, tpcid, prt);
     
+    SaveAllCots(tjs, "CQ");
+
     if(prt) Print2DShowers("FEP", tjs, USHRT_MAX, false);
     Match2DShowers(fcnLabel, tjs, tpcid, prt);
+    SaveAllCots(tjs, "M2DSo");
     if(prt) Print2DShowers("M2DSo", tjs, USHRT_MAX, false);
     
     unsigned short nNewShowers = 0;
@@ -2985,7 +2988,7 @@ namespace tca {
           } // end
         }
       } // don't killit
-      if (tjs.SaveShowerTree) SaveTjInfo(tjs, ss.CTP, cotIndex, "CQ");
+      
     } // ic
     
     // check for duplicates
