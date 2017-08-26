@@ -403,7 +403,7 @@ void TrackRecoAna::analyze( const art::Event& event )
             // Look for the best matched PFParticle by counting hits
             // Since we have sorted the PFParticles in the TrackIDToPFParticle map, the first PFParticle is the one
             const auto& pfpart = TrackIDToPFParticleItr->second.at(0);
-            fNHitsBestMatchedPFParticle[fNMCParticles] = PFParticleToTrackHit[pfpart].size();
+            fNHitsBestMatchedPFParticle[fNMCParticles] = PFParticleToTrackHit[pfpart][ParticleTrackID].size();
             fBestMatchedPFParticlePDGCode[fNMCParticles] = pfpart->PdgCode();
             fBestMatchedPFParticleNHits[fNMCParticles] = PFParticleToHitCnt[pfpart];
         }
