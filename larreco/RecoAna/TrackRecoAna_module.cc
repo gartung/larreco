@@ -17,6 +17,7 @@
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/PFParticle.h"
+#include "lardataobj/RecoBase/Vertex.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "lardataobj/MCBase/MCHitCollection.h"
@@ -452,6 +453,9 @@ void TrackRecoAna::analyze( const art::Event& event )
     MCParticleToPFParticle->MakePFParticleMaps( event, pfParticleHandle, HitToParticle, 
                                                 PFParticleToTrackHit, TrackIDToPFParticle, PFParticleToHitCnt );
 
+    // Recover the association from the PFParticle to the vertex
+    art::FindManyP< recob::Vertex > pfParticleVertexAssns( pfParticleHandle, event, fPFParticleProducerLabel );
+
     // Loop over MC particles
     for ( size_t iMCPart = 0; iMCPart < particleHandle->size(); ++iMCPart ) {
 
@@ -496,6 +500,14 @@ void TrackRecoAna::analyze( const art::Event& event )
             fNHitsBestMatchedPFParticle[fNMCParticles] = PFParticleToTrackHit[pfpart][ParticleTrackID].size();
             fBestMatchedPFParticlePDGCode[fNMCParticles] = pfpart->PdgCode();
             fBestMatchedPFParticleNHits[fNMCParticles] = PFParticleToHitCnt[pfpart];
+            // Fill the reconstructed vertex associated to the PFParticle
+            double xyz[3];
+            std::vector< art::Ptr< recob::Vertex > > const& vertices = pfParticleVertexAssns.at( pfpart.key() );
+            art::Ptr< recob::Vertex > vertex = vertices.at(0);
+            vertex->XYZ( xyz );
+            fBestMatchedPFParticleVx[fNMCParticles] = xyz[0];
+            fBestMatchedPFParticleVy[fNMCParticles] = xyz[1];
+            fBestMatchedPFParticleVz[fNMCParticles] = xyz[2];
         }
 
         // It is pointless to go through the rest of the loop if there are no hits to analyze
@@ -536,6 +548,30 @@ void TrackRecoAna::analyze( const art::Event& event )
     } // end of loop over MC particles
 
     fNPFParticles = pfParticleHandle->size();
+
+    // Looking for the primary vertex.
+    // Currently we look for a neutrino PFParticle which has the most daughter PFParticles
+    int nDaughtersMax = 0;
+    size_t iNuPFParticle = 0;
+    for ( size_t iPFPart = 0; iPFPart < pfParticleHandle->size(); ++iPFPart ) {
+        recob::PFParticle const& pfpart = (*pfParticleHandle)[iPFPart];
+        int PDGCode = pfpart.PdgCode();
+        if ( PDGCode != 12 && PDGCode != 14 ) continue;
+        mf::LogDebug("TrackRecoAna") << "PDGCode of PFParticle " << iPFPart << ": " << PDGCode;
+        int nDaughters = pfpart.NumDaughters();
+        if ( nDaughters > nDaughtersMax ) {
+            nDaughtersMax = nDaughters;
+            iNuPFParticle = iPFPart;
+        }
+    }
+    std::vector< art::Ptr< recob::Vertex > > const& PVtxs = pfParticleVertexAssns.at( iNuPFParticle );
+    art::Ptr< recob::Vertex > PVtx = PVtxs.at(0);
+    double pvxyz[3];
+    PVtx->XYZ( pvxyz );
+    fRecoPVx = pvxyz[0];
+    fRecoPVy = pvxyz[1];
+    fRecoPVz = pvxyz[2];
+
     fAnaTree->Fill();
 
     return;
