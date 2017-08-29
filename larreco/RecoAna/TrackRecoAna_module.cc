@@ -119,6 +119,9 @@ private:
     Int_t    fNMCParticles;
     Int_t    fNPFParticles;
     Int_t    fNMatchedPFParticles;
+    Double_t fRecoPVx;
+    Double_t fRecoPVy;
+    Double_t fRecoPVz;
 
     // MCParticle-wise information
     std::vector< Int_t >       fPDGCode;
@@ -129,6 +132,26 @@ private:
     std::vector< Int_t >       fNHitsBestMatchedPFParticle;
     std::vector< Int_t >       fBestMatchedPFParticlePDGCode;
     std::vector< Int_t >       fBestMatchedPFParticleNHits;
+    std::vector< Double_t >    fPx;
+    std::vector< Double_t >    fPy;
+    std::vector< Double_t >    fPz;
+    std::vector< Double_t >    fE;
+    std::vector< Double_t >    fEndPx;
+    std::vector< Double_t >    fEndPy;
+    std::vector< Double_t >    fEndPz;
+    std::vector< Double_t >    fEndE;
+    std::vector< Double_t >    fVx;
+    std::vector< Double_t >    fVy;
+    std::vector< Double_t >    fVz;
+    std::vector< Double_t >    fT;
+    std::vector< Double_t >    fEndx;
+    std::vector< Double_t >    fEndy;
+    std::vector< Double_t >    fEndz;
+    std::vector< Double_t >    fEndT;
+    std::vector< Double_t >    fBestMatchedPFParticleVx;
+    std::vector< Double_t >    fBestMatchedPFParticleVy;
+    std::vector< Double_t >    fBestMatchedPFParticleVz;
+
 
     std::vector< std::string > fProcNames;
     // std::vector< std::string > fParentProcNames;
@@ -183,6 +206,9 @@ void TrackRecoAna::beginJob()
     fAnaTree->Branch("NMCParticles",         &fNMCParticles,          "NMCParticles/I");
     fAnaTree->Branch("NPFParticles",         &fNPFParticles,          "NPFParticles/I");
     fAnaTree->Branch("NMatchedPFParticles",  &fNMatchedPFParticles,   "NMatchedPFParticles/I");
+    fAnaTree->Branch("RecoPVx",              &fRecoPVx,               "RecoPVx/D");
+    fAnaTree->Branch("RecoPVy",              &fRecoPVy,               "RecoPVy/D");
+    fAnaTree->Branch("RecoPVz",              &fRecoPVz,               "RecoPVz/D");
 
     fRun = -1;
     fSubRun = -1;
@@ -192,6 +218,9 @@ void TrackRecoAna::beginJob()
     fNMCParticles = 0;
     fNPFParticles = 0;
     fNMatchedPFParticles = 0;
+    fRecoPVx = 0.;
+    fRecoPVy = 0.;
+    fRecoPVz = 0.;
 
     fPDGCode.resize( fMaxEntries, 0 );
     fNUniqueHitsPerMCParticle.resize( fMaxEntries, 0 );
@@ -200,6 +229,25 @@ void TrackRecoAna::beginJob()
     fNHitsBestMatchedPFParticle.resize( fMaxEntries, 0 );
     fBestMatchedPFParticlePDGCode.resize( fMaxEntries, 0 );
     fBestMatchedPFParticleNHits.resize( fMaxEntries, 0 );
+    fPx.resize( fMaxEntries, 0. );
+    fPy.resize( fMaxEntries, 0. );
+    fPz.resize( fMaxEntries, 0. );
+    fE.resize( fMaxEntries, 0. );
+    fEndPx.resize( fMaxEntries, 0. );
+    fEndPy.resize( fMaxEntries, 0. );
+    fEndPz.resize( fMaxEntries, 0. );
+    fEndE.resize( fMaxEntries, 0. );
+    fVx.resize( fMaxEntries, 0. );
+    fVy.resize( fMaxEntries, 0. );
+    fVz.resize( fMaxEntries, 0. );
+    fT.resize( fMaxEntries, 0. );
+    fEndx.resize( fMaxEntries, 0. );
+    fEndy.resize( fMaxEntries, 0. );
+    fEndz.resize( fMaxEntries, 0. );
+    fEndT.resize( fMaxEntries, 0. );
+    fBestMatchedPFParticleVx.resize( fMaxEntries, 0. );
+    fBestMatchedPFParticleVy.resize( fMaxEntries, 0. );
+    fBestMatchedPFParticleVz.resize( fMaxEntries, 0. );
 
     fAnaTree->Branch("PDGCode",              fPDGCode.data(),         "PDGCode[NMCParticles]/I");
     fAnaTree->Branch("NUniqueHitsPerMCParticle", fNUniqueHitsPerMCParticle.data(), "NUniqueHitsPerMCParticle[NMCParticles]/I");
@@ -208,6 +256,26 @@ void TrackRecoAna::beginJob()
     fAnaTree->Branch("NHitsBestMatchedPFParticle", fNHitsBestMatchedPFParticle.data(), "NHitsBestMatchedPFParticle[NMCParticles]/I");
     fAnaTree->Branch("BestMatchedPFParticlePDGCode", fBestMatchedPFParticlePDGCode.data(), "BestMatchedPFParticlePDGCode[NMCParticles]/I");
     fAnaTree->Branch("BestMatchedPFParticleNHits", fBestMatchedPFParticleNHits.data(), "BestMatchedPFParticleNHits[NMCParticles]/I");
+    fAnaTree->Branch("Px",  fPx.data(), "Px[NMCParticles]/D");
+    fAnaTree->Branch("Py",  fPy.data(), "Py[NMCParticles]/D");
+    fAnaTree->Branch("Pz",  fPz.data(), "Pz[NMCParticles]/D");
+    fAnaTree->Branch("E",   fE.data(),  "E[NMCParticles]/D");
+    fAnaTree->Branch("EndPx",  fEndPx.data(), "EndPx[NMCParticles]/D");
+    fAnaTree->Branch("EndPy",  fEndPy.data(), "EndPy[NMCParticles]/D");
+    fAnaTree->Branch("EndPz",  fEndPz.data(), "EndPz[NMCParticles]/D");
+    fAnaTree->Branch("EndT",   fEndT.data(),  "EndT[NMCParticles]/D");
+    fAnaTree->Branch("Vx",  fVx.data(), "Vx[NMCParticles]/D");
+    fAnaTree->Branch("Vy",  fVy.data(), "Vy[NMCParticles]/D");
+    fAnaTree->Branch("Vz",  fVz.data(), "Vz[NMCParticles]/D");
+    fAnaTree->Branch("T",   fT.data(),  "T[NMCParticles]/D");
+    fAnaTree->Branch("Endx",  fEndx.data(), "Endx[NMCParticles]/D");
+    fAnaTree->Branch("Endy",  fEndy.data(), "Endy[NMCParticles]/D");
+    fAnaTree->Branch("Endz",  fEndz.data(), "Endz[NMCParticles]/D");
+    fAnaTree->Branch("EndT",  fEndT.data(), "EndT[NMCParticles]/D");
+    fAnaTree->Branch("BestMatchedPFParticleVx",  fBestMatchedPFParticleVx.data(), "BestMatchedPFParticleVx[NMCParticles]/D");
+    fAnaTree->Branch("BestMatchedPFParticleVy",  fBestMatchedPFParticleVy.data(), "BestMatchedPFParticleVy[NMCParticles]/D");
+    fAnaTree->Branch("BestMatchedPFParticleVz",  fBestMatchedPFParticleVz.data(), "BestMatchedPFParticleVz[NMCParticles]/D");
+
 
     fProcNames.resize( fMaxEntries, "processname  " );
     // fParentProcNames.resize( fMaxEntries, "processname  " );
@@ -255,6 +323,9 @@ void TrackRecoAna::PrepareEvent( const art::Event &evt )
     fNMCParticles          = 0;
     fNPFParticles          = 0;
     fNMatchedPFParticles   = 0;
+    fRecoPVx               = 0.;
+    fRecoPVy               = 0.;
+    fRecoPVz               = 0.;
 
     fPDGCode.assign( fMaxEntries, 0 );
     fNUniqueHitsPerMCParticle.assign( fMaxEntries, 0 );
@@ -263,6 +334,25 @@ void TrackRecoAna::PrepareEvent( const art::Event &evt )
     fNHitsBestMatchedPFParticle.assign( fMaxEntries, 0 );
     fBestMatchedPFParticlePDGCode.assign( fMaxEntries, 0 );
     fBestMatchedPFParticleNHits.assign( fMaxEntries, 0 );
+    fPx.resize( fMaxEntries, 0. );
+    fPy.resize( fMaxEntries, 0. );
+    fPz.resize( fMaxEntries, 0. );
+    fE.resize( fMaxEntries, 0. );
+    fEndPx.resize( fMaxEntries, 0. );
+    fEndPy.resize( fMaxEntries, 0. );
+    fEndPz.resize( fMaxEntries, 0. );
+    fEndE.resize( fMaxEntries, 0. );
+    fVx.resize( fMaxEntries, 0. );
+    fVy.resize( fMaxEntries, 0. );
+    fVz.resize( fMaxEntries, 0. );
+    fT.resize( fMaxEntries, 0. );
+    fEndx.resize( fMaxEntries, 0. );
+    fEndy.resize( fMaxEntries, 0. );
+    fEndz.resize( fMaxEntries, 0. );
+    fEndT.resize( fMaxEntries, 0. );
+    fBestMatchedPFParticleVx.resize( fMaxEntries, 0. );
+    fBestMatchedPFParticleVy.resize( fMaxEntries, 0. );
+    fBestMatchedPFParticleVz.resize( fMaxEntries, 0. );
     fProcNames.assign( fMaxEntries, "processname  " );
     // fParentProcNames.assign( fMaxEntries, "processname  " );
 }
@@ -415,6 +505,23 @@ void TrackRecoAna::analyze( const art::Event& event )
         int TrackPDGCode = particle->PdgCode();
         fPDGCode[fNMCParticles] = TrackPDGCode;        
         mf::LogDebug("TrackRecoAna") << "fPDGCode[" << fNMCParticles << "]: " << fPDGCode[fNMCParticles];
+
+        fPx[fNMCParticles] = particle->Px();
+        fPy[fNMCParticles] = particle->Py();
+        fPz[fNMCParticles] = particle->Pz();
+        fE[fNMCParticles]  = particle->E();
+        fEndPx[fNMCParticles] = particle->EndPx();
+        fEndPy[fNMCParticles] = particle->EndPy();
+        fEndPz[fNMCParticles] = particle->EndPz();
+        fEndE[fNMCParticles]  = particle->EndE();
+        fVx[fNMCParticles] = particle->Vx();
+        fVy[fNMCParticles] = particle->Vy();
+        fVz[fNMCParticles] = particle->Vz();
+        fT[fNMCParticles] = particle->T();
+        fEndx[fNMCParticles] = particle->EndX();
+        fEndy[fNMCParticles] = particle->EndY();
+        fEndz[fNMCParticles] = particle->EndZ();
+        fEndT[fNMCParticles] = particle->EndT();
 
         fNHits += fNMatchedHitsPerMCParticle[fNMCParticles];
         fNUniqueHits += fNUniqueHitsPerMCParticle[fNMCParticles];
