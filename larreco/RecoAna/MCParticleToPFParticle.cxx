@@ -229,7 +229,7 @@ void lar::recoana::MCParticleToPFParticle::MakePFParticleMaps( const art::Event&
                 TrackIDToPFParticles[trackItr.first].push_back( pfParticle );
             }
         } else {
-            mf::LogWarning("MCParticleToPFParticle::MakePFParticleMaps") << "===>> No PFParticle to MCParticle match made; the PFParticl has a PDGCode: "
+            mf::LogWarning("MCParticleToPFParticle::MakePFParticleMaps") << "===>> No PFParticle to MCParticle match made; the PFParticle has a PDGCode: "
                                                                          << pfParticle->PdgCode();
         }
     } // end of loop over the PFParticle collection
@@ -238,6 +238,10 @@ void lar::recoana::MCParticleToPFParticle::MakePFParticleMaps( const art::Event&
     // Sort the PFParticles in the track ID to PFParticle map
     for ( auto& trackItr : TrackIDToPFParticles ) {
         std::sort( trackItr.second.begin(), trackItr.second.end(), SortPFParticleVec( PFParticleToHitCnt ) );
+        // for ( size_t ipfpart = 0; ipfpart < trackItr.second.size(); ++ipfpart ) {
+        //     art::Ptr< recob::PFParticle > pfpart = trackItr.second.at( ipfpart );
+        //     mf::LogDebug("MCParticleToPFParticle::MakePFParticleMaps") << "PFParticle " << ipfpart << ": number of hits: " << PFParticleToHitCnt[pfpart];
+        // }
     }
 
     return;
