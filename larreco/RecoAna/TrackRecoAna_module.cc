@@ -133,6 +133,7 @@ private:
     std::vector< Int_t >       fNHitsBestMatchedPFParticle;
     std::vector< Int_t >       fBestMatchedPFParticlePDGCode;
     std::vector< Int_t >       fBestMatchedPFParticleNHits;
+    std::vector< Int_t >       fBestMatchedPFParticleID;
     std::vector< Double_t >    fPx;
     std::vector< Double_t >    fPy;
     std::vector< Double_t >    fPz;
@@ -230,6 +231,7 @@ void TrackRecoAna::beginJob()
     fNHitsBestMatchedPFParticle.resize( fMaxEntries, 0 );
     fBestMatchedPFParticlePDGCode.resize( fMaxEntries, 0 );
     fBestMatchedPFParticleNHits.resize( fMaxEntries, 0 );
+    fBestMatchedPFParticleID.resize( fMaxEntries, -1 );
     fPx.resize( fMaxEntries, 0. );
     fPy.resize( fMaxEntries, 0. );
     fPz.resize( fMaxEntries, 0. );
@@ -257,6 +259,7 @@ void TrackRecoAna::beginJob()
     fAnaTree->Branch("NHitsBestMatchedPFParticle", fNHitsBestMatchedPFParticle.data(), "NHitsBestMatchedPFParticle[NMCParticles]/I");
     fAnaTree->Branch("BestMatchedPFParticlePDGCode", fBestMatchedPFParticlePDGCode.data(), "BestMatchedPFParticlePDGCode[NMCParticles]/I");
     fAnaTree->Branch("BestMatchedPFParticleNHits", fBestMatchedPFParticleNHits.data(), "BestMatchedPFParticleNHits[NMCParticles]/I");
+    fAnaTree->Branch("BestMatchedPFParticleID", fBestMatchedPFParticleID.data(), "BestMatchedPFParticleID[NMCParticles]/I");
     fAnaTree->Branch("Px",  fPx.data(), "Px[NMCParticles]/D");
     fAnaTree->Branch("Py",  fPy.data(), "Py[NMCParticles]/D");
     fAnaTree->Branch("Pz",  fPz.data(), "Pz[NMCParticles]/D");
@@ -335,6 +338,7 @@ void TrackRecoAna::PrepareEvent( const art::Event &evt )
     fNHitsBestMatchedPFParticle.assign( fMaxEntries, 0 );
     fBestMatchedPFParticlePDGCode.assign( fMaxEntries, 0 );
     fBestMatchedPFParticleNHits.assign( fMaxEntries, 0 );
+    fBestMatchedPFParticleID.assign( fMaxEntries, -1 );
     fPx.resize( fMaxEntries, 0. );
     fPy.resize( fMaxEntries, 0. );
     fPz.resize( fMaxEntries, 0. );
@@ -500,6 +504,8 @@ void TrackRecoAna::analyze( const art::Event& event )
             fNHitsBestMatchedPFParticle[fNMCParticles] = PFParticleToTrackHit[pfpart][ParticleTrackID].size();
             fBestMatchedPFParticlePDGCode[fNMCParticles] = pfpart->PdgCode();
             fBestMatchedPFParticleNHits[fNMCParticles] = PFParticleToHitCnt[pfpart];
+            fBestMatchedPFParticleID[fNMCParticles] = pfpart.key();
+
             // Fill the reconstructed vertex associated to the PFParticle
             double xyz[3];
             std::vector< art::Ptr< recob::Vertex > > const& vertices = pfParticleVertexAssns.at( pfpart.key() );
