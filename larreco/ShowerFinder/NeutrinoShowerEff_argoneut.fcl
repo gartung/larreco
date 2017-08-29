@@ -1,0 +1,45 @@
+#include "services_argoneut.fcl"
+#include "trackfindermodules_argoneut.fcl"
+#include "showerfindermodules_argoneut.fcl"
+
+process_name: NeutrinoShowerEff
+
+services:
+{
+  TFileService: { fileName: "ShowerHistograms.root" closeFileFast: false}
+  TimeTracker:       {}
+  RandomNumberGenerator: {}
+  message:      @local::standard_info
+                @table::argoneut_simulation_services
+}
+
+source:
+{
+  module_type: RootInput
+  firstEvent : 1
+  maxEvents:  -1
+}
+
+
+outputs:{}
+
+
+physics:
+{
+
+  analyzers:
+  {
+    trajclustershowereff:       @local::standard_neutrinoshowereff
+  }
+  analysis: [ trajclustershowereff ] #Directory for histograms                                                         
+  end_paths: [ analysis ]
+}
+physics.analyzers.trajclustershowereff.HitModuleLabel:    "trajcluster"
+physics.analyzers.trajclustershowereff.ShowerModuleLabel: "trajcluster" 
+
+
+
+physics.analyzers.trajclustershowereff.FidVolCutX: 0
+physics.analyzers.trajclustershowereff.FidVolCutY: 0
+physics.analyzers.trajclustershowereff.FidVolCutZ: 0
+
