@@ -26,6 +26,7 @@ art_make(
 			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}
 			${ROOT_GENVECTOR}
+			larreco_RecoAlg
          )
 
 
