@@ -1,0 +1,20 @@
+BEGIN_PROLOG
+vertexfitter: {
+   module_type: VertexFitter
+      inputs: {
+      inputPFParticleLabel: "pandoraNu"
+      inputTracksLabel: "pandoraNuKalmanTrack"
+   }
+   options: {
+      debugLevel: 0
+   }
+   propagator: {
+      minStep: 1.0
+      maxElossFrac: 0.1
+      maxNit: 10
+      tcut: 10.
+      wrongDirDistTolerance: 0.01
+      propPinvErr: false
+   }
+}
+END_PROLOG
