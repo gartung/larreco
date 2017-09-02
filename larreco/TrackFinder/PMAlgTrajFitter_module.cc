@@ -182,8 +182,7 @@ void PMAlgTrajFitter::produce(art::Event& evt)
 	      evt.getByLabel(fPfpModuleLabel, cluListHandle) &&     // clusters associated to PFParticles
 	      evt.getByLabel(fPfpModuleLabel, pfparticleHandle)))   // and finally PFParticles
 	{
-		mf::LogError("PMAlgTrajFitter") << "Not all required data products found in the event.";
-		return;
+		throw cet::exception("PMAlgTrajFitter") << "Not all required data products found in the event." << std::endl;
 	}
 
 	art::fill_ptr_vector(allhitlist, allHitListHandle);
@@ -246,12 +245,11 @@ void PMAlgTrajFitter::produce(art::Event& evt)
 			art::Ptr<recob::Track> trkPtr(trkId, trkIdx, evt.productGetter(trkId));
 
 			// which idx from start, except disabled, really....
-			unsigned int hIdxs[trk->size()];
-			for (size_t h = 0, cnt = 0; h < trk->size(); h++)
-			{
-				if ((*trk)[h]->IsEnabled()) hIdxs[h] = cnt++;
-				else hIdxs[h] = 0;
-			}
+                        std::vector<unsigned int> hIdxs(trk->size(), 0);
+                        for (size_t h = 0, cnt = 0; h < hIdxs.size(); h++)
+                        {
+                        	if ((*trk)[h]->IsEnabled()) hIdxs[h] = cnt++;
+                        }
 
 			art::PtrVector< recob::Hit > sp_hits;
 			spStart = allsp->size();
@@ -373,20 +371,15 @@ void PMAlgTrajFitter::produce(art::Event& evt)
 			}
 		}
 
-		if (!pfPartToTrackVecMap.empty()) // associate tracks to existing PFParticles
+		for (const auto & pfParticleItr : pfPartToTrackVecMap)
 		{
-			art::Handle< std::vector<recob::PFParticle> > pfParticleHandle;
-			evt.getByLabel(fPfpModuleLabel, pfParticleHandle);
-			for (const auto & pfParticleItr : pfPartToTrackVecMap)
-			{
-				art::Ptr<recob::PFParticle> pfParticle(pfParticleHandle, pfParticleItr.first);
-				mf::LogVerbatim("PMAlgTrajFitter") << "PFParticle key: " << pfParticle.key()
-					<< ", self: " << pfParticle->Self() << ", #tracks: " << pfParticleItr.second.size();
+			art::Ptr<recob::PFParticle> pfParticle(pfparticleHandle, pfParticleItr.first);
+			mf::LogVerbatim("PMAlgTrajFitter") << "PFParticle key: " << pfParticle.key()
+				<< ", self: " << pfParticle->Self() << ", #tracks: " << pfParticleItr.second.size();
 
-				if (!pfParticle.isNull()) util::CreateAssn(*this, evt, pfParticle, pfParticleItr.second, *pfp2trk);
-				else mf::LogError("PMAlgTrajFitter") << "Error in PFParticle lookup, pfparticle index: "
-					<< pfParticleItr.first << ", key: " << pfParticle.key();
-			}
+			if (!pfParticle.isNull()) util::CreateAssn(*this, evt, pfParticle, pfParticleItr.second, *pfp2trk);
+			else mf::LogError("PMAlgTrajFitter") << "Error in PFParticle lookup, pfparticle index: "
+				<< pfParticleItr.first << ", key: " << pfParticle.key();
 		}
 	}
 

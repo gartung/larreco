@@ -16,7 +16,7 @@
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "fhiclcpp/types/Atom.h"
-//#include "fhiclcpp/types/Sequence.h"
+#include "fhiclcpp/types/Sequence.h"
 #include "fhiclcpp/types/Table.h"
 #include "canvas/Utilities/InputTag.h"
 
@@ -34,6 +34,8 @@
 
 #include "larreco/RecoAlg/ImagePatternAlgs/MLP/NNReader.h"
 #include "larreco/RecoAlg/ImagePatternAlgs/Keras/keras_model.h"
+
+#include "CLHEP/Random/JamesRandom.h"
 
 // ROOT & C++
 #include <memory>
@@ -74,14 +76,19 @@ public:
 			Comment("Downsampling function")
 		};
 
-		fhicl::Atom<unsigned int> PatchSizeW {
-			Name("PatchSizeW"),
-			Comment("How many wires in patch.")
+		fhicl::Sequence<float> BlurKernel {
+			Name("BlurKernel"),
+			Comment("Blur kernel in wire direction")
 		};
 
-		fhicl::Atom<unsigned int> PatchSizeD {
-			Name("PatchSizeD"),
-			Comment("How many downsampled ADC entries in patch")
+		fhicl::Atom<float> NoiseSigma {
+			Name("NoiseSigma"),
+			Comment("White noise sigma")
+		};
+
+		fhicl::Atom<float> CoherentSigma {
+			Name("CoherentSigma"),
+			Comment("Coherent noise sigma")
 		};
     };
 
@@ -93,17 +100,12 @@ public:
 
 	virtual ~DataProviderAlg(void);
 
-	void reconfigure(const Config& config); // setup patch buffer, ...
+	void reconfigure(const Config& config); // setup buffers etc.
 
 	bool setWireDriftData(const std::vector<recob::Wire> & wires, // once per view: setup ADC buffer, collect & downscale ADC's
 		unsigned int view, unsigned int tpc, unsigned int cryo);
 
 	std::vector<float> const & wireData(size_t widx) const { return fWireDriftData[widx]; }
-
-	static std::vector<float> flattenData2D(std::vector< std::vector<float> > const & patch);
-
-	std::vector< std::vector<float> > const & patchData2D(void) const { return fWireDriftPatch; }
-	std::vector<float> patchData1D(void) const { return flattenData2D(fWireDriftPatch); }  // flat vector made of the patch data, wire after wire
 
 	unsigned int Cryo(void) const { return fCryo; }
 	unsigned int TPC(void) const { return fTPC; }
@@ -114,31 +116,23 @@ public:
 
     double LifetimeCorrection(double tick) const { return fCalorimetryAlg.LifetimeCorrection(tick); }
 
-	bool isInsideFiducialRegion(unsigned int wire, float drift) const;
-
 protected:
 	unsigned int fCryo, fTPC, fView;
 	unsigned int fNWires, fNDrifts, fNScaledDrifts;
 
 	std::vector< raw::ChannelID_t > fWireChannels;              // wire channels (may need this connection...), InvalidChannelID if not used
 	std::vector< std::vector<float> > fWireDriftData;           // 2D data for entire projection, drifts scaled down
-	mutable std::vector< std::vector<float> > fWireDriftPatch;  // placeholder for patch around identified point
 
-	size_t fDriftWindow, fPatchSizeW, fPatchSizeD;
 	EDownscaleMode fDownscaleMode;
+	size_t fDriftWindow;
 
 	void downscaleMax(std::vector<float> & dst, std::vector<float> const & adc) const;
 	void downscaleMaxMean(std::vector<float> & dst, std::vector<float> const & adc) const;
 	void downscaleMean(std::vector<float> & dst, std::vector<float> const & adc) const;
 
-	mutable size_t fCurrentWireIdx, fCurrentScaledDrift;
-	bool bufferPatch(size_t wire, float drift) const;
-
 	bool setWireData(std::vector<float> const & adc, size_t wireIdx);
-	float scaleAdcSample(float val) const;
 
 	virtual void resizeView(size_t wires, size_t drifts);
-	void resizePatch(void);
 
 	// Calorimetry needed to equalize ADC amplitude along drift:
 	calo::CalorimetryAlg  fCalorimetryAlg;
@@ -146,6 +140,20 @@ protected:
 	// Geometry and detector properties:
 	geo::GeometryCore const* fGeometry;
 	detinfo::DetectorProperties const* fDetProp;
+
+private:
+    static float scaleAdcSample(float val);
+
+    CLHEP::HepJamesRandom fRndEngine;
+
+    void applyBlur();
+    std::vector<float> fBlurKernel; // blur not applied if empty
+
+    void addWhiteNoise();
+    float fNoiseSigma;              // noise not added if sigma=0
+
+    void addCoherentNoise();
+    float fCoherentSigma;           // noise not added if sigma=0
 };
 // ------------------------------------------------------
 // ------------------------------------------------------
@@ -168,7 +176,7 @@ public:
 protected:
 	ModelInterface(void) { }
 
-private:
+    std::string findFile(const char* fileName) const;
 };
 // ------------------------------------------------------
 
@@ -222,6 +230,16 @@ public:
 			Name("NNetModelFile"),
 			Comment("Neural net model to apply.")
 		};
+
+		fhicl::Atom<unsigned int> PatchSizeW {
+			Name("PatchSizeW"),
+			Comment("How many wires in patch.")
+		};
+
+		fhicl::Atom<unsigned int> PatchSizeD {
+			Name("PatchSizeD"),
+			Comment("How many downsampled ADC entries in patch")
+		};
     };
 
 	PointIdAlg(const fhicl::ParameterSet& pset) :
@@ -244,9 +262,23 @@ public:
 	std::vector<float> predictIdVector(unsigned int wire, float drift) const;
 	std::vector<float> predictIdVector(std::vector< art::Ptr<recob::Hit> > const & hits) const;
 
+	static std::vector<float> flattenData2D(std::vector< std::vector<float> > const & patch);
+
+	std::vector< std::vector<float> > const & patchData2D(void) const { return fWireDriftPatch; }
+	std::vector<float> patchData1D(void) const { return flattenData2D(fWireDriftPatch); }  // flat vector made of the patch data, wire after wire
+
+    bool isInsideFiducialRegion(unsigned int wire, float drift) const;
+
 private:
 	std::string fNNetModelFilePath;
 	nnet::ModelInterface* fNNet;
+
+	mutable std::vector< std::vector<float> > fWireDriftPatch;  // placeholder for patch around identified point
+	size_t fPatchSizeW, fPatchSizeD;
+
+	mutable size_t fCurrentWireIdx, fCurrentScaledDrift;
+	bool bufferPatch(size_t wire, float drift) const;
+	void resizePatch(void);
 
 	void deleteNNet(void) { if (fNNet) delete fNNet; fNNet = 0; }
 };
@@ -258,18 +290,28 @@ class nnet::TrainingDataAlg : public nnet::DataProviderAlg
 {
 public:
 
+    enum EMask
+    {
+        kNone     = 0,
+        kPdgMask  = 0x00000FFF, // pdg code mask
+        kTypeMask = 0x0000F000, // track type mask
+        kVtxMask  = 0x0FFF0000  // vertex flags, still can use 0xFFFF0000 if more vtx types needed
+    };
+
+    enum ETrkType
+    {
+        kDelta  = 0x1000,      // delta electron
+        kMichel = 0x2000       // Michel electron
+    };
+
 	enum EVtxId
 	{
-		kNone  = 0,
 		kNuNC  = 0x0010000, kNuCC = 0x0020000,                      // nu interaction type
 		kNuE   = 0x0100000, kNuMu = 0x0200000, kNuTau = 0x0400000,  // nu flavor
 		kHadr  = 0x1000000,    // hadronic inelastic scattering
 		kPi0   = 0x2000000,    // pi0 produced in this vertex
 		kDecay = 0x4000000,    // point of particle decay
 		kConv  = 0x8000000,    // gamma conversion
-
-		kVtxMask = 0x0FFF0000, // vertex flags, still can use 0xFFFF0000 if more vtx types needed
-		kPdgMask = 0x0000FFFF  // pdg code mask (pdg is saved in the same int as vtx flags)
 	};
 
     struct Config : public nnet::DataProviderAlg::Config
@@ -290,6 +332,11 @@ public:
 		fhicl::Atom< bool > SaveVtxFlags {
 			Name("SaveVtxFlags"),
 			Comment("Include (or not) vertex info in PDG map.")
+		};
+		
+		fhicl::Atom<unsigned int> AdcDelayTicks {
+			Name("AdcDelayTicks"),
+			Comment("ADC pulse peak delay in ticks (non-zero for not deconvoluted waveforms).")
 		};
     };
 
@@ -336,12 +383,18 @@ private:
 		const std::unordered_map< int, const simb::MCParticle* > & particleMap,
 		unsigned int view) const;
 
+    bool isMuonDecaying(
+        const simb::MCParticle & particle,
+        const std::unordered_map< int, const simb::MCParticle* > & particleMap) const;
+
 	std::vector< std::vector<float> > fWireDriftEdep;
 	std::vector< std::vector<int> > fWireDriftPdg;
 
 	art::InputTag fWireProducerLabel;
 	art::InputTag fSimulationProducerLabel;
 	bool fSaveVtxFlags;
+
+    unsigned int fAdcDelay;
 };
 // ------------------------------------------------------
 // ------------------------------------------------------

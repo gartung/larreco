@@ -25,7 +25,7 @@
 // larsoft
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
-#include "lardata/RecoBaseArt/TrackUtils.h"
+#include "lardata/ArtDataHelper/TrackUtils.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/GeometryCore.h"
 #include "larcore/Geometry/CryostatGeo.h"
@@ -101,7 +101,7 @@ public:
   /// This implementation also orients the track in the correct direction if a map of shower centres (units [cm]) in each view is provided.
   std::unique_ptr<recob::Track> ConstructTrack(std::vector<art::Ptr<recob::Hit> > const& track1,
 					       std::vector<art::Ptr<recob::Hit> > const& track2,
-					       std::map<geo::PlaneID,TVector2> const& showerCentreMap);
+					       std::map<int,TVector2> const& showerCentreMap);
 
   /// Constructs a recob::Track from sets of hits in two views. Intended to be used to construct the initial first part of a shower.
   /// All methods taken from the pma tracking algorithm (R. Sulej and D. Stefan).
@@ -109,7 +109,7 @@ public:
 					       std::vector<art::Ptr<recob::Hit> > const& track2);
 
   /// Finds the initial track-like part of the shower and the hits in all views associated with it
-  void FindInitialTrack(art::PtrVector<recob::Hit> const& hits,
+  void FindInitialTrack(const std::map<int,std::vector<art::Ptr<recob::Hit> > >& hits,//art::PtrVector<recob::Hit> const& hits,
 			std::unique_ptr<recob::Track>& initialTrack,
 			std::map<int,std::vector<art::Ptr<recob::Hit> > >& initialTrackHits, int plane);
 
@@ -127,7 +127,11 @@ public:
 			   int & iok);
 
   /// Makes space points from the shower hits in each plane
-  std::vector<recob::SpacePoint> MakeSpacePoints(const art::PtrVector<recob::Hit>& hits, std::vector<std::vector<art::Ptr<recob::Hit> > >& hitAssns);
+  std::vector<recob::SpacePoint> MakeSpacePoints(std::map<int,std::vector<art::Ptr<recob::Hit> > > hits, std::vector<std::vector<art::Ptr<recob::Hit> > >& hitAssns);
+
+  /// Takes the hits associated with a shower and orders them so they follow the direction of the shower
+  //std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(art::PtrVector<recob::Hit> const& shower, int plane);
+  std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(const art::PtrVector<recob::Hit>& shower, int plane);
 
   /// <Tingjun to document>
   void FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> >const& showerHits,
@@ -187,9 +191,6 @@ private:
   std::unique_ptr<recob::Track> MakeInitialTrack(std::map<int,std::vector<art::Ptr<recob::Hit> > > const& initialHitsMap,
 						 std::map<int,std::vector<art::Ptr<recob::Hit> > > const& showerHitsMap);
 
-  /// Takes the hits associated with a shower and orders them so they follow the direction of the shower
-  std::map<int,std::vector<art::Ptr<recob::Hit> > > OrderShowerHits(art::PtrVector<recob::Hit> const& shower, int plane);
-
   /// Takes the hits associated with a shower and orders then so they follow the direction of the shower
   void OrderShowerHits(std::vector<art::Ptr<recob::Hit> > const& shower,
 		       std::vector<art::Ptr<recob::Hit> >& orderedShower,
@@ -197,7 +198,7 @@ private:
 
   /// Projects a 3D point (units [cm]) onto a 2D plane
   /// Returns 2D point (units [cm])
-  TVector2 Project3DPointOntoPlane(TVector3 const& point, geo::PlaneID planeID);
+  TVector2 Project3DPointOntoPlane(TVector3 const& point, int plane, int cryostat = 0);
 
   /// Determines the 'relative wire width', i.e. how spread a shower is across wires of each plane relative to the others
   /// If a shower travels along the wire directions in a particular view, it will have a smaller wire width in that view

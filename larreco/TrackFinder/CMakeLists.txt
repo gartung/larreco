@@ -21,12 +21,13 @@ art_make(
 			    ${ART_FRAMEWORK_SERVICES_OPTIONAL}
 			    ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
 			    ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
-			    art_Persistency_Common canvas_Persistency_Common
-			    art_Utilities canvas_Utilities
+			    art_Persistency_Common
+			    art_Utilities
+			    canvas
 			    ${MF_MESSAGELOGGER}
 			    ${MF_UTILITIES}
 			    ${FHICLCPP}
-			    ${CETLIB}
+			    cetlib cetlib_except
 			    ${CLHEP}
 			    ${ROOT_BASIC_LIB_LIST}
 			    ${G4_LIB_LIST}
@@ -43,7 +44,7 @@ simple_plugin( Track3DKalman "module"
 			 larreco_Calorimetry
 			 lardataobj_AnalysisBase
 			 lardata_Utilities
-			 larsim_RandomUtils_LArSeedService_service
+			 nutools_RandomUtils_NuRandomService_service
 			 nutools_MagneticField_MagneticField_service
 			 nusimdata_SimulationBase
 			 ${ART_FRAMEWORK_CORE}
@@ -53,12 +54,13 @@ simple_plugin( Track3DKalman "module"
 			 ${ART_FRAMEWORK_SERVICES_OPTIONAL}
 			 ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
 			 ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
-			 art_Persistency_Common canvas_Persistency_Common
-			 art_Utilities canvas_Utilities
+			 art_Persistency_Common
+			 art_Utilities
+			 canvas
 			 ${MF_MESSAGELOGGER}
 			 ${MF_UTILITIES}
 			 ${FHICLCPP}
-			 ${CETLIB}
+			 cetlib cetlib_except
 	   
         )
 
@@ -82,27 +84,15 @@ simple_plugin( Track3DKalmanSPS "module"
 			 ${ART_FRAMEWORK_SERVICES_OPTIONAL}
 			 ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
 			 ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
-			 art_Persistency_Common canvas_Persistency_Common
-			 art_Utilities canvas_Utilities
+			 art_Persistency_Common
+			 art_Utilities
+			 canvas
 			 ${MF_MESSAGELOGGER}
 			 ${MF_UTILITIES}
 			 ${FHICLCPP}
-			 ${CETLIB}
+			 cetlib cetlib_except
  	   
        )
-
-
-simple_plugin( DumpTracks "module"
-               lardataobj_RecoBase
-               ${ART_FRAMEWORK_CORE}
-               ${ART_FRAMEWORK_PRINCIPAL}
-               ${MF_MESSAGELOGGER}
-               ${MF_UTILITIES}
-               ${FHICLCPP}
-               ${CETLIB}
-               ${ROOT_BASIC_LIB_LIST}
-               
-        )
 
 
 install_headers()

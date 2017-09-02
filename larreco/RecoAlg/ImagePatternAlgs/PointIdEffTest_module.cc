@@ -13,11 +13,10 @@
 #include "larsim/Simulation/LArG4Parameters.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/GeometryCore.h"
+#include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/RecoBase/Shower.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
@@ -38,7 +37,7 @@
 #include "fhiclcpp/types/Table.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "larreco/RecoAlg/ImagePatternAlgs/PointIdAlg/PointIdAlg.h"
+#include "lardata/ArtDataHelper/MVAReader.h"
 
 #include "TH1.h"
 #include "TTree.h"
@@ -50,25 +49,21 @@
 
 #include <cmath>
 
-namespace nnet
-{
-	typedef std::unordered_map< unsigned int, std::vector< std::vector< art::Ptr<recob::Hit> > > > view_clmap;
-	typedef std::unordered_map< unsigned int, view_clmap > tpc_view_clmap;
-	typedef std::unordered_map< unsigned int, tpc_view_clmap > cryo_tpc_view_clmap;
+#define MVA_LENGTH 4
 
-	class PointIdEffTest;
-}
+namespace nnet {
 
-class nnet::PointIdEffTest : public art::EDAnalyzer {
+class PointIdEffTest : public art::EDAnalyzer {
 public:
-    enum EId { kShower = 0, kTrack = 1 };
+    enum EId { kShower = 0, kTrack = 1, kMichel = 2 };
 
 	struct Config {
 		using Name = fhicl::Name;
 		using Comment = fhicl::Comment;
 
-		fhicl::Table<nnet::PointIdAlg::Config> PointIdAlg {
-			Name("PointIdAlg")
+		fhicl::Table<calo::CalorimetryAlg::Config> CalorimetryAlg {
+			Name("CalorimetryAlg"),
+			Comment("Used to calculate electron lifetime correction.")
 		};
 
 		fhicl::Atom<art::InputTag> SimModuleLabel {
@@ -76,28 +71,13 @@ public:
 			Comment("...")
 		};
 
-		fhicl::Atom<art::InputTag> WireLabel {
-			Name("WireLabel"),
-			Comment("...")
-		};
-
-		fhicl::Atom<art::InputTag> HitsModuleLabel {
-			Name("HitsModuleLabel"),
-			Comment("...")
-		};
-
-		fhicl::Atom<art::InputTag> ClusterModuleLabel {
-			Name("ClusterModuleLabel"),
-			Comment("...")
+		fhicl::Atom<art::InputTag> NNetModuleLabel {
+			Name("NNetModuleLabel"),
+			Comment("NNet outputs tag")
 		};
 
 		fhicl::Atom<bool> SaveHitsFile {
 			Name("SaveHitsFile"),
-			Comment("...")
-		};
-
-		fhicl::Atom<double> Threshold {
-			Name("Threshold"),
 			Comment("...")
 		};
 
@@ -129,25 +109,36 @@ private:
         const std::vector< sim::SimChannel > & channels,
         float & emLike, float & trackLike) const;
 
-	int RunCNN(
+    bool isMuonDecaying(
+        const simb::MCParticle & particle,
+        const std::unordered_map< int, const simb::MCParticle* > & particleMap) const;
+
+	int testCNN(
 	    const std::vector< sim::SimChannel > & channels,
-        const std::vector< art::Ptr<recob::Hit> > & hits);
+        const std::vector< art::Ptr<recob::Hit> > & hits,
+        const std::array<float, MVA_LENGTH> & cnn_out,
+        const std::vector< anab::FeatureVector<MVA_LENGTH> > & hit_outs);
 
 	int fRun, fEvent;
     float fMcDepEM, fMcDepTrack, fMcFractionEM;
-    float fHitEM_0p5, fHitTrack_0p5, fHitMcFractionEM;
+    float fHitEM_0p5, fHitTrack_0p5, fHitMichel_0p5, fHitMcFractionEM;
+    float fHitEM_mc, fpEM;
+    float fHitMichel_mc, fpMichel_hit, fpMichel_cl;
+    float fOutTrk, fOutEM, fOutNone;
     float fHitEM_0p85, fHitTrack_0p85;
     float fTotHit, fCleanHit;
 
     //const int kEffSize = 100;
     float fHitsEM_OK_0p5[100], fHitsTrack_OK_0p5[100];
+    float fHitsMichel_OK_0p5[100], fHitsMichel_False_0p5[100];
     float fHitsEM_OK_0p85[100], fHitsTrack_OK_0p85[100];
     float fHitRecoEM[100], fHitRecoFractionEM[100];
 
 	int fMcPid;
 	int fClSize;
 	int fPure;
-	double fPidValue;
+	double fPidValue; // P(track-like)
+	
 
 	int fTrkOk[100], fTrkBad[100];
 	int fShOk[100], fShBad[100];
@@ -155,37 +146,31 @@ private:
 
 	double fElectronsToGeV;
 
-	TTree *fEventTree, *fClusterTree;
+	TTree *fEventTree, *fClusterTree, *fHitTree;
 
 	std::ofstream fHitsOutFile;
 
-	nnet::PointIdAlg fPointIdAlg;
-    double fThreshold;
 	unsigned int fView;
 
 	geo::GeometryCore const* fGeometry;
 
 	std::unordered_map< int, const simb::MCParticle* > fParticleMap;
 
-	cryo_tpc_view_clmap fClMap;	
-
+    calo::CalorimetryAlg fCalorimetryAlg;
 	art::InputTag fSimulationProducerLabel;
-	art::InputTag fWireProducerLabel;
-	art::InputTag fHitsModuleLabel;
-	art::InputTag fClusterModuleLabel;
+	art::InputTag fNNetModuleLabel;
 	bool fSaveHitsFile;
 };
+
+} // namespace nnet
 
 nnet::PointIdEffTest::PointIdEffTest(nnet::PointIdEffTest::Parameters const& config) : art::EDAnalyzer(config),
 	fMcPid(-1), fClSize(0),
 
- 	fPointIdAlg(config().PointIdAlg()),
-	fThreshold(config().Threshold()),
 	fView(config().View()),
+	fCalorimetryAlg(config().CalorimetryAlg()),
 	fSimulationProducerLabel(config().SimModuleLabel()),
-	fWireProducerLabel(config().WireLabel()),
-	fHitsModuleLabel(config().HitsModuleLabel()),
-	fClusterModuleLabel(config().ClusterModuleLabel()),
+	fNNetModuleLabel(config().NNetModuleLabel()),
 	fSaveHitsFile(config().SaveHitsFile())
 {
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());
@@ -208,6 +193,7 @@ void nnet::PointIdEffTest::beginJob()
     fEventTree->Branch("fMcDepTrack", &fMcDepTrack, "fMcDepTrack/F");
     fEventTree->Branch("fMcFractionEM", &fMcFractionEM, "fMcFractionEM/F");
     fEventTree->Branch("fHitEM_0p5", &fHitEM_0p5, "fHitEM_0p5/F");
+    fEventTree->Branch("fHitMichel_0p5", &fHitMichel_0p5, "fHitMichel_0p5/F");
     fEventTree->Branch("fHitTrack_0p5", &fHitTrack_0p5, "fHitTrack_0p5/F");
     fEventTree->Branch("fHitMcFractionEM", &fHitMcFractionEM, "fHitMcFractionEM/F");
     fEventTree->Branch("fHitEM_0p85", &fHitEM_0p85, "fHitEM_0p85/F");
@@ -216,6 +202,8 @@ void nnet::PointIdEffTest::beginJob()
 
     fEventTree->Branch("fHitsEM_OK_0p5", fHitsEM_OK_0p5, "fHitsEM_OK_0p5[100]/F");
     fEventTree->Branch("fHitsTrack_OK_0p5", fHitsTrack_OK_0p5, "fHitsTrack_OK_0p5[100]/F");
+    fEventTree->Branch("fHitsMichel_OK_0p5", fHitsMichel_OK_0p5, "fHitsMichel_OK_0p5[100]/F");
+    fEventTree->Branch("fHitsMichel_False_0p5", fHitsMichel_False_0p5, "fHitsMichel_False_0p5[100]/F");
 
     fEventTree->Branch("fHitsEM_OK_0p85", fHitsEM_OK_0p85, "fHitsEM_OK_0p85[100]/F");
     fEventTree->Branch("fHitsTrack_OK_0p85", fHitsTrack_OK_0p85, "fHitsTrack_OK_0p85[100]/F");
@@ -228,6 +216,18 @@ void nnet::PointIdEffTest::beginJob()
 	fClusterTree->Branch("fMcPid", &fMcPid, "fMcPid/I");
 	fClusterTree->Branch("fClSize", &fClSize, "fClSize/I");
 	fClusterTree->Branch("fPidValue", &fPidValue, "fPidValue/D");
+	fClusterTree->Branch("fpMichel_cl", &fpMichel_cl, "fpMichel_cl/F");
+
+    fHitTree = tfs->make<TTree>("hits","hits info");
+    fHitTree->Branch("fRun", &fRun, "fRun/I");
+    fHitTree->Branch("fEvent", &fEvent, "fEvent/I");
+    fHitTree->Branch("fHitEM_mc", &fHitEM_mc, "fHitEM_mc/F");
+    fHitTree->Branch("fpEM", &fpEM, "fpEM/F");
+    fHitTree->Branch("fHitMichel_mc", &fHitMichel_mc, "fHitMichel_mc/F");
+    fHitTree->Branch("fpMichel_hit", &fpMichel_hit, "fpMichel_hit/F");
+    fHitTree->Branch("fOutTrk", &fOutTrk, "fOutTrk/F");
+    fHitTree->Branch("fOutEM", &fOutEM, "fOutEM/F");
+    fHitTree->Branch("fOutNone", &fOutNone, "fOutNone/F");
 
 	if (fSaveHitsFile) fHitsOutFile.open("hits_pid.prn");
 
@@ -261,17 +261,18 @@ void nnet::PointIdEffTest::endJob()
 
         //std::cout << "Threshold " << thr << "  fShErr " << shErr << " fTrkErr " << trkErr << " sum:" << shErr + trkErr <<  std::endl;
 	}
-	std::cout << "Total " << fTotal << std::endl;
+	// std::cout << "Total " << fTotal << std::endl;
 }
 
 void nnet::PointIdEffTest::cleanup(void)
 {
-    fClMap.clear();
+    fParticleMap.clear();
 
     fMcDepEM = 0; fMcDepTrack = 0;
     fMcFractionEM = 0;
     fHitEM_0p5 = 0; fHitTrack_0p5 = 0;
     fHitEM_0p85 = 0; fHitTrack_0p85 = 0;
+    fHitMichel_0p5 = 0;
     fHitMcFractionEM = 0;
     fTotHit = 0; fCleanHit = 0;
 
@@ -279,146 +280,85 @@ void nnet::PointIdEffTest::cleanup(void)
     {
         fHitsEM_OK_0p5[i] = 0; fHitsTrack_OK_0p5[i] = 0;
         fHitsEM_OK_0p85[i] = 0; fHitsTrack_OK_0p85[i] = 0;
+        fHitsMichel_OK_0p5[i] = 0; fHitsMichel_False_0p5[i] = 0;
         fHitRecoEM[i] = 0; fHitRecoFractionEM[i] = 0;
     }
 }
 
 void nnet::PointIdEffTest::analyze(art::Event const & e)
 {
-    cleanup(); // remove everything from member vectors and maps
+    cleanup(); // remove everything from members
 
 	fRun = e.run();
 	fEvent = e.id().event();
-	std::cout << "event " << fEvent << std::endl;
+	// std::cout << "event " << fEvent << std::endl;
 
 	// access to MC information
 	
 	// MC particles list
 	auto particleHandle = e.getValidHandle< std::vector<simb::MCParticle> >(fSimulationProducerLabel);
-	std::vector< art::Ptr<simb::MCParticle> > particleList;
-	art::fill_ptr_vector(particleList, particleHandle);
-
-	for (auto const& particle : *particleHandle)
-	{
-		fParticleMap[particle.TrackId()] = &particle;
-	}
+	for (auto const& particle : *particleHandle) { fParticleMap[particle.TrackId()] = &particle; }
 
 	// SimChannels
 	auto simChannelHandle = e.getValidHandle< std::vector<sim::SimChannel> >(fSimulationProducerLabel);
-	std::vector< art::Ptr<sim::SimChannel> > channelList;
-	art::fill_ptr_vector(channelList, simChannelHandle);
 
-    countTruthDep(*simChannelHandle, fMcDepEM, fMcDepTrack);
+	countTruthDep(*simChannelHandle, fMcDepEM, fMcDepTrack);
 
-	// output from reconstruction
+    // output from cnn's
 
-	// wires
-	auto wireHandle = e.getValidHandle< std::vector<recob::Wire> >(fWireProducerLabel);
-
-	// hits
-	auto hitListHandle = e.getValidHandle< std::vector<recob::Hit> >(fHitsModuleLabel);
-	std::vector< art::Ptr<recob::Hit> > hitList;
-	art::fill_ptr_vector(hitList, hitListHandle);
-
-	// clusters
-	auto clusterListHandle = e.getValidHandle< std::vector<recob::Cluster> >(fClusterModuleLabel);
-	std::vector< art::Ptr<recob::Cluster> > clusterList;
-	art::fill_ptr_vector(clusterList, clusterListHandle);
- 
-	const art::FindManyP<recob::Hit> hitsFromClusters(clusterListHandle, e, fClusterModuleLabel);
-	for (size_t clid = 0; clid != clusterListHandle->size(); ++clid)
-	{
-		auto const& hits = hitsFromClusters.at(clid);
-		if (!hits.size()) continue;
-
-		unsigned int cryo = hits.front()->WireID().Cryostat;
-		unsigned int tpc = hits.front()->WireID().TPC;
-		unsigned int view = hits.front()->WireID().Plane;
-
-		fClMap[cryo][tpc][view].push_back(hits);
-	}
-
-    for (auto const & hi : hitList)
-	{
-		bool unclustered = true;
-		for (size_t k = 0; k < hitsFromClusters.size(); ++k)
-		{
-			auto v = hitsFromClusters.at(k);
-			for (auto const & hj : v)
-			{
-				if (hi.key() == hj.key()) { unclustered = false; break; }
-			}
-			if (!unclustered) break;
-		}
-
-		if (unclustered)
-		{
-			unsigned int cryo = hi->WireID().Cryostat;
-		    unsigned int tpc = hi->WireID().TPC;
-		    unsigned int view = hi->WireID().Plane;
-
-            std::vector< art::Ptr<recob::Hit> > singlehit;
-            singlehit.push_back(hi);
-
-		    fClMap[cryo][tpc][view].push_back(singlehit);
-		}
-	}
-
-	for (auto const& c : fClMap)
-	{
-		unsigned int cryo = c.first;
-		for (auto const& t : c.second)
-		{
-			unsigned int tpc = t.first;
-			for (auto const& v : t.second)
-			{
-				unsigned int view = v.first;
-				if (view == fView)
-				{
-					fPointIdAlg.setWireDriftData(*wireHandle, view, tpc, cryo);
-
-					for (auto const& h : v.second)
-					{
-						RunCNN(*simChannelHandle, h);
-					}
-				}
-			}
-		}
-	}
-
-    if (fTotHit > 0) fCleanHit = fCleanHit / fTotHit;
-    else fCleanHit = 0;
-
-    double totMcDep = fMcDepEM + fMcDepTrack;
-    if (totMcDep) fMcFractionEM = fMcDepEM / totMcDep;
-    else fMcFractionEM = 0;
-
-    double totEmTrk0p5 = fHitEM_0p5 + fHitTrack_0p5;
-    if (totEmTrk0p5 > 0) fHitMcFractionEM = fHitEM_0p5 / totEmTrk0p5;
-    else fHitMcFractionEM = 0;
-
-    for (size_t i = 0; i < 100; ++i)
+    anab::MVAReader<recob::Hit, MVA_LENGTH> hitResults(e, fNNetModuleLabel);                     // hit-by-hit outpus just to be dumped to file for debugging
+    auto cluResults = anab::MVAReader<recob::Cluster, MVA_LENGTH>::create(e, fNNetModuleLabel);  // outputs for clusters recovered in not-throwing way 
+    if (cluResults)
     {
-        if (fHitEM_0p5 > 0) fHitsEM_OK_0p5[i] /= fHitEM_0p5;
-        else fHitsEM_OK_0p5[i] = 0;
+    	const art::FindManyP<recob::Hit> hitsFromClusters(cluResults->dataHandle(), e, cluResults->dataTag());
 
-        if (fHitTrack_0p5 > 0) fHitsTrack_OK_0p5[i] /= fHitTrack_0p5;
-        else fHitsTrack_OK_0p5[i] = 0;
+	    for (size_t c = 0; c < cluResults->size(); ++c)
+	    {
+	        const recob::Cluster & clu = cluResults->item(c);
 
-        if (fHitEM_0p85 > 0) fHitsEM_OK_0p85[i] /= fHitEM_0p85;
-        else fHitsEM_OK_0p85[i] = 0;
+            if (clu.Plane().Plane != fView) continue;
 
-        if (fHitTrack_0p85 > 0) fHitsTrack_OK_0p85[i] /= fHitTrack_0p85;
-        else fHitsTrack_OK_0p85[i] = 0;
+    	    const std::vector< art::Ptr<recob::Hit> > & hits = hitsFromClusters.at(c);
+    	    std::array<float, MVA_LENGTH> cnn_out = cluResults->getOutput(c);
+
+            testCNN(*simChannelHandle, hits, cnn_out, hitResults.outputs()); // test hits in the cluster
+    	}
+
+        if (fTotHit > 0) fCleanHit = fCleanHit / fTotHit;
+        else fCleanHit = 0;
+
+        double totMcDep = fMcDepEM + fMcDepTrack;
+        if (totMcDep) fMcFractionEM = fMcDepEM / totMcDep;
+        else fMcFractionEM = 0;
+
+        double totEmTrk0p5 = fHitEM_0p5 + fHitTrack_0p5;
+        if (totEmTrk0p5 > 0) fHitMcFractionEM = fHitEM_0p5 / totEmTrk0p5;
+        else fHitMcFractionEM = 0;
+
+        for (size_t i = 0; i < 100; ++i)
+        {
+            if (fHitEM_0p5 > 0) fHitsEM_OK_0p5[i] /= fHitEM_0p5;
+            else fHitsEM_OK_0p5[i] = 0;
+
+            if (fHitTrack_0p5 > 0) fHitsTrack_OK_0p5[i] /= fHitTrack_0p5;
+            else fHitsTrack_OK_0p5[i] = 0;
+
+            if (fHitEM_0p85 > 0) fHitsEM_OK_0p85[i] /= fHitEM_0p85;
+            else fHitsEM_OK_0p85[i] = 0;
+
+            if (fHitTrack_0p85 > 0) fHitsTrack_OK_0p85[i] /= fHitTrack_0p85;
+            else fHitsTrack_OK_0p85[i] = 0;
 
 
-        if (totEmTrk0p5 > 0) fHitRecoFractionEM[i] = fHitRecoEM[i] / totEmTrk0p5;
-        else fHitRecoFractionEM[i] = 0;
+            if (totEmTrk0p5 > 0) fHitRecoFractionEM[i] = fHitRecoEM[i] / totEmTrk0p5;
+            else fHitRecoFractionEM[i] = 0;
+        }
+
+    	fEventTree->Fill();
     }
+    else { mf::LogWarning("TrainingDataAlg") << "MVA FOR CLUSTERS NOT FOUND"; }
 
-	fEventTree->Fill();
-
-	cleanup(); // remove everything from member vectors and maps
+	cleanup(); // remove everything from members
 }
 
 /******************************************/
@@ -472,39 +412,63 @@ void nnet::PointIdEffTest::countTruthDep(
 }
 
 /******************************************/
+bool nnet::PointIdEffTest::isMuonDecaying(const simb::MCParticle & particle,
+    const std::unordered_map< int, const simb::MCParticle* > & particleMap) const
+{
+    bool hasElectron = false, hasNuMu = false, hasNuE = false;
 
-int nnet::PointIdEffTest::RunCNN(
+    int pdg = abs(particle.PdgCode());
+	if ((pdg == 13) && (particle.EndProcess() == "FastScintillation")) // potential muon decay at rest
+	{
+		unsigned int nSec = particle.NumberDaughters();
+		for (size_t d = 0; d < nSec; ++d)
+		{
+			auto d_search = particleMap.find(particle.Daughter(d));
+			if (d_search != particleMap.end())
+			{
+				auto const & daughter = *((*d_search).second);
+				int d_pdg = abs(daughter.PdgCode());
+				if (d_pdg == 11) hasElectron = true;
+				else if (d_pdg == 14) hasNuMu = true;
+				else if (d_pdg == 12) hasNuE = true;
+			}
+		}
+	}
+
+	return (hasElectron && hasNuMu && hasNuE);
+}
+
+int nnet::PointIdEffTest::testCNN(
     const std::vector< sim::SimChannel > & channels,
-    const std::vector< art::Ptr<recob::Hit> > & hits)
+    const std::vector< art::Ptr<recob::Hit> > & hits,
+    const std::array<float, MVA_LENGTH> & cnn_out,
+    const std::vector< anab::FeatureVector<MVA_LENGTH> > & hit_outs)
 {
 	fClSize = hits.size();
 
+    std::unordered_map<int, int> mcHitPid;
+
 	fPidValue = 0;
-	if (fPointIdAlg.NClasses() == 1)
+	double p_trk_or_sh = cnn_out[0] + cnn_out[1];
+	if (p_trk_or_sh > 0) { fPidValue = cnn_out[0] / p_trk_or_sh; }
+
+    double p_michel = 0;
+    if (MVA_LENGTH == 4) { fpMichel_cl = cnn_out[2]; }
+
+	double totEnSh = 0, totEnTrk = 0, totEnMichel = 0;
+	for (auto const & hit: hits)
 	{
-		fPidValue = fPointIdAlg.predictIdValue(hits);
-	}
-	else
-	{
-		auto vout = fPointIdAlg.predictIdVector(hits);
-		double p_trk_or_sh = vout[0] + vout[1];
-		if (p_trk_or_sh > 0) fPidValue = vout[0] / p_trk_or_sh;
-	}
-
-
-	double totEnSh = 0, totEnTrk = 0;
-	size_t insideFidArea = 0;
-
-	for (auto const& hit: hits)
-	{
-		if (!fPointIdAlg.isInsideFiducialRegion(hit->WireID().Wire, hit->PeakTime())) continue;
-		insideFidArea++;
-
 		// the channel associated with this hit.
 		auto hitChannelNumber = hit->Channel();
 
-        double hitEnSh = 0, hitEnTrk = 0;
-		for (auto const& channel : channels)
+		double hitEn = 0, hitEnSh = 0, hitEnTrk = 0, hitEnMichel = 0;
+        
+		auto const & vout = hit_outs[hit.key()];
+		fOutTrk = vout[0]; fOutEM = vout[1];
+		if (MVA_LENGTH == 4) { p_michel = vout[2]; fOutNone = vout[3]; }
+		else { fOutNone = vout[2]; }
+
+		for (auto const & channel : channels)
 		{
 			if (channel.Channel() != hitChannelNumber) continue;
 
@@ -516,37 +480,38 @@ int nnet::PointIdEffTest::RunCNN(
 				if (std::abs(hit->TimeDistanceAsRMS(time)) < 1.0)
 				{
 					// loop over the energy deposits.
-					auto const& energyDeposits = timeSlice.second;
+					auto const & energyDeposits = timeSlice.second;
 		
-					for (auto const& energyDeposit : energyDeposits)
+					for (auto const & energyDeposit : energyDeposits)
 					{
 						int trackID = energyDeposit.trackID;
 
 						double energy = energyDeposit.numElectrons * fElectronsToGeV * 1000;
+						hitEn += energy;
 
-						if (trackID < 0)
-						{
-							hitEnSh += energy;
-						}
+						if (trackID < 0) { hitEnSh += energy; } // EM activity
 						else if (trackID > 0)
 						{
 							auto search = fParticleMap.find(trackID);
-							bool found = true;
-							if (search == fParticleMap.end())
+							if (search != fParticleMap.end())
 							{
-								mf::LogWarning("TrainingDataAlg") << "PARTICLE NOT FOUND";
-								found = false;
-							}
-						
-							int pdg = 0;
-							if (found)
-							{
-								const simb::MCParticle& particle = *((*search).second);
-								if (!pdg) pdg = particle.PdgCode(); // not EM activity so read what PDG it is
-							}
+								const simb::MCParticle & particle = *((*search).second);
+								int pdg = particle.PdgCode(); // not EM activity so read what PDG it is
 
-							if ((pdg == 11) || (pdg == -11) || (pdg == 22)) hitEnSh += energy;
-							else hitEnTrk += energy;
+							    if ((pdg == 11) || (pdg == -11) || (pdg == 22)) hitEnSh += energy;
+							    else hitEnTrk += energy;
+
+							    if (pdg == 11) // electron, check if it is Michel
+                                {
+                  	                auto msearch = fParticleMap.find(particle.Mother());
+	    					        if (msearch != fParticleMap.end())
+	    					        {
+	    					    	    auto const & mother = *((*msearch).second);
+	    		                        if (isMuonDecaying(mother, fParticleMap)) { hitEnMichel += energy; }
+	    					        }
+                                }
+                            }
+							else { mf::LogWarning("TrainingDataAlg") << "PARTICLE NOT FOUND"; }
 						}
 					}
 				}
@@ -554,8 +519,9 @@ int nnet::PointIdEffTest::RunCNN(
 		}
 		totEnSh += hitEnSh;
 		totEnTrk += hitEnTrk;
+		totEnMichel += hitEnMichel;
 
-        double hitAdc = hit->SummedADC() * fPointIdAlg.LifetimeCorrection(hit->PeakTime());
+        double hitAdc = hit->SummedADC() * fCalorimetryAlg.LifetimeCorrection(hit->PeakTime());
 		fTotHit += hitAdc;
 
         int hitPidMc_0p5 = -1;
@@ -569,6 +535,12 @@ int nnet::PointIdEffTest::RunCNN(
 		    fHitTrack_0p5 += hitAdc;
 		    hitPidMc_0p5 = nnet::PointIdEffTest::kTrack;
 		}
+		mcHitPid[hit.key()] = hitPidMc_0p5;
+		auto const & hout = hit_outs[hit.key()];
+	    fpEM = 0;
+        float hit_trk_or_sh = hout[0] + hout[1]; // 0:trk, 1:em, can also get index by name
+        if (hit_trk_or_sh > 0) fpEM = hout[1] / hit_trk_or_sh;
+		fHitEM_mc = hitEnSh / (hitEnSh + hitEnTrk);
 
         int hitPidMc_0p85 = -1;
         double hitDep = hitEnSh + hitEnTrk;
@@ -583,10 +555,27 @@ int nnet::PointIdEffTest::RunCNN(
 		    hitPidMc_0p85 = nnet::PointIdEffTest::kTrack;
 		}
 
+
+        bool mcMichel = false;
+        fpMichel_hit = p_michel;
+        fHitMichel_mc = hitEnMichel / hitEn;
+        if (fHitMichel_mc > 0.5)
+        {
+            fHitMichel_0p5 += hitAdc; mcMichel = true;
+        }
+
+        fHitTree->Fill();
+
 		for (size_t i = 0; i < 100; ++i)
 		{
 		    double thr = 0.01 * i;
-		    
+
+            if (p_michel > thr)
+            {
+                if (mcMichel) { fHitsMichel_OK_0p5[i] += hitAdc; }
+                else { fHitsMichel_False_0p5[i] += hitAdc; }
+            }
+
             int recoPid = -1;
     	    if (fPidValue < thr)
     	    {
@@ -618,16 +607,13 @@ int nnet::PointIdEffTest::RunCNN(
     // ************ count clusters *************
 
 	fMcPid = -1;
-	if (insideFidArea > 2 * hits.size() / 3) // 2/3 of the cluster hits inside fiducial area
+	if (totEnSh > 1.5 * totEnTrk) // major energy deposit from EM activity
 	{
-		if (totEnSh > 1.5 * totEnTrk) // major energy deposit from EM activity
-		{
-			fMcPid = nnet::PointIdEffTest::kShower;
-		}
-		else if (totEnTrk > 1.5 * totEnSh)
-		{
-			fMcPid = nnet::PointIdEffTest::kTrack;
-		}
+		fMcPid = nnet::PointIdEffTest::kShower;
+	}
+	else if (totEnTrk > 1.5 * totEnSh)
+	{
+		fMcPid = nnet::PointIdEffTest::kTrack;
 	}
 
     for (size_t i = 0; i < 100; ++i)
@@ -658,16 +644,30 @@ int nnet::PointIdEffTest::RunCNN(
 	    {
 	    	fNone++;
 	    }
-	}	
+
+	}
 	fTotal++;
 
 	if (fSaveHitsFile)
 	{
-		for (auto const h : hits)
+		for (auto const & h : hits)
 		{
+		    auto const & vout = hit_outs[h.key()];
+	    	double hitPidValue = 0;
+        	double h_trk_or_sh = vout[0] + vout[1];
+        	if (h_trk_or_sh > 0) hitPidValue = vout[0] / h_trk_or_sh;
+
 			fHitsOutFile << fRun << " " << fEvent << " "
 				<< h->WireID().TPC  << " " << h->WireID().Wire << " " << h->PeakTime() << " "
-				<< fMcPid << " " << fPidValue << std::endl;
+				<< h->SummedADC() * fCalorimetryAlg.LifetimeCorrection(h->PeakTime()) << " "
+				<< mcHitPid[h.key()] << " " << fPidValue << " " << hitPidValue;
+
+			if (MVA_LENGTH == 4)
+			{
+			    fHitsOutFile << " " << vout[2]; // is michel?
+			}
+
+			fHitsOutFile << std::endl;
 		}
 	}
 

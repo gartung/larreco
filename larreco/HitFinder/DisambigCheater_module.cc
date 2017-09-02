@@ -22,7 +22,7 @@
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardata/RecoBaseArt/HitCreator.h"
+#include "lardata/ArtDataHelper/HitCreator.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larsim/MCCheater/BackTracker.h"
 
@@ -267,9 +267,16 @@ namespace hit{
 	// NearestWire seems to be missing some correction that is applied in LArG4, and is
 	// sometimes off by one or two wires. Use it and then correct it given channel
 	/// \todo: Why would an IDE ossociated with a hit return a nearest wire not on the hit's channel? Usually only one off.
-	geo::WireID IdeWid = geom->NearestWireID(  xyzIde,
-						   cwids[0].Plane,
-						   tpc,   cryo  );
+	geo::WireID IdeWid;
+	try {
+	  IdeWid = geom->NearestWireID(xyzIde, cwids[0].Plane, tpc, cryo);
+	}
+	catch (geo::InvalidWireError const& e) { // adopt suggestion if possible
+	  if (!e.hasSuggestedWire()) throw;
+	  IdeWid = e.suggestedWireID();
+	  mf::LogError("DisambigCheat") << "Detected a point out of its wire plane:\n"
+	    << e.what() << "\nUsing suggested wire " << IdeWid << "\n";
+	}
 	geo::WireID storethis = IdeWid; // default...
 	bool foundmatch(false);	
 	for( size_t w=0; w<cwids.size(); w++ ){	 
