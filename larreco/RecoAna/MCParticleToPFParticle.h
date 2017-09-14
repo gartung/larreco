@@ -66,6 +66,7 @@ namespace lar {
         typedef std::map< int, PFParticleVec >                               TrackIDToPFParticleVecMap;  // Maps Track ID's to the PFParticles associated to them
         typedef std::map< art::Ptr< recob::PFParticle >, TrackIDToHit2DMap > PFParticleToTrackHit2DMap;  // Maps PFParticles to a map of associated Track ID's to their hits
         typedef std::map< art::Ptr< recob::PFParticle >, int >               PFParticleHitCntMap;        // Allows us to count reco hits per PFParticle directly
+        typedef std::map< int, std::vector< int > >                          TrackIDToMatchedPFParticleHitCntMap;
 
 
         // Define a function to fill the above data structures
@@ -80,7 +81,8 @@ namespace lar {
                                  const HitToParticleMap&                                HitToParticle,
                                  PFParticleToTrackHit2DMap&                             PFParticleToTrackHit2D,
                                  TrackIDToPFParticleVecMap&                             TrackIDtoPFParticles,
-                                 PFParticleHitCntMap&                                   PFParticleHitCnt );
+                                 PFParticleHitCntMap&                                   PFParticleHitCnt,
+                                 TrackIDToMatchedPFParticleHitCntMap&                   TrackIDToMatchedPFParticleHitCnt );
 
         private:
 

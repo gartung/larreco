@@ -453,9 +453,12 @@ void TrackRecoAna::analyze( const art::Event& event )
     // Something to keep track of number of hits associated to a cluster
     std::map< art::Ptr< recob::PFParticle >, int > PFParticleToHitCnt;
 
+    lar::recoana::MCParticleToPFParticle::TrackIDToMatchedPFParticleHitCntMap TrackIDToMatchedPFParticleHitCnt;
+
     // Call the method for building out the PFParticle data structures
     MCParticleToPFParticle->MakePFParticleMaps( event, pfParticleHandle, HitToParticle, 
-                                                PFParticleToTrackHit, TrackIDToPFParticle, PFParticleToHitCnt );
+                                                PFParticleToTrackHit, TrackIDToPFParticle, PFParticleToHitCnt,
+                                                TrackIDToMatchedPFParticleHitCnt );
 
     // Recover the association from the PFParticle to the vertex
     art::FindManyP< recob::Vertex > pfParticleVertexAssns( pfParticleHandle, event, fPFParticleProducerLabel );
@@ -480,6 +483,7 @@ void TrackRecoAna::analyze( const art::Event& event )
 
         // Did this mc particle leave hits in the TPC?
         lar::recoana::MCParticleToPFParticle::ParticleToHitMap::iterator ParticleToHitItr = ParticleToHit.find( ParticleTrackID );
+        lar::recoana::MCParticleToPFParticle::TrackIDToMatchedPFParticleHitCntMap::iterator TrackIDToMatchedPFParticleHitCntItr = TrackIDToMatchedPFParticleHitCnt.find( ParticleTrackID );
 
         // Let's get the total number of reconstructed hits that are created by this MCParticle
         // Count number of hits in each view
@@ -503,7 +507,8 @@ void TrackRecoAna::analyze( const art::Event& event )
             const auto& pfpart = TrackIDToPFParticleItr->second.at(0);
             fNHitsBestMatchedPFParticle[fNMCParticles] = PFParticleToTrackHit[pfpart][ParticleTrackID].size();
             fBestMatchedPFParticlePDGCode[fNMCParticles] = pfpart->PdgCode();
-            fBestMatchedPFParticleNHits[fNMCParticles] = PFParticleToHitCnt[pfpart];
+            if ( TrackIDToMatchedPFParticleHitCntItr != TrackIDToMatchedPFParticleHitCnt.end() ) 
+                fBestMatchedPFParticleNHits[fNMCParticles] = TrackIDToMatchedPFParticleHitCntItr->second.at(0);
             fBestMatchedPFParticleID[fNMCParticles] = pfpart.key();
 
             // Fill the reconstructed vertex associated to the PFParticle

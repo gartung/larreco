@@ -139,7 +139,8 @@ void lar::recoana::MCParticleToPFParticle::MakePFParticleMaps( const art::Event&
                                                                const HitToParticleMap&                                HitToParticle,
                                                                PFParticleToTrackHit2DMap&                             PFParticleToTrackHit2D,
                                                                TrackIDToPFParticleVecMap&                             TrackIDToPFParticles,
-                                                               PFParticleHitCntMap&                                   PFParticleToHitCnt) {
+                                                               PFParticleHitCntMap&                                   PFParticleToHitCnt,
+                                                               TrackIDToMatchedPFParticleHitCntMap&                   TrackIDToMatchedPFParticleHitCnt ) {
 
     // Recover pfparticle to cluster associations
     art::FindManyP< recob::Cluster > pfParticleClusterAssns( pfParticleHandle, event, fPFParticleProducerLabel );
@@ -237,7 +238,19 @@ void lar::recoana::MCParticleToPFParticle::MakePFParticleMaps( const art::Event&
 
     // Sort the PFParticles in the track ID to PFParticle map
     for ( auto& trackItr : TrackIDToPFParticles ) {
-        std::sort( trackItr.second.begin(), trackItr.second.end(), SortPFParticleVec( PFParticleToHitCnt ) );
+        PFParticleHitCntMap PFParticleToMatchedHitCnt;
+        for ( auto& pfpart : trackItr.second ) {
+            TrackIDToHit2DMap& trackIdToMatchedHits = PFParticleToTrackHit2D[pfpart];
+            TrackIDToHit2DMap::const_iterator TrackIDToHit2DMapItr = trackIdToMatchedHits.find( trackItr.first );
+            PFParticleToMatchedHitCnt[pfpart] = trackIdToMatchedHits[trackItr.first].size();
+        }
+        std::sort( trackItr.second.begin(), trackItr.second.end(), SortPFParticleVec( PFParticleToMatchedHitCnt ) );
+        TrackIDToMatchedPFParticleHitCnt[trackItr.first] = std::vector< int >();
+        std::vector< int >& MatchedHitCnt = TrackIDToMatchedPFParticleHitCnt[trackItr.first];
+        for ( size_t iPFPart = 0; iPFPart < trackItr.second.size(); ++iPFPart ) {
+            auto& pfpart = trackItr.second.at(iPFPart);
+            MatchedHitCnt[iPFPart] = PFParticleToMatchedHitCnt[pfpart];
+        }
         // for ( size_t ipfpart = 0; ipfpart < trackItr.second.size(); ++ipfpart ) {
         //     art::Ptr< recob::PFParticle > pfpart = trackItr.second.at( ipfpart );
         //     mf::LogDebug("MCParticleToPFParticle::MakePFParticleMaps") << "PFParticle " << ipfpart << ": number of hits: " << PFParticleToHitCnt[pfpart];
