@@ -245,11 +245,14 @@ void lar::recoana::MCParticleToPFParticle::MakePFParticleMaps( const art::Event&
             PFParticleToMatchedHitCnt[pfpart] = trackIdToMatchedHits[trackItr.first].size();
         }
         std::sort( trackItr.second.begin(), trackItr.second.end(), SortPFParticleVec( PFParticleToMatchedHitCnt ) );
+        if ( PFParticleToMatchedHitCnt.size() != trackItr.second.size() ) 
+            mf::LogError("MCParticleToPFParticle::MakePFParticleMaps") << "===>> The size of PFParticleToMatchedHitCnt (" << PFParticleToMatchedHitCnt.size() << ") and the number of matched PFParticles (" << trackItr.second.size() << ") don't match!";
         TrackIDToMatchedPFParticleHitCnt[trackItr.first] = std::vector< int >();
         std::vector< int >& MatchedHitCnt = TrackIDToMatchedPFParticleHitCnt[trackItr.first];
+        // MatchedHitCnt.reserve( PFParticleToMatchedHitCnt.size() );
         for ( size_t iPFPart = 0; iPFPart < trackItr.second.size(); ++iPFPart ) {
             auto& pfpart = trackItr.second.at(iPFPart);
-            MatchedHitCnt[iPFPart] = PFParticleToMatchedHitCnt[pfpart];
+            MatchedHitCnt.push_back( PFParticleToMatchedHitCnt[pfpart] );
         }
         // for ( size_t ipfpart = 0; ipfpart < trackItr.second.size(); ++ipfpart ) {
         //     art::Ptr< recob::PFParticle > pfpart = trackItr.second.at( ipfpart );
