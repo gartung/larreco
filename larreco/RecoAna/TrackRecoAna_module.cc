@@ -392,6 +392,12 @@ void TrackRecoAna::analyze( const art::Event& event )
         return;
     }
 
+    if ( pfParticleHandle->empty() ) {
+        mf::LogWarning("TrackRecoAna") << "===>> PFParticle collection is empty.";
+        fAnaTree->Fill();
+        return;
+    }
+
     // Recover the MC particles
     art::Handle< std::vector< simb::MCParticle > > particleHandle;
     event.getByLabel( fSimulationProducerLabel, particleHandle );
@@ -504,16 +510,21 @@ void TrackRecoAna::analyze( const art::Event& event )
 
             // Look for the best matched PFParticle by counting hits
             // Since we have sorted the PFParticles in the TrackIDToPFParticle map, the first PFParticle is the one
+            if ( TrackIDToPFParticleItr->second.empty() ) continue;
             const auto& pfpart = TrackIDToPFParticleItr->second.at(0);
             fNHitsBestMatchedPFParticle[fNMCParticles] = PFParticleToTrackHit[pfpart][ParticleTrackID].size();
             fBestMatchedPFParticlePDGCode[fNMCParticles] = pfpart->PdgCode();
-            if ( TrackIDToMatchedPFParticleHitCntItr != TrackIDToMatchedPFParticleHitCnt.end() ) 
-                fBestMatchedPFParticleNHits[fNMCParticles] = TrackIDToMatchedPFParticleHitCntItr->second.at(0);
+            if ( TrackIDToMatchedPFParticleHitCntItr != TrackIDToMatchedPFParticleHitCnt.end() ) {
+                if ( TrackIDToMatchedPFParticleHitCntItr->second.size() > 0 )
+                    fBestMatchedPFParticleNHits[fNMCParticles] = TrackIDToMatchedPFParticleHitCntItr->second.at(0);
+                else fBestMatchedPFParticleNHits[fNMCParticles] = 0;
+            }
             fBestMatchedPFParticleID[fNMCParticles] = pfpart.key();
 
             // Fill the reconstructed vertex associated to the PFParticle
             double xyz[3];
             std::vector< art::Ptr< recob::Vertex > > const& vertices = pfParticleVertexAssns.at( pfpart.key() );
+            if ( vertices.empty() ) continue;
             art::Ptr< recob::Vertex > vertex = vertices.at(0);
             vertex->XYZ( xyz );
             fBestMatchedPFParticleVx[fNMCParticles] = xyz[0];
@@ -576,13 +587,14 @@ void TrackRecoAna::analyze( const art::Event& event )
         }
     }
     std::vector< art::Ptr< recob::Vertex > > const& PVtxs = pfParticleVertexAssns.at( iNuPFParticle );
-    art::Ptr< recob::Vertex > PVtx = PVtxs.at(0);
-    double pvxyz[3];
-    PVtx->XYZ( pvxyz );
-    fRecoPVx = pvxyz[0];
-    fRecoPVy = pvxyz[1];
-    fRecoPVz = pvxyz[2];
-
+    if ( !PVtxs.empty() ) {
+        art::Ptr< recob::Vertex > PVtx = PVtxs.at(0);
+        double pvxyz[3];
+        PVtx->XYZ( pvxyz );
+        fRecoPVx = pvxyz[0];
+        fRecoPVy = pvxyz[1];
+        fRecoPVz = pvxyz[2];
+    }
     fAnaTree->Fill();
 
     return;

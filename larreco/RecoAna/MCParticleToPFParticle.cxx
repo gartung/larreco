@@ -159,7 +159,7 @@ void lar::recoana::MCParticleToPFParticle::MakePFParticleMaps( const art::Event&
         art::Ptr< recob::PFParticle > pfParticle( pfParticleHandle, iPFPart );
 
         // Get the list of clusters associated to this PFParticle
-        std::vector< art::Ptr< recob::Cluster > > clusters = pfParticleClusterAssns.at( pfParticle.key() );
+        std::vector< art::Ptr< recob::Cluster > > const& clusters = pfParticleClusterAssns.at( iPFPart );
 
         // Number 2D hits this PFParticle
         int nPFParticleHits(0);
@@ -239,17 +239,22 @@ void lar::recoana::MCParticleToPFParticle::MakePFParticleMaps( const art::Event&
     // Sort the PFParticles in the track ID to PFParticle map
     for ( auto& trackItr : TrackIDToPFParticles ) {
         PFParticleHitCntMap PFParticleToMatchedHitCnt;
+        int trackID = trackItr.first;
+        if ( trackItr.second.empty() ) continue;
         for ( auto& pfpart : trackItr.second ) {
+            PFParticleToTrackHit2DMap::const_iterator PFParticleToTrackHit2DItr = PFParticleToTrackHit2D.find( pfpart );
+            if ( PFParticleToTrackHit2DItr == PFParticleToTrackHit2D.end() ) continue;
             TrackIDToHit2DMap& trackIdToMatchedHits = PFParticleToTrackHit2D[pfpart];
-            TrackIDToHit2DMap::const_iterator TrackIDToHit2DMapItr = trackIdToMatchedHits.find( trackItr.first );
-            PFParticleToMatchedHitCnt[pfpart] = trackIdToMatchedHits[trackItr.first].size();
+            TrackIDToHit2DMap::const_iterator TrackIDToHit2DMapItr = trackIdToMatchedHits.find( trackID );
+            if ( TrackIDToHit2DMapItr != trackIdToMatchedHits.end() ) PFParticleToMatchedHitCnt[pfpart] = trackIdToMatchedHits[trackID].size();
+            else PFParticleToMatchedHitCnt[pfpart] = 0;
         }
         std::sort( trackItr.second.begin(), trackItr.second.end(), SortPFParticleVec( PFParticleToMatchedHitCnt ) );
+
         if ( PFParticleToMatchedHitCnt.size() != trackItr.second.size() ) 
             mf::LogError("MCParticleToPFParticle::MakePFParticleMaps") << "===>> The size of PFParticleToMatchedHitCnt (" << PFParticleToMatchedHitCnt.size() << ") and the number of matched PFParticles (" << trackItr.second.size() << ") don't match!";
-        TrackIDToMatchedPFParticleHitCnt[trackItr.first] = std::vector< int >();
-        std::vector< int >& MatchedHitCnt = TrackIDToMatchedPFParticleHitCnt[trackItr.first];
-        // MatchedHitCnt.reserve( PFParticleToMatchedHitCnt.size() );
+        TrackIDToMatchedPFParticleHitCnt[trackID] = std::vector< int >();
+        std::vector< int >& MatchedHitCnt = TrackIDToMatchedPFParticleHitCnt[trackID];
         for ( size_t iPFPart = 0; iPFPart < trackItr.second.size(); ++iPFPart ) {
             auto& pfpart = trackItr.second.at(iPFPart);
             MatchedHitCnt.push_back( PFParticleToMatchedHitCnt[pfpart] );
