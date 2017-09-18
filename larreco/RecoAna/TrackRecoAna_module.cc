@@ -512,7 +512,7 @@ void TrackRecoAna::analyze( const art::Event& event )
             // Since we have sorted the PFParticles in the TrackIDToPFParticle map, the first PFParticle is the one
             if ( TrackIDToPFParticleItr->second.empty() ) continue;
             const auto& pfpart = TrackIDToPFParticleItr->second.at(0);
-            fNHitsBestMatchedPFParticle[fNMCParticles] = PFParticleToTrackHit[pfpart][ParticleTrackID].size();
+            fNHitsBestMatchedPFParticle[fNMCParticles] = PFParticleToHitCnt[pfpart];
             fBestMatchedPFParticlePDGCode[fNMCParticles] = pfpart->PdgCode();
             if ( TrackIDToMatchedPFParticleHitCntItr != TrackIDToMatchedPFParticleHitCnt.end() ) {
                 if ( TrackIDToMatchedPFParticleHitCntItr->second.size() > 0 )
