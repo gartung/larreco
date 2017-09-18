@@ -19,6 +19,7 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Services/Optional/TFileService.h"
+#include "art/Framework/Services/System/TriggerNamesService.h"
 #include "larcore/Geometry/Geometry.h"
 
 #include "canvas/Persistency/Common/FindManyP.h"
@@ -334,6 +335,13 @@ void TrajectoryMCSNtuple::analyze(art::Event const & e)
 {
 
   art::ValidHandle<art::TriggerResults> filter = e.getValidHandle<art::TriggerResults>("TriggerResults");
+  size_t ntp =  art::ServiceHandle<art::TriggerNamesService>()->size();
+  size_t ftp = ntp;
+  for (size_t itp=0;itp<ntp;itp++) {
+    //std::cout << art::ServiceHandle<art::TriggerNamesService>()->getTrigPath(itp) << " " << filter->at(itp).accept()  << std::endl;
+    if (art::ServiceHandle<art::TriggerNamesService>()->getTrigPath(itp)=="sel2") ftp = itp;
+  }
+  assert(ftp<ntp);
 
   using namespace std;
   using namespace trkf;
@@ -368,7 +376,7 @@ void TrajectoryMCSNtuple::analyze(art::Event const & e)
     //
     resetTree();
     //
-    passSelII = filter->at(1).accept();
+    passSelII = filter->at(ftp).accept();
     run = e.run();
     subrun = e.subRun();
     eventid = e.event();

@@ -91,7 +91,7 @@ physics: {
 
   filters:       { tpcneutrinoidfilter : @local::microboone_tpcneutrinoidfilter}
 
-  reco:          [ NuMuCCSelectionII, tpcneutrinoidfilter ]
+  sel2:          [ NuMuCCSelectionII, tpcneutrinoidfilter ]
 
   analyzers: {
     trajmcsntupleCosmic: {
@@ -101,7 +101,7 @@ physics: {
       	   inputLabel: pandoraCosmic
       }
       mcsfitter: {@table::mcsfitproducer.fitter}
-      #SelectEvents: [reco]
+      #SelectEvents: [sel2]
     } # trajmcsntupleCosmic
     trajmcsntupleNu: {
       module_label: TrajectoryMCSNtuple
@@ -110,7 +110,7 @@ physics: {
            inputLabel: pandoraNu
       }
       mcsfitter: {@table::mcsfitproducer.fitter}
-      #SelectEvents: [reco]
+      #SelectEvents: [sel2]
     } # trajmcsntupleNu
     trajmcsntupleNuPMA: {
       module_label: TrajectoryMCSNtuple
@@ -119,7 +119,7 @@ physics: {
            inputLabel: pandoraNuPMA
       }
       mcsfitter: {@table::mcsfitproducer.fitter}
-      #SelectEvents: [reco]
+      #SelectEvents: [sel2]
     } # trajmcsntupleNuPMA
   }
 
@@ -132,7 +132,7 @@ physics: {
 
   #stream1:  [out1]
 
-  trigger_paths: [ reco, pro ]
+  trigger_paths: [ sel2, pro ]
   end_paths:     [ ana ] #, stream1
 
 } # physics
