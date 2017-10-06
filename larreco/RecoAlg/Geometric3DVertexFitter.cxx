@@ -13,14 +13,14 @@ trkf::FittedVertex trkf::Geometric3DVertexFitter::fitPFP(size_t iPF, const art::
 			      << std::endl;
   if (pfp->IsPrimary()==false || pfp->NumDaughters()<2) FittedVertex();
   
-  vector< TrackWithPid > tracks;
+  vector< art::Ptr<recob::Track> > tracks;
   
   auto& pfd = pfp->Daughters();
   for (auto ipfd : pfd) {
     vector< art::Ptr<recob::Track> > pftracks = assocTracks->at(ipfd);
     art::Ptr<recob::PFParticle> pfpd(inputPFParticle, ipfd);
     for (auto t : pftracks) {
-      tracks.push_back(TrackWithPid(t.get(),pfpd->PdgCode()));
+      tracks.push_back(t);
     }
   }
   if (tracks.size()<2) return FittedVertex();
@@ -28,11 +28,17 @@ trkf::FittedVertex trkf::Geometric3DVertexFitter::fitPFP(size_t iPF, const art::
   return fitTracks(tracks);
 }
 
-trkf::FittedVertex trkf::Geometric3DVertexFitter::fitTracks(std::vector<trkf::TrackWithPid>& tracks) const
+trkf::FittedVertex trkf::Geometric3DVertexFitter::fitTracks(std::vector<art::Ptr<recob::Track> >& tracks) const
 {
   if (debugLevel>0) std::cout << "fitting vertex with ntracks=" << tracks.size() << std::endl;
+  if (tracks.size()==0) return FittedVertex();
+  if (tracks.size()==1) {
+    FittedVertex vtx;
+    vtx.addTrackAndUpdateVertex(tracks[0]->Start(), tracks[0]->VertexCovarianceGlobal6D().Sub<SMatrixSym33>(0,0), 0, 0, tracks[0], 0);
+    return vtx;
+  }
   // sort tracks by number of hits
-  std::sort(tracks.begin(), tracks.end(), [](TrackWithPid a, TrackWithPid b) {return a.track->CountValidPoints() > b.track->CountValidPoints();});
+  std::sort(tracks.begin(), tracks.end(), [](art::Ptr<recob::Track> a, art::Ptr<recob::Track> b) {return a->CountValidPoints() > b->CountValidPoints();});
   //
   // find vertex between the two tracks with most hits
   FittedVertex vtx = fitTwoTracks(tracks[0], tracks[1]);
@@ -45,24 +51,24 @@ trkf::FittedVertex trkf::Geometric3DVertexFitter::fitTracks(std::vector<trkf::Tr
   return vtx;
 }
 
-trkf::FittedVertex trkf::Geometric3DVertexFitter::fitTwoTracks(trkf::TrackWithPid tk1, trkf::TrackWithPid tk2) const
+trkf::FittedVertex trkf::Geometric3DVertexFitter::fitTwoTracks(const art::Ptr<recob::Track> tk1, const art::Ptr<recob::Track> tk2) const
 {
   // find the closest approach points
-  auto start1 = tk1.track->Trajectory().Start();
-  auto start2 = tk2.track->Trajectory().Start();
+  auto start1 = tk1->Trajectory().Start();
+  auto start2 = tk2->Trajectory().Start();
 
-  auto dir1 = tk1.track->Trajectory().StartDirection();
-  auto dir2 = tk2.track->Trajectory().StartDirection();
+  auto dir1 = tk1->Trajectory().StartDirection();
+  auto dir2 = tk2->Trajectory().StartDirection();
 
   if (debugLevel>0) {
     std::cout << "track1 with start=" << start1 << " dir=" << dir1
-	      << " length=" << tk1.track->Length() << " points=" << tk1.track->CountValidPoints()
+	      << " length=" << tk1->Length() << " points=" << tk1->CountValidPoints()
 	      << std::endl;
-    std::cout << "covariance=\n" << tk1.track->VertexCovarianceGlobal6D() << std::endl;
+    std::cout << "covariance=\n" << tk1->VertexCovarianceGlobal6D() << std::endl;
     std::cout << "track2 with start=" << start2 << " dir=" << dir2
-  	      << " length=" << tk2.track->Length() << " points=" << tk2.track->CountValidPoints()
+              << " length=" << tk2->Length() << " points=" << tk2->CountValidPoints()
   	      << std::endl;
-    std::cout << "covariance=\n" << tk2.track->VertexCovarianceGlobal6D() << std::endl;
+    std::cout << "covariance=\n" << tk2->VertexCovarianceGlobal6D() << std::endl;
   }
 
   auto dpos = start1-start2;
@@ -78,13 +84,13 @@ trkf::FittedVertex trkf::Geometric3DVertexFitter::fitTwoTracks(trkf::TrackWithPi
   recob::tracking::Plane target(start1+dist1*dir1, dir1);
 
   recob::tracking::Plane plane1(start1, dir1);
-  trkf::TrackState state1(tk1.track->VertexParametersLocal5D(), tk1.track->VertexCovarianceLocal5D(), plane1, true, tk1.pid);
+  trkf::TrackState state1(tk1->VertexParametersLocal5D(), tk1->VertexCovarianceLocal5D(), plane1, true, tk1->ParticleId());
   bool propok1 = true;
   state1 = prop->propagateToPlane(propok1, state1, target, true, true, trkf::TrackStatePropagator::UNKNOWN);
   if (!propok1) return FittedVertex();
 
   recob::tracking::Plane plane2(start2, dir2);
-  trkf::TrackState state2(tk2.track->VertexParametersLocal5D(), tk2.track->VertexCovarianceLocal5D(), plane2, true, tk2.pid);
+  trkf::TrackState state2(tk2->VertexParametersLocal5D(), tk2->VertexCovarianceLocal5D(), plane2, true, tk2->ParticleId());
   bool propok2 = true;
   state2 = prop->propagateToPlane(propok2, state2, target, true, true, trkf::TrackStatePropagator::UNKNOWN);
   if (!propok2) return FittedVertex();
@@ -98,8 +104,8 @@ trkf::FittedVertex trkf::Geometric3DVertexFitter::fitTwoTracks(trkf::TrackWithPi
     std::cout << "target pos=" << target.position() << " dir=" << target.direction() << std::endl;
     //test if orthogonal
     auto dcp = state1.position()-state2.position();
-    std::cout << "dot dcp-dir1=" << dcp.Dot(tk1.track->Trajectory().StartDirection()) << std::endl;
-    std::cout << "dot dcp-dir2=" << dcp.Dot(tk2.track->Trajectory().StartDirection()) << std::endl;
+    std::cout << "dot dcp-dir1=" << dcp.Dot(tk1->Trajectory().StartDirection()) << std::endl;
+    std::cout << "dot dcp-dir2=" << dcp.Dot(tk2->Trajectory().StartDirection()) << std::endl;
   }
 
   //here we neglect that to find dist1 and dist2 one track depends on the other...
@@ -160,8 +166,8 @@ trkf::FittedVertex trkf::Geometric3DVertexFitter::fitTwoTracks(trkf::TrackWithPi
 
   const int ndof = 1; //1=2*2-3; each measurement is 2D because it is defined on a plane
   trkf::FittedVertex vtx(vtxstate.position(), vtxstate.covariance6D().Sub<SMatrixSym33>(0,0), chi2, ndof);
-  vtx.addTrack(tk1.track, tk1.pid, dist1);
-  vtx.addTrack(tk2.track, tk2.pid, dist2);
+  vtx.addTrack(tk1, dist1);
+  vtx.addTrack(tk2, dist2);
 
   if (debugLevel>0) {
     std::cout << "vtxpos=" << vtx.position() << std::endl;
@@ -172,17 +178,15 @@ trkf::FittedVertex trkf::Geometric3DVertexFitter::fitTwoTracks(trkf::TrackWithPi
   return vtx;
 }
 
-void trkf::Geometric3DVertexFitter::addTrackToVertex(trkf::FittedVertex& vtx, trkf::TrackWithPid tk) const
-{
-
-  auto start = tk.track->Trajectory().Start();
-  auto dir = tk.track->Trajectory().StartDirection();
+trkf::Geometric3DVertexFitter::ParsCovsPlaneDist trkf::Geometric3DVertexFitter::getParsCovsPlaneDist(const trkf::FittedVertex& vtx, const art::Ptr<recob::Track> tk) const {
+  auto start = tk->Trajectory().Start();
+  auto dir = tk->Trajectory().StartDirection();
 
   if (debugLevel>0) {
     std::cout << "adding track with start=" << start << " dir=" << dir
-	      << " length=" << tk.track->Length() << " points=" << tk.track->CountValidPoints()
+	      << " length=" << tk->Length() << " points=" << tk->CountValidPoints()
 	      << std::endl;
-    std::cout << "covariance=\n" << tk.track->VertexCovarianceGlobal6D() << std::endl;
+    std::cout << "covariance=\n" << tk->VertexCovarianceGlobal6D() << std::endl;
   }
 
   auto vtxpos = vtx.position();
@@ -194,7 +198,7 @@ void trkf::Geometric3DVertexFitter::addTrackToVertex(trkf::FittedVertex& vtx, tr
   recob::tracking::Plane target(start+dist*dir, dir);
 
   recob::tracking::Plane plane(start, dir);
-  trkf::TrackState state(tk.track->VertexParametersLocal5D(), tk.track->VertexCovarianceLocal5D(), plane, true, tk.pid);
+  trkf::TrackState state(tk->VertexParametersLocal5D(), tk->VertexCovarianceLocal5D(), plane, true, tk->ParticleId());
   bool propok = true;
   state = prop->propagateToPlane(propok, state, target, true, true, trkf::TrackStatePropagator::UNKNOWN);
 
@@ -207,13 +211,28 @@ void trkf::Geometric3DVertexFitter::addTrackToVertex(trkf::FittedVertex& vtx, tr
   SVector6 vtxpar6(vtxpos.X(),vtxpos.Y(),vtxpos.Z(),0,0,0);
   SMatrixSym66 vtxcov66;vtxcov66.Place_at(vtxcov,0,0);
 
+  auto vtxpar5 = target.Global6DToLocal5DParameters(vtxpar6);
+  SVector2 par1(vtxpar5[0],vtxpar5[1]);
+  SVector2 par2(state.parameters()[0],state.parameters()[1]);
+
   //here we neglect that to find dist, the vertex is used...
   SMatrixSym22 cov1 = target.Global6DToLocal5DCovariance(vtxcov66,false,Vector_t()).Sub<SMatrixSym22>(0,0);
   SMatrixSym22 cov2 = state.covariance().Sub<SMatrixSym22>(0,0);
 
-  auto vtxpar5 = target.Global6DToLocal5DParameters(vtxpar6);
-  SVector2 par1(vtxpar5[0],vtxpar5[1]);
-  SVector2 par2(state.parameters()[0],state.parameters()[1]);
+  return ParsCovsPlaneDist(par1,par2,cov1,cov2,target,dist);
+}
+
+void trkf::Geometric3DVertexFitter::addTrackToVertex(trkf::FittedVertex& vtx, const art::Ptr<recob::Track> tk) const
+{
+
+  ParsCovsPlaneDist pcp = getParsCovsPlaneDist(vtx, tk);
+  SVector2& par1 = pcp.par1;
+  SVector2& par2 = pcp.par2;
+  SMatrixSym22& cov1 = pcp.cov1;
+  SMatrixSym22& cov2 = pcp.cov2;
+  recob::tracking::Plane& target = pcp.plane;
+  double dist = pcp.dist;
+
   SVector2 deltapar = par2 - par1;
 
   SMatrixSym22 covsum = (cov2+cov1);
@@ -242,12 +261,14 @@ void trkf::Geometric3DVertexFitter::addTrackToVertex(trkf::FittedVertex& vtx, tr
   //
   bool invertok = covsum.Invert();
   if (!invertok) return;
+  auto chi2 = ROOT::Math::Similarity(deltapar,covsum);
+
   auto k = cov1*covsum;
 
   if (debugLevel>1) {
     std::cout << "inverted covsum=\n" << covsum << std::endl;
     std::cout << "k=\n" << k << std::endl;
-    std::cout << "dist=" << dist << " propok=" << propok << " invertok=" << invertok << std::endl;
+    // std::cout << "dist=" << dist << " propok=" << propok << " invertok=" << invertok << std::endl;
   }
 
   SVector2 updvtxpar2 = par1 + k*deltapar;
@@ -257,15 +278,13 @@ void trkf::Geometric3DVertexFitter::addTrackToVertex(trkf::FittedVertex& vtx, tr
     std::cout << "updvtxpar2=" << updvtxpar2 << std::endl;
     std::cout << "updvtxcov22=\n" << updvtxcov22 << std::endl;
   }
-
-  auto chi2 = ROOT::Math::Similarity(deltapar,covsum);
   
   SVector5 updvtxpar5(updvtxpar2[0],updvtxpar2[1],0,0,0);
   SMatrixSym55 updvtxcov55;updvtxcov55.Place_at(updvtxcov22,0,0);
   TrackState updvtxstate(updvtxpar5, updvtxcov55, target, true, 0);
 
   const int ndof = 2;// Each measurement is 2D because it is defined on a plane
-  vtx.addTrackAndUpdateVertex(updvtxstate.position(), updvtxstate.covariance6D().Sub<SMatrixSym33>(0,0), chi2, ndof, tk.track, tk.pid, dist);
+  vtx.addTrackAndUpdateVertex(updvtxstate.position(), updvtxstate.covariance6D().Sub<SMatrixSym33>(0,0), chi2, ndof, tk, dist);
 
   if (debugLevel>0) {
     std::cout << "updvtxpos=" << vtx.position() << std::endl;
@@ -274,4 +293,110 @@ void trkf::Geometric3DVertexFitter::addTrackToVertex(trkf::FittedVertex& vtx, tr
   }
 
   return;
+}
+
+double trkf::Geometric3DVertexFitter::chi2(const trkf::Geometric3DVertexFitter::ParsCovsPlaneDist& pcp) const
+{
+  const SVector2 deltapar = pcp.par2 - pcp.par1;
+  SMatrixSym22 covsum = (pcp.cov2+pcp.cov1);
+  //
+  bool invertok = covsum.Invert();
+  if (!invertok) return -1.;
+  //
+  return ROOT::Math::Similarity(deltapar,covsum);
+}
+
+double trkf::Geometric3DVertexFitter::chi2(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const 
+{
+  return chi2(getParsCovsPlaneDist(vtx, tk));
+}
+
+double trkf::Geometric3DVertexFitter::ip(const trkf::Geometric3DVertexFitter::ParsCovsPlaneDist& pcp) const
+{
+  const SVector2 deltapar = pcp.par2 - pcp.par1;
+  return std::sqrt( deltapar[0]*deltapar[0] + deltapar[1]*deltapar[1] );
+}
+
+double trkf::Geometric3DVertexFitter::ip(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const
+{
+  return ip(getParsCovsPlaneDist(vtx, tk));
+}
+
+double trkf::Geometric3DVertexFitter::ipErr(const trkf::Geometric3DVertexFitter::ParsCovsPlaneDist& pcp) const
+{
+  SVector2 deltapar = pcp.par2 - pcp.par1;
+  deltapar/=std::sqrt( deltapar[0]*deltapar[0] + deltapar[1]*deltapar[1] );
+  SMatrixSym22 covsum = (pcp.cov2+pcp.cov1);
+  return ROOT::Math::Similarity(deltapar,covsum);
+}
+
+double trkf::Geometric3DVertexFitter::ipErr(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const
+{
+  return ipErr(getParsCovsPlaneDist(vtx, tk));
+}
+
+double trkf::Geometric3DVertexFitter::sip(const trkf::Geometric3DVertexFitter::ParsCovsPlaneDist& pcp) const
+{
+  return ip(pcp)/ipErr(pcp);
+}
+
+double trkf::Geometric3DVertexFitter::sip(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const
+{
+  return sip(getParsCovsPlaneDist(vtx, tk));
+}
+
+trkf::FittedVertex trkf::Geometric3DVertexFitter::unbiasedVertex(const trkf::FittedVertex& vtx, const art::Ptr<recob::Track> tk) const 
+{
+  auto ittoerase = vtx.findTrack(tk);
+  if (ittoerase == vtx.tracks().size()) {
+    return vtx;
+  } else {
+    std::vector< art::Ptr<recob::Track> > tks = vtx.tracksCopy();
+    tks.erase(tks.begin()+ittoerase);
+    return fitTracks(tks);
+  }
+}
+
+double trkf::Geometric3DVertexFitter::chi2Unbiased(const trkf::FittedVertex& vtx, const art::Ptr<recob::Track> tk) const {
+  auto ittoerase = vtx.findTrack(tk);
+  if (ittoerase == vtx.tracks().size()) {
+    return chi2(vtx,tk);
+  } else {
+    std::vector< art::Ptr<recob::Track> > tks = vtx.tracksCopy();
+    tks.erase(tks.begin()+ittoerase);
+    return chi2(fitTracks(tks),tk);
+  }
+}
+
+double trkf::Geometric3DVertexFitter::ipUnbiased(const trkf::FittedVertex& vtx, const art::Ptr<recob::Track> tk) const {
+  auto ittoerase = vtx.findTrack(tk);
+  if (ittoerase == vtx.tracks().size()) {
+    return ip(vtx,tk);
+  } else {
+    std::vector< art::Ptr<recob::Track> > tks = vtx.tracksCopy();
+    tks.erase(tks.begin()+ittoerase);
+    return ip(fitTracks(tks),tk);
+  }
+}
+
+double trkf::Geometric3DVertexFitter::ipErrUnbiased(const trkf::FittedVertex& vtx, const art::Ptr<recob::Track> tk) const {
+  auto ittoerase = vtx.findTrack(tk);
+  if (ittoerase == vtx.tracks().size()) {
+    return ipErr(vtx,tk);
+  } else {
+    std::vector< art::Ptr<recob::Track> > tks = vtx.tracksCopy();
+    tks.erase(tks.begin()+ittoerase);
+    return ipErr(fitTracks(tks),tk);
+  }
+}
+
+double trkf::Geometric3DVertexFitter::sipUnbiased(const trkf::FittedVertex& vtx, const art::Ptr<recob::Track> tk) const {
+  auto ittoerase = vtx.findTrack(tk);
+  if (ittoerase == vtx.tracks().size()) {
+    return sip(vtx,tk);
+  } else {
+    std::vector< art::Ptr<recob::Track> > tks = vtx.tracksCopy();
+    tks.erase(tks.begin()+ittoerase);
+    return sip(fitTracks(tks),tk);
+  }
 }

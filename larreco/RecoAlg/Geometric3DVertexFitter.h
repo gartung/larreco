@@ -31,47 +31,48 @@ namespace trkf {
     FittedVertex(const Point_t& pos, const SMatrixSym33& cov, double chi2, int ndof)
     : pos_(pos), cov_(cov), chi2_(chi2), ndof_(ndof), valid_(true) {}
     //
-    void addTrack(const recob::Track* tk, int pid, double dist) { vtxtracks_.push_back(tk); trackpids_.push_back(pid); propdists_.push_back(dist); }
+    void addTrack(art::Ptr<recob::Track> tk, double dist) { vtxtracks_.push_back(tk); propdists_.push_back(dist); }
     //
-    void addTrackAndUpdateVertex(const Point_t& pos, const SMatrixSym33& cov, double chi2, int ndof, const recob::Track* tk, int pid, double dist) { 
+    void addTrackAndUpdateVertex(const Point_t& pos, const SMatrixSym33& cov, double chi2, int ndof, art::Ptr<recob::Track> tk, double dist) { 
       pos_ = pos;
       cov_ = cov;
       chi2_+=chi2;
       ndof_+=ndof;
-      addTrack(tk, pid, dist);
+      addTrack(tk, dist);
     }
     //
     const Point_t& position() const { return pos_; }
     const SMatrixSym33& covariance() const { return cov_; }
-    const std::vector< const recob::Track* >& tracks() { return vtxtracks_; }
-    const std::vector< int >& pids() { return trackpids_; }
-    const std::vector< double >& distances() { return propdists_; }
+    const std::vector< art::Ptr<recob::Track> >& tracks() const { return vtxtracks_; }
+    std::vector< art::Ptr<recob::Track> > tracksCopy() const { return vtxtracks_; }
+    const std::vector< double >& distances() const { return propdists_; }
     //
     double chi2() const { return chi2_; }
     double ndof() const { return ndof_; }
     //
     bool isValid() const { return valid_; }
+    size_t findTrack(art::Ptr<recob::Track> tk) const {
+      for (size_t it = 0; it!=vtxtracks_.size(); ++it) {
+	if (tk==vtxtracks_[it]) return it;
+      }
+      return vtxtracks_.size();
+    }
   private:
     Point_t pos_;
     SMatrixSym33 cov_;
     double chi2_;
     int ndof_;
-    std::vector< const recob::Track* > vtxtracks_;
-    std::vector< int > trackpids_;
+    std::vector< art::Ptr<recob::Track> > vtxtracks_;
     std::vector< double > propdists_;
     bool valid_;
   };
   //
-  struct TrackWithPid { 
-  public:
-    TrackWithPid(const recob::Track* t, int p) : track(t), pid(p) {}
-    const recob::Track* track; 
-    int pid; 
-  };
-  //
-  //
   //
   class Geometric3DVertexFitter {
+    // TODO:
+    // test chi2, ip, ipErr, sip functions
+    // find a cut value to accept tracks in vertex fit
+    // find a way to have core functionalities rely only on plain recob::Tracks and not art::Ptr so that they can be used outside full art
   public:
     //
     struct Options {
@@ -92,12 +93,35 @@ namespace trkf {
 
     FittedVertex fitPFP(size_t iPF, const art::ValidHandle<std::vector<recob::PFParticle> >& inputPFParticle, 
 			const std::unique_ptr<art::FindManyP<recob::Track> >& assocTracks) const;
-    FittedVertex fitTracks(std::vector<TrackWithPid>& tracks) const;
-    FittedVertex fitTwoTracks(TrackWithPid tk1, TrackWithPid tk2) const;
-    void addTrackToVertex(FittedVertex& vtx, TrackWithPid tk) const;
+    FittedVertex fitTracks(std::vector<art::Ptr<recob::Track> >& tracks) const;
+    FittedVertex fitTwoTracks(const art::Ptr<recob::Track> tk1, const art::Ptr<recob::Track> tk2) const;
+    void addTrackToVertex(FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
+    double chi2(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
+    double ip(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
+    double ipErr(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
+    double sip(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
+    FittedVertex unbiasedVertex(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
+    double chi2Unbiased(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
+    double ipUnbiased(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
+    double ipErrUnbiased(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
+    double sipUnbiased(const FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
   private:
     std::unique_ptr<TrackStatePropagator> prop;
     int debugLevel;
+    //
+    struct ParsCovsPlaneDist {
+    ParsCovsPlaneDist(SVector2 p1, SVector2 p2, SMatrixSym22 c1, SMatrixSym22 c2, recob::tracking::Plane p, double d)
+    : par1(p1), par2(p2), cov1(c1), cov2(c2), plane(p), dist(d) {}
+      SVector2& par1, par2;
+      SMatrixSym22& cov1, cov2;
+      recob::tracking::Plane& plane;
+      double dist;
+    };
+    ParsCovsPlaneDist getParsCovsPlaneDist(const trkf::FittedVertex& vtx, const art::Ptr<recob::Track> tk) const;
+    double chi2(const ParsCovsPlaneDist& pcp) const;
+    double ip(const ParsCovsPlaneDist& pcp) const;
+    double ipErr(const ParsCovsPlaneDist& pcp) const;
+    double sip(const ParsCovsPlaneDist& pcp) const;
   };
   //
 }
