@@ -37,6 +37,7 @@
 #include "larreco/RecoAlg/PMAlgCosmicTagger.h"
 #include "larreco/RecoAlg/PMAlgVertexing.h"
 #include "larreco/RecoAlg/PMAlgStitching.h"
+#include "larreco/RecoAlg/PMAlgDetermineT0.h"
 
 // ROOT & C++
 #include <memory>
@@ -214,6 +215,10 @@ public:
 			Name("MatchT0inCPACrossing"), Comment("match T0 of CPA-crossing tracks using PMAlgStitcher")
 		};
 
+    fhicl::Atom<bool> RunT0 {
+      Name("RunT0"), Comment("Run the algorithm to determine T0 for tracks")
+    };
+
 		fhicl::Atom<std::string> Validation {
 			Name("Validation"), Comment("tracks validation mode: hits, adc, calib")
 		};
@@ -233,6 +238,7 @@ public:
 		const pma::PMAlgVertexing::Config& pmvtxConfig,
 		const pma::PMAlgStitching::Config& pmstitchConfig,
 		const pma::PMAlgCosmicTagger::Config& pmtaggerConfig,
+		const pma::PMAlgDetermineT0::Config& pmt0Config,
 		
 		const std::vector< TH1F* > & hpassing, const std::vector< TH1F* > & hrejected);
 
@@ -350,6 +356,9 @@ private:
     pma::PMAlgStitching fStitcher;
 
 	bool fRunVertexing;          // run vertex finding
+
+  pma::PMAlgDetermineT0 fDetermineT0; // PMAlgDetermineT0 algorithm
+  bool fGetT0;
 
     EValidationMode fValidation;                    // track validation mode
     std::vector< img::DataProviderAlg > fAdcImages; // adc image making algorithms for each plane

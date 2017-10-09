@@ -295,6 +295,7 @@ pma::PMAlgTracker::PMAlgTracker(const std::vector< art::Ptr<recob::Hit> > & allh
 	const pma::PMAlgVertexing::Config& pmvtxConfig,
 	const pma::PMAlgStitching::Config& pmstitchConfig,
 	const pma::PMAlgCosmicTagger::Config& pmtaggerConfig,
+	const pma::PMAlgDetermineT0::Config& pmt0Config,
 	
 	const std::vector< TH1F* > & hpassing, const std::vector< TH1F* > & hrejected) :
 
@@ -316,8 +317,8 @@ pma::PMAlgTracker::PMAlgTracker(const std::vector< art::Ptr<recob::Hit> > & allh
 	fMergeTransverseShift(pmalgTrackerConfig.MergeTransverseShift()),
 	fMergeAngle(pmalgTrackerConfig.MergeAngle()),
 
-    fCosmicTagger(pmtaggerConfig),
-    fTagCosmicTracks(fCosmicTagger.tagAny()),
+  fCosmicTagger(pmtaggerConfig),
+  fTagCosmicTracks(fCosmicTagger.tagAny()),
 
 	fStitchBetweenTPCs(pmalgTrackerConfig.StitchBetweenTPCs()),
 	fStitchDistToWall(pmalgTrackerConfig.StitchDistToWall()),
@@ -329,6 +330,9 @@ pma::PMAlgTracker::PMAlgTracker(const std::vector< art::Ptr<recob::Hit> > & allh
     fStitcher(pmstitchConfig),
 
 	fRunVertexing(pmalgTrackerConfig.RunVertexing()),
+
+  fDetermineT0(pmt0Config),
+  fGetT0(pmalgTrackerConfig.RunT0()),
 
 	fAdcInPassingPoints(hpassing), fAdcInRejectedPoints(hrejected),
 
@@ -1064,6 +1068,10 @@ int pma::PMAlgTracker::build(void)
 		mf::LogVerbatim("PMAlgTracker") << "Find co-linear APA-crossing tracks with any T0.";
     fStitcher.StitchTracksAPA(fResult);
 	}
+
+  if(fGetT0){
+    fDetermineT0.DetermineT0(fResult);
+  }
 
   if (fTagCosmicTracks)
   {

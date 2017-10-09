@@ -1,0 +1,13 @@
+BEGIN_PROLOG
+
+# default parameters for the pma t0 algorithm
+standard_pmalgt0:
+{
+
+  DriftWidthMargin: 5 # Margin on the track length in the drift direction (cm)
+
+}
+
+END_PROLOG
+
+

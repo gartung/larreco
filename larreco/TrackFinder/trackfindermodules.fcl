@@ -1,6 +1,7 @@
 #include "trackfinderalgorithms.fcl"
 #include "clusteralgorithms.fcl"
 #include "pmacosmictagalg.fcl"
+#include "pmadeterminet0alg.fcl"
 #include "pmavertexalg.fcl"
 #include "pmastitchalg.fcl"
 
@@ -64,6 +65,7 @@ standard_pmalgtrackmaker:
   PMAlgCosmicTagging:     @local::standard_pmalgtagger
   PMAlgVertexing:         @local::standard_pmavertexalg
   PMAlgStitching:         @local::standard_pmastitchalg
+  PMAlgDetermineT0:       @local::standard_pmalgt0
                                       #
   SaveOnlyBranchingVtx:   false       # use true to save only vertices interconnecting many tracks, otherwise
                                       # vertex is added to the front of each track

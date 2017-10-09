@@ -55,6 +55,8 @@ standard_pmalgtracker:
                                   #
   RunVertexing:           false   # find vertices, join with tracks, reoptimize track-vertex structure
                                   #
+  RunT0:                  false   # assign T0 for all those tracks we can
+                                  #
   FlipToBeam:             false   # set the track direction to increasing Z values
   FlipDownward:           false   # set the track direction to decreasing Y values (like cosmic rays)
   AutoFlip_dQdx:          false   # set the track direction to increasing dQ/dx (overrides FlipToBeam

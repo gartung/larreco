@@ -69,6 +69,8 @@
 #include "larreco/RecoAlg/PMAlgTracking.h"
 #include "larreco/RecoAlg/PMAlgVertexing.h"
 #include "larreco/RecoAlg/PMAlgStitching.h"
+#include "larreco/RecoAlg/PMAlgCosmicTagger.h"
+#include "larreco/RecoAlg/PMAlgDetermineT0.h"
 
 #include <memory>
 
@@ -100,6 +102,10 @@ public:
         fhicl::Table<pma::PMAlgStitching::Config> PMAlgStitching {
             Name("PMAlgStitching")
         };
+
+    fhicl::Table<pma::PMAlgDetermineT0::Config> PMAlgDetermineT0 {
+      Name("PMAlgDetermineT0")
+    };
 
 		fhicl::Atom<bool> SaveOnlyBranchingVtx {
 			Name("SaveOnlyBranchingVtx"),
@@ -164,7 +170,8 @@ private:
 	pma::PMAlgTracker::Config fPmaTrackerConfig;
 	pma::PMAlgCosmicTagger::Config fPmaTaggingConfig;
 	pma::PMAlgVertexing::Config fPmaVtxConfig;
-    pma::PMAlgStitching::Config fPmaStitchConfig;
+  pma::PMAlgStitching::Config fPmaStitchConfig;
+  pma::PMAlgDetermineT0::Config fPmaT0Config;
 
 	bool fSaveOnlyBranchingVtx;  // for debugging, save only vertices which connect many tracks
 	bool fSavePmaNodes;          // for debugging, save only track nodes
@@ -194,7 +201,8 @@ PMAlgTrackMaker::PMAlgTrackMaker(PMAlgTrackMaker::Parameters const& config) :
 	fPmaTrackerConfig(config().PMAlgTracking()),
 	fPmaTaggingConfig(config().PMAlgCosmicTagging()),
 	fPmaVtxConfig(config().PMAlgVertexing()),
-    fPmaStitchConfig(config().PMAlgStitching()),
+  fPmaStitchConfig(config().PMAlgStitching()),
+  fPmaT0Config(config().PMAlgDetermineT0()),
 
 	fSaveOnlyBranchingVtx(config().SaveOnlyBranchingVtx()),
 	fSavePmaNodes(config().SavePmaNodes()),
@@ -362,7 +370,7 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 
 	// -------------- PMA Tracker for this event ----------------------
 	auto pmalgTracker = pma::PMAlgTracker(allhitlist, *wireHandle,
-		fPmaConfig, fPmaTrackerConfig, fPmaVtxConfig, fPmaStitchConfig, fPmaTaggingConfig, fAdcInPassingPoints, fAdcInRejectedPoints);
+		fPmaConfig, fPmaTrackerConfig, fPmaVtxConfig, fPmaStitchConfig, fPmaTaggingConfig, fPmaT0Config, fAdcInPassingPoints, fAdcInRejectedPoints);
 
     size_t mvaLength = 0;
 	if (fEmModuleLabel != "") // ----------- Exclude EM parts ---------
