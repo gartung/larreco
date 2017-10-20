@@ -89,5 +89,28 @@ standard_particledecayid:
     SkipView:               -1    # use all views to find decays if -1, or skip the view with provided index and use only the two other views
 }
 
+standard_showervertexfinder:
+{
+  module_type:    "ShowerVertexFinder"
+
+  WireLabel:      "caldata"             # Wire module
+  HitModuleLabel: "linecluster"         # Hit module
+  InputMVALabel:  "emtrkmichel"         # Input CNN module
+  PointIdAlg:     @local::standard_pointidalg 
+  Views:          []                    # Views considered (empty means all)
+  InputMVACut:    "0.6"                 # Cut below which we accept hits from the EM-Track CNN
+  VertexMVACut:   "0.9"                 # Cut above which we say a 1D vertex was seen by the CNN
+  DriftLimit:     "1.0"                 # 1cm limit to match drift coordinates in different views
+  Match3DLimit:   "2.0"                 # Predicted 3D vertices from pairs of views in 3D must agree to better than 2cm
+  IgnoreCosmics:  true                  # Ignore hits from tracks tagged as cosmic in origin
+  IgnoreLongTracks:     true            # Ignore hits in tracks at leasst LongTrackCut in length
+  LongTrackCut:         1.0             # Track length cut in meters
+  CosmicModuleLabel:    "pmtrack"       # Tracking and cosmic tagging module name
+  CalcPiZeroEfficiency: false           # Make some efficiency plots for pizero decays 
+  TruthMatchDist:       1.0             # Distance in cm to determine a reco to true vertex match
+  SaveHitMaps:          false           # Save 2D hitmaps for each event
+}
+
+
 END_PROLOG
 
