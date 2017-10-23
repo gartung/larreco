@@ -165,6 +165,7 @@ simple_plugin(ShowerVertexFinder "module"
       lardata_ArtDataHelper
       larreco_Calorimetry
       larreco_RecoAlg_ImagePatternAlgs_PointIdAlg
+      larreco_RecoAlg_ImagePatternAlgs_ShowerVertex
       ${ART_FRAMEWORK_CORE}
       ${ART_FRAMEWORK_PRINCIPAL}
       ${ART_FRAMEWORK_SERVICES_REGISTRY}

@@ -229,7 +229,13 @@ namespace nnet {
       TH1D* fPhotAngVtx;
       TH1D* fEnAll;
       TH1D* fEnVtx;
- 
+      // Main inefficiency comes from energy < 200 MeV, so make a cut and see
+      // if we see anything else in other distributions 
+      TH1D* fPhotDistAll200;
+      TH1D* fPhotDistVtx200;
+      TH1D* fPhotAngAll200;
+      TH1D* fPhotAngVtx200;
+
       ShowerVertexFinder::cryo_tpc_view_keymap fHitMap;
   };
   // ------------------------------------------------------
@@ -984,11 +990,22 @@ namespace nnet {
         }
       } 
       // Fill some pion level histograms
+      // Sometimes we only find one photon, make sure we are prepared
+      if(pizero.second.fPhotonIndex.size() == 1){
+        pizero.second.fShouldReco.push_back(false);
+      }
       if(pizero.second.fShouldReco[0] && pizero.second.fShouldReco[1]){
         simb::MCParticle photon1 = (*particleHandle)[pizero.second.fPhotonIndex[0]];
         simb::MCParticle photon2 = (*particleHandle)[pizero.second.fPhotonIndex[1]];
         fPhotAngAll->Fill(photon1.EndPosition().Vect().Angle(photon2.EndPosition().Vect()));
         fPhotDistAll->Fill((photon1.EndPosition().Vect()-photon2.EndPosition().Vect()).Mag());
+        // Photon energies to make cut plots
+        float e1 = 1000.*(photon1.E());
+        float e2 = 1000.*(photon2.E());
+        if(e1 > 200. && e2 > 200.){
+          fPhotDistAll200->Fill((photon1.EndPosition().Vect()-photon2.EndPosition().Vect()).Mag());
+          fPhotAngAll200->Fill(photon1.EndPosition().Vect().Angle(photon2.EndPosition().Vect()));
+        }
       }
     }
 
@@ -1097,6 +1114,14 @@ namespace nnet {
         simb::MCParticle photon2 = (*particleHandle)[pizero.second.fPhotonIndex[1]];
         fPhotDistVtx->Fill((photon1.EndPosition().Vect()-photon2.EndPosition().Vect()).Mag());
         fPhotAngVtx->Fill(photon1.EndPosition().Vect().Angle(photon2.EndPosition().Vect()));
+
+        // Photon energies to make cut plots
+        float e1 = 1000.*(photon1.E());
+        float e2 = 1000.*(photon2.E());
+        if(e1 > 200. && e2 > 200.){
+          fPhotDistVtx200->Fill((photon1.EndPosition().Vect()-photon2.EndPosition().Vect()).Mag());
+          fPhotAngVtx200->Fill(photon1.EndPosition().Vect().Angle(photon2.EndPosition().Vect()));
+        }
       }
     } // End loop over piZeros
 
@@ -1132,6 +1157,11 @@ namespace nnet {
       fPhotAngVtx = tfs->make<TH1D>("photAngVtx","Angle between photons (degrees)",50,0,0.5*TMath::Pi());
       fEnAll   = tfs->make<TH1D>("enAll",";Energy (MeV)",50,0,1000);
       fEnVtx   = tfs->make<TH1D>("enVtx",";Energy (MeV)",50,0,1000);
+      // With 200 MeV energy cut
+      fPhotDistAll200 = tfs->make<TH1D>("photDistAll200","Distance to other photon (cm)",50,0,50);
+      fPhotDistVtx200 = tfs->make<TH1D>("photDistVtx200","Distance to other photon (cm)",50,0,50);
+      fPhotAngAll200 = tfs->make<TH1D>("photAngAll200","Angle between photons (degrees)",50,0,0.25*TMath::Pi());
+      fPhotAngVtx200 = tfs->make<TH1D>("photAngVtx200","Angle between photons (degrees)",50,0,0.25*TMath::Pi());
     }
   }
 
