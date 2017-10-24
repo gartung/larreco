@@ -760,17 +760,23 @@ namespace nnet {
         vtxCands.push_back(thisVtx);
       }
       else{
-        // Make sure that any 2D vertices have a corresponding hit in the third view
-        unsigned int missingView = 999;
-        if(thisVtx.HasView(0) && thisVtx.HasView(1)) missingView = 2;
-        if(thisVtx.HasView(0) && thisVtx.HasView(2)) missingView = 1;
-        if(thisVtx.HasView(1) && thisVtx.HasView(2)) missingView = 0;
-        // Returns true if good
-        if(Check3DPosition(evt,thisVtx.Get3DPos(),thisVtx.GetDrift(0),missingView)){
+        // If this is a two view detector, just save the vertex
+        if(inputMap.size() == 2){
           vtxCands.push_back(thisVtx);
         }
+        else{
+          // Make sure that any 2D vertices have a corresponding hit in the third view
+          unsigned int missingView = 999;
+          if(thisVtx.HasView(0) && thisVtx.HasView(1)) missingView = 2;
+          if(thisVtx.HasView(0) && thisVtx.HasView(2)) missingView = 1;
+          if(thisVtx.HasView(1) && thisVtx.HasView(2)) missingView = 0;
+          // Returns true if good
+          if(Check3DPosition(evt,thisVtx.Get3DPos(),thisVtx.GetDrift(0),missingView)){
+            vtxCands.push_back(thisVtx);
+          }
+        }
       } 
-    }
+    } // End loop over 
 
   }
 
