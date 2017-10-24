@@ -776,34 +776,43 @@ namespace nnet {
 
   bool ShowerVertexFinder::Check3DPosition(const art::Event& evt, TVector3 pos, float drift, unsigned int missingView){
 
-    // For now just return true, the code below needs some work.
-    return true;    
-
     // Get a geometry instance to convert a 3D position to a wire coordinate
     auto const* geom = lar::providerFrom<geo::Geometry>();
     // Get the TPC first
     geo::TPCID thisTPC = geom->FindTPCAtPosition(pos);
+    // If we can't find the TPC we probably made a mistake!
+    if(thisTPC.TPC > 10000){
+      std::cout << "2D vertex did not correspond to a TPC! Rejected. " << std::endl;
+      return false;
+    }
     // Now get the WireCoordinate
     double wire = geom->WireCoordinate(pos.Y(),pos.Z(),missingView,thisTPC.TPC,thisTPC.Cryostat);
+
+    auto const* detProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
     // Now we have our wire and time, look for a match in the hit vector
     auto hitListHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
     std::vector< art::Ptr<recob::Hit> > hitPtrList;
     art::fill_ptr_vector(hitPtrList, hitListHandle);
+
+    // Loop over hits
     for (auto const& h : hitPtrList){
+      // Look for all hits in the hit map for this view, tpc and cryostat
       std::vector<size_t> keysOfInterest = fHitMap[thisTPC.Cryostat][thisTPC.TPC][missingView];
+      
       if(std::find(keysOfInterest.begin(),keysOfInterest.end(),h.key()) != keysOfInterest.end()){
         // This hit is interesting, so we should see if it matches our position
-        const recob::Hit & hit = *(hitPtrList[h.key()]);
-        unsigned int thisWire = hit.WireID().Wire;
-        float thisTime = hit.PeakTime();
-        if(fabs(thisWire - wire) < 2 && fabs(thisTime - drift) < 2){
+        unsigned int thisWire = h->WireID().Wire;
+        float thisTime = h->PeakTime();
+        double thisDrift = detProp->ConvertTicksToX(thisTime,h->WireID().planeID());
+        if(fabs(thisWire - wire) < 2 && fabs(thisDrift - drift) < 2){
+          std::cout << "Found matching hit for 2D vertex " << thisWire << ", " << thisDrift << " in view " << missingView << std::endl;
           return true;
         }
       }
     }
 
-    mf::LogDebug("ShowerVertexFinder") << "2D vertex did not correspond to a hit in 3D, so was rejected. " << std::endl;
+    std::cout << "2D vertex did not correspond to a hit in 3D, so was rejected. " << std::endl;
     return false;
   }
 
