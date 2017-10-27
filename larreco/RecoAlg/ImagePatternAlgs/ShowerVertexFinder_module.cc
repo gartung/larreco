@@ -788,7 +788,7 @@ namespace nnet {
     geo::TPCID thisTPC = geom->FindTPCAtPosition(pos);
     // If we can't find the TPC we probably made a mistake!
     if(thisTPC.TPC > 10000){
-      std::cout << "2D vertex did not correspond to a TPC! Rejected. " << std::endl;
+      mf::LogDebug("ShowerVertexFinder") << "2D vertex did not correspond to a TPC! Rejected. " << std::endl;
       return false;
     }
     // Now get the WireCoordinate
@@ -812,13 +812,13 @@ namespace nnet {
         float thisTime = h->PeakTime();
         double thisDrift = detProp->ConvertTicksToX(thisTime,h->WireID().planeID());
         if(fabs(thisWire - wire) < 2 && fabs(thisDrift - drift) < 2){
-          std::cout << "Found matching hit for 2D vertex " << thisWire << ", " << thisDrift << " in view " << missingView << std::endl;
+          mf::LogDebug("ShowerVertexFinder") << "Found matching hit for 2D vertex " << thisWire << ", " << thisDrift << " in view " << missingView << std::endl;
           return true;
         }
       }
     }
 
-    std::cout << "2D vertex did not correspond to a hit in 3D, so was rejected. " << std::endl;
+    mf::LogDebug("ShowerVertexFinder") << "2D vertex did not correspond to a hit in 3D, so was rejected. " << std::endl;
     return false;
   }
 
