@@ -567,15 +567,46 @@ namespace nnet {
               }
             }
           }
+          std::cout << "We should require " << valuesForCNN.size() << " calls to the CNN" << std::endl;
+          // If we dump all of this information into the CNN at once we could cause high memory usage. Convert to batches of 256
+          std::vector<std::vector<std::pair<unsigned int,float>>> betterValuesForCNN;
+          unsigned int nBatches = (valuesForCNN.size() / 256) + 1;
+          for(unsigned int n = 0; n < nBatches; ++n){
+            std::vector<std::pair<unsigned int,float>>::iterator start = valuesForCNN.begin() + (n*256);
+            std::vector<std::pair<unsigned int,float>>::iterator finish;
+            if(n != nBatches - 1){
+              finish = valuesForCNN.begin() + ((n+1)*256);
+            }
+            else{
+              finish = valuesForCNN.end();
+            }
+            std::vector<std::pair<unsigned int, float>> tempVec(start,finish);
+            betterValuesForCNN.push_back(tempVec);
+          }
+
+          for(unsigned int n = 0; n < betterValuesForCNN.size(); ++n){
+            std::cout << "Vector " << n << " has " << betterValuesForCNN[n].size() << " elements " << std::endl;      
+            std::vector<std::vector<float>> cnnOutputs = fPointIdAlg.predictIdVectors(betterValuesForCNN[n]); 
+            nCalls+=cnnOutputs.size();
+            for(unsigned int v = 0; v < cnnOutputs.size(); ++v){
+              unsigned int originalIndex = v + n*(256);
+              allHitCNNVals[prepForCNN[originalIndex].first].SetCNNValue(prepForCNN[originalIndex].second,cnnOutputs[v][0]);
+            }
+          }
 
           // Now lets call the CNN once with this vector
-          std::vector<std::vector<float>> cnnOutputs = fPointIdAlg.predictIdVectors(valuesForCNN);   
-          nCalls = cnnOutputs.size();
+//          std::vector<std::vector<float>> cnnOutputs = fPointIdAlg.predictIdVectors(valuesForCNN);   
+//          nCalls = cnnOutputs.size();
           // Associate these points back to the HitCNNOutput objects
-          for(unsigned int v = 0; v < cnnOutputs.size(); ++v){
-            allHitCNNVals[prepForCNN[v].first].SetCNNValue(prepForCNN[v].second,cnnOutputs[v][0]);
-          }
+//          for(unsigned int v = 0; v < cnnOutputs.size(); ++v){
+//            allHitCNNVals[prepForCNN[v].first].SetCNNValue(prepForCNN[v].second,cnnOutputs[v][0]);
+//          }
        
+          // We are done with these vectors now, clear up
+          prepForCNN.clear();
+          valuesForCNN.clear();
+          betterValuesForCNN.clear();
+
           // Loop over the HitCNNOutput objects
           for(auto const hc : allHitCNNVals){
 
