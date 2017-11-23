@@ -2,9 +2,9 @@ art_make(
           LIB_LIBRARIES 
 			${FHICLCPP}
 			cetlib cetlib_except
-			${ROOT_BASIC_LIB_LIST}
-			${ROOT_XMLPARSER}
-					
+			${TENSORFLOW}
+			${PROTOBUF}
+			${FOR_TENSORFLOW}
         )
 
 install_headers()

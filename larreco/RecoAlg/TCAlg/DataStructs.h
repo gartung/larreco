@@ -46,12 +46,22 @@ namespace tca {
   /// @{
   /// @name Data structures for the reconstruction results
   
+/*
+    Associations
+    Hit.InTraj <-> tj.Pts.Hits
+    Tj.ParentID -> ID of parent tj
+    PFParticle.TjIDs -> IDs of tjs in each plane that define the PFParticle
+    PFParticle.ParentID -> PFParticle ID of parent
+    Shower.TjIDs -> IDs of InShower tjs, (tj.AlgMod[kInShower] set true)
+    Shower.ShowerTjID -> ID of the shower tj (3 pts for start, chg center, end) (tj.AlgMod[kShowerTj] set true)
+    Shower.ParentID -> ID of the tj identified as the shower parent (tj.AlgMod[kShwrParent] set true)
+*/ 
+  
   /// struct of temporary clusters
   struct ClusterStore {
     int ID {0};         // Cluster ID. ID < 0 = abandoned cluster
     CTP_t CTP {0};        // Cryostat/TPC/Plane code
     unsigned short PDGCode {0}; // PDG-like code shower-like or line-like
-    unsigned short ParentCluster {0};
     float BeginWir {0};   // begin wire
     float BeginTim {0};   // begin tick
     float BeginAng {0};   // begin angle
@@ -72,7 +82,9 @@ namespace tca {
     unsigned short NTraj {0};  
     unsigned short Pass {0};   // Pass in which this vertex was created
     float ChiDOF {0};
-    short Topo {0}; 			// 0 = end0-end0, 1 = end0(1)-end1(0), 2 = end1-end1, 3 = CI3DV, 4 = C3DIVIG, 5 = FHV, 6 = FHV2, 7 = SHCH, 8 = CTBC
+    // Topo: 0 = end0-end0, 1 = end0(1)-end1(0), 2 = end1-end1, 3 = CI3DV, 
+    //       4 = C3DIVIG, 5 = FHV, 6 = FHV2, 7 = SHCH, 8 = CTBC, 9 = Junk
+    short Topo {0}; 			
     CTP_t CTP {0};
     unsigned short ID {0};          ///< set to 0 if killed
     unsigned short Vx3ID {0};
@@ -85,7 +97,6 @@ namespace tca {
     kVtxTrjTried,     ///< FindVtxTraj algorithm tried
     kFixed,           ///< vertex position fixed manually - no fitting done
     kOnDeadWire,
-    kVtxRefined,
     kHiVx3Score,      ///< matched to a high-score 3D vertex
     kVtxTruMatch,      ///< tagged as a vertex between Tjs that are matched to MC truth neutrino interaction particles
     kVtxMerged,
@@ -106,6 +117,7 @@ namespace tca {
     std::array<unsigned short, 3> Vx2ID {{0}}; // List of 2D vertex IDs in each plane
     unsigned short ID {0};          // 0 = obsolete vertex
     bool Primary {false};
+    bool Neutrino {false};
   };
   
   // A temporary struct for matching trajectory points; 1 struct for each TP for
@@ -123,6 +135,7 @@ namespace tca {
     // the number of points in the Tj so that the minimum Tj length cut (MatchCuts[2]) can be made
     unsigned short npts;
     short score; // 0 = Tj with nice vertex, 1 = high quality Tj, 2 = normal, -1 = already matched
+    bool showerlike;
   };
 
   struct TrajPoint {
@@ -153,7 +166,7 @@ namespace tca {
     CTP_t CTP {0};                      ///< Cryostat, TPC, Plane code
     std::bitset<64> AlgMod;        ///< Bit set if algorithm AlgBit_t modifed the trajectory
     int WorkID {0};
-    int ParentID {0};     ///< ID of the parent
+    int ParentID {-1};     ///< ID of the parent
     float AveChg {0};                   ///< Calculated using ALL hits
     float ChgRMS {0.5};                 /// Normalized RMS using ALL hits. Assume it is 50% to start
     short MCSMom {-1};         //< Crude 2D estimate to use for shower-like vs track-like discrimination
@@ -341,6 +354,7 @@ namespace tca {
     kHED, // High End Delta
     kHamVx,
     kHamVx2,
+    kJunkVx,
     kJunkTj,
     kKilled,
     kMerge,
@@ -348,6 +362,7 @@ namespace tca {
     kCHMEH,
     kFillGap,
     kUseGhostHits,
+    kMrgGhost,
     kChkInTraj,
     kStopBadFits,
     kFixBegin,
@@ -373,10 +388,13 @@ namespace tca {
     kInShower,
     kShowerTj,
     kShwrParent,
+    kChkShwrParEnd,
     kMergeOverlap,
     kMergeSubShowers,
     kMergeNrShowers,
     kMergeShChain,
+    kSplitTjCVx,
+    kSetDir,
     kAlgBitSize     ///< don't mess with this line
   } AlgBit_t;
   
@@ -445,8 +463,11 @@ namespace tca {
     std::vector<float> KinkCuts; ///< kink angle, nPts fit, (alternate) kink angle significance
     std::vector<float> Match3DCuts;  ///< 3D matching cuts
     std::vector<float> MatchTruth;     ///< Match to MC truth
-    std::vector<const simb::MCParticle*> MCPartList;
+    std::vector<simb::MCParticle*> MCPartList;
     unsigned int EventsProcessed;
+    unsigned int Run;
+    unsigned int SubRun;
+    unsigned int Event;
     std::bitset<64> UseAlg;  ///< Allow user to mask off specific algorithms
     const geo::GeometryCore* geom;
     const detinfo::DetectorProperties* detprop;

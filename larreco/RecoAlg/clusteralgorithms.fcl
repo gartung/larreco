@@ -16,7 +16,7 @@ standard_trajclusteralg:
    MinMCSMom: [100, 0, 0]   # Minimum MCSMom for each pass
    MaxVertexTrajSep: [6, 6, 4] # Max separation for attaching trajectories to 3D vertices (WSE units)
    MaxChi: 20               # Max Chi/DOF for accepting a trajectory fit (long muons)
-   HitErrFac: 0.15          # hit time error for fitting = fHitErrFac * (hit RMS)
+   HitErrFac: 0.4          # hit time error for fitting = fHitErrFac * (hit RMS)
    MinAmp:  1               # Min amplitude for a wire signal being considered present (must be > 0)
    AngleRanges: [40, 55, 75, 90]  # Max angle (degrees) for small, intermediate and large angle trajectories
    MultHitSep: 2.5          # Hits separated by < MultHitSep * RMS may be combined in a trajectory point
@@ -66,12 +66,12 @@ standard_trajclusteralg:
    # 8 Min charge fraction near a vertex or merge point
    # 9 max MCSmom asymmetry for a merge
    Vertex3DCuts: [0.8, 2]       # [ dX match cut, dY and dZ match cut]
-   Match3DCuts: [ 0.3, 0.1, 5, 1, 0.1 ] 
+   Match3DCuts: [ 0.3, 0.25, 4, 0.5, 2000 ] 
    # 0 dx (cm) matching cut
-   # 1 Angle cut (radians) (0 = don't use)
+   # 1 Angle cut (radians) Set <= 0 to turn off angle checking
    # 2 min length for 2-view match
-   # 3 2-view missing plane requirement
-   # 4 min match fraction
+   # 3 min match fraction
+   # 4 max allowed number of 3D combinations
    KalmanFilterFit: false
    SkipAlgs: [  "VtxHitsSwap", "SplitHiChgHits", "CTKink", "HED" ]   # List of algs that should not be called
    SpecialAlgs: []          # list of special purpose algs, e.g. "StopAtTj", "ChkInTraj" 
@@ -88,6 +88,7 @@ standard_trajclusteralg.CaloAlg: @local::standard_calorimetryalgmc
 standard_trajclusteralg.kfpropagator: @local::kalmanfilterfittrackmakertool.propagator
 standard_trajclusteralg.kffitter: @local::kalmanfilterfittrackmakertool.fitter
 #standard_trajclusteralg.kffitter.skipNegProp: false # gc: do we need this?
+#standard_trajclusteralg.kffitter.dumpLevel: 10
 
 standard_clustercrawleralg:
 {
@@ -408,7 +409,8 @@ microboone_smallclustalg:	              @local::standard_smallclustalg
 microboone_clustercrawleralg:                 @local::standard_clustercrawleralg
 
 microboone_trajclusteralg:                    @local::standard_trajclusteralg
-microboone_trajclusteralg.MaxWireSkipNoSignal: 15 # increase a bit to allow for low gain wires
+microboone_trajclusteralg.MaxWireSkipNoSignal: 5
+microboone_trajclusteralg.MuonTag: [40, 500, 5, 3]
 
 microboone_clustermatchalg:                   @local::standard_clustermatchalg
 microboone_clustermergealg:                   @local::standard_clustermergealg

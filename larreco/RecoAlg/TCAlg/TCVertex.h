@@ -30,9 +30,12 @@
 
 namespace tca {
   
+  void MakeJunkVertices(TjStuff& tjs, const CTP_t& inCTP);
   void Find2DVertices(TjStuff& tjs, const CTP_t& inCTP);
+  void MakeJunkTjVertices(TjStuff& tjs, const CTP_t& inCTP);
   void ChkVxTjs(TjStuff& tjs, const CTP_t& inCTP, bool prt);
   bool MergeWithVertex(TjStuff& tjs, VtxStore& vx2, unsigned short existingVxID, bool prt);
+  void SplitTrajCrossingVertices(TjStuff& tjs, const CTP_t& inCTP);
   void FindHammerVertices(TjStuff& tjs, const CTP_t& inCTP);
   void FindHammerVertices2(TjStuff& tjs, const CTP_t& inCTP);
   void Find3DVertices(TjStuff& tjs, const geo::TPCID& tpcid);

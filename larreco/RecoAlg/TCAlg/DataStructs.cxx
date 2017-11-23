@@ -17,6 +17,7 @@ namespace tca {
     "HED",
     "HamVx",
     "HamVx2",
+    "JunkVx",
     "JunkTj",
     "Killed",
     "Merge",
@@ -24,6 +25,7 @@ namespace tca {
     "CHMEH",
     "FillGap",
     "Ghost",
+    "MrgGhost",
     "ChkInTraj",
     "StopBadFits",
     "FixBegin",
@@ -41,18 +43,21 @@ namespace tca {
     "ChkStopEP",
     "FTBRvProp",
     "StopAtTj",
-    "M3D",
+    "Mat3D",
     "Mat3DMerge",
     "TjHiVx3Score",
-     "VtxHitsSwap",
+    "VtxHitsSwap",
     "SplitHiChgHits",
     "InShower",
     "ShowerTj",
     "ShwrParent",
+    "ChkShwrParEnd",
     "MergeOverlap",
     "MergeSubShowers",
     "MergeNrShowers",
-    "MergeShChain"
+    "MergeShChain",
+    "SplitTjCVx",
+    "SetDir"
   };
 
   const std::vector<std::string> StopFlagNames {
@@ -67,18 +72,18 @@ namespace tca {
     "VtxTrjTried",
     "Fixed",
     "OnDeadWire",
-    "VtxRefined",
     "HiVx3Score",
     "VtxTruMatch",
     "VtxMerged"
   } ;
   
   geo::PlaneID DecodeCTP(CTP_t CTP) {
-    geo::PlaneID tmp;
-    tmp.Cryostat = CTP / Cpad;
-    tmp.TPC = (CTP - tmp.Cryostat * Cpad) / Tpad;
-    tmp.Plane = (CTP % 10);
-    return tmp;
+    auto const cryo = (CTP / Cpad);
+    return geo::PlaneID(
+      /* Cryostat */ cryo,
+           /* TPC */ (CTP - cryo * Cpad) / Tpad,
+         /* Plane */ (CTP % 10)
+      );
   }
   
 } // namespace tca
