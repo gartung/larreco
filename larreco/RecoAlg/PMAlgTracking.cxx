@@ -1047,6 +1047,10 @@ int pma::PMAlgTracker::build(void)
         fCosmicTagger.tag(fResult);
     }
 
+  if(fGetT0){
+    fDetermineT0.DetermineT0(fResult);
+  }
+
 	if (fRunVertexing)
 	{
 		mf::LogVerbatim("PMAlgTracker") << "Vertex finding / track-vertex reoptimization.";
@@ -1069,9 +1073,9 @@ int pma::PMAlgTracker::build(void)
     fStitcher.StitchTracksAPA(fResult);
 	}
 
-  if(fGetT0){
-    fDetermineT0.DetermineT0(fResult);
-  }
+//  if(fGetT0){
+//    fDetermineT0.DetermineT0(fResult);
+//  }
 
   if (fTagCosmicTracks)
   {

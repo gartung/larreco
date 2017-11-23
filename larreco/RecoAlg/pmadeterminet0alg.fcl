@@ -4,8 +4,8 @@ BEGIN_PROLOG
 standard_pmalgt0:
 {
 
-  DriftWidthMargin: 5 # Margin on the track length in the drift direction (cm)
-
+  DriftWidthMargin: 5     # Margin on the track length in the drift direction (cm)
+  CathodeWidthCorr: 0.0 # Account for the half-width of the cathode (cm)
 }
 
 END_PROLOG

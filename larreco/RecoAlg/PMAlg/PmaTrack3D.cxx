@@ -12,7 +12,8 @@
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "larcore/Geometry/Geometry.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "TMath.h"
@@ -2296,9 +2297,34 @@ void pma::Track3D::ApplyDriftShiftInTree(double dx, bool skipFirst)
 
     for (auto p : fAssignedPoints) { (*p)[0] += dx; }
 
-    auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
-	double tisk2time = 1.0; // what is the coefficient, offset?
-	fT0 = tisk2time * dx / detprop->GetXTicksCoefficient(fNodes.front()->TPC(), fNodes.front()->Cryo());
+  // For T0 we need to make sure we use the total shift, not just this current one in case of multiple shifts
+  double newdx = fNodes.front()->GetDriftShift();
+
+  auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
+  auto const* detclock = lar::providerFrom<detinfo::DetectorClocksService>();
+//	double tisk2time = 1.0; // what is the coefficient, offset?
+
+  auto const* geom = lar::providerFrom<geo::Geometry>();
+  const geo::TPCGeo &tpcGeo = geom->TPC(fNodes.front()->TPC(), fNodes.front()->Cryo());
+  
+  // GetXTicksCoefficient has a sign that we don't care about. We need to decide
+  // the sign for ourselves
+  double correctedSign = 0;
+  if((newdx * tpcGeo.DetectDriftDirection()) > 0){
+    // dx and the TPC drift have the same sign - this should give us a positive T0
+    correctedSign = 1.0;
+  }
+  else{
+    // dx and the TPC drift have different signs, this should give us a negative T0    
+    correctedSign = -1.0;
+  }
+
+  // The magnitude of this is correct
+	fT0 = detclock->TPCTick2Time(newdx / detprop->GetXTicksCoefficient(fNodes.front()->TPC(), fNodes.front()->Cryo()));
+  // Make sure we get the sign right
+  fT0 = correctedSign * fabs(fT0);
+
+  std::cout << dx << ", " << newdx << ", " << detprop->GetXTicksCoefficient(fNodes.front()->TPC(), fNodes.front()->Cryo()) << ", " << correctedSign << ", " << fT0 << ", " << fNodes.front()->TPC() << std::endl;
 }
 
 void pma::Track3D::DeleteSegments(void)

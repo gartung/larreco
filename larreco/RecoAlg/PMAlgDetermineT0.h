@@ -29,8 +29,13 @@ class pma::PMAlgDetermineT0 {
       using Comment = fhicl::Comment;
 
       fhicl::Atom<double> DriftWidthMargin {
-          Name("DriftWidthMargin"),
-          Comment("The minimum distance beyond 1 drift window required for tagging track as a cosmic background.")
+        Name("DriftWidthMargin"),
+        Comment("The minimum distance beyond 1 drift window required for tagging track as a cosmic background.")
+      };
+      
+      fhicl::Atom<double> CathodeWidthCorr {
+        Name("CathodeWidthCorr"),
+        Comment("Correct the TPC edge position to account for the width of the cathode")
       };
   };
 
@@ -48,6 +53,7 @@ class pma::PMAlgDetermineT0 {
   void GetTPCDriftWidths();
 
   double fDriftWidthMargin; // The leeway we give ourselves on saying a track traversed the entire drift length of the TPC
+  double fCathodeCorr;
   std::map<unsigned int, double> fDriftMin; // The minimum value of the drift coordinate for each TPC
   std::map<unsigned int, double> fDriftMax; // The maximum value of the drift coordinate for each TPC
 

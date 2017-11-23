@@ -11,12 +11,11 @@
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-pma::PMAlgDetermineT0::PMAlgDetermineT0(const pma::PMAlgDetermineT0::Config &conf): fDriftWidthMargin(conf.DriftWidthMargin())
+pma::PMAlgDetermineT0::PMAlgDetermineT0(const pma::PMAlgDetermineT0::Config &conf): fDriftWidthMargin(conf.DriftWidthMargin()), fCathodeCorr(conf.CathodeWidthCorr())
 {
   fDriftMin.clear();
   fDriftMax.clear();
   fDriftCoord = -999;
-
   GetTPCDriftWidths();
 }
 
@@ -60,6 +59,7 @@ size_t pma::PMAlgDetermineT0::GetAPAToCPAT0(pma::TrkCandidateColl& tracks)
       double driftTrkLen = fabs(firstNode->Point3D()[fDriftCoord] - finalNode->Point3D()[fDriftCoord]);
       double driftTPCLen = fabs(fDriftMax[tpc] - fDriftMin[tpc]);
 
+      mf::LogInfo("pma::PMAlgDetermineT0") << " Track length = " << driftTrkLen << " and TPC width = " << driftTPCLen << std::endl;
       if(fabs(driftTrkLen - driftTPCLen) < fDriftWidthMargin)
       {
         // This track should have a T0 assigned, so let's do it
@@ -68,15 +68,17 @@ size_t pma::PMAlgDetermineT0::GetAPAToCPAT0(pma::TrkCandidateColl& tracks)
         double maxDrift = (firstNode->Point3D()[fDriftCoord] >= finalNode->Point3D()[fDriftCoord]) ? 
                           firstNode->Point3D()[fDriftCoord] : finalNode->Point3D()[fDriftCoord];
 
+        mf::LogInfo("pma::PMAlgDetermineT0") << "- Checking track in TPCs " << firstNode->TPC() << ", " << finalNode->TPC() << ": " << minDrift << ", " << maxDrift << std::endl;
+
         // Find which one is clostest to the cathode, then use that to tell us the shift
         double driftShift = 0;
         if(fDriftDir[tpc] > 0){
           // For positive drift, the cathode is always the minimum value
-          driftShift = fDriftMin[tpc] - minDrift;
+          driftShift = fDriftMin[tpc] + fCathodeCorr - minDrift;
         }
         else{
           // For negative drift, the cathode is always the maximum value
-          driftShift = fDriftMax[tpc] - maxDrift;
+          driftShift = fDriftMax[tpc] - fCathodeCorr - maxDrift;
         }
 
         // Apply the drift direction shift and the track takes care of T0
@@ -84,8 +86,15 @@ size_t pma::PMAlgDetermineT0::GetAPAToCPAT0(pma::TrkCandidateColl& tracks)
 
         mf::LogInfo("pma::PMAlgDetermineT0") << "- Applied shift " << driftShift << " to a track in tpc " << tpc << std::endl;
         mf::LogInfo("pma::PMAlgDetermineT0") << " - Old x values = " << minDrift << " and " << maxDrift << std::endl;
+        if(fabs(minDrift) < 1e-3){
+          std::cout << "  - Neighbouring node drift = " << t.Track()->Nodes()[1]->Point3D().X() << std::endl;
+        }
+        if(fabs(maxDrift) < 1e-3){
+          std::cout << "  - Neighbouring node drift = " << t.Track()->Nodes()[t.Track()->Nodes().size()-2]->Point3D().X() << std::endl;
+        }
         mf::LogInfo("pma::PMAlgDetermineT0") << " - New x values = " << minDrift + driftShift << " and " << maxDrift + driftShift << std::endl;
         mf::LogInfo("pma::PMAlgDetermineT0") << " - TPC edges    = " << fDriftMin[tpc] << " and " << fDriftMax[tpc] << std::endl;
+        mf::LogInfo("pma::PMAlgDetermineT0") << " - Track T0     = " << t.Track()->GetT0() << std::endl;
 
         ++n;
       }
@@ -114,27 +123,45 @@ void pma::PMAlgDetermineT0::GetTPCDriftWidths(){
       continue;
     }
 
-    if(fDriftCoord == -999){
-      // Note following functions returns: +/- 1, 2, 3 for +/- x, y, z and 0 for unknown
-      short int tempCoord = TPC.DetectDriftDirection();
-      if(tempCoord != 0){
-        // Convert to array index
-        short int sign = 1;
-        if(tempCoord < 0) sign = -1;
-        fDriftDir.insert(std::make_pair(tID.TPC,sign));
+    // Note following functions returns: +/- 1, 2, 3 for +/- x, y, z and 0 for unknown
+    short int tempCoord = TPC.DetectDriftDirection();
+    if(tempCoord != 0){
+      short int sign = 1;
+      if(tempCoord < 0) sign = -1;
+      fDriftDir.insert(std::make_pair(tID.TPC,sign));
+      if(fDriftCoord == -999){
         fDriftCoord = abs(tempCoord) - 1; // x = 0, y = 1, z = 2;
       }
     }
-    if(fDriftCoord == -999) continue;
 
     // get centre in world coordinates
     double origin[3] = {0.};
     double centre[3] = {0.};
     TPC.LocalToWorld(origin, centre);
     double tpcDim[3] = {TPC.HalfWidth(), TPC.HalfHeight(), 0.5*TPC.Length() };
+   
+    // What actually matters is the position of the last readout plane
+    double planeOrigin[3] = {0.};
+    double planeCentre[3] = {0.};
+    TPC.LastPlane().LocalToWorld(planeOrigin,planeCentre);
+ 
+//    fDriftMin.insert(std::make_pair(tID.TPC,centre[fDriftCoord] - tpcDim[fDriftCoord]));
+//    fDriftMax.insert(std::make_pair(tID.TPC,centre[fDriftCoord] + tpcDim[fDriftCoord]));
+
+    double tpcMin = centre[fDriftCoord] - tpcDim[fDriftCoord];
+    double tpcMax = centre[fDriftCoord] + tpcDim[fDriftCoord];
+    if(fDriftDir[tID.TPC] > 0){
+      // Positive x drift
+      fDriftMin.insert(std::make_pair(tID.TPC,tpcMin));
+      fDriftMax.insert(std::make_pair(tID.TPC,planeCentre[fDriftCoord]));
+    }
+    else{
+      // Negative x drift
+      fDriftMin.insert(std::make_pair(tID.TPC,planeCentre[fDriftCoord]));
+      fDriftMax.insert(std::make_pair(tID.TPC,tpcMax)); 
+    }
     
-    fDriftMin.insert(std::make_pair(tID.TPC,centre[fDriftCoord] - tpcDim[fDriftCoord]));
-    fDriftMax.insert(std::make_pair(tID.TPC,centre[fDriftCoord] + tpcDim[fDriftCoord]));
+    std::cout << "Drift info for TPC " << tID.TPC << ": " << fDriftDir[tID.TPC] << ", " << fDriftCoord << " :: " << fDriftMin[tID.TPC] << ", " << fDriftMax[tID.TPC] << std::endl;
   }
 
 }
