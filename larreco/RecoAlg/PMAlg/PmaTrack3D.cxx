@@ -2310,21 +2310,30 @@ void pma::Track3D::ApplyDriftShiftInTree(double dx, bool skipFirst)
   // GetXTicksCoefficient has a sign that we don't care about. We need to decide
   // the sign for ourselves
   double correctedSign = 0;
-  if((newdx * tpcGeo.DetectDriftDirection()) > 0){
-    // dx and the TPC drift have the same sign - this should give us a positive T0
-    correctedSign = 1.0;
+  if(tpcGeo.DetectDriftDirection() > 0){
+    if(newdx > 0){
+      correctedSign = 1.0;
+    }
+    else{
+      correctedSign = -1.0;
+    }
   }
   else{
-    // dx and the TPC drift have different signs, this should give us a negative T0    
-    correctedSign = -1.0;
+    if(newdx > 0){
+      correctedSign = -1.0;
+    }
+    else{
+      correctedSign = 1.0;
+    }
   }
+  // The magnitude of x in ticks is fine
+  double xInTicks = newdx / detprop->GetXTicksCoefficient();
+  // Now correct the sign
+  xInTicks = xInTicks * correctedSign;
+  // Finally, convert the ticks into time relative to the trigger
+	fT0 = detclock->TriggerTime() + xInTicks * detclock->TPCClock().TickPeriod();
 
-  // The magnitude of this is correct
-	fT0 = detclock->TPCTick2Time(newdx / detprop->GetXTicksCoefficient(fNodes.front()->TPC(), fNodes.front()->Cryo()));
-  // Make sure we get the sign right
-  fT0 = correctedSign * fabs(fT0);
-
-  std::cout << dx << ", " << newdx << ", " << detprop->GetXTicksCoefficient(fNodes.front()->TPC(), fNodes.front()->Cryo()) << ", " << correctedSign << ", " << fT0 << ", " << fNodes.front()->TPC() << std::endl;
+  std::cout << dx << ", " << newdx << ", " << xInTicks << ", " << correctedSign << ", " << fT0 << ", " << tpcGeo.DetectDriftDirection() << " :: " << detclock->TriggerTime() << ", " << detclock->TriggerOffsetTPC() << std::endl;
 }
 
 void pma::Track3D::DeleteSegments(void)
