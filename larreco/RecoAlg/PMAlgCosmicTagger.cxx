@@ -11,7 +11,7 @@
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
 void pma::PMAlgCosmicTagger::tag(pma::TrkCandidateColl& tracks)
 {
@@ -85,7 +85,7 @@ size_t pma::PMAlgCosmicTagger::nonBeamT0Tag(pma::TrkCandidateColl &tracks){
 
 	size_t n = 0;
 
-	auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
+	auto const* detclocks = lar::providerFrom<detinfo::DetectorClocksService>();
 
 	// Search through all of the tracks
 	for(auto & t : tracks.tracks()){
@@ -97,7 +97,7 @@ size_t pma::PMAlgCosmicTagger::nonBeamT0Tag(pma::TrkCandidateColl &tracks){
 		if(t.Track()->GetT0() != 0.0){
 		mf::LogInfo("pma::PMAlgCosmicTagger") << " - track with T0 = " << t.Track()->GetT0();
 
-			if(fabs(t.Track()->GetT0() - detprop->TriggerOffset()) > fNonBeamT0Margin){
+			if(fabs(t.Track()->GetT0() - detclocks->TriggerTime()) > fNonBeamT0Margin){
 				++n;
 				t.Track()->SetTagFlag(pma::Track3D::kCosmic);
 				t.Track()->SetTagFlag(pma::Track3D::kBeamIncompatible);

@@ -2327,13 +2327,18 @@ void pma::Track3D::ApplyDriftShiftInTree(double dx, bool skipFirst)
     }
   }
   // The magnitude of x in ticks is fine
-  double xInTicks = newdx / detprop->GetXTicksCoefficient();
+  double dxInTicks = fabs(newdx / detprop->GetXTicksCoefficient());
   // Now correct the sign
-  xInTicks = xInTicks * correctedSign;
-  // Finally, convert the ticks into time relative to the trigger
-	fT0 = detclock->TriggerTime() + xInTicks * detclock->TPCClock().TickPeriod();
+  dxInTicks = dxInTicks * correctedSign;
+  // At this stage, we have xInTicks relative to the trigger time
+  double dxInTime = dxInTicks * detclock->TPCClock().TickPeriod();
+  // Reconstructed times are relative to TriggerOffsetTPC
+	fT0 = dxInTime - detclock->TriggerOffsetTPC();
 
-  std::cout << dx << ", " << newdx << ", " << xInTicks << ", " << correctedSign << ", " << fT0 << ", " << tpcGeo.DetectDriftDirection() << " :: " << detclock->TriggerTime() << ", " << detclock->TriggerOffsetTPC() << std::endl;
+  std::cout << dx << ", " << newdx << ", " << dxInTicks << ", " << correctedSign 
+            << ", " << fT0 << ", " << tpcGeo.DetectDriftDirection() << " :: " 
+            << detclock->TriggerTime() << ", " << detclock->TriggerOffsetTPC() << std::endl;
+
 }
 
 void pma::Track3D::DeleteSegments(void)
