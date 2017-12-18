@@ -95,7 +95,6 @@ size_t pma::PMAlgDetermineT0::GetAPAToCPAT0(pma::TrkCandidateColl& tracks)
         mf::LogInfo("pma::PMAlgDetermineT0") << " - New x values = " << minDrift + driftShift << " and " << maxDrift + driftShift << std::endl;
         mf::LogInfo("pma::PMAlgDetermineT0") << " - TPC edges    = " << fDriftMin[tpc] << " and " << fDriftMax[tpc] << std::endl;
         mf::LogInfo("pma::PMAlgDetermineT0") << " - Track T0     = " << t.Track()->GetT0() << std::endl;
-
         ++n;
       }
 

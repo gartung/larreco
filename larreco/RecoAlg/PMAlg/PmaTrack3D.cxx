@@ -30,6 +30,7 @@ pma::Track3D::Track3D(void) :
 	fHitsRadius(1.0F),
 
 	fT0(0.0),
+  fT0Flag(false),
 
 	fTag(pma::Track3D::kNotTagged)
 {
@@ -49,6 +50,7 @@ pma::Track3D::Track3D(const Track3D& src) :
 	fHitsRadius(src.fHitsRadius),
 
 	fT0(src.fT0),
+  fT0Flag(src.fT0Flag),
 
 	fTag(src.fTag)
 {
@@ -1371,7 +1373,7 @@ pma::Track3D* pma::Track3D::Split(size_t idx, bool try_start_at_idx)
 
 	pma::Node3D* n = 0;
 	pma::Track3D* t0 = new pma::Track3D();
-	t0->fT0 = fT0; t0->fTag = fTag;
+	t0->fT0 = fT0; t0->fT0Flag = fT0Flag; t0->fTag = fTag;
 
 	for (size_t i = 0; i < idx; ++i)
 	{
@@ -2335,10 +2337,12 @@ void pma::Track3D::ApplyDriftShiftInTree(double dx, bool skipFirst)
   // Reconstructed times are relative to TriggerOffsetTPC
 	fT0 = dxInTime - detclock->TriggerOffsetTPC();
 
-  std::cout << dx << ", " << newdx << ", " << dxInTicks << ", " << correctedSign 
-            << ", " << fT0 << ", " << tpcGeo.DetectDriftDirection() << " :: " 
-            << detclock->TriggerTime() << ", " << detclock->TriggerOffsetTPC() << std::endl;
+  mf::LogDebug("pma::Track3D") << dx << ", " << newdx << ", " << dxInTicks << ", " << correctedSign 
+                                 << ", " << fT0 << ", " << tpcGeo.DetectDriftDirection() << " :: " 
+                                 << detclock->TriggerTime() << ", " << detclock->TriggerOffsetTPC() << std::endl;
 
+  // Mark this track as having a measured T0
+  fT0Flag = true;
 }
 
 void pma::Track3D::DeleteSegments(void)
