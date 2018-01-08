@@ -74,6 +74,7 @@ standard_pmalgtrackmaker:
 
   ClusterModuleLabel:     "cluster"   # cluster module label, these clusters are used for track building
   EmClusterModuleLabel:   ""          # EM-like clusters, will be excluded from tracking if provided
+  SpacePointModuleLabel:  ""          # SpacePoints label, will use SP to match clusters if provided
 }
 
 # Trajectory fit using PMA.

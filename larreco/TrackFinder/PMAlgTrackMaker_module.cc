@@ -27,6 +27,7 @@
 //                     tracking functionality to algorithm classes
 //    ~Jan-May 2017:   track stitching on APA and CPA, cosmics tagging
 //    July 2017:       validation on 2D ADC image
+//    Jan 2018:        cluster matching ranking combined with SpacePoints from a 3D imaging
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -130,6 +131,11 @@ public:
 			Name("EmClusterModuleLabel"),
 			Comment("EM-like clusters, will be excluded from tracking if provided")
 		};
+
+		fhicl::Atom<art::InputTag> SpacePointModuleLabel {
+			Name("SpacePointModuleLabel"),
+			Comment("SpacePoints label, will use SP to match clusters if provided")
+		};
     };
     using Parameters = art::EDProducer::Table<Config>;
 
@@ -155,10 +161,11 @@ private:
     anab::CosmicTagID_t getCosmicTag(const pma::Track3D::ETag pmaTag) const;
 
 	// ******************** fcl parameters **********************
-	art::InputTag fHitModuleLabel;  // tag for hits collection (used for trk validation)
-	art::InputTag fWireModuleLabel; // tag for recob::Wire collection (used for trk validation)
-	art::InputTag fCluModuleLabel;  // tag for input cluster collection
-	art::InputTag fEmModuleLabel;   // tag for em-like cluster collection
+	art::InputTag fHitModuleLabel;        // tag for hits collection (used for trk validation)
+	art::InputTag fWireModuleLabel;       // tag for recob::Wire collection (used for trk validation)
+	art::InputTag fCluModuleLabel;        // tag for input cluster collection
+	art::InputTag fEmModuleLabel;         // tag for em-like cluster collection
+	art::InputTag fSpacePointModuleLabel; // tag for SpacePoints collection (used to match clusters)
 
 	pma::ProjectionMatchingAlg::Config fPmaConfig;
 	pma::PMAlgTracker::Config fPmaTrackerConfig;
@@ -189,6 +196,7 @@ PMAlgTrackMaker::PMAlgTrackMaker(PMAlgTrackMaker::Parameters const& config) :
 	fWireModuleLabel(config().WireModuleLabel()),
 	fCluModuleLabel(config().ClusterModuleLabel()),
 	fEmModuleLabel(config().EmClusterModuleLabel()),
+	fSpacePointModuleLabel(config().SpacePointModuleLabel()),
 
 	fPmaConfig(config().ProjectionMatchingAlg()),
 	fPmaTrackerConfig(config().PMAlgTracking()),
@@ -392,6 +400,12 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 		pmalgTracker.init(hitsFromClusters);
 	}
 
+    if (fSpacePointModuleLabel != "") //  ----------- Sort SpacePoints by clusters ---------
+    {
+        auto spHitListHandle = evt.getValidHandle< std::vector<recob::Hit> >("gaushit");
+        art::FindManyP< recob::SpacePoint > spFromHits(spHitListHandle, evt, fSpacePointModuleLabel);
+        pmalgTracker.init_sp(*spHitListHandle, spFromHits);
+    }
 
 	// ------------------ Do the job here: ----------------------------
 	int retCode = pmalgTracker.build();

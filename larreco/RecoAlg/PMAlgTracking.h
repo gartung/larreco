@@ -244,6 +244,8 @@ public:
 	void init(const art::FindManyP< recob::Hit > & hitsFromClusters,
 		const art::FindManyP< recob::Hit > & hitsFromEmParts);
 
+    void init_sp(const std::vector<recob::Hit> & hits, const art::FindManyP< recob::SpacePoint > & spFromHits);
+
 	int build(void);
 
 private:
@@ -273,6 +275,9 @@ private:
 
 	double validate(pma::Track3D& trk, unsigned int testView);
 
+	void fromClustersBySP_tpc(pma::TrkCandidateColl & result,
+		size_t minBuildSize, unsigned int tpc, unsigned int cryo);
+
 	void fromMaxCluster_tpc(pma::TrkCandidateColl & result,
 		size_t minBuildSize, unsigned int tpc, unsigned int cryo);
 
@@ -296,6 +301,16 @@ private:
 		const std::vector< art::Ptr<recob::Hit> >& hits,
 		unsigned int testView, bool add_nodes);
 
+    /// Cluster with a highest no. of unambiguous SP's.
+    int bestClusterBySP(float min_score,
+	    geo::View_t view, unsigned int tpc, unsigned int cryo) const;
+
+    /// Best matching cluster by SP's to a cluster given by first_idx_tag.
+    int matchClusterBySP(int first_clu_idx, float min_score) const;
+
+    /// Best matching cluster by SP's to a set of clusters.
+    int matchClusterBySP(const std::vector<size_t>& clusters, float min_score) const;
+
 	int maxCluster(int first_idx_tag,
 		const pma::TrkCandidateColl & candidates,
 		float xmin, float xmax, size_t min_clu_size,
@@ -313,7 +328,8 @@ private:
 	}
 
     const std::vector<recob::Wire> & fWires;
-	std::vector< std::vector< art::Ptr<recob::Hit> > > fCluHits;
+	std::vector< std::vector< art::Ptr<recob::Hit> > > fCluHits; // map cluster idx to its hits
+	std::vector< std::unordered_map<int, size_t> > fCluSPoints; // map cluster idx to its space point counts
 	std::vector< float > fCluWeights;
 
 	/// --------------------------------------------------------------

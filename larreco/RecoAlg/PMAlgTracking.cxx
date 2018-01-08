@@ -153,7 +153,7 @@ int pma::PMAlgFitter::build(void)
 
 			if (fRunVertexing) fPMAlgVertexing.run(fResult);
 
-			// build segment of shower
+			// build segments of showers
 			buildShowers();
     }
     else
@@ -428,6 +428,40 @@ void pma::PMAlgTracker::init(const art::FindManyP< recob::Hit > & hitsFromCluste
 		else { fCluWeights.push_back(0); }
 	}
 	mf::LogVerbatim("PMAlgTracker") << "...done, " << n << " clusters for 3D tracking.";
+}
+// ------------------------------------------------------
+
+void pma::PMAlgTracker::init_sp(const std::vector<recob::Hit> & hits, const art::FindManyP< recob::SpacePoint > & spFromHits)
+{
+    //mf::LogVerbatim("PMAlgTracker")
+    std::cout
+        << "Map clusters to space points associated through hits..." << std::endl;
+    fCluSPoints.clear(); fCluSPoints.resize(fCluHits.size());
+    for (size_t i = 0; i < fCluHits.size(); ++i)
+    {
+        for (const auto h : fCluHits[i])
+        {
+            size_t key = 0;
+            geo::WireID w = h->WireID();
+            float t = h->PeakTime();
+            bool found = false;
+            for (size_t g = 0; g < hits.size(); ++g)
+            {
+                if ((hits[g].WireID() == w) && (hits[g].PeakTime() == t)) { key = g; found = true; break; }
+            }
+
+            if (found)
+            {
+                const auto v = spFromHits.at(key);
+                for (const auto sp : v) { fCluSPoints[i][sp.key()]++; }
+                std::cout << " spacepoints: " << v.size() << std::endl;
+            }
+            else std::cout << "hit not found" << std::endl;
+        }
+    }
+    //mf::LogVerbatim("PMAlgTracker")
+    std::cout
+        << "...done." << std::endl;
 }
 // ------------------------------------------------------
 
@@ -999,6 +1033,12 @@ int pma::PMAlgTracker::build(void)
             else { mf::LogVerbatim("PMAlgTracker") << "  ...failed."; continue; }
         }
 
+        if (!fCluSPoints.empty())
+        {   // use space points, if available, and build tracks from largest to smallest in one go
+            std::cout << "Match clusters by space points." << std::endl;
+            fromClustersBySP_tpc(tracks[tpc_iter->TPC], 10, tpc_iter->TPC, tpc_iter->Cryostat);
+        }
+
         // find reasonably large parts
 		fromMaxCluster_tpc(tracks[tpc_iter->TPC], fMinSeedSize1stPass, tpc_iter->TPC, tpc_iter->Cryostat);
 		// loop again to find small things
@@ -1086,6 +1126,57 @@ int pma::PMAlgTracker::build(void)
 // ------------------------------------------------------
 // ------------------------------------------------------
 
+void pma::PMAlgTracker::fromClustersBySP_tpc(pma::TrkCandidateColl & result,
+	size_t minBuildSize, unsigned int tpc, unsigned int cryo)
+{
+	fInitialClusters.clear();
+
+    // scores corresponding to the no. of unambiguous hits
+    float minBuildScore = minBuildSize;
+	float minComplScore = minBuildSize / 2.0;
+
+	int first_clu_idx = 0;
+	while (first_clu_idx >= 0) // loop over clusters, any view, starting from the best selected by space points
+	{
+		mf::LogVerbatim("PMAlgTracker") << "Find best cluster by SP's...";
+		first_clu_idx = bestClusterBySP(minBuildScore, geo::kUnknown, tpc, cryo); // any view, but must be track-like
+		if ((first_clu_idx >= 0) && !fCluHits[first_clu_idx].empty())
+		{
+		    geo::View_t first_view = fCluHits[first_clu_idx].front()->View();
+		    fInitialClusters.push_back((size_t)first_clu_idx);
+
+		    for (auto av : fAvailableViews) { fTriedClusters[av].clear(); }
+		    fTriedClusters[first_view].push_back((size_t)first_clu_idx);
+
+			int clu_idx = matchClusterBySP(first_clu_idx, minComplScore);
+			if (clu_idx >= 0)
+			{
+			    mf::LogVerbatim("PMAlgTracker") << "   - initial pair found, collect matching clusters";
+			    pma::TrkCandidate candidate;
+			    candidate.Clusters().push_back(first_clu_idx);
+			    candidate.Clusters().push_back(clu_idx);
+			    
+			    while (clu_idx >= 0)
+			    {
+			        clu_idx = matchClusterBySP(candidate.Clusters(), minComplScore);
+			        if (clu_idx >= 0)
+			        {
+			            candidate.Clusters().push_back(clu_idx);
+			        }
+			    }
+			    mf::LogVerbatim("PMAlgTracker") << "   - collected " << candidate.Clusters().size() << " matching clusters";
+
+			    if (candidate.IsGood()) result.push_back(candidate);
+			}
+		}
+		else mf::LogVerbatim("PMAlgTracker") << "...no more good clusters found by SP's";
+	}
+
+	fInitialClusters.clear();
+}
+// ------------------------------------------------------
+
+
 void pma::PMAlgTracker::fromMaxCluster_tpc(pma::TrkCandidateColl & result,
 	size_t minBuildSize, unsigned int tpc, unsigned int cryo)
 {
@@ -1099,6 +1190,7 @@ void pma::PMAlgTracker::fromMaxCluster_tpc(pma::TrkCandidateColl & result,
 	{
 		mf::LogVerbatim("PMAlgTracker") << "Find max cluster...";
 		max_first_idx = maxCluster(minBuildSize, geo::kUnknown, tpc, cryo); // any view, but must be track-like
+
 		if ((max_first_idx >= 0) && !fCluHits[max_first_idx].empty())
 		{
 			geo::View_t first_view = fCluHits[max_first_idx].front()->View();
@@ -1134,14 +1226,12 @@ pma::TrkCandidate pma::PMAlgTracker::matchCluster(
 	mf::LogVerbatim("PMAlgTracker") << "use view  *** " << first_view << " *** plane idx " << first_plane_idx << " ***  size: " << nFirstHits;
 
 	float x, xmax = fDetProp->ConvertTicksToX(first_hits.front()->PeakTime(), first_plane_idx, tpc, cryo), xmin = xmax;
-	//mf::LogVerbatim("PMAlgTracker") << "  *** x max0: " << xmax;
 	for (size_t j = 1; j < first_hits.size(); ++j)
 	{
 		x = fDetProp->ConvertTicksToX(first_hits[j]->PeakTime(), first_plane_idx, tpc, cryo);
 		if (x > xmax) { xmax = x; }
 		if (x < xmin) { xmin = x; }
 	}
-	//mf::LogVerbatim("PMAlgTracker") << "  *** x max: " << xmax << " min:" << xmin;
 
 	pma::TrkCandidateColl candidates; // possible solutions of the selected cluster and clusters in complementary views
 
@@ -1373,6 +1463,159 @@ int pma::PMAlgTracker::matchCluster(const pma::TrkCandidate& trk,
 	else mf::LogVerbatim("PMAlgTracker") << "no clusters to extend the track";
 
 	return idx;
+}
+// ------------------------------------------------------
+
+int pma::PMAlgTracker::bestClusterBySP(float min_score,
+	geo::View_t view, unsigned int tpc, unsigned int cryo) const
+{
+    int idx = -1;
+
+	float max_score = 0;
+
+	for (size_t i = 0; i < fCluSPoints.size(); ++i)
+	{
+		const auto & v = fCluSPoints[i];
+
+		if (v.empty() || fCluHits[i].empty() || (fCluWeights[i] < fTrackLikeThreshold) ||
+		    has(fUsedClusters, i) || has(fInitialClusters, i)) { continue; }
+
+        if ((view != geo::kUnknown) && has(fTriedClusters[view], i)) { continue; }
+
+        const auto & h0 = fCluHits[i].front();
+        if ((view != geo::kUnknown) && (h0->View() != view)) { continue; }
+
+		if ((h0->WireID().TPC == tpc) &&
+		    (h0->WireID().Cryostat == cryo))
+		{
+            float score = 0;
+            for (const auto & entry : v) { score += 1. / entry.second; }
+
+			if ((score >= min_score) && (score > max_score))
+			{
+				max_score = score; idx = i;
+			}
+		}
+	}
+
+    if (idx >= 0)
+    {
+        //mf::LogVerbatim("PMAlgTracker")
+        std::cout
+            << "   Best initial cluster by SP, size: " << fCluHits[idx].size()
+            << ", score: " << max_score
+            << std::endl;
+    }
+    else std::cout << "Best by SP not found." << std::endl;
+
+    return idx;
+}
+// ------------------------------------------------------
+
+int pma::PMAlgTracker::matchClusterBySP(int first_clu_idx, float min_score) const
+{
+    int idx = -1;
+
+	float max_score = 0;
+
+    const auto & u = fCluSPoints[first_clu_idx];
+
+	for (size_t i = 0; i < fCluSPoints.size(); ++i)
+	{
+		const auto & v = fCluSPoints[i];
+
+		if (v.empty() || fCluHits[i].empty() || ((int)i == first_clu_idx) ||
+		    has(fUsedClusters, i) || has(fInitialClusters, i)) { continue; }
+
+		const auto & h0 = fCluHits[first_clu_idx].front();
+		const auto & hi = fCluHits[i].front();
+		if ((h0->View() == hi->View()) ||
+		    (h0->WireID().TPC != hi->WireID().TPC) || (h0->WireID().Cryostat != hi->WireID().Cryostat) ||
+		    has(fTriedClusters[hi->View()], i)) { continue; }
+
+        float score = 0;
+        for (const auto & in_v : v)
+        {
+            auto in_u = u.find(in_v.first);
+            if (in_u != u.end())
+            {
+                score += 1. / (in_v.second * in_u->second);
+            }
+        }
+
+		if ((score >= min_score) && (score > max_score))
+		{
+			max_score = score; idx = i;
+		}
+	}
+
+    if (idx >= 0)
+    {
+        //mf::LogVerbatim("PMAlgTracker")
+        std::cout
+            << "   Best matched cluster by SP, size: " << fCluHits[idx].size()
+            << ", score: " << max_score
+            << std::endl;
+    }
+    else std::cout << "Match by SP not found." << std::endl;
+
+    return idx;
+}
+// ------------------------------------------------------
+
+int pma::PMAlgTracker::matchClusterBySP(const std::vector<size_t>& clusters, float min_score) const
+{
+    int idx = -1;
+
+	float max_score = 0;
+
+	for (size_t i = 0; i < fCluSPoints.size(); ++i)
+	{
+		const auto & v = fCluSPoints[i];
+
+		if (v.empty() || fCluHits[i].empty() ||
+		    has(fUsedClusters, i) || has(fInitialClusters, i)) { continue; }
+
+		const auto & hi = fCluHits[i].front();
+
+        float score = 0;
+        for (const size_t c : clusters)
+        {
+            const auto & hc = fCluHits[c].front();
+
+    		if ((hi->View() == hc->View()) ||
+    		    (hi->WireID().TPC != hc->WireID().TPC) || (hi->WireID().Cryostat != hc->WireID().Cryostat) ||
+    		    has(fTriedClusters[hc->View()], c)) { continue; }
+
+            const auto & u = fCluSPoints[c];
+
+            for (const auto & in_v : v)
+            {
+                auto in_u = u.find(in_v.first);
+                if (in_u != u.end())
+                {
+                    score += 1. / (in_v.second * in_u->second);
+                }
+            }
+        }
+
+		if ((score >= min_score) && (score > max_score))
+		{
+			max_score = score; idx = i;
+		}
+	}
+
+    if (idx >= 0)
+    {
+        //mf::LogVerbatim("PMAlgTracker")
+        std::cout
+            << "   Best matched cluster by SP, size: " << fCluHits[idx].size()
+            << ", score: " << max_score
+            << std::endl;
+    }
+    else std::cout << "Match by SP not found." << std::endl;
+
+    return idx;
 }
 // ------------------------------------------------------
 
