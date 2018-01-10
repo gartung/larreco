@@ -1,6 +1,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Class:       PointIdAlg
-// Author:      P.Plonski, R.Sulej (Robert.Sulej@cern.ch), D.Stefan, May 2016
+// Authors:     D.Stefan (Dorota.Stefan@ncbj.gov.pl),         from DUNE, CERN/NCBJ, since May 2016
+//              R.Sulej (Robert.Sulej@cern.ch),               from DUNE, FNAL/NCBJ, since May 2016
+//              P.Plonski,                                    from DUNE, WUT,       since May 2016
+//
 //
 // Point Identification Algorithm
 //
@@ -15,34 +18,24 @@
 // Framework includes
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "fhiclcpp/types/Atom.h"
-#include "fhiclcpp/types/Sequence.h"
-#include "fhiclcpp/types/Table.h"
 #include "canvas/Utilities/InputTag.h"
 
 // LArSoft includes
-#include "larcore/Geometry/GeometryCore.h"
-#include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/TPCGeo.h"
-#include "larcore/Geometry/PlaneGeo.h"
-#include "larcore/Geometry/WireGeo.h"
-#include "lardataobj/RecoBase/Wire.h"
+#include "canvas/Persistency/Common/FindManyP.h" 
 #include "lardataobj/RecoBase/Hit.h"
-#include "larreco/Calorimetry/CalorimetryAlg.h"
+#include "lardataobj/RecoBase/Track.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 
+#include "larreco/RecoAlg/ImagePatternAlgs/PointIdAlg/DataProviderAlg.h"
 #include "larreco/RecoAlg/ImagePatternAlgs/MLP/NNReader.h"
 #include "larreco/RecoAlg/ImagePatternAlgs/Keras/keras_model.h"
-
-#include "CLHEP/Random/JamesRandom.h"
 
 // ROOT & C++
 #include <memory>
 
 namespace nnet
 {
-	class DataProviderAlg;
 	class ModelInterface;
 	class MlpModelInterface;
 	class KerasModelInterface;
@@ -50,116 +43,9 @@ namespace nnet
 	class TrainingDataAlg;
 }
 
-/// Base class providing data for training / running classifiers.
-class nnet::DataProviderAlg
-{
-public:
-	enum EDownscaleMode { kMax = 1, kMaxMean = 2, kMean = 3 };
-
-    struct Config
-    {
-	    using Name = fhicl::Name;
-	    using Comment = fhicl::Comment;
-
-		fhicl::Table<calo::CalorimetryAlg::Config> CalorimetryAlg {
-			Name("CalorimetryAlg"),
-			Comment("Used to eliminate amplitude variation due to electron lifetime.")
-		};
-
-		fhicl::Atom<unsigned int> DriftWindow {
-			Name("DriftWindow"),
-			Comment("Downsampling window (in drift ticks).")
-		};
-
-		fhicl::Atom<std::string> DownscaleFn {
-			Name("DownscaleFn"),
-			Comment("Downsampling function")
-		};
-
-		fhicl::Sequence<float> BlurKernel {
-			Name("BlurKernel"),
-			Comment("Blur kernel in wire direction")
-		};
-
-		fhicl::Atom<float> NoiseSigma {
-			Name("NoiseSigma"),
-			Comment("White noise sigma")
-		};
-
-		fhicl::Atom<float> CoherentSigma {
-			Name("CoherentSigma"),
-			Comment("Coherent noise sigma")
-		};
-    };
-
-	DataProviderAlg(const fhicl::ParameterSet& pset) :
-		DataProviderAlg(fhicl::Table<Config>(pset, {})())
-	{}
-
-    DataProviderAlg(const Config& config);
-
-	virtual ~DataProviderAlg(void);
-
-	void reconfigure(const Config& config); // setup buffers etc.
-
-	bool setWireDriftData(const std::vector<recob::Wire> & wires, // once per view: setup ADC buffer, collect & downscale ADC's
-		unsigned int view, unsigned int tpc, unsigned int cryo);
-
-	std::vector<float> const & wireData(size_t widx) const { return fWireDriftData[widx]; }
-
-	unsigned int Cryo(void) const { return fCryo; }
-	unsigned int TPC(void) const { return fTPC; }
-	unsigned int View(void) const { return fView; }
-
-	unsigned int NWires(void) const { return fNWires; }
-	unsigned int NScaledDrifts(void) const { return fNScaledDrifts; }
-
-    double LifetimeCorrection(double tick) const { return fCalorimetryAlg.LifetimeCorrection(tick); }
-
-protected:
-	unsigned int fCryo, fTPC, fView;
-	unsigned int fNWires, fNDrifts, fNScaledDrifts;
-
-	std::vector< raw::ChannelID_t > fWireChannels;              // wire channels (may need this connection...), InvalidChannelID if not used
-	std::vector< std::vector<float> > fWireDriftData;           // 2D data for entire projection, drifts scaled down
-
-	EDownscaleMode fDownscaleMode;
-	size_t fDriftWindow;
-
-	void downscaleMax(std::vector<float> & dst, std::vector<float> const & adc) const;
-	void downscaleMaxMean(std::vector<float> & dst, std::vector<float> const & adc) const;
-	void downscaleMean(std::vector<float> & dst, std::vector<float> const & adc) const;
-
-	bool setWireData(std::vector<float> const & adc, size_t wireIdx);
-
-	virtual void resizeView(size_t wires, size_t drifts);
-
-	// Calorimetry needed to equalize ADC amplitude along drift:
-	calo::CalorimetryAlg  fCalorimetryAlg;
-
-	// Geometry and detector properties:
-	geo::GeometryCore const* fGeometry;
-	detinfo::DetectorProperties const* fDetProp;
-
-private:
-    float scaleAdcSample(float val) const;
-    std::vector<float> fAmplCalibConst;
-
-    CLHEP::HepJamesRandom fRndEngine;
-
-    void applyBlur();
-    std::vector<float> fBlurKernel; // blur not applied if empty
-
-    void addWhiteNoise();
-    float fNoiseSigma;              // noise not added if sigma=0
-
-    void addCoherentNoise();
-    float fCoherentSigma;           // noise not added if sigma=0
-};
-// ------------------------------------------------------
-// ------------------------------------------------------
-// ------------------------------------------------------
-
+/// Interface class for various classifier models. Now MLP (NetMaker) and CNN (Keras with
+/// simple cpp interface) are supported. Will add interface to Protobuf as soon as Tensorflow
+/// may be used from UPS.
 class nnet::ModelInterface
 {
 public:
@@ -186,13 +72,13 @@ class nnet::MlpModelInterface : public nnet::ModelInterface
 public:
 	MlpModelInterface(const char* xmlFileName);
 
-	virtual unsigned int GetInputRows(void) const { return m.GetInputLength(); }
-	virtual unsigned int GetInputCols(void) const { return 1; }
-	virtual int GetOutputLength(void) const { return m.GetOutputLength(); }
+	unsigned int GetInputRows(void) const override { return m.GetInputLength(); }
+	unsigned int GetInputCols(void) const override { return 1; }
+	int GetOutputLength(void) const override { return m.GetOutputLength(); }
 
-	virtual bool Run(std::vector< std::vector<float> > const & inp2d);
-	virtual float GetOneOutput(int neuronIndex) const;
-	virtual std::vector<float> GetAllOutputs(void) const;
+	bool Run(std::vector< std::vector<float> > const & inp2d) override;
+	float GetOneOutput(int neuronIndex) const override;
+	std::vector<float> GetAllOutputs(void) const override;
 
 private:
 	nnet::NNReader m;
@@ -204,13 +90,13 @@ class nnet::KerasModelInterface : public nnet::ModelInterface
 public:
 	KerasModelInterface(const char* modelFileName);
 
-	virtual unsigned int GetInputRows(void) const { return m.get_input_rows(); }
-	virtual unsigned int GetInputCols(void) const { return m.get_input_cols(); }
-	virtual int GetOutputLength(void) const { return m.get_output_length(); }
+	unsigned int GetInputRows(void) const override { return m.get_input_rows(); }
+	unsigned int GetInputCols(void) const override { return m.get_input_cols(); }
+	int GetOutputLength(void) const override { return m.get_output_length(); }
 
-	virtual bool Run(std::vector< std::vector<float> > const & inp2d);
-	virtual float GetOneOutput(int neuronIndex) const;
-	virtual std::vector<float> GetAllOutputs(void) const;
+	bool Run(std::vector< std::vector<float> > const & inp2d) override;
+	float GetOneOutput(int neuronIndex) const override;
+	std::vector<float> GetAllOutputs(void) const override;
 
 private:
 	std::vector<float> fOutput; // buffer for output values
@@ -218,11 +104,11 @@ private:
 };
 // ------------------------------------------------------
 
-class nnet::PointIdAlg : public nnet::DataProviderAlg
+class nnet::PointIdAlg : public img::DataProviderAlg
 {
 public:
 
-    struct Config : public nnet::DataProviderAlg::Config
+    struct Config : public img::DataProviderAlg::Config
     {
 	    using Name = fhicl::Name;
 	    using Comment = fhicl::Comment;
@@ -249,19 +135,15 @@ public:
 
     PointIdAlg(const Config& config);
 
-	virtual ~PointIdAlg(void);
-
-	void reconfigure(const Config& config);  // read-in nnet
+	~PointIdAlg(void) override;
 
 	size_t NClasses(void) const;
 
-	// calculate single-value prediction (2-class probability) for [wire, drift] point
+	/// calculate single-value prediction (2-class probability) for [wire, drift] point
 	float predictIdValue(unsigned int wire, float drift, size_t outIdx = 0) const;
-	float predictIdValue(std::vector< art::Ptr<recob::Hit> > const & hits, size_t outIdx = 0) const;
 
-	// calculate multi-class probabilities for [wire, drift] point
+	/// calculate multi-class probabilities for [wire, drift] point
 	std::vector<float> predictIdVector(unsigned int wire, float drift) const;
-	std::vector<float> predictIdVector(std::vector< art::Ptr<recob::Hit> > const & hits) const;
 
 	static std::vector<float> flattenData2D(std::vector< std::vector<float> > const & patch);
 
@@ -270,15 +152,28 @@ public:
 
     bool isInsideFiducialRegion(unsigned int wire, float drift) const;
 
+    /// test if wire/drift coordinates point to the current patch (so maybe the cnn output
+    /// does not need to be recalculated)
+    bool isCurrentPatch(unsigned int wire, float drift) const;
+
+    /// test if two wire/drift coordinates point to the same patch
+    bool isSamePatch(unsigned int wire1, float drift1, unsigned int wire2, float drift2) const;
+
 private:
 	std::string fNNetModelFilePath;
 	nnet::ModelInterface* fNNet;
 
-	mutable std::vector< std::vector<float> > fWireDriftPatch;  // placeholder for patch around identified point
+	mutable std::vector< std::vector<float> > fWireDriftPatch;  // patch data around the identified point
 	size_t fPatchSizeW, fPatchSizeD;
 
 	mutable size_t fCurrentWireIdx, fCurrentScaledDrift;
-	bool bufferPatch(size_t wire, float drift) const;
+	bool patchFromDownsampledView(size_t wire, float drift) const;
+	bool patchFromOriginalView(size_t wire, float drift) const;
+	bool bufferPatch(size_t wire, float drift) const
+    {
+        if (fDownscaleFullView) { return patchFromDownsampledView(wire, drift); }
+        else { return patchFromOriginalView(wire, drift); }
+    }
 	void resizePatch(void);
 
 	void deleteNNet(void) { if (fNNet) delete fNNet; fNNet = 0; }
@@ -287,7 +182,7 @@ private:
 // ------------------------------------------------------
 // ------------------------------------------------------
 
-class nnet::TrainingDataAlg : public nnet::DataProviderAlg
+class nnet::TrainingDataAlg : public img::DataProviderAlg
 {
 public:
 
@@ -296,26 +191,29 @@ public:
         kNone     = 0,
         kPdgMask  = 0x00000FFF, // pdg code mask
         kTypeMask = 0x0000F000, // track type mask
-        kVtxMask  = 0x0FFF0000  // vertex flags, still can use 0xFFFF0000 if more vtx types needed
+        kVtxMask  = 0xFFFF0000  // vertex flags
     };
 
     enum ETrkType
     {
         kDelta  = 0x1000,      // delta electron
-        kMichel = 0x2000       // Michel electron
+        kMichel = 0x2000,      // Michel electron
+        kPriEl  = 0x4000,      // primary electron
+        kPriMu  = 0x8000       // primary muon
     };
 
 	enum EVtxId
 	{
-		kNuNC  = 0x0010000, kNuCC = 0x0020000,                      // nu interaction type
+		kNuNC  = 0x0010000, kNuCC = 0x0020000, kNuPri = 0x0040000,  // nu interaction type
 		kNuE   = 0x0100000, kNuMu = 0x0200000, kNuTau = 0x0400000,  // nu flavor
-		kHadr  = 0x1000000,    // hadronic inelastic scattering
-		kPi0   = 0x2000000,    // pi0 produced in this vertex
-		kDecay = 0x4000000,    // point of particle decay
-		kConv  = 0x8000000,    // gamma conversion
+		kHadr  = 0x1000000,       // hadronic inelastic scattering
+		kPi0   = 0x2000000,       // pi0 produced in this vertex
+		kDecay = 0x4000000,       // point of particle decay
+		kConv  = 0x8000000,       // gamma conversion
+		kElectronEnd = 0x10000000 // clear end of an electron
 	};
 
-    struct Config : public nnet::DataProviderAlg::Config
+    struct Config : public img::DataProviderAlg::Config
     {
 	    using Name = fhicl::Name;
 	    using Comment = fhicl::Comment;
@@ -323,6 +221,16 @@ public:
 		fhicl::Atom< art::InputTag > WireLabel {
 			Name("WireLabel"),
 			Comment("Tag of recob::Wire.")
+		};
+
+		fhicl::Atom< art::InputTag > HitLabel {
+			Name("HitLabel"),
+			Comment("Tag of recob::Hit.")
+		};
+
+		fhicl::Atom< art::InputTag > TrackLabel {
+			Name("TrackLabel"),
+			Comment("Tag of recob::Track.")
 		};
 
 		fhicl::Atom< art::InputTag > SimulationLabel {
@@ -347,12 +255,18 @@ public:
 
     TrainingDataAlg(const Config& config);
 
-	virtual ~TrainingDataAlg(void);
+	~TrainingDataAlg(void) override;
 
 	void reconfigure(const Config& config);
 
+    bool saveSimInfo() const { return fSaveSimInfo; }
+
 	bool setEventData(const art::Event& event,   // collect & downscale ADC's, charge deposits, pdg labels
-		unsigned int view, unsigned int tpc, unsigned int cryo);
+		unsigned int plane, unsigned int tpc, unsigned int cryo);
+
+	bool setDataEventData(const art::Event& event,   // collect & downscale ADC's, charge deposits, pdg labels
+		unsigned int plane, unsigned int tpc, unsigned int cryo);
+
 
 	bool findCrop(float max_e_cut, unsigned int & w0, unsigned int & w1, unsigned int & d0, unsigned int & d1) const;
 
@@ -361,7 +275,7 @@ public:
 
 protected:
 
-	virtual void resizeView(size_t wires, size_t drifts) override;
+	void resizeView(size_t wires, size_t drifts) override;
 
 private:
 
@@ -370,9 +284,10 @@ private:
 		size_t Wire;
 		int Drift;
 		int TPC;
+		int Cryo;
 	};
 
-	WireDrift getProjection(double x, double y, double z, unsigned int view) const;
+	WireDrift getProjection(const TLorentzVector& tvec, unsigned int plane) const;
 
 	bool setWireEdepsAndLabels(
 		std::vector<float> const & edeps,
@@ -382,7 +297,18 @@ private:
 	void collectVtxFlags(
 		std::unordered_map< size_t, std::unordered_map< int, int > > & wireToDriftToVtxFlags,
 		const std::unordered_map< int, const simb::MCParticle* > & particleMap,
-		unsigned int view) const;
+		unsigned int plane) const;
+
+    static float particleRange2(const simb::MCParticle & particle)
+    {
+        float dx = particle.EndX() - particle.Vx();
+        float dy = particle.EndY() - particle.Vy();
+        float dz = particle.EndZ() - particle.Vz();
+        return dx*dx + dy*dy + dz*dz;
+    }
+    bool isElectronEnd(
+        const simb::MCParticle & particle,
+        const std::unordered_map< int, const simb::MCParticle* > & particleMap) const;
 
     bool isMuonDecaying(
         const simb::MCParticle & particle,
@@ -392,10 +318,15 @@ private:
 	std::vector< std::vector<int> > fWireDriftPdg;
 
 	art::InputTag fWireProducerLabel;
+	art::InputTag fHitProducerLabel;
+	art::InputTag fTrackModuleLabel;
 	art::InputTag fSimulationProducerLabel;
 	bool fSaveVtxFlags;
+	bool fSaveSimInfo;
 
     unsigned int fAdcDelay;
+
+    std::vector<size_t> fEventsPerBin;
 };
 // ------------------------------------------------------
 // ------------------------------------------------------

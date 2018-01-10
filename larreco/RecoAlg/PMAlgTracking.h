@@ -1,6 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // Class:       PMAlgTracking
-// Author:      D.Stefan (Dorota.Stefan@ncbj.gov.pl) and R.Sulej (Robert.Sulej@cern.ch), June 2016
+// Author:      D.Stefan (Dorota.Stefan@ncbj.gov.pl),
+//              R.Sulej (Robert.Sulej@cern.ch),
+//              L.Whitehead (leigh.howard.whitehead@cern.ch), June 2016
 //
 // Single track reconstruction toolkit based on Projection Matching Algorithm. Uses cluster collections
 // to find single tracks (modularized version of our original code).
@@ -19,9 +21,9 @@
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/TPCGeo.h"
-#include "larcore/Geometry/PlaneGeo.h"
-#include "larcore/Geometry/WireGeo.h"
+#include "larcorealg/Geometry/TPCGeo.h"
+#include "larcorealg/Geometry/PlaneGeo.h"
+#include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -43,7 +45,7 @@ namespace pma
 {
 	typedef std::map< size_t, pma::TrkCandidateColl > tpc_track_map;
 
-	recob::Track convertFrom(const pma::Track3D& src, unsigned int tidx);
+	recob::Track convertFrom(const pma::Track3D& src, unsigned int tidx, int pdg = 0);
 
 	class PMAlgTrackingBase;
 	class PMAlgFitter;
@@ -142,132 +144,97 @@ private:
 class pma::PMAlgTracker : public pma::PMAlgTrackingBase
 {
 public:
+    enum EValidationMode { kHits = 1, kAdc = 2, kCalib = 3 };
 
 	struct Config {
 		using Name = fhicl::Name;
 		using Comment = fhicl::Comment;
 
 		fhicl::Atom<size_t> MinSeedSize1stPass {
-			Name("MinSeedSize1stPass"),
-			Comment("min. cluster size used to start building a track in the 1st pass")
+			Name("MinSeedSize1stPass"), Comment("min. cluster size used to start building a track in the 1st pass")
 		};
 
 		fhicl::Atom<size_t> MinSeedSize2ndPass {
-			Name("MinSeedSize2ndPass"),
-			Comment("min. cluster size used to start building a track in the 2nd pass")
+			Name("MinSeedSize2ndPass"), Comment("min. cluster size used to start building a track in the 2nd pass")
 		};
 
 		fhicl::Atom<float> TrackLikeThreshold {
-			Name("TrackLikeThreshold"),
-			Comment("Threshold for track-like recognition")
+			Name("TrackLikeThreshold"), Comment("Threshold for track-like recognition")
 		};
 
 		fhicl::Atom<bool> RunVertexing {
-			Name("RunVertexing"),
-			Comment("find vertices from PFP hierarchy, join with tracks, reoptimize track-vertex structure")
+			Name("RunVertexing"), Comment("find vertices from PFP hierarchy, join with tracks, reoptimize track-vertex structure")
 		};
 
 		fhicl::Atom<bool> FlipToBeam {
-			Name("FlipToBeam"),
-			Comment("set the track direction to increasing Z values")
+			Name("FlipToBeam"), Comment("set the track direction to increasing Z values")
 		};
 
 		fhicl::Atom<bool> FlipDownward {
-			Name("FlipDownward"),
-			Comment("set the track direction to decreasing Y values (like cosmic rays)")
+			Name("FlipDownward"), Comment("set the track direction to decreasing Y values (like cosmic rays)")
 		};
 
 		fhicl::Atom<bool> AutoFlip_dQdx {
-			Name("AutoFlip_dQdx"),
-			Comment("set the track direction to increasing dQ/dx (overrides FlipToBeam and FlipDownward if significant rise of dQ/dx at the track end)")
+			Name("AutoFlip_dQdx"), Comment("set the track direction to increasing dQ/dx (overrides FlipToBeam and FlipDownward if significant rise of dQ/dx at the track end)")
 		};
 
 		fhicl::Atom<bool> MergeWithinTPC {
-			Name("MergeWithinTPC"),
-			Comment("merge witnin single TPC; finds tracks best matching by angle and displacement")
+			Name("MergeWithinTPC"), Comment("merge witnin single TPC; finds tracks best matching by angle and displacement")
 		};
 
 		fhicl::Atom<double> MergeTransverseShift {
-			Name("MergeTransverseShift"),
-			Comment("max. transverse displacement [cm] between tracks")
+			Name("MergeTransverseShift"), Comment("max. transverse displacement [cm] between tracks")
 		};
 
 		fhicl::Atom<double> MergeAngle {
-			Name("MergeAngle"),
-			Comment("max. angle [degree] between tracks (nearest segments)")
+			Name("MergeAngle"), Comment("max. angle [degree] between tracks (nearest segments)")
 		};
 
 		fhicl::Atom<bool> StitchBetweenTPCs {
-			Name("StitchBetweenTPCs"),
-			Comment("stitch between TPCs; finds tracks best matching by angle and displacement")
+			Name("StitchBetweenTPCs"), Comment("stitch between TPCs; finds tracks best matching by angle and displacement")
 		};
 
 		fhicl::Atom<double> StitchDistToWall {
-			Name("StitchDistToWall"),
-			Comment("max. track endpoint distance [cm] to TPC boundary")
+			Name("StitchDistToWall"), Comment("max. track endpoint distance [cm] to TPC boundary")
 		};
 
 		fhicl::Atom<double> StitchTransverseShift {
-			Name("StitchTransverseShift"),
-			Comment("max. transverse displacement [cm] between tracks")
+			Name("StitchTransverseShift"), Comment("max. transverse displacement [cm] between tracks")
 		};
 
 		fhicl::Atom<double> StitchAngle {
-			Name("StitchAngle"),
-			Comment("max. angle [degree] between tracks (nearest segments)")
+			Name("StitchAngle"), Comment("max. angle [degree] between tracks (nearest segments)")
 		};
 
 		fhicl::Atom<bool> MatchT0inAPACrossing {
-			Name("MatchT0inAPACrossing"),
-			Comment("match T0 of APA-crossing tracks using PMAlgStitcher")
+			Name("MatchT0inAPACrossing"), Comment("match T0 of APA-crossing tracks using PMAlgStitcher")
 		};
 
 		fhicl::Atom<bool> MatchT0inCPACrossing {
-			Name("MatchT0inCPACrossing"),
-			Comment("match T0 of CPA-crossing tracks using PMAlgStitcher")
+			Name("MatchT0inCPACrossing"), Comment("match T0 of CPA-crossing tracks using PMAlgStitcher")
 		};
 
-  };
+		fhicl::Atom<std::string> Validation {
+			Name("Validation"), Comment("tracks validation mode: hits, adc, calib")
+		};
 
-	PMAlgTracker(const std::vector< art::Ptr<recob::Hit> > & allhitlist,
+		fhicl::Sequence<double> AdcValidationThr {
+			Name("AdcValidationThr"), Comment("thresholds for not-empty pixel in the ADC track validation")
+		};
+
+		fhicl::Table<img::DataProviderAlg::Config> AdcImageAlg {
+			Name("AdcImageAlg"), Comment("ADC based image used for the track validation")
+		};
+    };
+
+	PMAlgTracker(const std::vector< art::Ptr<recob::Hit> > & allhitlist, const std::vector<recob::Wire> & wires,
 		const pma::ProjectionMatchingAlg::Config& pmalgConfig,
 		const pma::PMAlgTracker::Config& pmalgTrackerConfig,
 		const pma::PMAlgVertexing::Config& pmvtxConfig,
 		const pma::PMAlgStitching::Config& pmstitchConfig,
-		const pma::PMAlgCosmicTagger::Config& pmtaggerConfig) :
-
-		PMAlgTrackingBase(allhitlist, pmalgConfig, pmvtxConfig),
-
-		fMinSeedSize1stPass(pmalgTrackerConfig.MinSeedSize1stPass()),
-		fMinSeedSize2ndPass(pmalgTrackerConfig.MinSeedSize2ndPass()),
-		fTrackLikeThreshold(pmalgTrackerConfig.TrackLikeThreshold()),
-
-		fMinTwoViewFraction(pmalgConfig.MinTwoViewFraction()),
-
-		fFlipToBeam(pmalgTrackerConfig.FlipToBeam()),
-		fFlipDownward(pmalgTrackerConfig.FlipDownward()),
-		fAutoFlip_dQdx(pmalgTrackerConfig.AutoFlip_dQdx()),
-
-		fMergeWithinTPC(pmalgTrackerConfig.MergeWithinTPC()),
-		fMergeTransverseShift(pmalgTrackerConfig.MergeTransverseShift()),
-		fMergeAngle(pmalgTrackerConfig.MergeAngle()),
-
-        fCosmicTagger(pmtaggerConfig),
-        fTagCosmicTracks(fCosmicTagger.tagAny()),
-
-		fStitchBetweenTPCs(pmalgTrackerConfig.StitchBetweenTPCs()),
-		fStitchDistToWall(pmalgTrackerConfig.StitchDistToWall()),
-		fStitchTransverseShift(pmalgTrackerConfig.StitchTransverseShift()),
-		fStitchAngle(pmalgTrackerConfig.StitchAngle()),
-
-		fMatchT0inAPACrossing(pmalgTrackerConfig.MatchT0inAPACrossing()),
-		fMatchT0inCPACrossing(pmalgTrackerConfig.MatchT0inCPACrossing()),
-        fStitcher(pmstitchConfig),
-
-		fRunVertexing(pmalgTrackerConfig.RunVertexing()),
-
-		fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
-	{}
+		const pma::PMAlgCosmicTagger::Config& pmtaggerConfig,
+		
+		const std::vector< TH1F* > & hpassing, const std::vector< TH1F* > & hrejected);
 
 	void init(const art::FindManyP< recob::Hit > & hitsFromClusters);
 
@@ -309,6 +276,8 @@ private:
 	void fromMaxCluster_tpc(pma::TrkCandidateColl & result,
 		size_t minBuildSize, unsigned int tpc, unsigned int cryo);
 
+    size_t matchTrack(const pma::TrkCandidateColl & tracks, const std::vector< art::Ptr<recob::Hit> > & hits) const;
+
 	pma::TrkCandidate matchCluster(int first_clu_idx, const std::vector< art::Ptr<recob::Hit> > & first_hits,
 		size_t minSizeCompl, unsigned int tpc, unsigned int cryo, geo::View_t first_view);
 
@@ -343,12 +312,14 @@ private:
 		return false;
 	}
 
+    const std::vector<recob::Wire> & fWires;
 	std::vector< std::vector< art::Ptr<recob::Hit> > > fCluHits;
 	std::vector< float > fCluWeights;
 
-	/// these guys are temporary states, to be moved to function calls
-	std::vector< size_t > used_clusters, initial_clusters;
-	mutable std::map< unsigned int, std::vector<size_t> > tried_clusters;
+	/// --------------------------------------------------------------
+	std::vector< size_t > fUsedClusters, fInitialClusters;
+	mutable std::map< unsigned int, std::vector<size_t> > fTriedClusters;
+	std::vector< geo::View_t > fAvailableViews;
 	/// --------------------------------------------------------------
 
 	// ******************** fcl parameters **********************
@@ -380,8 +351,16 @@ private:
 
 	bool fRunVertexing;          // run vertex finding
 
+    EValidationMode fValidation;                    // track validation mode
+    std::vector< img::DataProviderAlg > fAdcImages; // adc image making algorithms for each plane
+    std::vector<double> fAdcValidationThr;          // threshold on pixel values in the adc image
+    
+    // references to the validation calibration histograms
+	const std::vector< TH1F* > & fAdcInPassingPoints;
+	const std::vector< TH1F* > & fAdcInRejectedPoints;
+
 	// *********************** services *************************
-	art::ServiceHandle< geo::Geometry > fGeom;
+	geo::GeometryCore const* fGeom;
 	const detinfo::DetectorProperties* fDetProp;
 };
 

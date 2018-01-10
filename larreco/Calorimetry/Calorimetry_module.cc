@@ -39,8 +39,8 @@ extern "C" {
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusProvider.h"
 #include "lardata/ArtDataHelper/TrackUtils.h" // lar::util::TrackPitchInView()
-#include "larcore/Geometry/PlaneGeo.h"
-#include "larcore/Geometry/WireGeo.h"
+#include "larcorealg/Geometry/PlaneGeo.h"
+#include "larcorealg/Geometry/WireGeo.h"
 #include "larsim/MCCheater/BackTracker.h"
 
 // ROOT includes

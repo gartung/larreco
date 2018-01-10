@@ -2,7 +2,9 @@
 // Class:       PMAlgTrackMaker
 // Module Type: producer
 // File:        PMAlgTrackMaker_module.cc
-// Author:      D.Stefan (Dorota.Stefan@ncbj.gov.pl) and R.Sulej (Robert.Sulej@cern.ch), May 2015
+// Authors      D.Stefan (Dorota.Stefan@ncbj.gov.pl),         from DUNE, CERN/NCBJ, since May 2015
+//              R.Sulej (Robert.Sulej@cern.ch),               from DUNE, FNAL/NCBJ, since May 2015
+//              L.Whitehead (leigh.howard.whitehead@cern.ch), from DUNE, CERN,      since Jan 2017
 //
 // Creates 3D tracks and vertices using Projection Matching Algorithm,
 // please see RecoAlg/ProjectionMatchingAlg.h for basics of the PMA algorithm and its settings.
@@ -23,6 +25,8 @@
 //                     electrons
 //    July 2016:       redesign module: extract trajectory fitting-only to separate module, move
 //                     tracking functionality to algorithm classes
+//    ~Jan-May 2017:   track stitching on APA and CPA, cosmics tagging
+//    July 2017:       validation on 2D ADC image
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -32,6 +36,7 @@
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
+#include "art/Framework/Services/Optional/TFileService.h"
 
 #include "fhiclcpp/types/Atom.h"
 #include "fhiclcpp/types/Table.h"
@@ -42,9 +47,9 @@
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/TPCGeo.h"
-#include "larcore/Geometry/PlaneGeo.h"
-#include "larcore/Geometry/WireGeo.h"
+#include "larcorealg/Geometry/TPCGeo.h"
+#include "larcorealg/Geometry/PlaneGeo.h"
+#include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/PFParticle.h"
@@ -53,6 +58,7 @@
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/AnalysisBase/T0.h" 
+#include "lardataobj/AnalysisBase/CosmicTag.h" 
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/Utilities/PtrMaker.h"
@@ -110,6 +116,11 @@ public:
 			Comment("tag of unclustered hits, which were used to validate tracks")
 		};
 
+		fhicl::Atom< art::InputTag > WireModuleLabel {
+			Name("WireModuleLabel"),
+			Comment("tag of recob::Wire producer.")
+		};
+
 		fhicl::Atom<art::InputTag> ClusterModuleLabel {
 			Name("ClusterModuleLabel"),
 			Comment("tag of cluster collection, these clusters are used for track building")
@@ -140,10 +151,14 @@ private:
     // still may look track-like)
     template <size_t N> int getPdgFromCnnOnHits(const art::Event& evt, const pma::Track3D& trk) const;
 
+    // convert to LArSoft's cosmic tag type
+    anab::CosmicTagID_t getCosmicTag(const pma::Track3D::ETag pmaTag) const;
+
 	// ******************** fcl parameters **********************
-	art::InputTag fHitModuleLabel; // tag for hits collection (used for trk validation)
-	art::InputTag fCluModuleLabel; // tag for input cluster collection
-	art::InputTag fEmModuleLabel;  // tag for em-like cluster collection
+	art::InputTag fHitModuleLabel;  // tag for hits collection (used for trk validation)
+	art::InputTag fWireModuleLabel; // tag for recob::Wire collection (used for trk validation)
+	art::InputTag fCluModuleLabel;  // tag for input cluster collection
+	art::InputTag fEmModuleLabel;   // tag for em-like cluster collection
 
 	pma::ProjectionMatchingAlg::Config fPmaConfig;
 	pma::PMAlgTracker::Config fPmaTrackerConfig;
@@ -159,7 +174,10 @@ private:
 	static const std::string kNodesName;        // pma nodes
 
 	// *********************** geometry **************************
-	art::ServiceHandle< geo::Geometry > fGeom;
+	geo::GeometryCore const* fGeom;
+
+    // histograms created only for the calibration of the ADC-based track validation mode
+    std::vector< TH1F* > fAdcInPassingPoints, fAdcInRejectedPoints;
 };
 // -------------------------------------------------------------
 const std::string PMAlgTrackMaker::kKinksName = "kink";
@@ -168,6 +186,7 @@ const std::string PMAlgTrackMaker::kNodesName = "node";
 
 PMAlgTrackMaker::PMAlgTrackMaker(PMAlgTrackMaker::Parameters const& config) :
 	fHitModuleLabel(config().HitModuleLabel()),
+	fWireModuleLabel(config().WireModuleLabel()),
 	fCluModuleLabel(config().ClusterModuleLabel()),
 	fEmModuleLabel(config().EmClusterModuleLabel()),
 
@@ -178,7 +197,9 @@ PMAlgTrackMaker::PMAlgTrackMaker(PMAlgTrackMaker::Parameters const& config) :
     fPmaStitchConfig(config().PMAlgStitching()),
 
 	fSaveOnlyBranchingVtx(config().SaveOnlyBranchingVtx()),
-	fSavePmaNodes(config().SavePmaNodes())
+	fSavePmaNodes(config().SavePmaNodes()),
+	
+	fGeom( &*(art::ServiceHandle<geo::Geometry>()))
 {
 	produces< std::vector<recob::Track> >();
 	produces< std::vector<recob::SpacePoint> >();
@@ -186,6 +207,7 @@ PMAlgTrackMaker::PMAlgTrackMaker(PMAlgTrackMaker::Parameters const& config) :
 	produces< std::vector<recob::Vertex> >(kKinksName); // collection of kinks on tracks
 	produces< std::vector<recob::Vertex> >(kNodesName); // collection of pma nodes
 	produces< std::vector<anab::T0> >();
+	produces< std::vector<anab::CosmicTag> >(); // Cosmic ray tags
 
 	produces< art::Assns<recob::Track, recob::Hit> >(); // ****** REMEMBER to remove when FindMany improved ******
 	produces< art::Assns<recob::Track, recob::Hit, recob::TrackHitMeta> >();
@@ -195,11 +217,23 @@ PMAlgTrackMaker::PMAlgTrackMaker(PMAlgTrackMaker::Parameters const& config) :
 	produces< art::Assns<recob::Vertex, recob::Track> >(); // no instance name for assns of tracks to interaction vertices
 	produces< art::Assns<recob::Track, recob::Vertex> >(kKinksName);  // assns of kinks to tracks
 	produces< art::Assns<recob::Track, anab::T0> >();
+	produces< art::Assns<recob::Track, anab::CosmicTag> >(); // Cosmic ray tags associated to tracks
 
 	produces< std::vector<recob::PFParticle> >();
 	produces< art::Assns<recob::PFParticle, recob::Cluster> >();
 	produces< art::Assns<recob::PFParticle, recob::Vertex> >();
 	produces< art::Assns<recob::PFParticle, recob::Track> >();
+
+    if (fPmaTrackerConfig.Validation() == "calib") // create histograms only in the calibration mode
+    {
+    	art::ServiceHandle<art::TFileService> tfs;
+	    for (size_t p = 0; p < fGeom->MaxPlanes(); ++p)
+	    {
+	        std::ostringstream ss1; ss1 << "adc_plane_" << p ;
+	        fAdcInPassingPoints.push_back( tfs->make<TH1F>((ss1.str() + "_passing").c_str(), "max adc around the point on track", 100., 0., 5.) );
+	        fAdcInRejectedPoints.push_back( tfs->make<TH1F>((ss1.str() + "_rejected").c_str(), "max adc around spurious point ", 100., 0., 5.) );
+	    }
+	}
 }
 // ------------------------------------------------------
 
@@ -269,6 +303,25 @@ bool PMAlgTrackMaker::init(const art::Event & evt, pma::PMAlgTracker & pmalgTrac
     return true;
 }
 
+anab::CosmicTagID_t PMAlgTrackMaker::getCosmicTag(const pma::Track3D::ETag pmaTag) const
+{
+    anab::CosmicTagID_t anabTag;
+    
+    pma::Track3D::ETag masked = pma::Track3D::ETag(pmaTag & 0x00FFFF00);
+    switch (masked)
+    {
+        case pma::Track3D::kOutsideDrift_Partial: anabTag = anab::CosmicTagID_t::kOutsideDrift_Partial; break;
+        case pma::Track3D::kOutsideDrift_Complete: anabTag = anab::CosmicTagID_t::kOutsideDrift_Complete; break;
+        case pma::Track3D::kBeamIncompatible: anabTag = anab::CosmicTagID_t::kFlash_BeamIncompatible; break;
+        case pma::Track3D::kGeometry_XX: anabTag = anab::CosmicTagID_t::kGeometry_XX; break;
+        case pma::Track3D::kGeometry_YY: anabTag = anab::CosmicTagID_t::kGeometry_YY; break;
+        case pma::Track3D::kGeometry_ZZ: anabTag = anab::CosmicTagID_t::kGeometry_ZZ; break;
+        default: anabTag = anab::CosmicTagID_t::kUnknown; break;
+    }
+    
+    return anabTag;
+}
+
 void PMAlgTrackMaker::produce(art::Event& evt)
 {
 	// ---------------- Create data products --------------------------
@@ -278,12 +331,14 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 	auto kinks = std::make_unique< std::vector< recob::Vertex > >(); // kinks on tracks (no new particles start in kinks)
 	auto nodes = std::make_unique< std::vector< recob::Vertex > >(); // pma nodes
 	auto t0s = std::make_unique< std::vector< anab::T0 > >();
+	auto cosmicTags = std::make_unique< std::vector< anab::CosmicTag > >();
 
 	auto trk2hit_oldway = std::make_unique< art::Assns< recob::Track, recob::Hit > >(); // ****** REMEMBER to remove when FindMany improved ******
 	auto trk2hit = std::make_unique< art::Assns< recob::Track, recob::Hit, recob::TrackHitMeta > >();
 
 	auto trk2sp = std::make_unique< art::Assns< recob::Track, recob::SpacePoint > >();
 	auto trk2t0 = std::make_unique< art::Assns< recob::Track, anab::T0 > >();
+	auto trk2ct = std::make_unique< art::Assns< recob::Track, anab::CosmicTag > >();
 
 	auto sp2hit = std::make_unique< art::Assns< recob::SpacePoint, recob::Hit > >();
 	auto vtx2trk = std::make_unique< art::Assns< recob::Vertex, recob::Track > >();  // one or more tracks (particles) start in the vertex
@@ -296,15 +351,16 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 	auto pfp2trk = std::make_unique< art::Assns< recob::PFParticle, recob::Track > >();
 
 
-	// ------------------------- Hits ---------------------------------
+	// --------------------- Wires & Hits -----------------------------
+	auto wireHandle = evt.getValidHandle< std::vector<recob::Wire> >(fWireModuleLabel);
 	auto allHitListHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
 	std::vector< art::Ptr<recob::Hit> > allhitlist;
 	art::fill_ptr_vector(allhitlist, allHitListHandle);
 
 
 	// -------------- PMA Tracker for this event ----------------------
-	auto pmalgTracker = pma::PMAlgTracker(allhitlist,
-		fPmaConfig, fPmaTrackerConfig, fPmaVtxConfig, fPmaStitchConfig, fPmaTaggingConfig);
+	auto pmalgTracker = pma::PMAlgTracker(allhitlist, *wireHandle,
+		fPmaConfig, fPmaTrackerConfig, fPmaVtxConfig, fPmaStitchConfig, fPmaTaggingConfig, fAdcInPassingPoints, fAdcInRejectedPoints);
 
     size_t mvaLength = 0;
 	if (fEmModuleLabel != "") // ----------- Exclude EM parts ---------
@@ -319,8 +375,9 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 	else if (fPmaTrackerConfig.TrackLikeThreshold() > 0) // --- CNN EM/trk separation ----
 	{
 	    // try to dig out 4- or 3-output MVA data product
-	    if (init<4>(evt, pmalgTracker) )      { mvaLength = 4; }
-	    else if (init<3>(evt, pmalgTracker))  { mvaLength = 3; }
+	    if (init<4>(evt, pmalgTracker) )      { mvaLength = 4; } // e.g.: EM / track / Michel / none
+	    else if (init<3>(evt, pmalgTracker))  { mvaLength = 3; } // e.g.: EM / track / none
+	    else if (init<2>(evt, pmalgTracker))  { mvaLength = 2; } // just EM / track (LArIAT starts with this style)
 	    else
 	    {
 	        throw cet::exception("PMAlgTrackMaker") << "No EM/track MVA data products." << std::endl;
@@ -362,6 +419,7 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 		auto const make_vtxptr = lar::PtrMaker<recob::Vertex>(evt, *this);
 		auto const make_kinkptr = lar::PtrMaker<recob::Vertex>(evt, *this, kKinksName);
 		auto const make_t0ptr = lar::PtrMaker<anab::T0>(evt, *this);
+		auto const make_ctptr = lar::PtrMaker<anab::CosmicTag>(evt, *this);
 
 		tracks->reserve(result.size());
 		for (size_t trkIndex = 0; trkIndex < result.size(); ++trkIndex)
@@ -370,11 +428,20 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 
 			trk->SelectHits();  // just in case, set all to enabled
 			unsigned int itpc = trk->FrontTPC(), icryo = trk->FrontCryo();
-			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kU)) trk->CompleteMissingWires(geo::kU);
-			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kV)) trk->CompleteMissingWires(geo::kV);
-			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kZ)) trk->CompleteMissingWires(geo::kZ);
+			pma::dedx_map dedx_tmp;
+			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kU)) { trk->CompleteMissingWires(geo::kU); trk->GetRawdEdxSequence(dedx_tmp, geo::kU, 1); }
+			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kV)) { trk->CompleteMissingWires(geo::kV); trk->GetRawdEdxSequence(dedx_tmp, geo::kV, 1); }
+			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kX)) { trk->CompleteMissingWires(geo::kX); trk->GetRawdEdxSequence(dedx_tmp, geo::kX, 1); }
+			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kY)) { trk->CompleteMissingWires(geo::kY); trk->GetRawdEdxSequence(dedx_tmp, geo::kY, 1); }
+			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kZ)) { trk->CompleteMissingWires(geo::kZ); trk->GetRawdEdxSequence(dedx_tmp, geo::kZ, 1); }
 
-			tracks->push_back(pma::convertFrom(*trk, trkIndex));
+		    int pdg = 0;
+		    if (mvaLength == 4) pdg = getPdgFromCnnOnHits<4>(evt, *(result[trkIndex].Track()));
+		    else if (mvaLength == 3) pdg = getPdgFromCnnOnHits<3>(evt, *(result[trkIndex].Track()));
+		    else if (mvaLength == 2) pdg = getPdgFromCnnOnHits<2>(evt, *(result[trkIndex].Track()));
+		    //else mf::LogInfo("PMAlgTrackMaker") << "Not using PID from CNN.";
+
+			tracks->push_back(pma::convertFrom(*trk, trkIndex, pdg));
 
 			auto const trkPtr = make_trkptr(tracks->size() - 1); // PtrMaker Step #2
 
@@ -386,6 +453,32 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 
 				auto const t0Ptr = make_t0ptr(t0s->size() - 1);  // PtrMaker Step #3
 				trk2t0->addSingle(trkPtr, t0Ptr);
+			}
+
+			// Check if this is a cosmic ray and create an association if it is.
+			if(trk->HasTagFlag(pma::Track3D::kCosmic)){
+				// Get the track end points
+				std::vector<float> trkEnd0;
+				std::vector<float> trkEnd1;
+				// Get the drift direction, but don't care about the sign
+				// Also need to subtract 1 due to the definition.
+				int driftDir = abs(fGeom->TPC(trk->FrontTPC(), trk->FrontCryo()).DetectDriftDirection()) - 1;
+				
+				for(int i = 0; i < 3; ++i){
+					// Get the drift direction and apply the opposite of the drift shift in order to
+					// give the CosmicTag the drift coordinate assuming T0 = T_beam as it requests. 
+					double shift = 0.0;
+					if(i == driftDir){
+						shift = trk->Nodes()[0]->GetDriftShift();
+					}
+					trkEnd0.push_back(trk->Nodes()[0]->Point3D()[i] - shift);
+					trkEnd1.push_back(trk->Nodes()[trk->Nodes().size()-1]->Point3D()[i] - shift);
+				}
+				// Make the tag object. For now, let's say this is very likely a cosmic (3rd argument = 1).
+				// Set the type of cosmic to the value saved in pma::Track.
+				cosmicTags->emplace_back(trkEnd0, trkEnd1, 1, getCosmicTag(trk->GetTag()));
+				auto const cosmicPtr = make_ctptr(cosmicTags->size()-1);
+				trk2ct->addSingle(trkPtr,cosmicPtr);
 			}
 
 			// which idx from start, except disabled, really....
@@ -500,11 +593,6 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 
 		for (size_t t = 0; t < result.size(); ++t)
 		{
-		    int pdg = 0;
-		    if (mvaLength == 4) pdg = getPdgFromCnnOnHits<4>(evt, *(result[t].Track()));
-		    else if (mvaLength == 3) pdg = getPdgFromCnnOnHits<3>(evt, *(result[t].Track()));
-		    //else mf::LogInfo("PMAlgTrackMaker") << "Not using PID from CNN.";
-
 			size_t parentIdx = recob::PFParticle::kPFParticlePrimary;
 			if (result[t].Parent() >= 0) parentIdx = (size_t)result[t].Parent();
 
@@ -512,7 +600,7 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 			for (size_t idx : result[t].Daughters()) { daughterIdxs.push_back(idx); }
 
 			size_t pfpidx = pfps->size();
-			pfps->emplace_back(pdg, pfpidx, parentIdx, daughterIdxs);
+			pfps->emplace_back((*tracks)[t].ParticleId(), pfpidx, parentIdx, daughterIdxs);
 
 			auto const pfpptr = make_pfpptr(pfpidx);
 			auto const tptr = make_trkptr(t);
@@ -549,17 +637,21 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 		mf::LogVerbatim("Summary") << pfps->size() << " PFParticles created in total.";
 	}
 
+    // for (const auto & ct : *cosmicTags) { std::cout << "Cosmic tag: " << ct << std::endl; }
+
 	evt.put(std::move(tracks));
 	evt.put(std::move(allsp));
 	evt.put(std::move(vtxs));
 	evt.put(std::move(kinks), kKinksName);
 	evt.put(std::move(nodes), kNodesName);
 	evt.put(std::move(t0s));
+	evt.put(std::move(cosmicTags));
 
 	evt.put(std::move(trk2hit_oldway)); // ****** REMEMBER to remove when FindMany improved ******
 	evt.put(std::move(trk2hit));
 	evt.put(std::move(trk2sp));
 	evt.put(std::move(trk2t0));
+	evt.put(std::move(trk2ct));
 
 	evt.put(std::move(sp2hit));
 	evt.put(std::move(vtx2trk));

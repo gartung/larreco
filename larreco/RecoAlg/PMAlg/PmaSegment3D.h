@@ -26,35 +26,47 @@ class pma::Segment3D : public pma::Element3D, public pma::SortedObjectBase
 public:
 	Segment3D(void) : fParent(0) {}
 	Segment3D(pma::Track3D* trk, pma::Node3D* vstart, pma::Node3D* vstop);
-	virtual ~Segment3D(void) {}
+
+    Vector3D Start(void) const
+    {
+        auto const & p = static_cast< Node3D* >(Prev())->Point3D();
+        return Vector3D(p.X(), p.Y(), p.Z());
+    }
+    Vector3D End(void) const
+    {
+        auto const & p = static_cast< Node3D* >(Next())->Point3D();
+        return Vector3D(p.X(), p.Y(), p.Z());
+    }
 
 	/// Distance [cm] from the 3D segment to the point 3D.
-	virtual double GetDistance2To(const TVector3& p3d) const;
+	double GetDistance2To(const TVector3& p3d) const override;
 
 	/// Distance [cm] from the 2D point to the object's 2D projection in one of wire views.
-	virtual double GetDistance2To(const TVector2& p2d, unsigned int view) const;
+	double GetDistance2To(const TVector2& p2d, unsigned int view) const override;
 
-	/// Get 3D direction cosines.
-	TVector3 GetDirection3D(void) const;
+	/// Get 3D direction cosines of this segment.
+	pma::Vector3D GetDirection3D(void) const override;
 
 	/// Get 3D projection of a 2D point from the view.
 	TVector3 GetProjection(const TVector2& p, unsigned int view) const;
 
 	/// Get 3D projection of a 2D point from the view, no limitations if it falls beyond
 	/// the segment endpoints.
-	virtual TVector3 GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const;
+	TVector3 GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const override;
 
 	/// Set hit 3D position and its 2D projection to the vertex.
-	virtual void SetProjection(pma::Hit3D& h) const;
+	void SetProjection(pma::Hit3D& h) const override;
 
 	/// Squared sum of half-lengths of connected 3D segments
 	/// (used in the vertex position optimization).
-	virtual double Length2(void) const;
+	double Length2(void) const override;
 
 	pma::Track3D* Parent(void) const { return fParent; }
 
 private:
 	Segment3D(const pma::Segment3D& src);
+
+    double SumDist2Hits(void) const override;
 
 	pma::Track3D* fParent;
 
