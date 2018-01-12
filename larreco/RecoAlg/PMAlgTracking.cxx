@@ -434,8 +434,8 @@ void pma::PMAlgTracker::init(const art::FindManyP< recob::Hit > & hitsFromCluste
 void pma::PMAlgTracker::init_sp(const std::vector<recob::Hit> & hits, const art::FindManyP< recob::SpacePoint > & spFromHits)
 {
     //mf::LogVerbatim("PMAlgTracker")
-    std::cout
-        << "Map clusters to space points associated through hits..." << std::endl;
+    //std::cout
+    //    << "Map clusters to space points associated through hits..." << std::endl;
     fCluSPoints.clear(); fCluSPoints.resize(fCluHits.size());
     for (size_t i = 0; i < fCluHits.size(); ++i)
     {
@@ -454,14 +454,13 @@ void pma::PMAlgTracker::init_sp(const std::vector<recob::Hit> & hits, const art:
             {
                 const auto v = spFromHits.at(key);
                 for (const auto sp : v) { fCluSPoints[i][sp.key()]++; }
-                std::cout << " spacepoints: " << v.size() << std::endl;
             }
-            else std::cout << "hit not found" << std::endl;
         }
+	//std::cout << " spacepoints: " << fCluSPoints[i].size() << std::endl;
     }
     //mf::LogVerbatim("PMAlgTracker")
-    std::cout
-        << "...done." << std::endl;
+    //std::cout
+    //    << "...done." << std::endl;
 }
 // ------------------------------------------------------
 
@@ -1574,7 +1573,7 @@ int pma::PMAlgTracker::matchClusterBySP(const std::vector<size_t>& clusters, flo
 		const auto & v = fCluSPoints[i];
 
 		if (v.empty() || fCluHits[i].empty() ||
-		    has(fUsedClusters, i) || has(fInitialClusters, i)) { continue; }
+		    has(clusters, i) || has(fUsedClusters, i) || has(fInitialClusters, i)) { continue; }
 
 		const auto & hi = fCluHits[i].front();
 
