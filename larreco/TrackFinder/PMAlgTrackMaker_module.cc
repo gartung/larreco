@@ -398,8 +398,8 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 
     if (fSpacePointModuleLabel != "") //  ----------- Sort SpacePoints by clusters ---------
     {
-        auto spHitListHandle = evt.getValidHandle< std::vector<recob::Hit> >("gaushit");
-        art::FindManyP< recob::SpacePoint > spFromHits(spHitListHandle, evt, fSpacePointModuleLabel);
+        auto spHitListHandle = evt.getValidHandle< std::vector<recob::Hit> >("hitpdune");
+        art::FindManyP< recob::SpacePoint > spFromHits(spHitListHandle, evt, "hitpdune");
         pmalgTracker.init_sp(*spHitListHandle, spFromHits);
     }
 

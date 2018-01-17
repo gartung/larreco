@@ -439,6 +439,7 @@ void pma::PMAlgTracker::init_sp(const std::vector<recob::Hit> & hits, const art:
     fCluSPoints.clear(); fCluSPoints.resize(fCluHits.size());
     for (size_t i = 0; i < fCluHits.size(); ++i)
     {
+        //std::cout << " hsize: " << fCluHits[i].size() << std::endl;
         for (const auto h : fCluHits[i])
         {
             size_t key = 0;
@@ -453,10 +454,13 @@ void pma::PMAlgTracker::init_sp(const std::vector<recob::Hit> & hits, const art:
             if (found)
             {
                 const auto v = spFromHits.at(key);
-                for (const auto sp : v) { fCluSPoints[i][sp.key()]++; }
+                //std::cout << " spsize: " << v.size() << std::endl;
+                for (const auto sp : v) { fCluSPoints[i][sp.key()] += v.size(); }
             }
         }
-	//std::cout << " spacepoints: " << fCluSPoints[i].size() << std::endl;
+        //for (const auto & entry : fCluSPoints[i])
+	//    std::cout << " spscore: " << entry.second << std::endl;
+        //std::cout << std::endl;
     }
     //mf::LogVerbatim("PMAlgTracker")
     //std::cout
@@ -1137,20 +1141,26 @@ void pma::PMAlgTracker::fromClustersBySP_tpc(pma::TrkCandidateColl & result,
 	int first_clu_idx = 0;
 	while (first_clu_idx >= 0) // loop over clusters, any view, starting from the best selected by space points
 	{
-		mf::LogVerbatim("PMAlgTracker") << "Find best cluster by SP's...";
+		//mf::LogVerbatim("PMAlgTracker")
+		std::cout
+			<< "Find best cluster by SP's..." << std::endl;
+
 		first_clu_idx = bestClusterBySP(minBuildScore, geo::kUnknown, tpc, cryo); // any view, but must be track-like
 		if ((first_clu_idx >= 0) && !fCluHits[first_clu_idx].empty())
 		{
-		    geo::View_t first_view = fCluHits[first_clu_idx].front()->View();
-		    fInitialClusters.push_back((size_t)first_clu_idx);
+			geo::View_t first_view = fCluHits[first_clu_idx].front()->View();
+			fInitialClusters.push_back((size_t)first_clu_idx);
 
-		    for (auto av : fAvailableViews) { fTriedClusters[av].clear(); }
-		    fTriedClusters[first_view].push_back((size_t)first_clu_idx);
+			for (auto av : fAvailableViews) { fTriedClusters[av].clear(); }
+			fTriedClusters[first_view].push_back((size_t)first_clu_idx);
 
 			int clu_idx = matchClusterBySP(first_clu_idx, minComplScore);
 			if (clu_idx >= 0)
 			{
-			    mf::LogVerbatim("PMAlgTracker") << "   - initial pair found, collect matching clusters";
+			    //mf::LogVerbatim("PMAlgTracker")
+			    std::cout
+			    	<< "   - initial pair found, collect matching clusters" << std::endl;
+
 			    pma::TrkCandidate candidate;
 			    candidate.Clusters().push_back(first_clu_idx);
 			    candidate.Clusters().push_back(clu_idx);
@@ -1163,9 +1173,70 @@ void pma::PMAlgTracker::fromClustersBySP_tpc(pma::TrkCandidateColl & result,
 			            candidate.Clusters().push_back(clu_idx);
 			        }
 			    }
-			    mf::LogVerbatim("PMAlgTracker") << "   - collected " << candidate.Clusters().size() << " matching clusters";
+			    //mf::LogVerbatim("PMAlgTracker")
+			    std::cout
+				<< "   - collected " << candidate.Clusters().size() << " matching cluster(s)" << std::endl;
 
-			    if (candidate.IsGood()) result.push_back(candidate);
+			    std::vector< art::Ptr<recob::Hit> > hits;
+			    for (size_t c : candidate.Clusters())
+			    {
+			        for (const auto & h : fCluHits[c]) { hits.emplace_back(h); }
+			    }
+			    candidate.SetTrack(fProjectionMatchingAlg.buildTrack(hits));
+
+                            double m0 = 0.0;
+                            double mseThr = 0.15; // cuts for a good track candidate
+
+                            if (candidate.IsValid() && // no track if hits from 2 views do not alternate
+                                fProjectionMatchingAlg.isContained(*(candidate.Track()), 2.0F)) // sticks out of TPC's?
+                            {
+                                m0 = candidate.Track()->GetMse();
+                            }
+
+                            if (candidate.Track() && (m0 < mseThr)) // good candidate, try to extend it
+                            {
+                                //mf::LogVerbatim("PMAlgTracker")
+                                std::cout
+                                    << "  good track candidate, MSE = " << m0 << std::endl;
+
+                                candidate.SetMse(m0);
+                                candidate.SetValidation(1);
+                                candidate.SetGood(true);
+
+                                size_t minSize = 5;      // min size for clusters matching
+                                double fraction = 0.5;   // min fraction of close hits
+
+                                //mf::LogVerbatim("PMAlgTracker")
+                                std::cout
+				    << "try merging more clusters" << std::endl;
+                                fraction = 0.7; // only well matching the existing track
+
+                                int idx = 0;
+                                while (idx >= 0)
+                                {       //    match clusters from any plane
+                                        std::cout << "matching..." << std::endl;
+                                        idx = matchCluster(candidate, minSize, fraction, geo::kUnknown, geo::kUnknown, tpc, cryo);
+					std::cout << "matched cluster size " << fCluHits[idx].size() << std::endl;
+                                        if (idx >= 0)
+                                        {
+                                                if (extendTrack(candidate, fCluHits[idx], geo::kUnknown, true))
+                                                {
+							std::cout << "--track extended" << std::endl;
+                                                        candidate.Clusters().push_back(idx);
+                                                }
+                                                else idx = -1;
+                                        }
+                                }
+                            }
+
+
+			    if (candidate.IsGood())
+			    {
+			        candidate.Track()->ShiftEndsToHits();
+                        	for (auto c : candidate.Clusters()) { fUsedClusters.push_back(c); }
+			        result.push_back(candidate);
+			    }
+			    else { candidate.DeleteTrack(); }
 			}
 		}
 		else mf::LogVerbatim("PMAlgTracker") << "...no more good clusters found by SP's";
@@ -1501,7 +1572,7 @@ int pma::PMAlgTracker::bestClusterBySP(float min_score,
     {
         //mf::LogVerbatim("PMAlgTracker")
         std::cout
-            << "   Best initial cluster by SP, size: " << fCluHits[idx].size()
+            << "   Best initial cluster by SP, plane:" << fCluHits[idx].front()->WireID().Plane << ", size: " << fCluHits[idx].size()
             << ", score: " << max_score
             << std::endl;
     }
@@ -1552,7 +1623,7 @@ int pma::PMAlgTracker::matchClusterBySP(int first_clu_idx, float min_score) cons
     {
         //mf::LogVerbatim("PMAlgTracker")
         std::cout
-            << "   Best matched cluster by SP, size: " << fCluHits[idx].size()
+            << "   Best matched cluster by SP, plane:" << fCluHits[idx].front()->WireID().Plane << ", size: " << fCluHits[idx].size()
             << ", score: " << max_score
             << std::endl;
     }
@@ -1608,7 +1679,7 @@ int pma::PMAlgTracker::matchClusterBySP(const std::vector<size_t>& clusters, flo
     {
         //mf::LogVerbatim("PMAlgTracker")
         std::cout
-            << "   Best matched cluster by SP, size: " << fCluHits[idx].size()
+            << "   Best matched cluster by SP, plane:" << fCluHits[idx].front()->WireID().Plane << ", size: " << fCluHits[idx].size()
             << ", score: " << max_score
             << std::endl;
     }
