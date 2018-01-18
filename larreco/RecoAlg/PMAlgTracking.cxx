@@ -466,6 +466,31 @@ void pma::PMAlgTracker::init_sp(const std::vector<recob::Hit> & hits, const art:
     //std::cout
     //    << "...done." << std::endl;
 }
+
+void pma::PMAlgTracker::init_sp1(const art::FindManyP< recob::SpacePoint > & spFromHits)
+{
+    //mf::LogVerbatim("PMAlgTracker")
+    //std::cout
+    //    << "Map clusters to space points associated through hits..." << std::endl;
+    fCluSPoints.clear(); fCluSPoints.resize(fCluHits.size());
+    for (size_t i = 0; i < fCluHits.size(); ++i)
+    {
+        //std::cout << " hsize: " << fCluHits[i].size() << std::endl;
+        for (const auto h : fCluHits[i])
+        {
+            const auto v = spFromHits.at(h.key());
+            //std::cout << " spsize: " << v.size() << std::endl;
+            for (const auto sp : v) { fCluSPoints[i][sp.key()] += v.size(); }
+        }
+        //for (const auto & entry : fCluSPoints[i])
+        //    std::cout << " spscore: " << entry.second << std::endl;
+        //std::cout << std::endl;
+    }
+    //mf::LogVerbatim("PMAlgTracker")
+    //std::cout
+    //    << "...done." << std::endl;
+}
+
 // ------------------------------------------------------
 
 double pma::PMAlgTracker::validate(pma::Track3D& trk, unsigned int testView)
@@ -1216,9 +1241,9 @@ void pma::PMAlgTracker::fromClustersBySP_tpc(pma::TrkCandidateColl & result,
                                 {       //    match clusters from any plane
                                         std::cout << "matching..." << std::endl;
                                         idx = matchCluster(candidate, minSize, fraction, geo::kUnknown, geo::kUnknown, tpc, cryo);
-					std::cout << "matched cluster size " << fCluHits[idx].size() << std::endl;
                                         if (idx >= 0)
                                         {
+						std::cout << "matched cluster size " << fCluHits[idx].size() << std::endl;
                                                 if (extendTrack(candidate, fCluHits[idx], geo::kUnknown, true))
                                                 {
 							std::cout << "--track extended" << std::endl;

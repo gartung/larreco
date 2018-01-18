@@ -245,6 +245,7 @@ public:
 		const art::FindManyP< recob::Hit > & hitsFromEmParts);
 
     void init_sp(const std::vector<recob::Hit> & hits, const art::FindManyP< recob::SpacePoint > & spFromHits);
+    void init_sp1(const art::FindManyP< recob::SpacePoint > & spFromHits);
 
 	int build(void);
 
