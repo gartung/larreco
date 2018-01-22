@@ -401,7 +401,7 @@ void PMAlgTrackMaker::produce(art::Event& evt)
         //auto spHitListHandle = evt.getValidHandle< std::vector<recob::Hit> >("hitpdune");
         //art::FindManyP< recob::SpacePoint > spFromHits(spHitListHandle, evt, "hitpdune");
         //pmalgTracker.init_sp(*spHitListHandle, spFromHits);
-        art::FindManyP< recob::SpacePoint > spFromHits(allHitListHandle, evt, "fSpacePointModuleLabel");
+        art::FindManyP< recob::SpacePoint > spFromHits(allHitListHandle, evt, fSpacePointModuleLabel);
         pmalgTracker.init_sp1(spFromHits);
     }
 
