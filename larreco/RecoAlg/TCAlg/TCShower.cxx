@@ -1089,7 +1089,7 @@ namespace tca {
         pfp.TjIDs[cotIndex] = ss.ShowerTjID;
         // set the match flag
         auto& stj = tjs.allTraj[ss.ShowerTjID - 1];
-        stj.AlgMod[kMat3D] = true;
+        //stj.AlgMod[kMat3D] = true; //this is done in StorePFP, and otherwise it fails
         unsigned short plane = DecodeCTP(ss.CTP).Plane;
         ss3.dEdx[plane] = stj.dEdx[0];
         pfp.dEdx[0][plane] = stj.dEdx[0];
@@ -1660,10 +1660,12 @@ namespace tca {
     ss.NeedsUpdate = true;
 
     Trajectory& stj = tjs.allTraj[ss.ShowerTjID - 1];
-    stj.AlgMod[kInShower] = true;
-    stj.AlgMod[kShwrParent] = true;
-    
+    // stj.AlgMod[kInShower] = true;
+    // stj.AlgMod[kShwrParent] = true;
+
     Trajectory& ptj = tjs.allTraj[ss.ParentID - 1];
+    ptj.AlgMod[kInShower] = true;
+    ptj.AlgMod[kShwrParent] = true;
     // determine the appropriate start point of the parent
     unsigned short pend = FarEnd(tjs, ptj, ss);
     auto& ptp = ptj.Pts[ptj.EndPt[pend]];
