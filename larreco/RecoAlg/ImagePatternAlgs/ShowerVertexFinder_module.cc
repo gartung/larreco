@@ -44,8 +44,10 @@
 #include "lardata/ArtDataHelper/MVAReader.h"
 
 #include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "TH2D.h"
+#include "TTree.h"
 
 #include <memory>
 
@@ -180,7 +182,7 @@ namespace nnet {
 
       bool Check3DPosition(const art::Event &evt, TVector3 pos, float drift, unsigned int missingView);
 
-      void GetEfficiency(art::ValidHandle< std::vector<simb::MCParticle> > p, std::vector<VertexCandidate> const &v);
+      void GetEfficiency(const art::Event &evt, std::vector<VertexCandidate> const &v);
 
       bool IsFiducial(float x, float y, float z, float dx, float dy, float dz);
       void GetDetectorLimits();
@@ -229,12 +231,41 @@ namespace nnet {
       TH1D* fPhotAngVtx;
       TH1D* fEnAll;
       TH1D* fEnVtx;
+      TH1D* fConvDistAll;
+      TH1D* fConvDistVtx;
       // Main inefficiency comes from energy < 200 MeV, so make a cut and see
       // if we see anything else in other distributions 
       TH1D* fPhotDistAll200;
       TH1D* fPhotDistVtx200;
       TH1D* fPhotAngAll200;
       TH1D* fPhotAngVtx200;
+      TH1D* fConvDistAll200;
+      TH1D* fConvDistVtx200;
+      // Neutrino plots if we have an incoming neutrino
+      TH1D* fNuEnAll;
+      TH1D* fNuEnVtx;
+
+      // Want two trees to store information.
+     
+      // Photon level variables
+      TTree* fPhotonTree;
+      int fPhotonMatched;     // Was the photon conversion point identified?
+      double fPhotonEnergy;   // Photon energy
+      double fPhotonConvDist; // Photon conversion distance
+      double fPhotonRMTDist;  // Difference between reco and true conversion point
+      double fPhotonDirX;     // Photon direction in x
+      double fPhotonDirY;     // Photon direction in y
+      double fPhotonDirZ;     // Photon direction in z
+
+      // Pizero level variables
+      TTree* fPizeroTree;
+      int fPizeroMatched;      // Were both pizero photon conversion points identified?
+      double fPizeroEnergy0;   // Energy of photon 0
+      double fPizeroEnergy1;   // Energy of photon 1
+      double fPizeroPhotAngle; // True angle between the decay photons
+      double fPizeroPhotDist;  // 3D distance between the true photon conversion points
+      double fPizeroEnergy;    // Pizero energy
+      double fPizeroNuEnergy;  // Neutrino energy if this is a neutrino event
 
       ShowerVertexFinder::cryo_tpc_view_keymap fHitMap;
   };
@@ -676,8 +707,7 @@ namespace nnet {
 
     // Get the matching efficiency and fill the reco - true plots if we have MC and request it
     if(fCalcPiZeroEff && !evt.isRealData()){
-      auto particleHandle = evt.getValidHandle< std::vector<simb::MCParticle> >("largeant");
-      GetEfficiency(particleHandle,finalMatchedVertices);
+      GetEfficiency(evt,finalMatchedVertices);
     }
 
     // Make the recob::Vertex objects
@@ -982,16 +1012,29 @@ namespace nnet {
   
   }
 
-  void ShowerVertexFinder::GetEfficiency(art::ValidHandle< std::vector<simb::MCParticle> > particleHandle, std::vector<VertexCandidate> const &finalMatchedVertices){
+  void ShowerVertexFinder::GetEfficiency(const art::Event &evt, std::vector<VertexCandidate> const &finalMatchedVertices){
     std::vector<TVector3> trueDecayPhotons;
     std::vector<TVector3> trueDecayDirs;
     std::vector<bool> shouldReco;
     std::vector<float> energy;
 
+    double inputNuEnergy = -999.;
+
+    // Use MC Truth to get the neutrinos
+    auto mcTruths = evt.getValidHandle< std::vector<simb::MCTruth> >("generator");
+    if(mcTruths.isValid()){
+      if((*mcTruths)[0].NeutrinoSet()){
+        const simb::MCParticle neu = (*mcTruths)[0].GetNeutrino().Nu();
+        inputNuEnergy = neu.E();
+      }
+    }
+
+    auto particleHandle = evt.getValidHandle< std::vector<simb::MCParticle> >("largeant");
     // First things first, loop over the MCParticles to find all of the pizeros
     std::map<unsigned int,ShowerVertexFinder::PiZero> truePiZeros;
     for(unsigned int p = 0; p < particleHandle->size(); ++p){
-      if((*particleHandle)[p].PdgCode() == 111){
+      int pdg = (*particleHandle)[p].PdgCode();
+      if(pdg == 111){
         ShowerVertexFinder::PiZero newPiZero(p);
         truePiZeros.insert(std::make_pair(p,newPiZero));
       }
@@ -1033,6 +1076,11 @@ namespace nnet {
           fDirXAll->Fill(photon.Momentum().Vect().Unit().X());
           fDirYAll->Fill(photon.Momentum().Vect().Unit().Y());
           fEnAll->Fill(energy);
+          fConvDistAll->Fill((photon.Position().Vect()-photon.EndPosition().Vect()).Mag());
+          if(energy > 200){
+            fConvDistAll200->Fill((photon.Position().Vect()-photon.EndPosition().Vect()).Mag());
+          }
+
         }
       } 
       // Fill some pion level histograms
@@ -1045,6 +1093,9 @@ namespace nnet {
         simb::MCParticle photon2 = (*particleHandle)[pizero.second.fPhotonIndex[1]];
         fPhotAngAll->Fill(photon1.EndPosition().Vect().Angle(photon2.EndPosition().Vect()));
         fPhotDistAll->Fill((photon1.EndPosition().Vect()-photon2.EndPosition().Vect()).Mag());
+        if(inputNuEnergy > 0){
+          fNuEnAll->Fill(inputNuEnergy);
+        }
         // Photon energies to make cut plots
         float e1 = 1000.*(photon1.E());
         float e2 = 1000.*(photon2.E());
@@ -1058,6 +1109,7 @@ namespace nnet {
     // Now match to the reconstructed vertices
     std::vector<unsigned int> recoVtxUsed;
     for(auto &pizero : truePiZeros){
+      simb::MCParticle pizeroMC = (*particleHandle)[pizero.second.fPiZeroIndex];        
       for(unsigned int p = 0; p < pizero.second.fPhotonIndex.size(); ++p){
         // Get the photon
         simb::MCParticle photon = (*particleHandle)[pizero.second.fPhotonIndex[p]];
@@ -1126,6 +1178,13 @@ namespace nnet {
 
         } // Check for a 2 view vertex
 
+        // Store some information for the photon tree
+        fPhotonDirX = photon.Momentum().Vect().Unit().X();
+        fPhotonDirY = photon.Momentum().Vect().Unit().Y();
+        fPhotonDirZ = photon.Momentum().Vect().Unit().Z();
+        fPhotonEnergy = 1000.*photon.E(); // Kinetic energy = total energy for a photon
+        fPhotonConvDist = (photon.Position().Vect() - photon.EndPosition().Vect()).Mag();
+
         // If we matched a vertex, fill some plots
         if(got3ViewVtx || got2ViewVtx){
           ++fNRecoConvs;
@@ -1134,6 +1193,15 @@ namespace nnet {
           fDirXVtx->Fill(photon.Momentum().Vect().Unit().X());
           fDirYVtx->Fill(photon.Momentum().Vect().Unit().Y());
           fEnVtx->Fill(1000.*(photon.E()-photon.Mass()));
+          fConvDistVtx->Fill((photon.Position().Vect()-photon.EndPosition().Vect()).Mag());
+          if(1000.*photon.E() > 200){
+            fConvDistVtx200->Fill((photon.Position().Vect()-photon.EndPosition().Vect()).Mag());
+          }
+
+          // Photon tree info
+          fPhotonMatched = 1;
+          fPhotonRMTDist = recoTrueScore;
+
           mf::LogDebug("ShowerVertexFinder") << "Matched a true vertex (" << photonEnd.X() << ", " << photonEnd.Y() << ") to a reco vertex (" << bestMatch.X() << ", " << bestMatch.Y() << ")" << std::endl;
         }
         else{
@@ -1150,17 +1218,33 @@ namespace nnet {
             wireCoord[2] = geom->WireCoordinate(photonEnd.X(),photonEnd.Y(),2,thisTPC.TPC,thisTPC.Cryostat);
             mf::LogDebug("ShowerVertexFinder") << " - True position corresponds to wires " << wireCoord[0] << ", " << wireCoord[1] << ", " << wireCoord[2] << std::endl; 
           }
-        }
 
+          // Need to store that we didn't find a match for this photon
+          fPhotonMatched = 0;
+          fPhotonRMTDist = -1.;
+        }
+        fPhotonTree->Fill();
       } // End loop over piZero photons
+
+      // Pizero information
+      simb::MCParticle photon1 = (*particleHandle)[pizero.second.fPhotonIndex[0]];
+      simb::MCParticle photon2 = (*particleHandle)[pizero.second.fPhotonIndex[1]];
+      fPizeroEnergy0 = 1000.*photon1.E();
+      fPizeroEnergy1 = 1000.*photon2.E();
+      fPizeroPhotAngle = photon1.Momentum().Vect().Angle(photon2.Momentum().Vect());
+      fPizeroPhotDist = (photon1.EndPosition().Vect()-photon2.EndPosition().Vect()).Mag();
+      fPizeroEnergy = 1000.*(pizeroMC.E() - pizeroMC.Mass());
+      fPizeroNuEnergy = inputNuEnergy; // Equal to -999 if no neutrino
 
       // If we matched both photons
       if(pizero.second.fMatchedPhoton[0] && pizero.second.fMatchedPhoton[1]){
-        simb::MCParticle photon1 = (*particleHandle)[pizero.second.fPhotonIndex[0]];
-        simb::MCParticle photon2 = (*particleHandle)[pizero.second.fPhotonIndex[1]];
+        photon1 = (*particleHandle)[pizero.second.fPhotonIndex[0]];
+        photon2 = (*particleHandle)[pizero.second.fPhotonIndex[1]];
         fPhotDistVtx->Fill((photon1.EndPosition().Vect()-photon2.EndPosition().Vect()).Mag());
-        fPhotAngVtx->Fill(photon1.EndPosition().Vect().Angle(photon2.EndPosition().Vect()));
-
+        fPhotAngVtx->Fill(photon1.Momentum().Vect().Angle(photon2.Momentum().Vect()));
+        if(inputNuEnergy > 0){
+          fNuEnVtx->Fill(inputNuEnergy);
+        }
         // Photon energies to make cut plots
         float e1 = 1000.*(photon1.E());
         float e2 = 1000.*(photon2.E());
@@ -1168,7 +1252,15 @@ namespace nnet {
           fPhotDistVtx200->Fill((photon1.EndPosition().Vect()-photon2.EndPosition().Vect()).Mag());
           fPhotAngVtx200->Fill(photon1.EndPosition().Vect().Angle(photon2.EndPosition().Vect()));
         }
+      
+        // Matched pizero tree variables
+        fPizeroMatched = 1;
       }
+      else{
+        // Not fully matched
+        fPizeroMatched = 0;
+      }
+      fPizeroTree->Fill();
     } // End loop over piZeros
 
   }
@@ -1199,15 +1291,43 @@ namespace nnet {
       fDirYVtx = tfs->make<TH1D>("dirYVtx",";Direction cosine y",50,-1,1); // For those matched to reco
       fPhotDistAll = tfs->make<TH1D>("photDistAll","Distance to other photon (cm)",50,0,50);
       fPhotDistVtx = tfs->make<TH1D>("photDistVtx","Distance to other photon (cm)",50,0,50);
-      fPhotAngAll = tfs->make<TH1D>("photAngAll","Angle between photons (degrees)",50,0,0.5*TMath::Pi());
-      fPhotAngVtx = tfs->make<TH1D>("photAngVtx","Angle between photons (degrees)",50,0,0.5*TMath::Pi());
+      fPhotAngAll = tfs->make<TH1D>("photAngAll","Angle between photons (degrees)",50,0,0.5);
+      fPhotAngVtx = tfs->make<TH1D>("photAngVtx","Angle between photons (degrees)",50,0,0.5);
       fEnAll   = tfs->make<TH1D>("enAll",";Energy (MeV)",50,0,1000);
       fEnVtx   = tfs->make<TH1D>("enVtx",";Energy (MeV)",50,0,1000);
+      fConvDistAll = tfs->make<TH1D>("convDistAll","Photon conversion distance (cm)",50,0,100);
+      fConvDistVtx = tfs->make<TH1D>("convDistVtx","Photon conversion distance (cm)",50,0,100);
       // With 200 MeV energy cut
       fPhotDistAll200 = tfs->make<TH1D>("photDistAll200","Distance to other photon (cm)",50,0,50);
       fPhotDistVtx200 = tfs->make<TH1D>("photDistVtx200","Distance to other photon (cm)",50,0,50);
-      fPhotAngAll200 = tfs->make<TH1D>("photAngAll200","Angle between photons (degrees)",50,0,0.25*TMath::Pi());
-      fPhotAngVtx200 = tfs->make<TH1D>("photAngVtx200","Angle between photons (degrees)",50,0,0.25*TMath::Pi());
+      fPhotAngAll200 = tfs->make<TH1D>("photAngAll200","Angle between photons (degrees)",50,0,0.25);
+      fPhotAngVtx200 = tfs->make<TH1D>("photAngVtx200","Angle between photons (degrees)",50,0,0.25);
+      fConvDistAll200 = tfs->make<TH1D>("convDistAll200","Photon conversion distance (cm)",50,0,100);
+      fConvDistVtx200 = tfs->make<TH1D>("convDistVtx200","Photon conversion distance (cm)",50,0,100);
+      // Can we make a neutrino energy plot too?
+      fNuEnAll = tfs->make<TH1D>("nuEnAll","Neutrino energy (GeV)",50,0,10);
+      fNuEnVtx = tfs->make<TH1D>("nuEnVtx","Neutrino energy (GeV)",50,0,10);
+
+      // Now to make the two required trees.
+      // Photon level variables
+      fPhotonTree = tfs->make<TTree>("photonTree","photonTree");
+      fPhotonTree->Branch("photonMatched",&fPhotonMatched,"photonMatched/I");     
+      fPhotonTree->Branch("photonEnergy",&fPhotonEnergy,"photonEnergy/D");   
+      fPhotonTree->Branch("photonConvDist",&fPhotonConvDist,"photonConvDist/D"); 
+      fPhotonTree->Branch("photonRMTDist",&fPhotonRMTDist,"photonRMTDist/D");  
+      fPhotonTree->Branch("photonDirX",&fPhotonDirX,"photonDirX/D");     
+      fPhotonTree->Branch("photonDirY",&fPhotonDirY,"photonDirY/D");     
+      fPhotonTree->Branch("photonDirZ",&fPhotonDirZ,"photonDirZ/D");     
+
+      // Pizero level variables
+      fPizeroTree = tfs->make<TTree>("pizeroTree","pizeroTree");
+      fPizeroTree->Branch("pizeroMatched",&fPizeroMatched,"pizeroMatched/I");      
+      fPizeroTree->Branch("pizeroEnergy0",&fPizeroEnergy0,"pizeroEnergy0/D");   
+      fPizeroTree->Branch("pizeroEnergy1",&fPizeroEnergy1,"pizeroEnergy1/D");
+      fPizeroTree->Branch("pizeroPhotAngle",&fPizeroPhotAngle,"pizeroPhotAngle/D");
+      fPizeroTree->Branch("pizeroPhotDist",&fPizeroPhotDist,"pizeroPhotDist/D");  
+      fPizeroTree->Branch("pizeroEnergy",&fPizeroEnergy,"pizeroEnergy/D");   
+      fPizeroTree->Branch("pizeroNuEnergy",&fPizeroNuEnergy,"pizeroNuEnergy/D");
     }
   }
 
