@@ -4,6 +4,8 @@ art_make(
 			cetlib cetlib_except
 			${TENSORFLOW}
 			${PROTOBUF}
+			${FOR_TENSORFLOW}
+      #rt #workaround for larsoft issue 17960
         )
 
 install_headers()

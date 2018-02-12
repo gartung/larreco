@@ -9,7 +9,8 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardata/ArtDataHelper/MVAReader.h"
 #include "lardataobj/RecoBase/Cluster.h"
@@ -134,6 +135,12 @@ namespace DUNE{
     TH1D *h_dEdX_neutralpion_NC;
     TH1D *h_dEdX_everythingelse_NueCC;
     TH1D *h_dEdX_everythingelse_NC;
+    
+    TH1D *h_dEdXasymm_electronorpositron_NueCC;
+    TH1D *h_dEdXasymm_photon_NC;
+
+    TH1D *h_mpi0_electronorpositron_NueCC;
+    TH1D *h_mpi0_photon_NC;
 
     //Study CNN track/shower id
     TH1D *h_trklike_em;
@@ -235,6 +242,8 @@ namespace DUNE{
     int    sh_nHits[MAX_SHOWERS];
     int    sh_largest;
     int    sh_pdg[MAX_SHOWERS];
+    double sh_dEdxasymm[MAX_SHOWERS];
+    double sh_mpi0;
 
     int    n_recoShowers;
     double sh_Efrac_best;
@@ -410,6 +419,11 @@ namespace DUNE{
     h_dEdX_everythingelse_NueCC=tfs->make<TH1D>("h_dEdX_everythingelse_NueCC","dE/dX; everythingelse dE/dX (MeV/cm);",100,0.0,15.0); 
     h_dEdX_everythingelse_NC=tfs->make<TH1D>("h_dEdX_everythingelse_NC","dE/dX; everythingelse dE/dX (MeV/cm);",100,0.0,15.0); 
     
+    h_dEdXasymm_electronorpositron_NueCC=tfs->make<TH1D>("h_dEdXasymm_electronorpositron_NueCC","dE/dX asymmetry; Electron or Positron dE/dX asymmetry;",60,0.0,1.2); 
+    h_dEdXasymm_photon_NC=tfs->make<TH1D>("h_dEdXasymm_photon_NC","dE/dX asymmetry; photon dE/dx asymmetry;",60,0.0,1.2); 
+
+    h_mpi0_electronorpositron_NueCC=tfs->make<TH1D>("h_mpi0_electronorpositron_NueCC","m(#gamma#gamma); Electron or Positron dE/dX (MeV/cm);",100,0,1); 
+    h_mpi0_photon_NC=tfs->make<TH1D>("h_mpi0_photon_NC","m(#gamma#gamma); Electron or Positron dE/dX (MeV/cm);",100,0,1);
 
     h_esh_bestplane_NueCC->Sumw2();
     h_esh_bestplane_NC->Sumw2();
@@ -428,6 +442,11 @@ namespace DUNE{
     h_dEdX_everythingelse_NueCC->Sumw2();
     h_dEdX_everythingelse_NC->Sumw2();
     
+    h_dEdXasymm_electronorpositron_NueCC->Sumw2();
+    h_dEdXasymm_photon_NC->Sumw2();
+
+    h_mpi0_electronorpositron_NueCC->Sumw2();
+    h_mpi0_photon_NC->Sumw2();
 
     h_trklike_em = tfs->make<TH1D>("h_trklike_em","EM hits; Track-like Score;",100,0,1);
     h_trklike_nonem = tfs->make<TH1D>("h_trklike_nonem","Non-EM hits; Track-like Score;",100,0,1);
@@ -592,6 +611,8 @@ namespace DUNE{
       fEventTree->Branch("sh_nHits",&sh_nHits, "sh_nHits[n_showers]/I");
       fEventTree->Branch("sh_largest",&sh_largest,"sh_largest/I");
       fEventTree->Branch("sh_pdg",&sh_pdg,"sh_pdg[n_showers]/I");
+      fEventTree->Branch("sh_dEdxasymm", &sh_dEdxasymm, "sh_dEdxasymm[n_showers]/D");
+      fEventTree->Branch("sh_mpi0",&sh_mpi0,"sh_mpi0/D");
     }
 
   }
@@ -653,8 +674,8 @@ namespace DUNE{
 
     //!save lepton 
     simb::MCParticle *MClepton = NULL; 
-    art::ServiceHandle<cheat::BackTracker> bt;
-    const sim::ParticleList& plist = bt->ParticleList();
+    art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+    const sim::ParticleList& plist = pi_serv->ParticleList();
     simb::MCParticle *particle=0;
 
     for( sim::ParticleList::const_iterator ipar = plist.begin(); ipar!=plist.end(); ++ipar){
@@ -721,6 +742,8 @@ namespace DUNE{
     int ParticlePDG_HighestShHits=0;//undefined
     int shower_bestplane=0;
     double Showerparticlededx_inbestplane=0.0;
+    double dEdxasymm_largestshw = -1.;
+
     int showerPDGwithHighestHitsforFillingdEdX=0;//0=undefined,1=electronorpositronshower,2=photonshower,3=protonshower,4=neutronshower,5=chargedpionshower,6=neutralpionshower,7=everythingelseshower
 
     
@@ -728,6 +751,11 @@ namespace DUNE{
 
     const simb::MCParticle *MClepton_reco = NULL; 
     int nHits =0;
+    
+    TVector3 p1, p2;
+    double E1st = 0;
+    double E2nd = 0;
+
     for(int i=0; i<n_recoShowers; i++){
       
       art::Ptr<recob::Shower> shower = showerlist[i];
@@ -742,6 +770,47 @@ namespace DUNE{
       for( size_t j =0; j<shower->Energy().size(); j ++) sh_energy[i][j] = shower->Energy()[j];
       for( size_t j =0; j<shower->MIPEnergy().size(); j++) sh_MIPenergy[i][j] = shower->MIPEnergy()[j];
       for( size_t j =0; j<shower->dEdx().size(); j++) sh_dEdx[i][j] = shower->dEdx()[j];
+
+      double dEdxasymm = -1;
+      double dEdx0 = 0;
+      if (shower->best_plane()>=0&&shower->best_plane()<int(shower->dEdx().size())){
+        dEdx0 = shower->dEdx()[shower->best_plane()];
+      }
+      double dEdx1 = 0;
+      double maxE = 0;
+      for (int j = 0; j<3; ++j){
+        if (j==shower->best_plane()) continue;
+        if (j>=int(shower->Energy().size())) continue;
+        if (shower->Energy()[j]>maxE){
+          maxE = shower->Energy()[j];
+          dEdx1 = shower->dEdx()[j];
+        }
+      }
+      if (dEdx0||dEdx1){
+        dEdxasymm = std::abs(dEdx0-dEdx1)/(dEdx0+dEdx1);
+      }
+      sh_dEdxasymm[i] = dEdxasymm;
+
+      if (shower->best_plane()>=0 && shower->best_plane()<int(shower->Energy().size())){
+        if (shower->Energy()[shower->best_plane()]>E1st){
+          if (p1.Mag()){
+            E2nd = E1st;
+            p2 = p1;
+          }
+          E1st = shower->Energy()[shower->best_plane()];
+          p1[0] = E1st * shower->Direction().X();
+          p1[1] = E1st * shower->Direction().Y();
+          p1[2] = E1st * shower->Direction().Z();
+        }
+        else{
+          if (shower->Energy()[shower->best_plane()]>E2nd){
+            E2nd = shower->Energy()[shower->best_plane()];
+            p2[0] = E2nd * shower->Direction().X();
+            p2[1] = E2nd * shower->Direction().Y();
+            p2[2] = E2nd * shower->Direction().Z();
+          }
+        }
+      }
 
       std::vector<art::Ptr<recob::Hit>> sh_hits = sh_hitsAll.at(i);  
 
@@ -789,7 +858,7 @@ namespace DUNE{
 
       truthMatcher( all_hits, sh_hits, particle, tmpEfrac_contamination,tmpEcomplet);
       //truthMatcher( all_hits, sh_hits, particle, tmpEfrac_contaminationNueCC,tmpEcompletNueCC );
-       
+      if (!particle) continue;
 
       sh_Efrac_contamination[i] = tmpEfrac_contamination;
       sh_purity[i] = 1 - tmpEfrac_contamination;
@@ -801,6 +870,7 @@ namespace DUNE{
       //Shower with highest hits       
       if( tmp_nHits > nHits ){
         sh_largest = i;
+        dEdxasymm_largestshw = dEdxasymm;
         nHits = tmp_nHits;
         Ecomplet_NueCC =tmpEcomplet;
         Efrac_contaminationNueCC = tmpEfrac_contamination; 
@@ -899,6 +969,11 @@ namespace DUNE{
         }
       }          
     }//end of looping all the showers
+
+    if (p1.Mag()&&p2.Mag()){
+      sh_mpi0 = sqrt(pow(p1.Mag()+p2.Mag(),2)-(p1+p2).Mag2());
+    }
+    else sh_mpi0 = 0;
    
     if( MClepton_reco && MClepton  ){
       if( MC_isCC && (fNeutrinoPDGcode == std::abs(MC_incoming_PDG)) ){ 
@@ -943,7 +1018,10 @@ namespace DUNE{
 	      h_ShStartXwrtTrueparticleStartXDiff_electronorpositron_NueCC->Fill(ShVxTrueParticleVxDiff);
 	      h_ShStartYwrtTrueparticleStartYDiff_electronorpositron_NueCC->Fill(ShVyTrueParticleVyDiff);
 	      h_ShStartZwrtTrueparticleStartZDiff_electronorpositron_NueCC->Fill(ShVzTrueParticleVzDiff);
-	      
+
+	      h_dEdXasymm_electronorpositron_NueCC->Fill(dEdxasymm_largestshw);
+
+              h_mpi0_electronorpositron_NueCC->Fill(sh_mpi0);
 
 	    }else if(showerPDGwithHighestHitsforFillingdEdX==2)//photon shower
             {
@@ -1027,7 +1105,9 @@ namespace DUNE{
 	    h_ShStartYwrtTrueparticleEndYDiff_photon_NC->Fill(ShStartVyTrueParticleEndVyDiff);
 	    h_ShStartZwrtTrueparticleEndZDiff_photon_NC->Fill(ShStartVzTrueParticleEndVzDiff);
 
+            h_dEdXasymm_photon_NC->Fill(dEdxasymm_largestshw);
 
+            h_mpi0_photon_NC->Fill(sh_mpi0);
 
 	  }else if(showerPDGwithHighestHitsforFillingdEdX==3)//proton shower
           {
@@ -1073,13 +1153,14 @@ namespace DUNE{
     Efrac=1.0;
     Ecomplet=0;
     
-    art::ServiceHandle<cheat::BackTracker> bt;
+    art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+    art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
     std::map<int,double> trkID_E;
     for(size_t j = 0; j < shower_hits.size(); ++j){
       art::Ptr<recob::Hit> hit = shower_hits[j];
       //For know let's use collection plane to look at the shower reconstruction
       //if( hit->View() != 2) continue;
-      std::vector<sim::TrackIDE> TrackIDs = bt->HitToEveID(hit);
+      std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToEveTrackIDEs(hit);
       for(size_t k = 0; k < TrackIDs.size(); k++){
         if (trkID_E.find(std::abs(TrackIDs[k].trackID))==trkID_E.end()) trkID_E[std::abs(TrackIDs[k].trackID)] = 0;
         trkID_E[std::abs(TrackIDs[k].trackID)] += TrackIDs[k].energy;
@@ -1099,14 +1180,14 @@ namespace DUNE{
         TrackID = ii->first;
       }
       //int ID = ii->first;
-      // const simb::MCParticle *particle = bt->TrackIDToParticle(ID);
+      // const simb::MCParticle *particle = pi_serv->TrackIDToParticle(ID);
       //if( abs(particle->PdgCode()) == 211 || particle->PdgCode() == 2212 ){
       //if( particle->PdgCode() != 22 && abs(particle->PdgCode()) != 11){
       //noEM_E += ii->second;
       //}
 
     } 
-    MCparticle = bt->TrackIDToParticle(TrackID);
+    MCparticle = pi_serv->TrackIdToParticle_P(TrackID);
     
     
     Efrac = 1-(partial_E/total_E);
@@ -1115,7 +1196,7 @@ namespace DUNE{
     double totenergy =0;
     for(size_t k = 0; k < all_hits.size(); ++k){
       art::Ptr<recob::Hit> hit = all_hits[k];
-      std::vector<sim::TrackIDE> TrackIDs = bt->HitToEveID(hit);
+      std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToEveTrackIDEs(hit);
       for(size_t l = 0; l < TrackIDs.size(); ++l){
         if(std::abs(TrackIDs[l].trackID)==TrackID) {
           totenergy += TrackIDs[l].energy;
@@ -1204,7 +1285,8 @@ namespace DUNE{
   template <size_t N> void NeutrinoShowerEff::checkCNNtrkshw(const art::Event& evt, std::vector<art::Ptr<recob::Hit>>all_hits){
     if (fCNNEMModuleLabel=="") return;
 
-    art::ServiceHandle<cheat::BackTracker> bt;
+    art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+    art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
     //auto const* geo = lar::providerFrom<geo::Geometry>();
 
     auto hitResults = anab::MVAReader<recob::Hit, N>::create(evt, fCNNEMModuleLabel);
@@ -1219,7 +1301,7 @@ namespace DUNE{
         //find out if the hit was generated by an EM particle
         bool isEMparticle = false;
         int  pdg = INT_MAX;
-        std::vector<sim::TrackIDE> TrackIDs = bt->HitToEveID(all_hits[i]);
+        std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToEveTrackIDEs(all_hits[i]);
         if (!TrackIDs.size()) continue;
 //        raw::ChannelID_t channel = all_hits[i]->Channel();
 //        bool firstwire = false;
@@ -1239,7 +1321,7 @@ namespace DUNE{
           }
         }
         if (trkid!=INT_MAX){
-          auto *particle = bt->TrackIDToParticle(trkid);
+          auto *particle = pi_serv->TrackIdToParticle_P(trkid);
           if (particle){
             pdg = particle->PdgCode();
             if (std::abs(pdg)==11||//electron/positron
@@ -1308,8 +1390,10 @@ namespace DUNE{
         sh_dEdx[i][j] = -999.0;
       }
       sh_pdg[i] = -999;
+      sh_dEdxasymm[i] = -999;
     }
     sh_largest = -999;
+    sh_mpi0 = -999;
   }
   //========================================================================
   DEFINE_ART_MODULE(NeutrinoShowerEff)

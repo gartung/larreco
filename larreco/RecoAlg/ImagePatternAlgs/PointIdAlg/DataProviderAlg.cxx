@@ -181,7 +181,9 @@ float img::DataProviderAlg::poolSum(int wire, int drift, size_t r) const
 
 void img::DataProviderAlg::downscaleMax(std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) const
 {
-	for (size_t i = 0, k0 = 0; i < dst.size(); ++i, k0 += fDriftWindow)
+        size_t kStop = dst.size();
+        if (adc.size() < kStop) { kStop = adc.size(); }
+	for (size_t i = 0, k0 = 0; i < kStop; ++i, k0 += fDriftWindow)
 	{
 		size_t k1 = k0 + fDriftWindow;
 
@@ -199,7 +201,9 @@ void img::DataProviderAlg::downscaleMax(std::vector<float> & dst, std::vector<fl
 
 void img::DataProviderAlg::downscaleMaxMean(std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) const
 {
-	for (size_t i = 0, k0 = 0; i < dst.size(); ++i, k0 += fDriftWindow)
+        size_t kStop = dst.size();
+        if (adc.size() < kStop) { kStop = adc.size(); }
+	for (size_t i = 0, k0 = 0; i < kStop; ++i, k0 += fDriftWindow)
 	{
 		size_t k1 = k0 + fDriftWindow;
 
@@ -222,7 +226,9 @@ void img::DataProviderAlg::downscaleMaxMean(std::vector<float> & dst, std::vecto
 
 void img::DataProviderAlg::downscaleMean(std::vector<float> & dst, std::vector<float> const & adc, size_t tick0) const
 {
-	for (size_t i = 0, k0 = 0; i < dst.size(); ++i, k0 += fDriftWindow)
+	size_t kStop = dst.size();
+	if (adc.size() < kStop) { kStop = adc.size(); }
+	for (size_t i = 0, k0 = 0; i < kStop; ++i, k0 += fDriftWindow)
 	{
 		size_t k1 = k0 + fDriftWindow;
 
@@ -243,13 +249,14 @@ bool img::DataProviderAlg::setWireData(std::vector<float> const & adc, size_t wi
 
     if (fDownscaleFullView)
     {
-        if (adc.size() / fDriftWindow <= fNCachedDrifts) { downscale(wData, adc, 0); }
+        if (!adc.empty()) { downscale(wData, adc, 0); }
         else { return false; }
     }
     else
     {
-        if (adc.size() <= fNCachedDrifts) { std::copy(adc.begin(), adc.end(), wData.begin()); }
-        else { return false; }
+        if (adc.empty()) { return false; }
+        else if (adc.size() <= wData.size()) { std::copy(adc.begin(), adc.end(), wData.begin()); }
+        else { std::copy(adc.begin(), adc.begin()+wData.size(), wData.begin()); }
     }
     return true;
 }
@@ -386,6 +393,94 @@ void img::DataProviderAlg::applyBlur()
             fWireDriftData[w][d] = sum;
         }
     }
+}
+// ------------------------------------------------------
+
+// MUST give the same result as get_patch() in scripts/utils.py
+bool img::DataProviderAlg::patchFromDownsampledView(size_t wire, float drift, size_t size_w, size_t size_d,
+	std::vector< std::vector<float> > & patch) const
+{
+	int halfSizeW = size_w / 2;
+	int halfSizeD = size_d / 2;
+
+	int w0 = wire - halfSizeW;
+	int w1 = wire + halfSizeW;
+
+	size_t sd = (size_t)(drift / fDriftWindow);
+	int d0 = sd - halfSizeD;
+	int d1 = sd + halfSizeD;
+
+	int wsize = fWireDriftData.size();
+	for (int w = w0, wpatch = 0; w < w1; ++w, ++wpatch)
+	{
+		auto & dst = patch[wpatch];
+		if ((w >= 0) && (w < wsize))
+		{
+			auto & src = fWireDriftData[w];
+			int dsize = src.size();
+			for (int d = d0, dpatch = 0; d < d1; ++d, ++dpatch)
+			{
+				if ((d >= 0) && (d < dsize))
+				{
+					dst[dpatch] = src[d];
+				}
+				else
+				{
+					dst[dpatch] = fAdcZero;
+				}
+			}
+		}
+		else
+		{
+			std::fill(dst.begin(), dst.end(), fAdcZero);
+		}
+	}
+
+	return true;
+}
+
+bool img::DataProviderAlg::patchFromOriginalView(size_t wire, float drift, size_t size_w, size_t size_d,
+	std::vector< std::vector<float> > & patch) const
+{
+	int dsize = fDriftWindow * size_d;
+	int halfSizeW = size_w / 2;
+	int halfSizeD = dsize / 2;
+
+	int w0 = wire - halfSizeW;
+	int w1 = wire + halfSizeW;
+
+	int d0 = drift - halfSizeD;
+	int d1 = drift + halfSizeD;
+
+	std::vector<float> tmp(dsize);
+	int wsize = fWireDriftData.size();
+	for (int w = w0, wpatch = 0; w < w1; ++w, ++wpatch)
+	{
+		if ((w >= 0) && (w < wsize))
+		{
+			auto & src = fWireDriftData[w];
+			int src_size = src.size();
+			for (int d = d0, dpatch = 0; d < d1; ++d, ++dpatch)
+			{
+				if ((d >= 0) && (d < src_size))
+				{
+					tmp[dpatch] = src[d];
+				}
+				else
+				{
+					tmp[dpatch] = fAdcZero;
+				}
+			}
+		}
+		else
+		{
+			std::fill(tmp.begin(), tmp.end(), fAdcZero);
+		}
+
+		downscale(patch[wpatch], tmp, d0);
+	}
+
+	return true;
 }
 // ------------------------------------------------------
 

@@ -1,6 +1,7 @@
 
 art_make( 
-      LIB_LIBRARIES larsim_MCCheater_BackTracker_service
+      LIB_LIBRARIES larsim_MCCheater_BackTrackerService_service
+	            larsim_MCCheater_ParticleInventoryService_service
       larsim_Simulation
       nutools_ParticleNavigation
       lardataobj_Simulation
@@ -26,6 +27,8 @@ art_make(
 			${Boost_SYSTEM_LIBRARY}
 			${ROOT_GENVECTOR}
         )
+
+add_subdirectory(TCDebugTools)
 
 install_headers()
 install_source()

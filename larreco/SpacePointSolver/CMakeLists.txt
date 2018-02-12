@@ -7,7 +7,8 @@ art_make( BASENAME_ONLY
 			larevt_Filters
 			lardataobj_RawData
 			lardataobj_RecoBase
-                        larsim_MCCheater_BackTracker_service
+                        larsim_MCCheater_BackTrackerService_service
+	                larsim_MCCheater_ParticleInventoryService_service
 			lardata_ArtDataHelper
                         ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
@@ -28,7 +29,7 @@ art_make( BASENAME_ONLY
                         larreco_SpacePointSolver
         )
 
-# install_headers()
+install_headers()
 install_fhicl()
 install_source()
 

@@ -58,6 +58,10 @@ namespace cluster {
     std::unique_ptr<tca::TrajClusterAlg> fTCAlg; // define TrajClusterAlg object
     TTree* showertree;
     TTree* crtree;
+
+    bool fDoWireAssns;
+    bool fDoRawDigitAssns;
+    
   }; // class TrajCluster
   
 } // namespace cluster
@@ -96,6 +100,10 @@ namespace cluster {
     else {
       fTCAlg.reset(new tca::TrajClusterAlg(pset.get< fhicl::ParameterSet >("TrajClusterAlg")));
     }
+
+    fDoWireAssns = pset.get<bool>("DoWireAssns",true);
+    fDoRawDigitAssns = pset.get<bool>("DoRawDigitAssns",true);
+
   } // TrajCluster::reconfigure()
   
   //----------------------------------------------------------------------------
@@ -106,7 +114,7 @@ namespace cluster {
     // let HitCollectionAssociator declare that we are going to produce
     // hits and associations with wires and raw digits
     // (with no particular product label)
-    recob::HitCollectionAssociator::declare_products(*this);
+    recob::HitCollectionAssociator::declare_products(*this,"",fDoWireAssns,fDoRawDigitAssns);
     
     produces< std::vector<recob::Cluster> >();
     produces< std::vector<recob::Vertex> >();
@@ -334,10 +342,14 @@ namespace cluster {
       shower.set_total_MIPenergy(ss3.MIPEnergy);
       shower.set_total_MIPenergy_err(ss3.MIPEnergyErr);
       shower.set_total_best_plane(ss3.BestPlane);
-      shower.set_direction(ss3.Dir);
-      shower.set_direction_err(ss3.DirErr);
-      shower.set_start_point(ss3.Pos);
-      shower.set_start_point_err(ss3.PosErr);
+      TVector3 dir = {ss3.Dir[0], ss3.Dir[1], ss3.Dir[2]};
+      shower.set_direction(dir);
+      TVector3 dirErr = {ss3.DirErr[0], ss3.DirErr[1], ss3.DirErr[2]};
+      shower.set_direction_err(dirErr);
+      TVector3 pos = {ss3.Pos[0], ss3.Pos[1], ss3.Pos[2]};
+      shower.set_start_point(pos);
+      TVector3 posErr = {ss3.PosErr[0], ss3.PosErr[1], ss3.PosErr[2]};
+      shower.set_start_point_err(posErr);
       shower.set_dedx(ss3.dEdx);
       shower.set_dedx_err(ss3.dEdxErr);
       shower.set_length(ss3.Len);
@@ -372,11 +384,6 @@ namespace cluster {
         }
         clsIndices.push_back(clsIndex);
       } // tjid
-      // try to recover from an error
-      if(clsIndices.empty()) {
-        spcol.pop_back();
-        continue;
-      }
       if(pfp.Vx3ID[0] > Vertices.size()) std::cout<<"TC module: Bad Vtx3DIndex = "<<pfp.Vx3ID[0]<<" size "<<Vertices.size()<<"\n";
       
       // PFParticle - Cluster associations
@@ -389,6 +396,7 @@ namespace cluster {
       // Translate the 3D vertex index into the index of complete 3D vertices that have been put into sv3col
       unsigned short vtxIndex = 0;
       for(unsigned short iv = 0; iv < Vertices.size(); ++iv) {
+        if(Vertices[iv].ID == 0) continue;
         if(Vertices[iv].Wire >= 0) continue;
         if(pfp.Vx3ID[0] == Vertices[iv].ID) {
           vtmp[0] = vtxIndex;
@@ -427,7 +435,7 @@ namespace cluster {
 
     // move the cluster collection and the associations into the event:
     art::InputTag hitModuleLabel = fTCAlg->GetHitFinderModuleLabel();
-    recob::HitRefinerAssociator shcol(*this, evt, hitModuleLabel);
+    recob::HitRefinerAssociator shcol(*this, evt, hitModuleLabel, fDoWireAssns, fDoRawDigitAssns);
     shcol.use_hits(std::move(newHits));
     shcol.put_into(evt);
     evt.put(std::move(ccol));

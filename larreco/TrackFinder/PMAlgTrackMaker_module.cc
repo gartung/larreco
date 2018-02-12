@@ -151,8 +151,8 @@ private:
     // still may look track-like)
     template <size_t N> int getPdgFromCnnOnHits(const art::Event& evt, const pma::Track3D& trk) const;
 
-    // convert to LArSoft's cosmic tag type
-    anab::CosmicTagID_t getCosmicTag(const pma::Track3D::ETag pmaTag) const;
+    // convert to a vector of LArSoft's cosmic tags
+    std::vector<anab::CosmicTagID_t> getCosmicTag(const pma::Track3D::ETag pmaTag) const;
 
 	// ******************** fcl parameters **********************
 	art::InputTag fHitModuleLabel;  // tag for hits collection (used for trk validation)
@@ -303,25 +303,22 @@ bool PMAlgTrackMaker::init(const art::Event & evt, pma::PMAlgTracker & pmalgTrac
     return true;
 }
 
-anab::CosmicTagID_t PMAlgTrackMaker::getCosmicTag(const pma::Track3D::ETag pmaTag) const
+std::vector<anab::CosmicTagID_t> PMAlgTrackMaker::getCosmicTag(const pma::Track3D::ETag pmaTag) const
 {
-    anab::CosmicTagID_t anabTag;
+    std::vector<anab::CosmicTagID_t> anabTags;
     
-    pma::Track3D::ETag masked = pma::Track3D::ETag(pmaTag & 0x00FFFF00);
-    switch (masked)
-    {
-        case pma::Track3D::kOutsideDrift_Partial: anabTag = anab::CosmicTagID_t::kOutsideDrift_Partial; break;
-        case pma::Track3D::kOutsideDrift_Complete: anabTag = anab::CosmicTagID_t::kOutsideDrift_Complete; break;
-        case pma::Track3D::kBeamIncompatible: anabTag = anab::CosmicTagID_t::kFlash_BeamIncompatible; break;
-        case pma::Track3D::kGeometry_XX: anabTag = anab::CosmicTagID_t::kGeometry_XX; break;
-        case pma::Track3D::kGeometry_YY: anabTag = anab::CosmicTagID_t::kGeometry_YY; break;
-        case pma::Track3D::kGeometry_ZZ: anabTag = anab::CosmicTagID_t::kGeometry_ZZ; break;
-        case pma::Track3D::kGeometry_YZ:  anabTag = anab::CosmicTagID_t::kGeometry_YZ; break;
-        case pma::Track3D::kGeometry_Y:  anabTag = anab::CosmicTagID_t::kGeometry_Y; break;
-        default: anabTag = anab::CosmicTagID_t::kUnknown; break;
-    }
+    if (pmaTag & pma::Track3D::kOutsideDrift_Partial)  { anabTags.push_back(anab::CosmicTagID_t::kOutsideDrift_Partial);   }
+    if (pmaTag & pma::Track3D::kOutsideDrift_Complete) { anabTags.push_back(anab::CosmicTagID_t::kOutsideDrift_Complete);  }
+    if (pmaTag & pma::Track3D::kBeamIncompatible)      { anabTags.push_back(anab::CosmicTagID_t::kFlash_BeamIncompatible); }
+    if (pmaTag & pma::Track3D::kGeometry_XX)           { anabTags.push_back(anab::CosmicTagID_t::kGeometry_XX);            }
+    if (pmaTag & pma::Track3D::kGeometry_YY)           { anabTags.push_back(anab::CosmicTagID_t::kGeometry_YY);            }
+    if (pmaTag & pma::Track3D::kGeometry_ZZ)           { anabTags.push_back(anab::CosmicTagID_t::kGeometry_ZZ);            }
+    if (pmaTag & pma::Track3D::kGeometry_YZ)           { anabTags.push_back(anab::CosmicTagID_t::kGeometry_YZ);            }
+    if (pmaTag & pma::Track3D::kGeometry_Y)            { anabTags.push_back(anab::CosmicTagID_t::kGeometry_Y);             }
+
+    if (anabTags.empty())                              { anabTags.push_back(anab::CosmicTagID_t::kUnknown);                }
     
-    return anabTag;
+    return anabTags;
 }
 
 void PMAlgTrackMaker::produce(art::Event& evt)
@@ -414,7 +411,8 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 	{
 		size_t spStart = 0, spEnd = 0;
 		double sp_pos[3], sp_err[6];
-		for (size_t i = 0; i < 6; i++) sp_err[i] = 1.0;
+		for (size_t i = 0; i < 3; ++i) sp_pos[i] = 0.0;
+		for (size_t i = 0; i < 6; ++i) sp_err[i] = 1.0;
 
         auto const make_pfpptr = art::PtrMaker<recob::PFParticle>(evt, *this);
 		auto const make_trkptr = art::PtrMaker<recob::Track>(evt, *this); // PtrMaker Step #1
@@ -436,6 +434,9 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kX)) { trk->CompleteMissingWires(geo::kX); trk->GetRawdEdxSequence(dedx_tmp, geo::kX, 1); }
 			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kY)) { trk->CompleteMissingWires(geo::kY); trk->GetRawdEdxSequence(dedx_tmp, geo::kY, 1); }
 			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kZ)) { trk->CompleteMissingWires(geo::kZ); trk->GetRawdEdxSequence(dedx_tmp, geo::kZ, 1); }
+
+			//gc: make sure no tracks are created with less than 2 points
+			if (trk->size()<2) continue;
 
 		    int pdg = 0;
 		    if (mvaLength == 4) pdg = getPdgFromCnnOnHits<4>(evt, *(result[trkIndex].Track()));
@@ -478,34 +479,42 @@ void PMAlgTrackMaker::produce(art::Event& evt)
 				}
 				// Make the tag object. For now, let's say this is very likely a cosmic (3rd argument = 1).
 				// Set the type of cosmic to the value saved in pma::Track.
-				cosmicTags->emplace_back(trkEnd0, trkEnd1, 1, getCosmicTag(trk->GetTag()));
-				auto const cosmicPtr = make_ctptr(cosmicTags->size()-1);
-				trk2ct->addSingle(trkPtr,cosmicPtr);
+				auto tags = getCosmicTag(trk->GetTag());
+				for (const auto t : tags)
+				{
+					cosmicTags->emplace_back(trkEnd0, trkEnd1, 1, t);
+					auto const cosmicPtr = make_ctptr(cosmicTags->size()-1);
+					trk2ct->addSingle(trkPtr,cosmicPtr);
+				}
 			}
 
-			// which idx from start, except disabled, really....
-			std::vector<unsigned int> hIdxs(trk->size(), 0);
-			for (size_t h = 0, cnt = 0; h < hIdxs.size(); h++)
+			//gc: save associated hits in the same order as trajectory points
+                        for (size_t h = 0; h < trk->size(); h++)
 			{
-				if ((*trk)[h]->IsEnabled()) hIdxs[h] = cnt++;
+                                pma::Hit3D* h3d = (*trk)[h];
+                                if (!h3d->IsEnabled()) continue;
+
+                                recob::TrackHitMeta metadata(h, h3d->Dx());
+                                trk2hit->addSingle(trkPtr, h3d->Hit2DPtr(), metadata);
+                                trk2hit_oldway->addSingle(trkPtr, h3d->Hit2DPtr()); // ****** REMEMBER to remove when FindMany improved ******
 			}
 
 			art::PtrVector< recob::Hit > sp_hits;
 			spStart = allsp->size();
-			for (int h = trk->size() - 1; h >= 0; h--)
+			//rs: so make also associations to space points in the order of trajectory points
+			for (size_t h = 0; h < trk->size(); ++h)
 			{
 				pma::Hit3D* h3d = (*trk)[h];
 				if (!h3d->IsEnabled()) continue;
-
-				recob::TrackHitMeta metadata(hIdxs[h], h3d->Dx());
-				trk2hit->addSingle(trkPtr, h3d->Hit2DPtr(), metadata);
-				trk2hit_oldway->addSingle(trkPtr, h3d->Hit2DPtr()); // ****** REMEMBER to remove when FindMany improved ******
 
 				double hx = h3d->Point3D().X();
 				double hy = h3d->Point3D().Y();
 				double hz = h3d->Point3D().Z();
 
-				if ((h == 0) || (sp_pos[0] != hx) || (sp_pos[1] != hy) || (sp_pos[2] != hz))
+				if ((h == 0) ||
+				    (std::fabs(sp_pos[0] - hx) > 1.0e-5) ||
+				    (std::fabs(sp_pos[1] - hy) > 1.0e-5) ||
+				    (std::fabs(sp_pos[2] - hz) > 1.0e-5))
 				{
 					if (sp_hits.size()) // hits assigned to the previous sp
 					{

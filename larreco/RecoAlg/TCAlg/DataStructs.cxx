@@ -2,6 +2,7 @@
 
 namespace tca {
   const std::vector<std::string> AlgBitNames {
+    "HitsOrdered",
     "MaskHits",
     "MaskBadTPs",
     "Michel",
@@ -17,6 +18,7 @@ namespace tca {
     "HED",
     "HamVx",
     "HamVx2",
+    "JunkVx",
     "JunkTj",
     "Killed",
     "Merge",
@@ -24,6 +26,7 @@ namespace tca {
     "CHMEH",
     "FillGap",
     "Ghost",
+    "MrgGhost",
     "ChkInTraj",
     "StopBadFits",
     "FixBegin",
@@ -33,27 +36,33 @@ namespace tca {
     "MisdVxTj",
     "VtxTj",
     "ChkVxTj",
-    "RefVtx",
+    "Photon",
+    "NoFitToVx",
     "VxMerge",
     "NoKinkChk",
     "SoftKink",
     "ChkStop",
     "ChkStopEP",
+    "ChkChgAsym",
     "FTBRvProp",
     "StopAtTj",
-    "M3D",
+    "Mat3D",
     "Mat3DMerge",
     "TjHiVx3Score",
-     "VtxHitsSwap",
+    "VtxHitsSwap",
     "SplitHiChgHits",
     "InShower",
+    "KillInShowerVx",
     "ShowerTj",
     "ShwrParent",
+    "ChkShwrParEnd",  // Ensure that the end of a shower parent already inside a shower has an end near a shower end
+    "KillShwrNuPFP",  // Kill neutrino PFP particles with a vertex inside a shower
     "MergeOverlap",
     "MergeSubShowers",
     "MergeNrShowers",
     "MergeShChain",
-    "SplitTarjCV"  
+    "SplitTjCVx",
+    "SetDir"
   };
 
   const std::vector<std::string> StopFlagNames {
@@ -61,14 +70,14 @@ namespace tca {
     "AtKink",
     "AtVtx",
     "Bragg",
-    "AtTj"
+    "AtTj",
+    "OutFV"
   };
   
   const std::vector<std::string> VtxBitNames {
     "VtxTrjTried",
     "Fixed",
     "OnDeadWire",
-    "VtxRefined",
     "HiVx3Score",
     "VtxTruMatch",
     "VtxMerged"
