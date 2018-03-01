@@ -1,11 +1,12 @@
 
 art_make( 
-          LIB_LIBRARIES larsim_MCCheater_BackTracker_service
+          LIB_LIBRARIES larsim_MCCheater_BackTrackerService_service
+	                larsim_MCCheater_ParticleInventoryService_service
                         lardataobj_RecoBase
                         lardata_ArtDataHelper
                         larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
                         larevt_Filters
-                        larcore_Geometry
+                        larcorealg_Geometry
                         larcore_Geometry_Geometry_service
                         lardata_RecoObjects larreco_Deprecated
                         lardataobj_AnalysisBase
@@ -22,6 +23,7 @@ art_make(
                         ${ROOT_GEOM}
 			${ROOT_BASIC_LIB_LIST}
                         larreco_RecoAlg_TCAlg
+			larreco_RecoAlg_ImagePatternAlgs_PointIdAlg
 			larreco_RecoAlg_PMAlg
                         nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}

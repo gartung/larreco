@@ -58,10 +58,10 @@ extern "C" {
 // ### LArSoft includes ###
 
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/CryostatGeo.h"
-#include "larcore/Geometry/TPCGeo.h"
-#include "larcore/Geometry/PlaneGeo.h"
-#include "larcore/Geometry/WireGeo.h"
+#include "larcorealg/Geometry/CryostatGeo.h"
+#include "larcorealg/Geometry/TPCGeo.h"
+#include "larcorealg/Geometry/PlaneGeo.h"
+#include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Shower.h"
@@ -812,7 +812,7 @@ for(unsigned int ij = 0; ij < fNPlanes; ++ij)
   art::PtrVector < recob::Shower >  ssvec;
 	
     //for(unsigned int ip=0;ip<1;ip++)  {
-	art::ProductID aid = this->getProductID< std::vector < recob::Shower > >(evt);
+	art::ProductID aid = this->getProductID< std::vector < recob::Shower > >();
 	art::Ptr< recob::Shower > aptr(aid, 0, evt.productGetter(aid));
 	ssvec.push_back(aptr);
       //}

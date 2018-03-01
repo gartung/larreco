@@ -193,12 +193,22 @@ keras::DataChunk* keras::LayerActivation::compute_output(keras::DataChunk* dc) {
           }
         }
       }
-      keras::DataChunk *out = new keras::DataChunk2D();
-      out->set_data(y);
-      return out;
+    } else if(m_activation_type == "tanh") {
+      for(unsigned int i = 0; i < y.size(); ++i) {
+        for(unsigned int j = 0; j < y[0].size(); ++j) {
+          for(unsigned int k = 0; k < y[0][0].size(); ++k) {
+            y[i][j][k] = tanh(y[i][j][k]);
+          }
+        }
+      }
     } else {
       keras::missing_activation_impl(m_activation_type);
     }
+
+    keras::DataChunk *out = new keras::DataChunk2D();
+    out->set_data(y);
+    return out;
+
   } else if (dc->get_data_dim() == 1) { // flat data, use 1D
     vector<float> y = dc->get_1d();
     if(m_activation_type == "relu") {
@@ -229,6 +239,7 @@ keras::DataChunk* keras::LayerActivation::compute_output(keras::DataChunk* dc) {
     keras::DataChunk *out = new DataChunkFlat();
     out->set_data(y);
     return out;
+
   } else { throw "data dim not supported"; }
 
   return dc;
@@ -249,10 +260,11 @@ void keras::conv_single_depth_valid(
 
       float sum = 0;
       for(unsigned int k1 = 0; k1 < k1_size; ++k1) {
-        const float * k_data = k[k1_size-k1-1].data();
-        const float * im_data = im[i-st_x+k1].data();
+        //const float * k_data = k[k1_size-k1-1].data();
+        //const float * im_data = im[i-st_x+k1].data();
         for(unsigned int k2 = 0; k2 < k2_size; ++k2) {
-          sum += k_data[k2_size-k2-1] * im_data[j-st_y+k2];
+          //sum += k_data[k2_size-k2-1] * im_data[j-st_y+k2];
+          sum += k[k1_size-k1-1][k2_size-k2-1] * im[i-st_x+k1][j-st_y+k2];
         }
       }
       y[i-st_x][j-st_y] += sum;
@@ -278,15 +290,16 @@ void keras::conv_single_depth_same(
 
       float sum = 0;
       for(unsigned int k1 = 0; k1 < k1_size; ++k1) {
-        const float * k_data = k[k1_size-k1-1].data();
-        const float * im_data = im[i-st_x+k1].data();
+        //const float * k_data = k[k1_size-k1-1].data();
+        //const float * im_data = im[i-st_x+k1].data();
         for(unsigned int k2 = 0; k2 < k2_size; ++k2) {
           if(i-st_x+k1 < 0) continue;
           if(i-st_x+k1 > max_imc) continue;
           if(j-st_y+k2 < 0) continue;
           if(j-st_y+k2 > max_imr) continue;
 
-          sum += k_data[k2_size-k2-1] * im_data[j-st_y+k2];
+          //sum += k_data[k2_size-k2-1] * im_data[j-st_y+k2];
+          sum += k[k1_size-k1-1][k2_size-k2-1] * im[i-st_x+k1][j-st_y+k2];
         }
       }
       y[i][j] += sum;

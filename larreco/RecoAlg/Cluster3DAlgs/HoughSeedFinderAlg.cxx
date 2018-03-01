@@ -20,8 +20,8 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Seed.h"
 #include "lardata/RecoObjects/Cluster3D.h"
-#include "larcore/Geometry/PlaneGeo.h"
-#include "larcore/Geometry/WireGeo.h"
+#include "larcorealg/Geometry/PlaneGeo.h"
+#include "larcorealg/Geometry/WireGeo.h"
 
 // ROOT includes
 #include "TTree.h"
@@ -283,19 +283,19 @@ struct Hit3DSetCompare
 class OrderHitsAlongWire
 {
 public:
-    OrderHitsAlongWire(int view = 0) : m_view(view) {}
+    OrderHitsAlongWire(int plane = 0) : m_plane(plane) {}
     
     bool operator()(const reco::ClusterHit3D* left, const reco::ClusterHit3D* right)
     {
-        int viewToCheck = (m_view + 1) % 3;
+        int planeToCheck = (m_plane + 1) % 3;
         
-        return left->getHits()[viewToCheck]->getHit().WireID().Wire < right->getHits()[viewToCheck]->getHit().WireID().Wire;
+        return left->getHits()[planeToCheck]->getHit().WireID().Wire < right->getHits()[planeToCheck]->getHit().WireID().Wire;
     }
 private:
-    int m_view;
+    int m_plane;
 };
     
-struct OrderBestViews
+struct OrderBestPlanes
 {
     bool operator()(const std::pair<size_t,size_t>& left, const std::pair<size_t,size_t>& right)
     {

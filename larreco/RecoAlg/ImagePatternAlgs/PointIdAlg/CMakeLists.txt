@@ -1,8 +1,8 @@
 art_make( 
-          LIB_LIBRARIES larreco_RecoAlg_ImagePatternAlgs_MLP
-                        larreco_RecoAlg_ImagePatternAlgs_Keras
+          LIB_LIBRARIES larreco_RecoAlg_ImagePatternAlgs_Keras
+                        larreco_RecoAlg_ImagePatternAlgs_TF
                         larcore_Geometry_Geometry_service
-                        larcore_Geometry
+                        larcorealg_Geometry
 			lardataobj_RecoBase
 			larreco_Calorimetry
 			nusimdata_SimulationBase

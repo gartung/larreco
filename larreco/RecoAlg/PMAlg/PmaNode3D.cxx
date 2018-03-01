@@ -11,8 +11,8 @@
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 
-#include "larcore/Geometry/TPCGeo.h"
-#include "larcore/Geometry/PlaneGeo.h"
+#include "larcorealg/Geometry/TPCGeo.h"
+#include "larcorealg/Geometry/PlaneGeo.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -23,6 +23,7 @@ bool pma::Node3D::fGradFixed[3] = { false, false, false };
 double pma::Node3D::fMargin = 3.0;
 
 pma::Node3D::Node3D(void) :
+    fTpcGeo(art::ServiceHandle<geo::Geometry>()->TPC(0, 0)),
 	fMinX(0), fMaxX(0),
 	fMinY(0), fMaxY(0),
 	fMinZ(0), fMaxZ(0),
@@ -38,29 +39,22 @@ pma::Node3D::Node3D(void) :
 }
 
 pma::Node3D::Node3D(const TVector3& p3d, unsigned int tpc, unsigned int cryo, bool vtx, double xshift) :
+    fTpcGeo( art::ServiceHandle<geo::Geometry>()->TPC(tpc, cryo) ),
     fDriftOffset(xshift),
 	fIsVertex(vtx)
 {
 	fTPC = tpc; fCryo = cryo;
 
-	const auto& tpcGeo = fGeom->TPC(tpc, cryo);
-
 	unsigned int lastPlane = geo::kZ;
-	while ((lastPlane > 0) && !tpcGeo.HasPlane(lastPlane)) lastPlane--;
+	while ((lastPlane > 0) && !fTpcGeo.HasPlane(lastPlane)) lastPlane--;
 
 	auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 	fMinX = detprop->ConvertTicksToX(0, lastPlane, tpc, cryo);
 	fMaxX = detprop->ConvertTicksToX(detprop->NumberTimeSamples() - 1, lastPlane, tpc, cryo);
 	if (fMaxX < fMinX) { double tmp = fMaxX; fMaxX = fMinX; fMinX = tmp; }
 
-	fMinY = tpcGeo.MinY(); fMaxY = tpcGeo.MaxY();
-	fMinZ = tpcGeo.MinZ(); fMaxZ = tpcGeo.MaxZ();
-
-	for (size_t i = 0; i < 3; i++)
-	{
-		if (tpcGeo.HasPlane(i)) fWirePitch[i] = tpcGeo.Plane(i).WirePitch();
-		else fWirePitch[i] = 0.0;
-	}
+	fMinY = fTpcGeo.MinY(); fMaxY = fTpcGeo.MaxY();
+	fMinZ = fTpcGeo.MinZ(); fMaxZ = fTpcGeo.MaxZ();
 
 	SetPoint3D(p3d);
 }
@@ -92,6 +86,14 @@ bool pma::Node3D::SameTPC(const TVector3& p3d, float margin) const
 	else return false;
 }
 
+bool pma::Node3D::SameTPC(const pma::Vector3D& p3d, float margin) const
+{
+	if (((fMinX - margin) <= p3d.X()) && (p3d.X() <= (fMaxX + margin)) &&
+	    ((fMinY - margin) <= p3d.Y()) && (p3d.Y() <= (fMaxY + margin)) &&
+	    ((fMinZ - margin) <= p3d.Z()) && (p3d.Z() <= (fMaxZ + margin))) return true;
+	else return false;
+}
+
 bool pma::Node3D::LimitPoint3D(void)
 {
 	bool trimmed = false;
@@ -110,20 +112,10 @@ bool pma::Node3D::LimitPoint3D(void)
 
 void pma::Node3D::UpdateProj2D(void)
 {
-	fProj2D[0].Set(
-		fWirePitch[0] * fGeom->WireCoordinate(fPoint3D.Y(), fPoint3D.Z(), geo::kU, fTPC, fCryo),
-		fPoint3D.X() - fDriftOffset
-	);
-
-	fProj2D[1].Set(
-		fWirePitch[1] * fGeom->WireCoordinate(fPoint3D.Y(), fPoint3D.Z(), geo::kV, fTPC, fCryo),
-		fPoint3D.X() - fDriftOffset
-	);
-	
-	fProj2D[2].Set(
-		fWirePitch[2] * fGeom->WireCoordinate(fPoint3D.Y(), fPoint3D.Z(), geo::kZ, fTPC, fCryo),
-		fPoint3D.X() - fDriftOffset
-	);
+    for (size_t i = 0; i < fTpcGeo.Nplanes(); ++i)
+    {
+    	fProj2D[i].Set(fTpcGeo.Plane(i).PlaneCoordinate(fPoint3D), fPoint3D.X() - fDriftOffset);
+	}
 }
 
 bool pma::Node3D::SetPoint3D(const TVector3& p3d)
@@ -144,6 +136,34 @@ double pma::Node3D::GetDistance2To(const TVector3& p3d) const
 double pma::Node3D::GetDistance2To(const TVector2& p2d, unsigned int view) const
 {
 	return pma::Dist2(fProj2D[view], p2d);
+}
+
+double pma::Node3D::SumDist2Hits(void) const
+{
+	double sum = 0.0F;
+	for (auto h : fAssignedHits)
+	{
+		if (h->IsEnabled())
+		{
+			unsigned int view = h->View2D();
+
+			sum += OptFactor(view) *    // alpha_i
+				h->GetSigmaFactor() *   // hit_amp / hit_max_amp
+				pma::Dist2(h->Point2D(), fProj2D[view]);
+		}
+	}
+	return sum;
+}
+
+pma::Vector3D pma::Node3D::GetDirection3D(void) const
+{
+    pma::Element3D* seg = 0;
+    if (next) { seg = dynamic_cast< pma::Element3D* >(next); }
+    else if (prev) { seg = dynamic_cast< pma::Element3D* >(prev); }
+    else { throw cet::exception("Node3D") << "Isolated vertex." << std::endl; }
+
+    if (seg) { return seg->GetDirection3D(); }
+    else { throw cet::exception("Node3D") << "Corrupted vertex." << std::endl; }
 }
 
 void pma::Node3D::SetProjection(pma::Hit3D& h) const
@@ -239,13 +259,13 @@ double pma::Node3D::SegmentCos(void) const
 {
 	if (prev && next)
 	{
-		pma::Node3D* vStop1 = static_cast< pma::Node3D* >(prev->Prev());
-		pma::Node3D* vStop2 = static_cast< pma::Node3D* >(next->Next());
-		TVector3 v1(vStop1->fPoint3D); v1 -= fPoint3D;
-		TVector3 v2(vStop2->fPoint3D); v2 -= fPoint3D;
+		auto const & vStop1 = static_cast< pma::Node3D* >(prev->Prev())->fPoint3D;
+		auto const & vStop2 = static_cast< pma::Node3D* >(next->Next())->fPoint3D;
+		pma::Vector3D v1(vStop1.X() - fPoint3D.X(), vStop1.Y() - fPoint3D.Y(), vStop1.Z() - fPoint3D.Z());
+		pma::Vector3D v2(vStop2.X() - fPoint3D.X(), vStop2.Y() - fPoint3D.Y(), vStop2.Z() - fPoint3D.Z());
 		double mag = sqrt(v1.Mag2() * v2.Mag2());
 		double cosine = 0.0;
-		if (mag != 0.0) cosine = v1 * v2 / mag;
+		if (mag != 0.0) cosine = v1.Dot(v2) / mag;
 		return cosine;
 	}
 	else
@@ -259,13 +279,13 @@ double pma::Node3D::SegmentCosWirePlane(void) const
 {
 	if (prev && next)
 	{
-		pma::Node3D* vStop1 = static_cast< pma::Node3D* >(prev->Prev());
-		pma::Node3D* vStop2 = static_cast< pma::Node3D* >(next->Next());
-		TVector2 v1(vStop1->fPoint3D.Y() - fPoint3D.Y(), vStop1->fPoint3D.Z() - fPoint3D.Z());
-		TVector2 v2(vStop2->fPoint3D.Y() - fPoint3D.Y(), vStop2->fPoint3D.Z() - fPoint3D.Z());
-		double mag = sqrt(v1.Mod2() * v2.Mod2());
+		auto const & vStop1 = static_cast< pma::Node3D* >(prev->Prev())->fPoint3D;
+		auto const & vStop2 = static_cast< pma::Node3D* >(next->Next())->fPoint3D;
+		pma::Vector2D v1(vStop1.Y() - fPoint3D.Y(), vStop1.Z() - fPoint3D.Z());
+		pma::Vector2D v2(vStop2.Y() - fPoint3D.Y(), vStop2.Z() - fPoint3D.Z());
+		double mag = sqrt(v1.Mag2() * v2.Mag2());
 		double cosine = 0.0;
-		if (mag != 0.0) cosine = v1 * v2 / mag;
+		if (mag != 0.0) cosine = v1.Dot(v2) / mag;
 		return cosine;
 	}
 	else
@@ -279,16 +299,13 @@ double pma::Node3D::SegmentCosTransverse(void) const
 {
 	if (prev && next)
 	{
-		pma::Node3D* vStop1 = static_cast< pma::Node3D* >(prev->Prev());
-		pma::Node3D* vStop2 = static_cast< pma::Node3D* >(next->Next());
-		TVector2 v1, v2;
-		v1.Set( vStop1->fPoint3D.X() - fPoint3D.X(),
-		        vStop1->fPoint3D.Z() - fPoint3D.Z());
-		v2.Set( vStop2->fPoint3D.X() - fPoint3D.X(),
-		        vStop2->fPoint3D.Z() - fPoint3D.Z());
-		double mag = sqrt(v1.Mod2() * v2.Mod2());
+		auto const & vStop1 = static_cast< pma::Node3D* >(prev->Prev())->fPoint3D;
+		auto const & vStop2 = static_cast< pma::Node3D* >(next->Next())->fPoint3D;
+		pma::Vector2D v1( vStop1.X() - fPoint3D.X(), vStop1.Z() - fPoint3D.Z());
+		pma::Vector2D v2( vStop2.X() - fPoint3D.X(), vStop2.Z() - fPoint3D.Z());
+		double mag = sqrt(v1.Mag2() * v2.Mag2());
 		double cosine = 0.0;
-		if (mag != 0.0) cosine = v1 * v2 / mag;
+		if (mag != 0.0) cosine = v1.Dot(v2) / mag;
 		return cosine;
 	}
 	else
@@ -303,11 +320,11 @@ double pma::Node3D::EndPtCos2Transverse(void) const
 {
 	if (prev && next)
 	{
-		pma::Node3D* vStart = static_cast< pma::Node3D* >(prev->Prev());
-		pma::Node3D* vStop = static_cast< pma::Node3D* >(next->Next());
+		auto const & vStart = static_cast< pma::Node3D* >(prev->Prev())->fPoint3D;
+		auto const & vStop = static_cast< pma::Node3D* >(next->Next())->fPoint3D;
 
-		double dy = vStop->Point3D().X() - vStart->Point3D().X();
-		double dz = vStop->Point3D().Z() - vStart->Point3D().Z();
+		double dy = vStop.X() - vStart.X();
+		double dz = vStop.Z() - vStart.Z();
 		double len2 = dy * dy + dz * dz;
 		double cosine2 = 0.0;
 		if (len2 > 0.0) cosine2 = dz * dz / len2;

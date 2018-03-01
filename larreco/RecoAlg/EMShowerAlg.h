@@ -27,11 +27,11 @@
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "lardata/ArtDataHelper/TrackUtils.h"
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/GeometryCore.h"
-#include "larcore/Geometry/CryostatGeo.h"
-#include "larcore/Geometry/TPCGeo.h"
-#include "larcore/Geometry/PlaneGeo.h"
-#include "larcore/Geometry/WireGeo.h"
+#include "larcorealg/Geometry/GeometryCore.h"
+#include "larcorealg/Geometry/CryostatGeo.h"
+#include "larcorealg/Geometry/TPCGeo.h"
+#include "larcorealg/Geometry/PlaneGeo.h"
+#include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -59,7 +59,7 @@
 #include "TCanvas.h"
 #include "TString.h"
 #include "TF1.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTrackerService.h"
 #include "TH1I.h"
 #include "TText.h"
 #include "TFile.h"
@@ -249,7 +249,7 @@ private:
   // tmp
   int FindTrueParticle(const std::vector<art::Ptr<recob::Hit> >& showerHits);
   int FindParticleID(const art::Ptr<recob::Hit>& hit);
-  art::ServiceHandle<cheat::BackTracker> bt;
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
   TH1I* hTrueDirection;
   TProfile* hNumHitsInSegment, *hNumSegments;
   void MakePicture();

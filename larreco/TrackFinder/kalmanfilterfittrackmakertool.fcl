@@ -1,0 +1,42 @@
+#include "mcsfitproducer.fcl"
+BEGIN_PROLOG
+kalmanfilterfittrackmakertool: {
+   tool_type: KalmanFilterFitTrackMaker
+   options: {
+      defaultMomInGeV: 1.0
+      momFromMCSCollection: false
+      mcsInputTag: ""
+      momFromCombAndPid: false
+      contInputTag: ""
+      pidFromCollection: false
+      pidInputTag: ""
+      pidFromLengthCut: -1.
+      defaultPdgId: 13
+      dirFromVec: false
+      dirVec: [0,0,1]
+      alwaysInvertDir: false
+      keepInputTrajectoryPoints: false
+   }
+   fitter: {
+      useRMSError: true
+      sortHitsByPlane: true
+      sortOutputHitsMinLength: true
+      skipNegProp: true
+      cleanZigzag: false
+      rejectHighMultHits: false
+      rejectHitsNegativeGOF: true
+      hitErr2ScaleFact: 1.0
+      tryNoSkipWhenFails: true
+      dumpLevel: 0
+   }
+   propagator: {
+      minStep: 1.0
+      maxElossFrac: 0.1
+      maxNit: 10
+      tcut: 10.
+      wrongDirDistTolerance: 0.01
+      propPinvErr: false
+   }
+   mcsfit: @local::mcsfitproducer.fitter
+}
+END_PROLOG

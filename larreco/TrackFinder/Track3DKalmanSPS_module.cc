@@ -51,8 +51,8 @@
  
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/WireGeo.h"
-#include "larcore/Geometry/PlaneGeo.h"
+#include "larcorealg/Geometry/WireGeo.h"
+#include "larcorealg/Geometry/PlaneGeo.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -1215,7 +1215,6 @@ void Track3DKalmanSPS::produce(art::Event& evt)
 	      // Get rid of redundantly Excised sppts before proceeding.
 	      std::stable_sort(spacepointss.begin(),spacepointss.end());
 	      std::stable_sort(spacepointssExcise.begin(),spacepointssExcise.end());
-	      art::PtrVector<recob::SpacePoint>::iterator uniqueSpptIt =
 	      std::set_union(spacepointssExcise.begin(),spacepointssExcise.end(),
 			     spacepointssExcise.begin(),spacepointssExcise.end(),
 			     spacepointssExcise.begin()

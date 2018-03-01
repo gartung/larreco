@@ -19,13 +19,13 @@
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/CryostatGeo.h"
-#include "larcore/Geometry/TPCGeo.h"
-#include "larcore/Geometry/PlaneGeo.h"
-#include "larcore/Geometry/WireGeo.h"
+#include "larcorealg/Geometry/CryostatGeo.h"
+#include "larcorealg/Geometry/TPCGeo.h"
+#include "larcorealg/Geometry/PlaneGeo.h"
+#include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/Simulation/sim.h"
 #include "larsim/Simulation/SimListUtils.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTrackerService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 
@@ -297,9 +297,9 @@ void FeatureVertexFinderAna::analyze(const art::Event& evt)
   evt.getByLabel(fGenieModuleLabel,mctruthListHandle); 
   
   // ############################################
-  // ### Getting information from BackTracker ###
+  // ### Getting information from BackTrackerService ###
   // ############################################
-  art::ServiceHandle<cheat::BackTracker> bt;
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
   
   // ####################################
   // ### Getting Geometry Information ###

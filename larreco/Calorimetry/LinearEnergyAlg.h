@@ -15,7 +15,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/DetectorInfo/DetectorProperties.h"
 #include "lardata/DetectorInfo/DetectorClocks.h"
-#include "larcore/Geometry/GeometryCore.h"
+#include "larcorealg/Geometry/GeometryCore.h"
 #include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::kModBoxA ...
 
 // infrastructure and utilities
@@ -372,8 +372,6 @@ namespace calo {
      * 
      */
     double CalculateHitEnergy(recob::Hit const& hit) const;
-
-    double ConvertTickToDriftTime( double tick, geo::View_t plane ) const;
 
     double RecombinationCorrection( double dEdx ) const;  ///< TODO: make it more flexible
 

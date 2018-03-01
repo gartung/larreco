@@ -2,70 +2,103 @@
 
 namespace tca {
   const std::vector<std::string> AlgBitNames {
+    "HitsOrdered",
     "MaskHits",
     "MaskBadTPs",
+    "Michel",
+    "DeltaRay",
     "CTKink",
     "CTStepChk",
     "TryNextPass",
-    "RevProp",
-    "CHMH",
-    "SplitTraj",
+    "RvPrp",
+    "CHMUH",
+    "Split",
     "Comp3DVx",
     "Comp3DVxIG",
     "HED",
     "HamVx",
     "HamVx2",
+    "JunkVx",
     "JunkTj",
     "Killed",
-    "EndMerge",
-    "TrimEndPts",
+    "Merge",
+    "TEP",
     "CHMEH",
     "FillGap",
     "Ghost",
+    "MrgGhost",
     "ChkInTraj",
     "StopBadFits",
     "FixBegin",
+    "FTBChg",
+    "BeginChg",
     "FixEnd",
-    "UseUnusedHits",
+    "UUH",
+    "MisdVxTj",
     "VtxTj",
-    "RefVtx",
+    "ChkVxTj",
+    "Photon",
+    "NoFitToVx",
+    "VxMerge",
     "NoKinkChk",
     "SoftKink",
     "ChkStop",
-    "ChkAllStop",
-    "FTBRevProp",
+    "ChkStopEP",
+    "ChkChgAsym",
+    "FTBRvProp",
     "StopAtTj",
-    "Match3D",
+    "Mat3D",
+    "Mat3DMerge",
+    "Split3DKink",
+    "TjHiVx3Score",
     "VtxHitsSwap",
     "SplitHiChgHits",
     "InShower",
-    "ShowerParent",
-    "ShowerTj"
+    "KillInShowerVx",
+    "ShowerTj",
+    "ShwrParent",
+    "ChkShwrParEnd",  // Ensure that the end of a shower parent already inside a shower has an end near a shower end
+    "KillShwrNuPFP",  // Kill neutrino PFP particles with a vertex inside a shower
+    "MergeOverlap",
+    "MergeSubShowers",
+    "MergeNrShowers",
+    "MergeShChain",
+    "SplitTjCVx",
+    "SetDir"
   };
 
+  // bit names that describe the environment near a TP
+  const std::vector<std::string> TPEnvNames {
+    "EnvNearShower",
+    "EnvNearTj",
+    "EnvUnusedHits"
+  };
+  
   const std::vector<std::string> StopFlagNames {
     "Signal",
     "AtKink",
     "AtVtx",
     "Bragg",
-    "AtTj"
+    "AtTj",
+    "OutFV"
   };
   
   const std::vector<std::string> VtxBitNames {
-    "Fixed",
     "VtxTrjTried",
+    "Fixed",
     "OnDeadWire",
-    "VtxRefined",
-    "NiceVtx",
-    "kInShower"
+    "HiVx3Score",
+    "VtxTruMatch",
+    "VtxMerged"
   } ;
   
   geo::PlaneID DecodeCTP(CTP_t CTP) {
-    geo::PlaneID tmp;
-    tmp.Cryostat = CTP / Cpad;
-    tmp.TPC = (CTP - tmp.Cryostat * Cpad) / Tpad;
-    tmp.Plane = (CTP % 10);
-    return tmp;
+    auto const cryo = (CTP / Cpad);
+    return geo::PlaneID(
+      /* Cryostat */ cryo,
+           /* TPC */ (CTP - cryo * Cpad) / Tpad,
+         /* Plane */ (CTP % 10)
+      );
   }
   
 } // namespace tca

@@ -1,17 +1,18 @@
 
 art_make( 
           
-          LIB_LIBRARIES larcore_Geometry
+          LIB_LIBRARIES larcorealg_Geometry
                         lardataobj_RecoBase
                         larreco_RecoAlg_ClusterRecoUtil
           MODULE_LIBRARIES larreco_RecoAlg
                            larreco_RecoAlg_Cluster3DAlgs
                            larreco_RecoAlg_ClusterRecoUtil
                            larreco_ClusterFinder
-                           larsim_MCCheater_BackTracker_service
+                           larsim_MCCheater_BackTrackerService_service
+	                   larsim_MCCheater_ParticleInventoryService_service
                            larevt_Filters
                            lardataobj_RecoBase
-                           larcore_Geometry
+                           larcorealg_Geometry
                            larcore_Geometry_Geometry_service
                            nutools_RandomUtils_NuRandomService_service
                            nusimdata_SimulationBase

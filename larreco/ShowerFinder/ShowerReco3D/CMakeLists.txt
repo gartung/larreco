@@ -36,10 +36,11 @@ art_make(
 	  		   lardataobj_MCBase
 	  		   larreco_ShowerFinder_ShowerReco3D
 	  		   larreco_RecoAlg
-                           larsim_MCCheater_BackTracker_service
+                           larsim_MCCheater_BackTrackerService_service
+	                   larsim_MCCheater_ParticleInventoryService_service
                            larevt_Filters
                            lardataobj_RecoBase
-                           larcore_Geometry
+                           larcorealg_Geometry
                            larcore_Geometry_Geometry_service
                            nusimdata_SimulationBase
                            ${ART_FRAMEWORK_CORE}

@@ -7,6 +7,8 @@ standard_trajcluster:
 {
   module_type:          "TrajCluster"
   TrajClusterAlg:       @local::standard_trajclusteralg
+  DoWireAssns: true
+  DoRawDigitAssns: false
 } # standard_trajcluster
 
 standard_blurredcluster:
@@ -50,8 +52,9 @@ standard_linecluster:
 {
 # this is the cluster finding component of former ClusterCrawler
   module_type:          "LineCluster"
-  FilteredDataModuleLabel: "NA"
   HitFinderModuleLabel: "gaushit"
+  DoWireAssns: true
+  DoRawDigitAssns: false
   ClusterCrawlerAlg:    @local::standard_clustercrawleralg
 } # standard_linecluster
 
@@ -70,7 +73,10 @@ standard_cluster3d:
   HitFinderModuleLabel:   "gaushit"
   EnableMonitoring:       false
   EnableProduction:       false
-  DBScanAlg:              @local::standard_cluster3ddbscanalg
+  Hit3DBuilderAlg:        @local::standard_cluster3dhit3dbuilderalg
+  ClusterAlg:             @local::standard_cluster3dminSpanTreeAlg
+  ClusterMergeAlg:        @local::standard_cluster3dMergeAlg
+  ClusterParamsBuilder:   @local::standard_cluster3dParamsBuilder
   PrincipalComponentsAlg: @local::standard_cluster3dprincipalcomponentsalg
   SkeletonAlg:            @local::standard_cluster3dskeletonalg
   SeedFinderAlg:          @local::standard_cluster3dhoughseedfinderalg
