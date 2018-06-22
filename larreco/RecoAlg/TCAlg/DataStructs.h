@@ -207,6 +207,7 @@ namespace tca {
     unsigned short LocalIndex {0};
     int InTraj {0};
     unsigned int MCPartListIndex {UINT_MAX};
+    unsigned int InputPFPIndex {UINT_MAX};
   };
   
   // struct used for TrajCluster 3D trajectory points
@@ -526,6 +527,7 @@ namespace tca {
     bool SelectEvent;     ///< select this event for use in the performance metric, writing out, etc
     bool TestBeam;      ///< Expect tracks entering from the front face. Don't create neutrino PFParticles
     bool DebugMode;     ///< print additional info when in debug mode
+    unsigned int nInputPFPs; ///< number of input PFParticles
    };
 
 } // namespace tca

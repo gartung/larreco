@@ -103,7 +103,8 @@ namespace tca {
     
     art::InputTag fHitFinderModuleLabel; ///< label of module producing input hits
     art::InputTag fHitTruthModuleLabel; ///< label of module producing MCParticle -> hit associations
-    
+    art::InputTag fPFParticleModuleLabel; ///< label of module producing input PFParticles (optional)
+
     short fMode;            ///  StepCrawl mode (0 = turn off)
     std::vector<unsigned short> fMinPtsFit; ///< Reconstruct in two passes
     std::vector<unsigned short> fMinPts;    ///< min number of Pts required to make a trajectory

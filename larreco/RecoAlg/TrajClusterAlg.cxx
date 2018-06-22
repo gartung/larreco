@@ -17,6 +17,8 @@
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardata/Utilities/FindManyInChainP.h"
 
 class TH1F;
 class TH2F;
@@ -62,6 +64,8 @@ namespace tca {
     bool badinput = false;
     fHitFinderModuleLabel  = pset.get<art::InputTag>("HitFinderModuleLabel");
     fHitTruthModuleLabel   = pset.get<art::InputTag>("HitTruthModuleLabel", "NA");
+    fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel", "NA");
+
     fMakeNewHits          = pset.get< bool >("MakeNewHits", true);
     fMode                 = pset.get< short >("Mode", 1);
     fHitErrFac            = pset.get< float >("HitErrFac", 0.4);
@@ -5594,11 +5598,12 @@ namespace tca {
     // Puts the hits and MCParticles into TjStuff
     tjs.fHits.clear();
     tjs.MCPartList.clear();
-    
+    tjs.nInputPFPs = 0;
+
     art::ValidHandle< std::vector<recob::Hit>> hitVecHandle = evt.getValidHandle<std::vector<recob::Hit>>(fHitFinderModuleLabel);
     if(hitVecHandle->size() < 2) return;
     tjs.fHits.reserve(hitVecHandle->size());
-    
+
     for(unsigned int iht = 0; iht < hitVecHandle->size(); ++iht) {
       art::Ptr<recob::Hit> hit = art::Ptr<recob::Hit>(hitVecHandle, iht);
       TCHit localHit;
@@ -5618,7 +5623,22 @@ namespace tca {
       localHit.ArtPtr = hit;
       tjs.fHits.push_back(localHit);
     } // iht
-    
+
+    // If input pfparticles exist, set pfparticle index for each associated hit
+    if (fPFParticleModuleLabel != "NA"){
+      lar::FindManyInChainP<recob::PFParticle, recob::Cluster> hitToPFPs
+        (hitVecHandle, evt, fPFParticleModuleLabel);
+      for (size_t iht = 0; iht < tjs.fHits.size(); ++iht){
+        auto hitkey = tjs.fHits[iht].ArtPtr.key();
+        decltype(auto) pfps = hitToPFPs.at(hitkey);
+        if (pfps.size()){
+          tjs.fHits[iht].InputPFPIndex = pfps[0].key();
+          if (pfps[0].key()+1>tjs.nInputPFPs){
+            tjs.nInputPFPs = pfps[0].key()+1;
+          }
+        }
+      }
+    }
     // sort it as needed;
     // that is, sorted by wire ID number,
     // then by start of the region of interest in time, then by the multiplet
