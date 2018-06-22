@@ -366,75 +366,93 @@ namespace tca {
       tjs.StepDir = -1;
     }
     if(fMode == 4) std::cout<<"RTCA: fMode set to 4 for debugging\n";
-    for (const geo::TPCID& tpcid: tjs.geom->IterateTPCIDs()) {
-      geo::TPCGeo const& TPC = tjs.geom->TPC(tpcid);
-      // special debug mode for multi-TPC detectors like protoDUNE
-      if(fMode == 4 && (int)tpcid.TPC != debug.TPC) continue;
-      fQuitAlg = !FillWireHitRange(tjs, tpcid);
-      if(fQuitAlg) return;
-      for(unsigned short plane = 0; plane < TPC.Nplanes(); ++plane) {
-        // special mode for only reconstructing the collection plane
-        if(fMode == 2 && plane != TPC.Nplanes() - 1) continue;
+    if (tjs.nInputPFPs){
+      for (unsigned int iht = 0; iht < tjs.fHits.size(); ++iht){
+        tjs.fHits[iht].InTraj = INT_MAX;
+      }
+    }
+    for (unsigned int ipfp = 0; ipfp < (tjs.nInputPFPs?tjs.nInputPFPs:1); ++ipfp){
+    //for (unsigned int ipfp = 0; ipfp < 10; ++ipfp){
+      //for (unsigned int ipfp = 0; ipfp < 1; ++ipfp){
+      //std::cout<<ipfp<<" "<<(tjs.nInputPFPs?tjs.nInputPFPs:1)<<std::endl;
+      if (tjs.nInputPFPs){
+        int nhits = 0;
+        for (unsigned int iht = 0; iht < tjs.fHits.size(); ++iht){
+          if (tjs.fHits[iht].InputPFPIndex == ipfp){
+            tjs.fHits[iht].InTraj = 0;
+            ++nhits;
+          }
+        }
+        std::cout<<"PFParticle id: "<<ipfp<<" number of hits: "<<nhits<<std::endl;
+      }
+      for (const geo::TPCID& tpcid: tjs.geom->IterateTPCIDs()) {
+        geo::TPCGeo const& TPC = tjs.geom->TPC(tpcid);
         // special debug mode for multi-TPC detectors like protoDUNE
-        if(fMode == 4 && (int)plane != debug.Plane) continue;
-        // no hits on this plane?
-        if(tjs.FirstWire[plane] > tjs.LastWire[plane]) continue;
-        // Set the CTP code to ensure objects are compared within the same plane
-        CTP_t inCTP = EncodeCTP(tpcid.Cryostat, tpcid.TPC, plane);
-        // reconstruct all trajectories in the current plane
-        ReconstructAllTraj(inCTP);
-        if(fQuitAlg) {
-          mf::LogVerbatim("TC")<<"Found fQuitAlg after ReconstructAllTraj";
-          ClearResults();
-          return;
-        }
-      } // plane
-      
-      // No sense taking muon direction if delta ray tagging is disabled
-      if(tjs.DeltaRayTag[0] >= 0) TagMuonDirections(tjs, debug.WorkID);
-      Find3DVertices(tjs, tpcid);
-      // Look for incomplete 3D vertices that won't be recovered because there are
-      // missing trajectories in a plane
-      FindMissedVxTjs(tpcid);
-      prt = (debug.Plane >= tjs.NumPlanes && debug.Tick == 6666);
-      ScoreVertices(tjs, tpcid, prt);
-      // This is done in ChkStop
-//      TagProtons(tjs, tpcid, prt);
-      // Define the ParentID of trajectories using the vertex score
-      DefineTjParents(tjs, tpcid, prt);
-      for(unsigned short plane = 0; plane < TPC.Nplanes(); ++plane) {
-        CTP_t inCTP = EncodeCTP(tpcid.Cryostat, tpcid.TPC, plane);
-        if(!ChkVtxAssociations(tjs, inCTP)) {
-          std::cout<<"RTC: ChkVtxAssociations found an error\n";
-        }
-      } // plane
-      if(tjs.Match3DCuts[0] > 0) {
-        // Fill tjs.mallTraj and tjs.MatchVec
-        bool prt = (debug.Plane >= 0) && (debug.Tick == 3333);
-        FillmAllTraj(tjs, tpcid);
-        FindPFParticles(tjs, tpcid, prt);
-        DefinePFPParents(tjs, tpcid, prt);
-        if(tjs.TagCosmics) {
-          for(auto& pfp : tjs.pfps) {
-            if(pfp.ID == 0) continue;
-            if(pfp.TPCID != tpcid) continue;
-            SaveCRInfo(tjs, pfp, prt, fIsRealData);
-          } // pfp
-        } // TagCosmics
-      } // 3D matching requested
-      KillPoorVertices(tjs, tpcid);
-      FindNeutralVertices(tjs, tpcid);
-      // Use 3D matching information to find showers in 2D. FindShowers3D returns
-      // true if the algorithm was successful indicating that the matching needs to be redone
-      if(tjs.ShowerTag[0] == 2 || tjs.ShowerTag[0] == 4) {
-        FindShowers3D(tjs, tpcid);
-        if(tjs.SaveShowerTree) {
-          std::cout << "SHOWER TREE STAGE NUM SIZE: "  << tjs.stv.StageNum.size() << std::endl;
-          showertree->Fill();
-        }
-      } // 3D shower code
-    } // tpcid
-
+        if(fMode == 4 && (int)tpcid.TPC != debug.TPC) continue;
+        fQuitAlg = !FillWireHitRange(tjs, tpcid);
+        if(fQuitAlg) return;
+        for(unsigned short plane = 0; plane < TPC.Nplanes(); ++plane) {
+          // special mode for only reconstructing the collection plane
+          if(fMode == 2 && plane != TPC.Nplanes() - 1) continue;
+          // special debug mode for multi-TPC detectors like protoDUNE
+          if(fMode == 4 && (int)plane != debug.Plane) continue;
+          // no hits on this plane?
+          if(tjs.FirstWire[plane] > tjs.LastWire[plane]) continue;
+          // Set the CTP code to ensure objects are compared within the same plane
+          CTP_t inCTP = EncodeCTP(tpcid.Cryostat, tpcid.TPC, plane);
+          // reconstruct all trajectories in the current plane
+          ReconstructAllTraj(inCTP);
+          if(fQuitAlg) {
+            mf::LogVerbatim("TC")<<"Found fQuitAlg after ReconstructAllTraj";
+            ClearResults();
+            return;
+          }
+        } // plane
+        // No sense taking muon direction if delta ray tagging is disabled
+        if(tjs.DeltaRayTag[0] >= 0) TagMuonDirections(tjs, debug.WorkID);
+        Find3DVertices(tjs, tpcid);
+        // Look for incomplete 3D vertices that won't be recovered because there are
+        // missing trajectories in a plane
+        FindMissedVxTjs(tpcid);
+        prt = (debug.Plane >= tjs.NumPlanes && debug.Tick == 6666);
+        ScoreVertices(tjs, tpcid, prt);
+        // This is done in ChkStop
+        //      TagProtons(tjs, tpcid, prt);
+        // Define the ParentID of trajectories using the vertex score
+        DefineTjParents(tjs, tpcid, prt);
+        for(unsigned short plane = 0; plane < TPC.Nplanes(); ++plane) {
+          CTP_t inCTP = EncodeCTP(tpcid.Cryostat, tpcid.TPC, plane);
+          if(!ChkVtxAssociations(tjs, inCTP)) {
+            std::cout<<"RTC: ChkVtxAssociations found an error\n";
+          }
+        } // plane
+        if(tjs.Match3DCuts[0] > 0) {
+          // Fill tjs.mallTraj and tjs.MatchVec
+          bool prt = (debug.Plane >= 0) && (debug.Tick == 3333);
+          FillmAllTraj(tjs, tpcid);
+          FindPFParticles(tjs, tpcid, prt);
+          DefinePFPParents(tjs, tpcid, prt);
+          if(tjs.TagCosmics) {
+            for(auto& pfp : tjs.pfps) {
+              if(pfp.ID == 0) continue;
+              if(pfp.TPCID != tpcid) continue;
+              SaveCRInfo(tjs, pfp, prt, fIsRealData);
+            } // pfp
+          } // TagCosmics
+        } // 3D matching requested
+        KillPoorVertices(tjs, tpcid);
+        FindNeutralVertices(tjs, tpcid);
+        // Use 3D matching information to find showers in 2D. FindShowers3D returns
+        // true if the algorithm was successful indicating that the matching needs to be redone
+        if(tjs.ShowerTag[0] == 2 || tjs.ShowerTag[0] == 4) {
+          FindShowers3D(tjs, tpcid);
+          if(tjs.SaveShowerTree) {
+            std::cout << "SHOWER TREE STAGE NUM SIZE: "  << tjs.stv.StageNum.size() << std::endl;
+            showertree->Fill();
+          }
+        } // 3D shower code
+      } // tpcid
+    }
     // Convert trajectories in allTraj into clusters
     MakeAllTrajClusters();
     // Ensure that all PFParticles have a start vertex
@@ -5626,15 +5644,23 @@ namespace tca {
 
     // If input pfparticles exist, set pfparticle index for each associated hit
     if (fPFParticleModuleLabel != "NA"){
-      lar::FindManyInChainP<recob::PFParticle, recob::Cluster> hitToPFPs
-        (hitVecHandle, evt, fPFParticleModuleLabel);
+      art::ValidHandle< std::vector<recob::Cluster>> cluVecHandle = evt.getValidHandle<std::vector<recob::Cluster>>(fPFParticleModuleLabel);
+      art::FindManyP<recob::Cluster> clusters_per_hit(hitVecHandle, evt, fPFParticleModuleLabel);
+      art::FindManyP<recob::PFParticle> pfps_per_cluster(cluVecHandle, evt, fPFParticleModuleLabel);
+      
+//      lar::FindManyInChainP<recob::PFParticle, recob::Cluster> hitToPFPs
+//        (hitVecHandle, evt, fPFParticleModuleLabel);
       for (size_t iht = 0; iht < tjs.fHits.size(); ++iht){
         auto hitkey = tjs.fHits[iht].ArtPtr.key();
-        decltype(auto) pfps = hitToPFPs.at(hitkey);
-        if (pfps.size()){
-          tjs.fHits[iht].InputPFPIndex = pfps[0].key();
-          if (pfps[0].key()+1>tjs.nInputPFPs){
-            tjs.nInputPFPs = pfps[0].key()+1;
+        auto clus = clusters_per_hit.at(hitkey);
+        if (clus.size()){
+          auto pfps = pfps_per_cluster.at(clus[0].key());
+          //        decltype(auto) pfps = hitToPFPs.at(hitkey);
+          if (pfps.size()){
+            tjs.fHits[iht].InputPFPIndex = pfps[0].key();
+            if (pfps[0].key()+1>tjs.nInputPFPs){
+              tjs.nInputPFPs = pfps[0].key()+1;
+            }
           }
         }
       }

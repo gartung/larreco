@@ -3787,6 +3787,7 @@ namespace tca {
     for(unsigned int iht = 0; iht < tjs.fHits.size(); ++iht) {
       if(tjs.fHits[iht].ArtPtr->WireID().Cryostat != cstat) continue;
       if(tjs.fHits[iht].ArtPtr->WireID().TPC != tpc) continue;
+      if(tjs.fHits[iht].InTraj != 0) continue;
       unsigned short ipl = tjs.fHits[iht].ArtPtr->WireID().Plane;
       unsigned int wire = tjs.fHits[iht].ArtPtr->WireID().Wire;
       if(wire > tjs.NumWires[ipl] - 1) {
