@@ -492,7 +492,15 @@ pma::Track3D* pma::ProjectionMatchingAlg::buildMultiTPCTrack(
 	{
 		//pma::Track3D* trk = buildTrack(hsel.second);
 		pma::Track3D* trk = buildSegment(hsel.second);
-		if (trk) tracks.push_back(trk);
+                //TY: flip if going backward
+                if (trk){
+                  if (trk->front()->Point3D().Z() > trk->back()->Point3D().Z()){
+                    trk->Flip();
+                    trk->SortHits();
+                    if (trk) tracks.push_back(trk);
+                  }
+                }
+
 	}
 
 	bool need_reopt = false;
