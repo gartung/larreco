@@ -259,7 +259,6 @@ void shower::TCShowerTemplateMaker::beginJob() {
   fTransverse4_other = tfs->make<TProfile>("fTransverse4_other", "transverse other profile [3 <= t < 4] (reco);dist (cm);Q", TBINS, TMIN, TMAX);  
   fTransverse5_other = tfs->make<TProfile>("fTransverse5_other", "transverse other profile [4 <= t < 5] (reco);dist (cm);Q", TBINS, TMIN, TMAX);  
 
-
 } // beginJob
 
 // -------------------------------------------------
@@ -300,16 +299,6 @@ void shower::TCShowerTemplateMaker::analyze(const art::Event& evt) {
 	showerProfileTrue(hitlist, elep);
 	showerProfileTrue(simchanlist, mctruth->GetNeutrino().Lepton());
       }
-      // use this to look at background
-      /*
-      if (!(std::abs(mctruth->GetNeutrino().Nu().PdgCode()) == 12 && mctruth->GetNeutrino().CCNC() == 0)) { 
-	if (showerlist.size()) {
-	  std::vector< art::Ptr<recob::Hit> > showerhits = shwfm.at(0);
-          showerProfile(showerhits, showerlist[0]->ShowerStart(), showerlist[0]->Direction(), 0);
-        }
-      }
-      */
-
     }
   }
 
@@ -400,6 +389,7 @@ void shower::TCShowerTemplateMaker::showerProfile(std::vector< art::Ptr<recob::H
 
   } // loop through showerhits
 
+  // fill relevant profiles
   if (pdg == 0) fillStandardHist(elep, ltemp, ttemp, ttemp_1, ttemp_2, ttemp_3, ttemp_4, ttemp_5);
   else if (abs(pdg) == 11) fillElectronHist(ltemp, ttemp_1, ttemp_2, ttemp_3, ttemp_4, ttemp_5);
   else if (abs(pdg) == 22) fillPhotonHist(ltemp, ttemp_1, ttemp_2, ttemp_3, ttemp_4, ttemp_5);
@@ -663,7 +653,7 @@ void shower::TCShowerTemplateMaker::truthMatcher(std::vector<art::Ptr<recob::Hit
   double total_E = 0.0;
   int TrackID = -999;
   double partial_E=0.0;
-  //double noEM_E = 0.0;  //non electromagnetic energy is defined as energy from charged pion and protons 
+
   if( !trkID_E.size() ) return; //Ghost shower??
   for(std::map<int,double>::iterator ii = trkID_E.begin(); ii!=trkID_E.end(); ++ii){
     total_E += ii->second;
@@ -672,16 +662,9 @@ void shower::TCShowerTemplateMaker::truthMatcher(std::vector<art::Ptr<recob::Hit
       max_E = ii->second;
       TrackID = ii->first;
     }
-    //int ID = ii->first'
-    // const simb::MCParticle *particle = pi_serv->TrackIDToParticle(ID); 
-    //if( abs(particle->PdgCode()) == 211 || particle->PdgCode() == 2212 ){ 
-    //if( particle->PdgCode() != 22 && abs(particle->PdgCode()) != 11){ 
-    //noEM_E += ii->second;
-    //}                                                                                  
   }
   MCparticle = pi_serv->TrackIdToParticle_P(TrackID);
 
-  //  Efrac = 1-(partial_E/total_E);   
   Efrac = partial_E/total_E;
 
   // completenes
