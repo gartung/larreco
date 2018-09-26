@@ -57,9 +57,15 @@ namespace shower {
     void beginJob();
     void analyze(const art::Event& evt);
    
-    void showerProfile(std::vector< art::Ptr<recob::Hit> > showerhits, TVector3 shwvtx, TVector3 shwdir, double elep);
+    void showerProfile(std::vector< art::Ptr<recob::Hit> > showerhits, TVector3 shwvtx, TVector3 shwdir, double elep, int pdg);
     void showerProfileTrue(std::vector< art::Ptr<recob::Hit> > allhits, double elep);
     void showerProfileTrue(std::vector< art::Ptr<sim::SimChannel> > allchan, simb::MCParticle electron);
+    void truthMatcher(std::vector<art::Ptr<recob::Hit>> all_hits, std::vector<art::Ptr<recob::Hit>> shower_hits, const simb::MCParticle *&MCparticle, double &Efrac, double &Ecomplet);
+
+    void fillStandardHist(double elep, TH1F* ltemp, TH1F* ttemp, TH1F* ttemp_1, TH1F* ttemp_2, TH1F* ttemp_3, TH1F* ttemp_4, TH1F* ttemp_5);
+    void fillElectronHist(TH1F* ltemp, TH1F* ttemp_1, TH1F* ttemp_2, TH1F* ttemp_3, TH1F* ttemp_4, TH1F* ttemp_5);
+    void fillPhotonHist(TH1F* ltemp, TH1F* ttemp_1, TH1F* ttemp_2, TH1F* ttemp_3, TH1F* ttemp_4, TH1F* ttemp_5);
+    void fillOtherHist(TH1F* ltemp, TH1F* ttemp_1, TH1F* ttemp_2, TH1F* ttemp_3, TH1F* ttemp_4, TH1F* ttemp_5);
 
   protected:
 
@@ -137,12 +143,6 @@ namespace shower {
     const int TBINS = 20;
     const int TMIN = -5;
     const int TMAX = 5;
-
-    /*
-    const int EBINS = 10;
-    const double EMIN = 0.5;
-    const double EMAX = 10.5;
-    */
 
     const int EBINS = 20;
     const double EMIN = 0.5;
@@ -295,7 +295,7 @@ void shower::TCShowerTemplateMaker::analyze(const art::Event& evt) {
 	double elep =  mctruth->GetNeutrino().Lepton().E();
 	if (showerlist.size()) {
 	  std::vector< art::Ptr<recob::Hit> > showerhits = shwfm.at(0);
-	  showerProfile(showerhits, showerlist[0]->ShowerStart(), showerlist[0]->Direction(), elep);
+	  showerProfile(showerhits, showerlist[0]->ShowerStart(), showerlist[0]->Direction(), elep, 0);
 	}
 	showerProfileTrue(hitlist, elep);
 	showerProfileTrue(simchanlist, mctruth->GetNeutrino().Lepton());
@@ -313,13 +313,32 @@ void shower::TCShowerTemplateMaker::analyze(const art::Event& evt) {
     }
   }
 
+  // add code to make electron,photon,background templates
+  if (mclist.size()) {
+    art::Ptr<simb::MCTruth> mctruth = mclist[0];
+    if (mctruth->NeutrinoSet()) {
+      if (showerlist.size()) { // only looks at the first shower since this is for tcshower                                
+	std::vector< art::Ptr<recob::Hit> > showerhits = shwfm.at(0);
+        // get shower truth info                                                                                           
+        const simb::MCParticle *particle;
+        double tmpEfrac = 0.0;
+        double tmpEcomplet = 0;
+        truthMatcher(hitlist, showerhits, particle, tmpEfrac, tmpEcomplet);
+        if (particle) {
+	  std::cout << "shower pdg: "<< particle->PdgCode() << " efrac " << tmpEfrac << std::endl;
+	  showerProfile(showerhits, showerlist[0]->ShowerStart(), showerlist[0]->Direction(), 0, particle->PdgCode());
+        }
+      }
+    }
+  }
+
   //fTree->Fill();
 
 } // analyze
 
 // -------------------------------------------------
 
-void shower::TCShowerTemplateMaker::showerProfile(std::vector< art::Ptr<recob::Hit> > showerhits, TVector3 shwvtx, TVector3 shwdir, double elep) {
+void shower::TCShowerTemplateMaker::showerProfile(std::vector< art::Ptr<recob::Hit> > showerhits, TVector3 shwvtx, TVector3 shwdir, double elep, int pdg) {
 
   auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
   art::ServiceHandle<geo::Geometry> geom;
@@ -381,32 +400,10 @@ void shower::TCShowerTemplateMaker::showerProfile(std::vector< art::Ptr<recob::H
 
   } // loop through showerhits
 
-  for (int i = 0; i < LBINS; ++i) {
-    if (ltemp->GetBinContent(i+1) == 0) continue;
-    fShowerProfileRecoLong->Fill(ltemp->GetBinCenter(i+1), ltemp->GetBinContent(i+1));
-    fShowerProfileRecoLong2D->Fill(ltemp->GetBinCenter(i+1), elep, ltemp->GetBinContent(i+1));
-    fLongitudinal->Fill(ltemp->GetBinCenter(i+1), elep, ltemp->GetBinContent(i+1));
-  }
-
-  for (int i = 0; i < TBINS; ++i) {
-    if (ttemp->GetBinContent(i+1) == 0) continue;
-    fShowerProfileRecoTrans->Fill(ttemp->GetBinCenter(i+1), ttemp->GetBinContent(i+1));
-    fShowerProfileRecoTrans2D->Fill(ttemp->GetBinCenter(i+1), elep, ttemp->GetBinContent(i+1));
-    fTransverse->Fill(ttemp->GetBinCenter(i+1), elep, ttemp->GetBinContent(i+1));
-
-    fShowerProfileRecoTrans2D_1->Fill(ttemp_1->GetBinCenter(i+1), elep, ttemp_1->GetBinContent(i+1));
-    fShowerProfileRecoTrans2D_2->Fill(ttemp_2->GetBinCenter(i+1), elep, ttemp_2->GetBinContent(i+1));
-    fShowerProfileRecoTrans2D_3->Fill(ttemp_3->GetBinCenter(i+1), elep, ttemp_3->GetBinContent(i+1));
-    fShowerProfileRecoTrans2D_4->Fill(ttemp_4->GetBinCenter(i+1), elep, ttemp_4->GetBinContent(i+1));
-    fShowerProfileRecoTrans2D_5->Fill(ttemp_5->GetBinCenter(i+1), elep, ttemp_5->GetBinContent(i+1));
-
-    fTransverse_1->Fill(ttemp_1->GetBinCenter(i+1), elep, ttemp_1->GetBinContent(i+1));
-    fTransverse_2->Fill(ttemp_2->GetBinCenter(i+1), elep, ttemp_2->GetBinContent(i+1));
-    fTransverse_3->Fill(ttemp_3->GetBinCenter(i+1), elep, ttemp_3->GetBinContent(i+1));
-    fTransverse_4->Fill(ttemp_4->GetBinCenter(i+1), elep, ttemp_4->GetBinContent(i+1));
-    fTransverse_5->Fill(ttemp_5->GetBinCenter(i+1), elep, ttemp_5->GetBinContent(i+1));
-
-  }
+  if (pdg == 0) fillStandardHist(elep, ltemp, ttemp, ttemp_1, ttemp_2, ttemp_3, ttemp_4, ttemp_5);
+  else if (abs(pdg) == 11) fillElectronHist(ltemp, ttemp_1, ttemp_2, ttemp_3, ttemp_4, ttemp_5);
+  else if (abs(pdg) == 22) fillPhotonHist(ltemp, ttemp_1, ttemp_2, ttemp_3, ttemp_4, ttemp_5);
+  else fillOtherHist(ltemp, ttemp_1, ttemp_2, ttemp_3, ttemp_4, ttemp_5);
 
   return;
 
@@ -640,6 +637,213 @@ void shower::TCShowerTemplateMaker::showerProfileTrue(std::vector< art::Ptr<sim:
   return;
 
 } // showerProfileTrue 
+
+// -------------------------------------------------
+
+void shower::TCShowerTemplateMaker::truthMatcher(std::vector<art::Ptr<recob::Hit>> all_hits, std::vector<art::Ptr<recob::Hit>> shower_hits, const simb::MCParticle *&MCparticle, double &Efrac, double &Ecomplet) {
+
+  MCparticle=0;
+  Efrac=1.0;
+  Ecomplet=0;
+
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+  art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+  std::map<int,double> trkID_E;
+  for(size_t j = 0; j < shower_hits.size(); ++j){
+    art::Ptr<recob::Hit> hit = shower_hits[j];
+    //For know let's use collection plane to look at the shower reconstruction
+    if( hit->View() != 1) continue;
+    std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToEveTrackIDEs(hit);
+    for(size_t k = 0; k < TrackIDs.size(); k++){
+      if (trkID_E.find(std::abs(TrackIDs[k].trackID))==trkID_E.end()) trkID_E[std::abs(TrackIDs[k].trackID)] = 0;
+      trkID_E[std::abs(TrackIDs[k].trackID)] += TrackIDs[k].energy;
+    }
+  }
+  double max_E = -999.0;
+  double total_E = 0.0;
+  int TrackID = -999;
+  double partial_E=0.0;
+  //double noEM_E = 0.0;  //non electromagnetic energy is defined as energy from charged pion and protons 
+  if( !trkID_E.size() ) return; //Ghost shower??
+  for(std::map<int,double>::iterator ii = trkID_E.begin(); ii!=trkID_E.end(); ++ii){
+    total_E += ii->second;
+    if((ii->second)>max_E){
+      partial_E = ii->second;
+      max_E = ii->second;
+      TrackID = ii->first;
+    }
+    //int ID = ii->first'
+    // const simb::MCParticle *particle = pi_serv->TrackIDToParticle(ID); 
+    //if( abs(particle->PdgCode()) == 211 || particle->PdgCode() == 2212 ){ 
+    //if( particle->PdgCode() != 22 && abs(particle->PdgCode()) != 11){ 
+    //noEM_E += ii->second;
+    //}                                                                                  
+  }
+  MCparticle = pi_serv->TrackIdToParticle_P(TrackID);
+
+  //  Efrac = 1-(partial_E/total_E);   
+  Efrac = partial_E/total_E;
+
+  // completenes
+  double totenergy =0;
+  for(size_t k = 0; k < all_hits.size(); ++k){
+    art::Ptr<recob::Hit> hit = all_hits[k];
+    std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToEveTrackIDEs(hit);
+    for(size_t l = 0; l < TrackIDs.size(); ++l){
+      if(std::abs(TrackIDs[l].trackID)==TrackID) {
+        totenergy += TrackIDs[l].energy;
+      }
+    }
+  }
+  Ecomplet = partial_E/totenergy;
+
+} // truthMatcher 
+
+// -------------------------------------------------
+
+void shower::TCShowerTemplateMaker::fillStandardHist(double elep, TH1F* ltemp, TH1F* ttemp, TH1F* ttemp_1, TH1F* ttemp_2, TH1F* ttemp_3, TH1F* ttemp_4, TH1F* ttemp_5) {
+
+  for (int i = 0; i < LBINS; ++i) {
+    if (ltemp->GetBinContent(i+1) == 0) continue;
+    fShowerProfileRecoLong->Fill(ltemp->GetBinCenter(i+1), ltemp->GetBinContent(i+1));
+    fShowerProfileRecoLong2D->Fill(ltemp->GetBinCenter(i+1), elep, ltemp->GetBinContent(i+1));
+    fLongitudinal->Fill(ltemp->GetBinCenter(i+1), elep, ltemp->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp->GetBinContent(i+1) == 0) continue;
+    fShowerProfileRecoTrans->Fill(ttemp->GetBinCenter(i+1), ttemp->GetBinContent(i+1));
+    fShowerProfileRecoTrans2D->Fill(ttemp->GetBinCenter(i+1), elep, ttemp->GetBinContent(i+1));
+    fTransverse->Fill(ttemp->GetBinCenter(i+1), elep, ttemp->GetBinContent(i+1));
+
+    fShowerProfileRecoTrans2D_1->Fill(ttemp_1->GetBinCenter(i+1), elep, ttemp_1->GetBinContent(i+1));
+    fShowerProfileRecoTrans2D_2->Fill(ttemp_2->GetBinCenter(i+1), elep, ttemp_2->GetBinContent(i+1));
+    fShowerProfileRecoTrans2D_3->Fill(ttemp_3->GetBinCenter(i+1), elep, ttemp_3->GetBinContent(i+1));
+    fShowerProfileRecoTrans2D_4->Fill(ttemp_4->GetBinCenter(i+1), elep, ttemp_4->GetBinContent(i+1));
+    fShowerProfileRecoTrans2D_5->Fill(ttemp_5->GetBinCenter(i+1), elep, ttemp_5->GetBinContent(i+1));
+
+    fTransverse_1->Fill(ttemp_1->GetBinCenter(i+1), elep, ttemp_1->GetBinContent(i+1));
+    fTransverse_2->Fill(ttemp_2->GetBinCenter(i+1), elep, ttemp_2->GetBinContent(i+1));
+    fTransverse_3->Fill(ttemp_3->GetBinCenter(i+1), elep, ttemp_3->GetBinContent(i+1));
+    fTransverse_4->Fill(ttemp_4->GetBinCenter(i+1), elep, ttemp_4->GetBinContent(i+1));
+    fTransverse_5->Fill(ttemp_5->GetBinCenter(i+1), elep, ttemp_5->GetBinContent(i+1));
+  }
+
+} // fillStandardHist
+
+// -------------------------------------------------
+
+void shower::TCShowerTemplateMaker::fillElectronHist(TH1F* ltemp, TH1F* ttemp_1, TH1F* ttemp_2, TH1F* ttemp_3, TH1F* ttemp_4, TH1F* ttemp_5) {
+
+  for (int i = 0; i < LBINS; ++i) {
+    if (ltemp->GetBinContent(i+1) == 0) continue;
+    fLongitudinal_electron->Fill(ltemp->GetBinCenter(i+1), ltemp->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_1->GetBinContent(i+1) == 0) continue;
+    fTransverse1_electron->Fill(ttemp_1->GetBinCenter(i+1), ttemp_1->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_2->GetBinContent(i+1) == 0) continue;
+    fTransverse2_electron->Fill(ttemp_2->GetBinCenter(i+1), ttemp_2->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_3->GetBinContent(i+1) == 0) continue;
+    fTransverse3_electron->Fill(ttemp_3->GetBinCenter(i+1), ttemp_3->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_4->GetBinContent(i+1) == 0) continue;
+    fTransverse4_electron->Fill(ttemp_4->GetBinCenter(i+1), ttemp_4->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_5->GetBinContent(i+1) == 0) continue;
+    fTransverse5_electron->Fill(ttemp_5->GetBinCenter(i+1), ttemp_5->GetBinContent(i+1));
+  }
+
+  return;
+
+} // fillElectronHist
+
+// -------------------------------------------------
+
+void shower::TCShowerTemplateMaker::fillPhotonHist(TH1F* ltemp, TH1F* ttemp_1, TH1F* ttemp_2, TH1F* ttemp_3, TH1F* ttemp_4, TH1F* ttemp_5) {
+
+  for (int i = 0; i < LBINS; ++i) {
+    if (ltemp->GetBinContent(i+1) == 0) continue;
+    fLongitudinal_photon->Fill(ltemp->GetBinCenter(i+1), ltemp->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_1->GetBinContent(i+1) == 0) continue;
+    fTransverse1_photon->Fill(ttemp_1->GetBinCenter(i+1), ttemp_1->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_2->GetBinContent(i+1) == 0) continue;
+    fTransverse2_photon->Fill(ttemp_2->GetBinCenter(i+1), ttemp_2->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_3->GetBinContent(i+1) == 0) continue;
+    fTransverse3_photon->Fill(ttemp_3->GetBinCenter(i+1), ttemp_3->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_4->GetBinContent(i+1) == 0) continue;
+    fTransverse4_photon->Fill(ttemp_4->GetBinCenter(i+1), ttemp_4->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_5->GetBinContent(i+1) == 0) continue;
+    fTransverse5_photon->Fill(ttemp_5->GetBinCenter(i+1), ttemp_5->GetBinContent(i+1));
+  }
+
+  return;
+
+} // fillPhotonHist
+
+// -------------------------------------------------
+
+void shower::TCShowerTemplateMaker::fillOtherHist(TH1F* ltemp, TH1F* ttemp_1, TH1F* ttemp_2, TH1F* ttemp_3, TH1F* ttemp_4, TH1F* ttemp_5) {
+
+  for (int i = 0; i < LBINS; ++i) {
+    if (ltemp->GetBinContent(i+1) == 0) continue;
+    fLongitudinal_other->Fill(ltemp->GetBinCenter(i+1), ltemp->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_1->GetBinContent(i+1) == 0) continue;
+    fTransverse1_other->Fill(ttemp_1->GetBinCenter(i+1), ttemp_1->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_2->GetBinContent(i+1) == 0) continue;
+    fTransverse2_other->Fill(ttemp_2->GetBinCenter(i+1), ttemp_2->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_3->GetBinContent(i+1) == 0) continue;
+    fTransverse3_other->Fill(ttemp_3->GetBinCenter(i+1), ttemp_3->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_4->GetBinContent(i+1) == 0) continue;
+    fTransverse4_other->Fill(ttemp_4->GetBinCenter(i+1), ttemp_4->GetBinContent(i+1));
+  }
+
+  for (int i = 0; i < TBINS; ++i) {
+    if (ttemp_5->GetBinContent(i+1) == 0) continue;
+    fTransverse5_other->Fill(ttemp_5->GetBinCenter(i+1), ttemp_5->GetBinContent(i+1));
+  }
+
+  return;
+
+} // fillOtherHist
 
 // -------------------------------------------------
 
