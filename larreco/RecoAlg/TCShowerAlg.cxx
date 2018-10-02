@@ -135,6 +135,7 @@ namespace shower {
 	for (size_t k = 0; k < hitlist.size(); ++k) {
 	  std::vector< art::Ptr<recob::Cluster> > hit_clslist = hitcls_fm.at(hitlist[k].key());
 	  if (hit_clslist.size()) continue;
+
 	  int isGoodHit = goodHit(hitlist[k], maxDist*2, minDistVert*2, trk_wire1, trk_tick1, trk_wire2, trk_tick2);
 	  if (isGoodHit == 1 && addShowerHit(hitlist[k], showerHits) ) showerHits.push_back(hitlist[k]);
 	} // loop over hits
@@ -168,8 +169,7 @@ namespace shower {
 	  // are the track hits close?
 	  for (size_t kk = 0; kk < trk_hitlistOther.size(); ++kk) {
 	    nhits++;
-	    int isGoodHit = goodHit(trk_hitlist[kk], maxDist, minDistVert, trk_wire1, trk_tick1, trk_wire2, trk_tick2);
-
+	    int isGoodHit = goodHit(trk_hitlistOther[kk], maxDist, minDistVert, trk_wire1, trk_tick1, trk_wire2, trk_tick2);
 	    if (isGoodHit == -1){
 	      ngoodhits = 0;
 	      break;
