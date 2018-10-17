@@ -86,6 +86,7 @@ cluster::DBCluster3D::DBCluster3D(fhicl::ParameterSet const & p)
 
   tickToDist = fDetProp->DriftVelocity(fDetProp->Efield(),fDetProp->Temperature());
   tickToDist *= 1.e-3 * fDetProp->SamplingRate(); // 1e-3 is conversion of 1/us to 1/ns     
+  fMinHitDis *= fMinHitDis;
 }
 
 void cluster::DBCluster3D::produce(art::Event & evt)
@@ -129,7 +130,12 @@ void cluster::DBCluster3D::produce(art::Event & evt)
     first = false;
   } // first
 
-  fDBScan.init(sps);
+  art::FindManyP< recob::Hit > hitFromSp(spsHandle, evt, fSPHitAssnLabel);
+  if(!hitFromSp.isValid()) {
+    std::cout<<"hitFromSp is invalid\n";
+    return;
+  }
+  fDBScan.init(sps, hitFromSp);
   fDBScan.dbscan();
 
   //Find number of slices
