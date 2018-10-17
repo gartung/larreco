@@ -161,7 +161,7 @@ int pma::PMAlgFitter::build(void)
         mf::LogWarning("PMAlgFitter") << "no clusters, no pfparticles";
         return -1;
     }
-    
+
     return fResult.size();
 }
 // ------------------------------------------------------
@@ -295,7 +295,7 @@ pma::PMAlgTracker::PMAlgTracker(const std::vector< art::Ptr<recob::Hit> > & allh
 	const pma::PMAlgVertexing::Config& pmvtxConfig,
 	const pma::PMAlgStitching::Config& pmstitchConfig,
 	const pma::PMAlgCosmicTagger::Config& pmtaggerConfig,
-	
+
 	const std::vector< TH1F* > & hpassing, const std::vector< TH1F* > & hrejected) :
 
 	PMAlgTrackingBase(allhitlist, pmalgConfig, pmvtxConfig),
@@ -341,7 +341,7 @@ pma::PMAlgTracker::PMAlgTracker(const std::vector< art::Ptr<recob::Hit> > & allh
 
     mf::LogVerbatim("PMAlgTracker") << "Using views in the following order:";
     for (const auto v : fAvailableViews) {  mf::LogInfo("PMAlgTracker") << " " << v; }
-    
+
     // ************************* track validation settings: **************************
     mf::LogVerbatim("PMAlgTracker") << "Validation mode in config: " << pmalgTrackerConfig.Validation();
 
@@ -460,7 +460,7 @@ double pma::PMAlgTracker::validate(pma::Track3D& trk, unsigned int testView)
                 trk, fAdcImages[testView], fHitMap[trk.FrontCryo()][trk.FrontTPC()][testView],
                 fAdcInPassingPoints[testView], fAdcInRejectedPoints[testView]);
             break;
-            
+
         default: throw cet::exception("pma::PMAlgTracker") << "validation mode not supported" << std::endl; break;
     }
 
@@ -782,7 +782,7 @@ bool pma::PMAlgTracker::areCoLinear(pma::Track3D* trk1, pma::Track3D* trk2,
 				trk1back1.SetY(0.);
 				proj2 = pma::GetProjectionToSegment(endpoint2, trk1back1, trk1back0);
 				distProj2 = sqrt( pma::Dist2(endpoint2, proj2) );
-			
+
 				double cosThrXZ = cos(0.5 * acos(cosThr));
 				double distProjThrXZ = 0.5 * distProjThr;
 				double cosXZ = dir1_xz.Dot(dir2_xz);
@@ -816,6 +816,7 @@ bool pma::PMAlgTracker::mergeCoLinear(pma::TrkCandidateColl & tracks)
 		pma::Track3D* trk2 = 0;
 		pma::Track3D* best_trk2 = 0;
 		dmin = 1.0e12; cmax = 0; lbest = 0;
+    size_t ubest = 0;
 		for (u = t + 1; u < tracks.size(); u++)
 		{
 			trk2 = tracks[u].Track();
@@ -828,6 +829,7 @@ bool pma::PMAlgTracker::mergeCoLinear(pma::TrkCandidateColl & tracks)
 					cmax = c; dmin = d;
 					best_trk2 = trk2;
 					lbest = l;
+          ubest = u;
 				}
 			}
 			trk2 = 0;
@@ -846,9 +848,9 @@ bool pma::PMAlgTracker::mergeCoLinear(pma::TrkCandidateColl & tracks)
 			else
 			{
 				fProjectionMatchingAlg.mergeTracks(*trk1, *trk2, true);
-				tracks[u].DeleteTrack();
+				tracks[ubest].DeleteTrack();
 			}
-			tracks.erase_at(u);
+			tracks.erase_at(ubest);
 			foundMerge = true;
 		}
 		else t++;
@@ -1422,7 +1424,7 @@ int pma::PMAlgTracker::maxCluster(int first_idx_tag,
 				pair_checked = true; break;
 			}
 		if (pair_checked) continue;
-		    
+
 		const auto & v = fCluHits[i];
 
 		if ((v.front()->WireID().TPC == tpc) &&
@@ -1532,4 +1534,3 @@ void pma::PMAlgTracker::listUsedClusters(void) const
 }
 // ------------------------------------------------------
 // ------------------------------------------------------
-
