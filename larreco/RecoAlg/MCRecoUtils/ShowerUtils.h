@@ -1,5 +1,5 @@
-#ifndef FDSELECTIONSHOWERUTILS_H_SEEN
-#define FDSELECTIONSHOWERUTILS_H_SEEN
+#ifndef SHOWERUTILS_H_SEEN
+#define SHOWERUTILS_H_SEEN
 
 
 ///////////////////////////////////////////////
