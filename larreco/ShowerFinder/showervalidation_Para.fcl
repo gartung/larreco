@@ -1,0 +1,15 @@
+BEGIN_PROLOG
+standard_showervalidation_Para: {
+ module_type: "sbndcode/ShowerReco/ShowerValidation"
+ GenieGenModuleLabel:      "generator"
+ LArGeantModuleLabel:      "largeant"
+ HitsModuleLabel:          "gaushit"
+ TrackModuleLabel:         "pmalgtrackmaker"
+ ShowerModuleLabels:        ["emshower"]
+ UseBiggestShower: true
+ Verbose: 0 
+ EnergyWidth: 0 
+ Energies: []
+}
+END_PROLOG
+

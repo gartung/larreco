@@ -125,4 +125,19 @@ standard_neutrinoshowereff:
 }
 
 
+standard_showervalidation: {
+ module_type: "ShowerValidation"
+ GenieGenModuleLabel:      "generator"
+ LArGeantModuleLabel:      "largeant"
+ HitsModuleLabel:          "gaushit"
+ TrackModuleLabel:         "pmalgtrackmaker"
+ ShowerModuleLabels:        ["emshower"]
+ UseBiggestShower: true
+ Verbose: 0
+ EnergyWidth: 0
+ Energies: []
+}
+
+
+
 END_PROLOG
