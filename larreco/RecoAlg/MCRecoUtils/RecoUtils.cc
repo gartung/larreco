@@ -148,15 +148,130 @@ bool RecoUtils::IsInsideTPC(TVector3 position, double distance_buffer){
 
   return inside;
 
+}
+
+int RecoUtils::NumberofHitsFromTrack(int TrackID, const std::vector<art::Ptr<recob::Hit> >& hits){
+
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+  
+  int HitNum = 0;
+
+  //Loop over the hits and find the IDE
+  for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt) {
+
+    art::Ptr<recob::Hit> hit = *hitIt;
+  
+    std::vector<sim::TrackIDE> trackIDEs = bt_serv->HitToTrackIDEs(hit);
+    std::map<int,float> hitEnergies; 
+
+    //Loop over the IDEs associated to the hit and add up energies
+    for(unsigned int idIt = 0; idIt < trackIDEs.size(); ++idIt) {
+      hitEnergies[TMath::Abs(trackIDEs.at(idIt).trackID)] += trackIDEs.at(idIt).energy;
+    }
+
+    //Find which track deposited the most energy. 
+    int   likelytrack = -9999;
+    float MaxEnergy   = -9999;
+    for(std::map<int,float>::iterator track_iter=hitEnergies.begin();track_iter!=hitEnergies.end();++track_iter){
+      if(track_iter->second > MaxEnergy){
+	MaxEnergy = track_iter->second;
+	likelytrack = track_iter->first;
+      }
+    }
+
+    if(likelytrack == TrackID){++HitNum;}
+   
+  }    
+  return HitNum;
+}
 
 
+std::map<geo::PlaneID,int> RecoUtils::NumberofPlaneHitsFromTrack(int TrackID, const std::vector<art::Ptr<recob::Hit> >& hits){
+
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+  art::ServiceHandle<geo::Geometry> geom;
+
+  std::map<geo::PlaneID, int> HitNum_plane;
+
+  //Loop over the hits and find the IDE
+  for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt) {
+
+    art::Ptr<recob::Hit> hit = *hitIt;
+    
+    geo::WireID wireid = hit->WireID();
+    geo::PlaneID  PlaneID = wireid.planeID();
+
+    std::vector<sim::TrackIDE> trackIDEs = bt_serv->HitToTrackIDEs(hit);
+    
+    std::map<int,float> hitEnergies; 
+
+    //Loop over the IDEs associated to the hit and add up energies
+    for(unsigned int idIt = 0; idIt < trackIDEs.size(); ++idIt) {
+      hitEnergies[TMath::Abs(trackIDEs.at(idIt).trackID)] += trackIDEs.at(idIt).energy;
+    }
+
+    //Find which track deposited the most energy. 
+    int   likelytrack = -9999;
+    float MaxEnergy   = -9999;
+    for(std::map<int,float>::iterator track_iter=hitEnergies.begin();track_iter!=hitEnergies.end();++track_iter){
+      if(track_iter->second > MaxEnergy){
+	MaxEnergy = track_iter->second;
+	likelytrack = track_iter->first;
+      }
+    }
+    
+    if(likelytrack == TrackID){++HitNum_plane[PlaneID];}
+  }
+  return HitNum_plane;
+}
+
+std::map<int,std::map<geo::PlaneID,int> > RecoUtils::NumberofPlaneHitsPerTrack(const std::vector<art::Ptr<recob::Hit> >& hits){
+
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+  art::ServiceHandle<geo::Geometry> geom;
+
+  std::map<int, std::map<geo::PlaneID, int> > HitNum;
+
+  //Loop over the hits and find the IDE
+  for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt) {
+
+    art::Ptr<recob::Hit> hit = *hitIt;
+    
+    geo::WireID wireid = hit->WireID();
+    geo::PlaneID  PlaneID = wireid.planeID();
+
+
+    std::vector<sim::TrackIDE> trackIDEs = bt_serv->HitToTrackIDEs(hit);
+
+    std::map<int,float> hitEnergies; 
+
+    //Loop over the IDEs associated to the hit and add up energies
+    for(unsigned int idIt = 0; idIt < trackIDEs.size(); ++idIt) {
+      hitEnergies[TMath::Abs(trackIDEs.at(idIt).trackID)] += trackIDEs.at(idIt).energy;
+    }
+
+    //Find which track deposited the most energy. 
+    int   likelytrack = -9999;
+    float MaxEnergy   = -9999;
+    for(std::map<int,float>::iterator track_iter=hitEnergies.begin();track_iter!=hitEnergies.end();++track_iter){
+      if(track_iter->second > MaxEnergy){
+	MaxEnergy = track_iter->second;
+	likelytrack = track_iter->first;
+      }
+    }
+    
+    ++HitNum[likelytrack][PlaneID];
+  }
+  return HitNum;
 }
 
 
 std::map<geo::PlaneID,int> RecoUtils::NumberofHitsThatContainEnergyDepositedByTrack(int TrackID, const std::vector<art::Ptr<recob::Hit> >& hits){
 
-  //Loop over the planes and create the initial PlaneMap
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
   art::ServiceHandle<geo::Geometry> geom;
+
+  //Loop over the planes and create the initial PlaneMap
   std::map<geo::PlaneID,int> HitPlaneMap;
   for(geo::PlaneID plane_id: geom->IteratePlaneIDs()){HitPlaneMap[plane_id] = 0;}
 
@@ -168,7 +283,6 @@ std::map<geo::PlaneID,int> RecoUtils::NumberofHitsThatContainEnergyDepositedByTr
     geo::WireID wireid = hit->WireID();
     geo::PlaneID  PlaneID = wireid.planeID();
 
-    art::ServiceHandle<cheat::BackTrackerService> bt_serv;
     std::vector<sim::TrackIDE> trackIDEs = bt_serv->HitToTrackIDEs(hit);
     //Loop over the IDEs associated to the Hit
     for (unsigned int idIt = 0; idIt < trackIDEs.size(); ++idIt) {
@@ -347,7 +461,6 @@ std::map<int,float> RecoUtils::TrueEnergyDepositedFromMCTracks(const std::vector
   
   std::map<int,float> total_energies;
 
-
   // Loop over SimChannel                                                                                  
   for(size_t simch_index=0; simch_index<simchannels.size(); ++simch_index) {
 
@@ -362,10 +475,10 @@ std::map<int,float> RecoUtils::TrueEnergyDepositedFromMCTracks(const std::vector
     
     //Get the TDCIDEMap (Charge vs Time) 
     auto tdc_ide_map = simch_ptr->TDCIDEMap();
-    
+
     //Loop through the map 
     for(auto const& tdc_ide_pair : tdc_ide_map) {
-      
+
       //Get the IDEs associated to the TDC?
       auto const& ide_v = tdc_ide_pair.second;
       
@@ -377,13 +490,13 @@ std::map<int,float> RecoUtils::TrueEnergyDepositedFromMCTracks(const std::vector
       }
     }
   }
-  
+
   return total_energies;
 }
 
 
 
-float RecoUtils::TotalEnergyDepinHits(const std::vector<art::Ptr<recob::Hit> >& hits){
+float RecoUtils::TotalEnergyDepinHits(const std::vector<art::Ptr<recob::Hit> >& hits, int Plane){
   
   float DepEnergy = 0;
   art::ServiceHandle<cheat::BackTrackerService> bt_serv;
@@ -394,7 +507,7 @@ float RecoUtils::TotalEnergyDepinHits(const std::vector<art::Ptr<recob::Hit> >& 
     //Get the plane ID                                                                                                                                                             
     geo::WireID wireid = (*hitIt)->WireID();
     int PlaneID = wireid.Plane;
-    if(PlaneID != 2){continue;}
+    if(PlaneID != Plane){continue;}
 
     //Split the Hit into its IDE for each track it associates with.                                                                                                                
     std::vector<sim::TrackIDE> trackIDEs = bt_serv->HitToTrackIDEs((*hitIt));

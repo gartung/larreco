@@ -49,13 +49,20 @@ namespace RecoUtils{
   int TrueParticleIDFromTotalRecoCharge(const std::vector<art::Ptr<recob::Hit> >& hits);  //Returns the geant4 ID which contributes the most to the vector of hits.  The matching method looks for which true particle contributes the most reconstructed charge to the hit selection (the reco charge of each hit is correlated with each maximally contributing true particle and summed)
   int TrueParticleIDFromTotalRecoHits(const std::vector<art::Ptr<recob::Hit> >& hits);  //Returns the geant4 ID which contributes the most to the vector of hits.  The matching method looks for which true particle maximally contributes to the most reco hits
   bool IsInsideTPC(TVector3 position, double distance_buffer); //Checks if a position is within any of the TPCs in the geometry (user can define some distance buffer from the TPC walls)
+  
+  int NumberofHitsFromTrack(int TrackID, const std::vector<art::Ptr<recob::Hit> >& hits); //Returns the number of hits in the vector that are associated to the MC track.
+
+  std::map<geo::PlaneID,int> NumberofPlaneHitsFromTrack(int TrackID, const std::vector<art::Ptr<recob::Hit> >& hits); //Returns the number of hits in the vector that are ssociated to the MC trakc split into planes. 
+
+  std::map<int,std::map<geo::PlaneID,int> > NumberofPlaneHitsPerTrack(const std::vector<art::Ptr<recob::Hit> >& hits); //Returns a map of all the number of hits and the respetive track id they are associated to.
+
 
   float TrueEnergyDepositedFromMCTrack(int TrackID,const std::vector<art::Ptr<sim::SimChannel> >& simchannels); //Returns the total energy deposited from the track id given.
   std::map<geo::PlaneID,int> NumberofMCWiresHit(int TrackID,const std::vector<art::Ptr<sim::SimChannel> > & simchannels); // Returns the number of Wires that saw an energy deposit in Monte Carlo from a track.Might be useful to add an energy cut on this. 
 
   std::map<geo::PlaneID,int> NumberofHitsThatContainEnergyDepositedByTrack(int TrackID, const std::vector<art::Ptr<recob::Hit> >& hits); //Returns the number of hits in the reconstruction that saw an energy deposition by the a track. Might be useful to add an energy cut on this. 
 
-  float TotalEnergyDepinHits(const std::vector<art::Ptr<recob::Hit> >& hits); //Returns the amount of energy deposited in the detector (before recombination and lifetime effects) in the hits. 
+  float TotalEnergyDepinHits(const std::vector<art::Ptr<recob::Hit> >& hits, int Plane); //Returns the amount of energy deposited in the detector (before recombination and lifetime effects) in the hits. 
 
   float TotalEnergyDepinHitsFromTrack(const std::vector<art::Ptr<recob::Hit> >& hits, int TrackID); //Returns the amount of energy deposited in the detector (before recombination and lifetime effects)in the hits from a given particle. 
 

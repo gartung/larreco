@@ -1,6 +1,6 @@
 #include "ShowerUtils.h"
 
-std::pair<int,double> ShowerUtils::TrueParticleIDFromTrueChain(std::map<int,std::vector<int>> &ShowersMothers,const std::vector<art::Ptr<recob::Hit> >& hits) {
+std::pair<int,double> ShowerUtils::TrueParticleIDFromTrueChain(std::map<int,std::vector<int>> &ShowersMothers,const std::vector<art::Ptr<recob::Hit> >& hits, int planeid) {
   art::ServiceHandle<cheat::BackTrackerService> bt_serv;
   art::ServiceHandle<cheat::ParticleInventoryService> particleInventory;
 
@@ -12,7 +12,7 @@ std::pair<int,double> ShowerUtils::TrueParticleIDFromTrueChain(std::map<int,std:
     //Get the plane ID                                                                                                                                                           
     geo::WireID wireid = (*hitIt)->WireID();
     int PlaneID = wireid.Plane;
-    if(PlaneID != 2){continue;}
+    if(PlaneID != planeid){continue;}
     std::vector<sim::TrackIDE> trackIDs = bt_serv->HitToTrackIDEs(hit);
     for (unsigned int idIt = 0; idIt < trackIDs.size(); ++idIt) {
       trackIDToEDepMap[TMath::Abs(trackIDs[idIt].trackID)] += trackIDs[idIt].energy;

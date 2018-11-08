@@ -45,7 +45,7 @@
 
 namespace ShowerUtils{
 
-  std::pair<int,double> TrueParticleIDFromTrueChain(std::map<int,std::vector<int> >& ShowersMothers,const std::vector<art::Ptr<recob::Hit> >& hits);
+  std::pair<int,double> TrueParticleIDFromTrueChain(std::map<int,std::vector<int> >& ShowersMothers,const std::vector<art::Ptr<recob::Hit> >& hits, int planeid);
   std::map<geo::PlaneID,int> NumberofWiresHitByShower(std::vector<int> &TrackIDs, const std::vector<art::Ptr<recob::Hit> >& hits);
 
 }
