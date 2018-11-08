@@ -2,7 +2,8 @@
 art_make( 
           EXCLUDE FeatureVertexFinder_module.cc CornerFinder_module.cc
           MODULE_LIBRARIES 
-                        larsim_MCCheater_BackTracker_service
+                        larsim_MCCheater_BackTrackerService_service
+			larsim_MCCheater_ParticleInventoryService_service
                         larevt_Filters
                         lardataobj_RecoBase
                         larcorealg_Geometry
@@ -10,6 +11,7 @@ art_make(
                         lardata_Utilities
                         larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
                         nusimdata_SimulationBase
+			lardata_RecoObjects
                         ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
 			${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -20,16 +22,19 @@ art_make(
 			art_Utilities
 			canvas
 			${MF_MESSAGELOGGER}
-			${MF_UTILITIES}
+			
 	                ${FHICLCPP}
 			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}
+			${ROOT_GENVECTOR}
+			larreco_RecoAlg
          )
 
 
 simple_plugin ( FeatureVertexFinder "module"
                         larreco_RecoAlg
-                        larsim_MCCheater_BackTracker_service
+                        larsim_MCCheater_BackTrackerService_service
+			larsim_MCCheater_ParticleInventoryService_service
                         larevt_Filters
                         lardataobj_RecoBase
                         larcorealg_Geometry
@@ -46,7 +51,7 @@ simple_plugin ( FeatureVertexFinder "module"
 			art_Utilities
 			canvas
 			${MF_MESSAGELOGGER}
-			${MF_UTILITIES}
+			
 	                ${FHICLCPP}
 			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}
@@ -67,7 +72,7 @@ simple_plugin ( CornerFinder "module"
 			art_Utilities
 			canvas
 			${MF_MESSAGELOGGER}
-			${MF_UTILITIES}
+			
 	                ${FHICLCPP}
 			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}

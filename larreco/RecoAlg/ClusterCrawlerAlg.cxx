@@ -22,6 +22,7 @@
 
 // LArSoft libraries
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
+#include "larcorealg/CoreUtils/NumericUtils.h" // util::absDiff()
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/TPCGeo.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -355,7 +356,7 @@ namespace cluster {
             // skip narrow hits
             if(fHits[ihit].PeakAmplitude() < fHitMinAmp) continue;
 //            prt = (fDebugPlane == (int)plane && (int)iwire == fDebugWire && std::abs((int)hit.PeakTime() - fDebugHit) < 20);
-            if((iwire - span + 1) < 0) continue;
+            if((iwire + 1) < span) continue;
             jwire = iwire - span + 1;
             if(prt) mf::LogVerbatim("CC")<<"Found debug hit "<<PrintHit(ihit)<<" on pass"<<pass;
             // skip if good wire and no hit
@@ -1411,7 +1412,7 @@ namespace cluster {
     
     // See if we can move the vertex within errors to reconcile the differences
     // without altering the clusters
-    if(std::abs(mindW) < vWireErr && std::abs(maxdW) < vWireErr && std::abs(maxdW - mindW) < 2) {
+    if( ((unsigned int)std::abs(mindW) < vWireErr) && ((unsigned int)std::abs(maxdW) < vWireErr) && std::abs(maxdW - mindW) < 2) {
       if(vtxprt) mf::LogVerbatim("CC")<<" Move vtx wire "<<vtx[iv].Wire;
       vtx[iv].Wire -= (float)(maxdW + mindW)/2;
       if(vtxprt) mf::LogVerbatim("CC")<<" to "<<vtx[iv].Wire;
@@ -3223,7 +3224,7 @@ namespace cluster {
     if(pass2 < pass1) cpass = pass2;
     
     // ***** Check End of Cluster 2 matching with middle of cluster 1
-    if(wiron1 - ew1 < 0) return;
+    if((int) wiron1 - ew1 < 0) return;
     unsigned int hiton1 = cl1hits[wiron1 - ew1];
     if(hiton1 > fHits.size() - 1) {
 //      mf::LogError("CC")<<"ChkMerge12 bad hiton1 "<<hiton1;
@@ -4882,7 +4883,7 @@ namespace cluster {
     for(ii = 0; ii < nHitToChk - 1; ++ii) {
       indx = fcl2hits.size() - 1 - ii;
       // ignore if not on adjacent wires
-      if(std::abs(fHits[fcl2hits[indx]].WireID().Wire != fHits[fcl2hits[indx-1]].WireID().Wire) > 1) continue;
+      if(util::absDiff(fHits[fcl2hits[indx]].WireID().Wire, fHits[fcl2hits[indx-1]].WireID().Wire) > 1) continue;
       hiStartTick = std::max(fHits[fcl2hits[indx]].StartTick(), fHits[fcl2hits[indx-1]].StartTick());
       loEndTick = std::min(fHits[fcl2hits[indx]].EndTick(), fHits[fcl2hits[indx-1]].EndTick());
       if(posSlope) {
@@ -5085,7 +5086,7 @@ namespace cluster {
       float bigchgcut = 1.5 * fChgCut[pass];
       bool lasthitbig = false;
       bool lasthitlow = false;
-      if(lastClHit != UINT_MAX && std::abs(wire0 - kwire) == 1) {
+      if(lastClHit != UINT_MAX && util::absDiff(wire0, kwire) == 1) {
         float lastchgrat = (fHits[lastClHit].Integral() - fAveChg) / fAveChg;
         lasthitbig = ( lastchgrat > bigchgcut);
         lasthitlow = ( lastchgrat < -fChgCut[pass]);
@@ -5400,8 +5401,8 @@ namespace cluster {
           for(unsigned short icl = 0; icl < tcl.size(); ++icl) {
             if(tcl[icl].ID < 0) continue;
             if(tcl[icl].CTP != clCTP) continue;
-            dwb = std::abs(theWire - tcl[icl].BeginWir);
-            dwe = std::abs(theWire - tcl[icl].EndWir);
+            dwb = util::absDiff(theWire, tcl[icl].BeginWir);
+            dwe = util::absDiff(theWire, tcl[icl].EndWir);
             // rough cut to start
             if(dwb > 10 && dwe > 10) continue;
             if(dwb < dwe && dwb < 10 && tcl[icl].BeginVtx < 0) {
@@ -5858,7 +5859,7 @@ namespace cluster {
       }
       
       // wire spacing in cm
-      float wirePitch = geom->WirePitch(0, 1, 0, tpcid.TPC, tpcid.Cryostat);
+      float wirePitch = geom->WirePitch(0, tpcid.TPC, tpcid.Cryostat);
       
       // fill temp vectors of 2D vertex X and X errors
       std::vector<float> vX(vtx.size());
@@ -5917,8 +5918,10 @@ namespace cluster {
           iWire = vtx[ivx].Wire;
           float best = fVertex3DCut;
           // temp array of 2D vertex indices in each plane
-          std::array<short, 3> t2dIndex = {-1, -1, -1};
-          std::array<short, 3> tmpIndex = {-1, -1, -1};
+          // BUG the double brace syntax is required to work around clang bug 21629
+          // (https://bugs.llvm.org/show_bug.cgi?id=21629)
+          std::array<short, 3> t2dIndex = {{-1, -1, -1}};
+          std::array<short, 3> tmpIndex = {{-1, -1, -1}};
           for(jpl = ipl + 1; jpl < 3; ++jpl) {
             for(jj = 0; jj < vIndex[jpl].size(); ++jj) {
               jvx = vIndex[jpl][jj];

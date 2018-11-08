@@ -27,14 +27,15 @@
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "art/Framework/Services/Optional/TFileService.h" 
 #include "messagefacility/MessageLogger/MessageLogger.h"
-#include "cetlib/exception.h"
+#include "cetlib_except/exception.h"
 
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 #include "larreco/RecoAlg/KalmanFilterAlg.h"
 #include "lardata/RecoObjects/KHitContainerWireX.h"
 #include "lardata/RecoObjects/SurfYZPlane.h"
@@ -207,7 +208,8 @@ void trkf::TrackKalmanCheater::produce(art::Event & evt)
   // Get Services.
 
   art::ServiceHandle<geo::Geometry> geom;
-  art::ServiceHandle<cheat::BackTracker> bt;
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+  art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
 
   // Reset space point algorithm.
 
@@ -271,7 +273,7 @@ void trkf::TrackKalmanCheater::produce(art::Event & evt)
 
     // Get track ids for this hit.
 
-    std::vector<sim::TrackIDE> tids = bt->HitToTrackID(*ihit);
+    std::vector<sim::TrackIDE> tids = bt_serv->HitToTrackIDEs(*ihit);
 
     // Loop over track ids.
 
@@ -287,7 +289,7 @@ void trkf::TrackKalmanCheater::produce(art::Event & evt)
 
   // Extract geant mc particles.
 
-  sim::ParticleList const& plist = bt->ParticleList();
+  sim::ParticleList const& plist = pi_serv->ParticleList();
 
   // Loop over geant particles.
 
@@ -466,7 +468,7 @@ void trkf::TrackKalmanCheater::produce(art::Event & evt)
       
     for(unsigned int ispt = nspt; ispt < spts->size(); ++ispt) {
       const recob::SpacePoint& spt = (*spts)[ispt];
-      art::ProductID sptid = getProductID<std::vector<recob::SpacePoint> >(evt);
+      art::ProductID sptid = getProductID<std::vector<recob::SpacePoint> >();
       art::Ptr<recob::SpacePoint> sptptr(sptid, ispt, evt.productGetter(sptid));
       sptvec.push_back(sptptr);
 

@@ -24,6 +24,7 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 
@@ -31,6 +32,7 @@
 
 #include "larreco/RecoAlg/TrackKalmanFitter.h"
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
+#include "larreco/TrackFinder/TrackMaker.h"
 
 #include "lardataobj/MCBase/MCTrack.h"
 
@@ -97,13 +99,13 @@ namespace trkf {
 	Name("alwaysInvertDir"),
 	Comment("If true, fit all tracks from end to vertex assuming inverted direction.")
       };
-      fhicl::Atom<bool> tryNoSkipWhenFails {
-        Name("tryNoSkipWhenFails"),
-        Comment("In case skipNegProp is true and the track fit fails, make a second attempt to fit the track with skipNegProp=false in order to attempt to avoid losing efficiency.")
-      };
       fhicl::Atom<bool> produceTrackFitHitInfo {
         Name("produceTrackFitHitInfo"),
         Comment("Option to produce (or not) the detailed TrackFitHitInfo.")
+      };
+      fhicl::Atom<bool> produceSpacePoints {
+        Name("produceSpacePoints"),
+        Comment("Option to produce (or not) the associated SpacePoints.")
       };
       fhicl::Atom<bool> keepInputTrajectoryPoints {
         Name("keepInputTrajectoryPoints"),
@@ -150,11 +152,11 @@ namespace trkf {
 
     bool isTT;
 
-    double setMomValue(const recob::Trajectory* ptraj, const double pMC, const int pId) const;
+    double setMomValue(const recob::TrackTrajectory* ptraj, const double pMC, const int pId) const;
     int    setPId() const;
-    bool   setDirFlip(const recob::Trajectory* ptraj, TVector3& mcdir) const;
+    bool   setDirFlip(const recob::TrackTrajectory* ptraj, TVector3& mcdir) const;
 
-    void restoreInputPoints(const recob::Trajectory& track,const std::vector<art::Ptr<recob::Hit> >& inHits,recob::Track& outTrack,art::PtrVector<recob::Hit>& outHits) const;
+    void restoreInputPoints(const recob::TrackTrajectory& track,const std::vector<art::Ptr<recob::Hit> >& inHits,recob::Track& outTrack, std::vector<art::Ptr<recob::Hit> >& outHits) const;
   };
 }
 
@@ -173,7 +175,7 @@ trkf::KalmanFilterTrajectoryFitter::KalmanFilterTrajectoryFitter(trkf::KalmanFil
 
   produces<std::vector<recob::Track> >();
   produces<art::Assns<recob::Track, recob::Hit> >();
-  // produces<art::Assns<recob::Track, recob::Hit, recob::TrackHitMeta> >();
+  produces<art::Assns<recob::Track, recob::Hit, recob::TrackHitMeta> >();
   if (isTT) {
     produces<art::Assns<recob::TrackTrajectory, recob::Track> >();
   } else {
@@ -181,6 +183,10 @@ trkf::KalmanFilterTrajectoryFitter::KalmanFilterTrajectoryFitter(trkf::KalmanFil
   }
   if (p_().options().produceTrackFitHitInfo()) {
     produces<std::vector<std::vector<recob::TrackFitHitInfo> > >();
+  }
+  if (p_().options().produceSpacePoints()) {
+    produces<std::vector<recob::SpacePoint> >();
+    produces<art::Assns<recob::Hit, recob::SpacePoint> >();
   }
 
   //throw expections to avoid possible silent failures due to incompatible configuration options
@@ -221,7 +227,7 @@ void trkf::KalmanFilterTrajectoryFitter::produce(art::Event & e)
 {
 
   auto outputTracks  = std::make_unique<std::vector<recob::Track> >();
-  // auto outputHits    = std::make_unique<art::Assns<recob::Track, recob::Hit, recob::TrackHitMeta> >();
+  auto outputHitsMeta = std::make_unique<art::Assns<recob::Track, recob::Hit, recob::TrackHitMeta> >();
   auto outputHits    = std::make_unique<art::Assns<recob::Track, recob::Hit> >();
   auto outputHitInfo = std::make_unique<std::vector<std::vector<recob::TrackFitHitInfo> > >();
 
@@ -229,8 +235,13 @@ void trkf::KalmanFilterTrajectoryFitter::produce(art::Event & e)
   auto outputTTjTAssn = std::make_unique<art::Assns<recob::TrackTrajectory, recob::Track> >();
   auto outputTjTAssn  = std::make_unique<art::Assns<recob::Trajectory     , recob::Track> >();
 
-  auto const tid = getProductID<std::vector<recob::Track> >(e);
+  auto const tid = getProductID<std::vector<recob::Track> >();
   auto const tidgetter = e.productGetter(tid);
+
+  auto outputSpacePoints  = std::make_unique<std::vector<recob::SpacePoint> >();
+  auto outputHitSpacePointAssn = std::make_unique<art::Assns<recob::Hit, recob::SpacePoint> >();
+  auto const spid = getProductID<std::vector<recob::SpacePoint> >();
+  auto const spidgetter = e.productGetter(spid);
 
   //FIXME, eventually remove this (ok only for single particle MC)
   double pMC = -1.;
@@ -273,8 +284,8 @@ void trkf::KalmanFilterTrajectoryFitter::produce(art::Event & e)
 
   for (unsigned int iTraj = 0; iTraj < nTrajs; ++iTraj) {
 
-    const recob::Trajectory& inTraj = (isTT ? trackTrajectoryVec->at(iTraj).Trajectory() : trajectoryVec->at(iTraj));
-    const std::vector<recob::TrajectoryPointFlags>& inFlags = (isTT ? trackTrajectoryVec->at(iTraj).Flags() : std::vector<recob::TrajectoryPointFlags>());
+    const recob::TrackTrajectory& inTraj = (isTT ? trackTrajectoryVec->at(iTraj) : recob::TrackTrajectory(trajectoryVec->at(iTraj), std::vector<recob::TrajectoryPointFlags>()) );
+    //const std::vector<recob::TrajectoryPointFlags>& inFlags = (isTT ? trackTrajectoryVec->at(iTraj).Flags() : std::vector<recob::TrajectoryPointFlags>());
     //this is not computationally optimal, but at least preserves the order unlike FindManyP
     std::vector<art::Ptr<recob::Hit> > inHits;
     if (isTT) {
@@ -293,28 +304,14 @@ void trkf::KalmanFilterTrajectoryFitter::produce(art::Event & e)
     const bool flipDir = setDirFlip(&inTraj, mcdir);
 
     recob::Track outTrack;
-    art::PtrVector<recob::Hit> outHits;
-    std::vector<recob::TrackFitHitInfo> trackFitHitInfos;
+    std::vector<art::Ptr<recob::Hit> > outHits;
+    trkmkr::OptionalOutputs optionals;
+    if (p_().options().produceTrackFitHitInfo()) optionals.initTrackFitInfos();
     bool fitok = kalmanFitter->fitTrack(inTraj,iTraj,
 					SMatrixSym55(),SMatrixSym55(),
-					inHits,inFlags,
-					mom, pId, flipDir, outTrack, outHits, trackFitHitInfos);
-    if (!fitok && (kalmanFitter->getSkipNegProp() || kalmanFitter->getCleanZigzag()) && p_().options().tryNoSkipWhenFails()) {
-      //ok try once more without skipping hits
-      mf::LogWarning("KalmanFilterTrajectoryFitter") << "Try to recover with skipNegProp = false and cleanZigzag = false\n";
-      kalmanFitter->setSkipNegProp(false);
-      kalmanFitter->setCleanZigzag(false);
-      fitok = kalmanFitter->fitTrack(inTraj,iTraj,
-				     SMatrixSym55(),SMatrixSym55(),
-				     inHits,inFlags,
-				     mom, pId, flipDir, outTrack, outHits, trackFitHitInfos);
-      kalmanFitter->setSkipNegProp(p_().fitter().skipNegProp());
-      kalmanFitter->setCleanZigzag(p_().fitter().cleanZigzag());
-    }
-    if (!fitok) {
-      mf::LogWarning("KalmanFilterTrajectoryFitter") << "Fit failed for track #" << iTraj << "\n";
-      continue;
-    }
+					inHits,//inFlags,
+					mom, pId, flipDir, outTrack, outHits, optionals);
+    if (!fitok) continue;
 
     if (p_().options().keepInputTrajectoryPoints()) {
       restoreInputPoints(inTraj,inHits,outTrack,outHits);
@@ -325,12 +322,21 @@ void trkf::KalmanFilterTrajectoryFitter::produce(art::Event & e)
     unsigned int ip = 0;
     for (auto const& trhit: outHits) {
       //the fitter produces collections with 1-1 match between hits and point
-      // recob::TrackHitMeta metadata(ip,-1);
-      // outputHits->addSingle(aptr, trhit, metadata);
+      recob::TrackHitMeta metadata(ip,-1);
+      outputHitsMeta->addSingle(aptr, trhit, metadata);
       outputHits->addSingle(aptr, trhit);
+      if (p_().options().produceSpacePoints() && outputTracks->back().HasValidPoint(ip)) {
+	auto& tp = outputTracks->back().Trajectory().LocationAtPoint(ip);
+	double fXYZ[3] = {tp.X(),tp.Y(),tp.Z()};
+	double fErrXYZ[6] = {0};
+	recob::SpacePoint sp(fXYZ, fErrXYZ, -1.);
+	outputSpacePoints->emplace_back(std::move(sp));
+	art::Ptr<recob::SpacePoint> apsp(spid, outputSpacePoints->size()-1, spidgetter);
+	outputHitSpacePointAssn->addSingle(trhit, apsp);
+      }
       ip++;
     }
-    outputHitInfo->emplace_back(std::move(trackFitHitInfos));
+    outputHitInfo->emplace_back(optionals.trackFitHitInfos());
     if (isTT) {
       outputTTjTAssn->addSingle(art::Ptr<recob::TrackTrajectory>(inputTrackTrajectoryH, iTraj),aptr);
     } else {
@@ -338,15 +344,20 @@ void trkf::KalmanFilterTrajectoryFitter::produce(art::Event & e)
     }
   }
   e.put(std::move(outputTracks));
+  e.put(std::move(outputHitsMeta));
   e.put(std::move(outputHits));
   if (p_().options().produceTrackFitHitInfo()) {
     e.put(std::move(outputHitInfo));
+  }
+  if (p_().options().produceSpacePoints()) {
+    e.put(std::move(outputSpacePoints));
+    e.put(std::move(outputHitSpacePointAssn));
   }
   if (isTT) e.put(std::move(outputTTjTAssn));
   else e.put(std::move(outputTjTAssn));
 }
 
-void trkf::KalmanFilterTrajectoryFitter::restoreInputPoints(const recob::Trajectory& track,const std::vector<art::Ptr<recob::Hit> >& inHits,recob::Track& outTrack,art::PtrVector<recob::Hit>& outHits) const {
+void trkf::KalmanFilterTrajectoryFitter::restoreInputPoints(const recob::TrackTrajectory& track,const std::vector<art::Ptr<recob::Hit> >& inHits,recob::Track& outTrack, std::vector<art::Ptr<recob::Hit> >& outHits) const {
   const auto np = outTrack.NumberTrajectoryPoints();
   std::vector<Point_t>                     positions(np);
   std::vector<Vector_t>                    momenta(np);
@@ -370,7 +381,7 @@ void trkf::KalmanFilterTrajectoryFitter::restoreInputPoints(const recob::Traject
   for (auto h : inHits) outHits.push_back(h);
 }
 
-double trkf::KalmanFilterTrajectoryFitter::setMomValue(const recob::Trajectory* ptraj, const double pMC, const int pId) const {
+double trkf::KalmanFilterTrajectoryFitter::setMomValue(const recob::TrackTrajectory* ptraj, const double pMC, const int pId) const {
   double result = p_().options().pval();
   // if (p_().options().pFromMSChi2()) {
   //   result = tmc->GetMomentumMultiScatterChi2(ptrack);
@@ -388,7 +399,7 @@ int trkf::KalmanFilterTrajectoryFitter::setPId() const {
   return result;
 }
 
-bool trkf::KalmanFilterTrajectoryFitter::setDirFlip(const recob::Trajectory* ptraj, TVector3& mcdir) const {
+bool trkf::KalmanFilterTrajectoryFitter::setDirFlip(const recob::TrackTrajectory* ptraj, TVector3& mcdir) const {
   bool result = false;
   if (p_().options().alwaysInvertDir()) {
     return true;

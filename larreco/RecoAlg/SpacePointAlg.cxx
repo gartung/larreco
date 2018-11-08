@@ -14,7 +14,7 @@
 #include <cmath>
 #include <map>
 #include <algorithm>
-#include "cetlib/exception.h"
+#include "cetlib_except/exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "larreco/RecoAlg/SpacePointAlg.h"
 #include "larcore/Geometry/Geometry.h"
@@ -26,8 +26,8 @@
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Principal/View.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-//\todo Remove include of BackTracker.h once this algorithm is stripped of test for MC
-#include "larsim/MCCheater/BackTracker.h"
+//\todo Remove include of BackTrackerService.h once this algorithm is stripped of test for MC
+#include "larsim/MCCheater/BackTrackerService.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardata/RecoObjects/KHitTrack.h"
@@ -49,7 +49,10 @@ namespace  trkf{
     fEnableW(false),
     fFilter(false),
     fMerge(false),
-    fPreferColl(false)
+    fPreferColl(false),
+    fTickOffsetU(0.),
+    fTickOffsetV(0.),
+    fTickOffsetW(0.)
     {
         reconfigure(pset);
     }
@@ -79,6 +82,9 @@ namespace  trkf{
         fFilter = pset.get<bool>("Filter");
         fMerge = pset.get<bool>("Merge");
         fPreferColl = pset.get<bool>("PreferColl");
+        fTickOffsetU = pset.get<double>("TickOffsetU", 0.);
+        fTickOffsetV = pset.get<double>("TickOffsetV", 0.);
+        fTickOffsetW = pset.get<double>("TickOffsetW", 0.);
         
         // Only allow one of fFilter and fMerge to be true.
         
@@ -87,16 +93,19 @@ namespace  trkf{
         
         // Report.
         
-        mf::LogInfo("SpacePointAlg")
-        << "SpacePointAlg configured with the following parameters:\n"
-        << "  MaxDT = " << fMaxDT << "\n"
-        << "  MaxS = " << fMaxS << "\n"
-        << "  MinViews = " << fMinViews << "\n"
-        << "  EnableU = " << fEnableU << "\n"
-        << "  EnableV = " << fEnableV << "\n"
-        << "  EnableW = " << fEnableW << "\n"
-        << "  Filter = " << fFilter << "\n"
-        << "  Merge = " << fMerge;
+	std::cout << "SpacePointAlg configured with the following parameters:\n"
+		  << "  MaxDT = " << fMaxDT << "\n"
+		  << "  MaxS = " << fMaxS << "\n"
+		  << "  MinViews = " << fMinViews << "\n"
+		  << "  EnableU = " << fEnableU << "\n"
+		  << "  EnableV = " << fEnableV << "\n"
+		  << "  EnableW = " << fEnableW << "\n"
+		  << "  Filter = " << fFilter << "\n"
+		  << "  Merge = " << fMerge << "\n"
+		  << "  PreferColl = " << fPreferColl << "\n"
+		  << "  TickOffsetU = " << fTickOffsetU << "\n"
+		  << "  TickOffsetV = " << fTickOffsetV << "\n"
+		  << "  TickOffsetW = " << fTickOffsetW << std::endl;
     }
     
     //----------------------------------------------------------------------
@@ -216,6 +225,12 @@ namespace  trkf{
         // Correct time for trigger offset and plane-dependent time offsets.
         
         double t = hit.PeakTime() - detprop->GetXTicksOffset(hit.WireID().Plane,hit.WireID().TPC,hit.WireID().Cryostat);
+	if(hit.View() == geo::kU)
+	  t -= fTickOffsetU;
+	else if(hit.View() == geo::kV)
+	  t -= fTickOffsetV;
+	else if(hit.View() == geo::kW)
+	  t -= fTickOffsetW;
         
         return t;
     }
@@ -557,7 +572,7 @@ namespace  trkf{
                 double s  = (cen1[1] - cen[1]) / hl;
                 double c = (cen1[2] - cen[2]) / hl;
                 double u = cen[2] * s - cen[1] * c;
-                double eu = geom->WirePitch(0, 1, hitWireID.Plane, hitWireID.TPC) / std::sqrt(12.);
+                double eu = geom->WirePitch(hitWireID.Plane, hitWireID.TPC) / std::sqrt(12.);
                 double w = 1. / (eu * eu);
                 
                 // Summations
@@ -691,8 +706,8 @@ namespace  trkf{
         
         // Remember associated hits internally.
         
-        if(fSptHitMap.count(sptid) != 0);
-        throw cet::exception("SpacePointAlg") << "fillComplexSpacePoint(): hit already present!\n";
+        if(fSptHitMap.count(sptid) != 0)
+          throw cet::exception("SpacePointAlg") << "fillComplexSpacePoint(): hit already present!\n";
         fSptHitMap[sptid] = hits;
         
         // Do a preliminary scan of hits.
@@ -807,7 +822,7 @@ namespace  trkf{
                 double s  = (cen1[1] - cen[1]) / hl;
                 double c = (cen1[2] - cen[2]) / hl;
                 double u = cen[2] * s - cen[1] * c;
-                double eu = geom->WirePitch(0, 1, hitWireID.Plane, hitWireID.TPC) / std::sqrt(12.);
+                double eu = geom->WirePitch(hitWireID.Plane, hitWireID.TPC) / std::sqrt(12.);
                 double w = weight[hitWireID.Plane] / (eu * eu);
                 
                 // Summations
@@ -925,7 +940,7 @@ namespace  trkf{
         ///\todo Why are we still checking on whether this is MC or not?
         ///\todo Such checks should not be in reconstruction code.
         if(useMC) {
-            art::ServiceHandle<cheat::BackTracker> bt;
+            art::ServiceHandle<cheat::BackTrackerService> bt_serv;
             
             // First loop over hits and fill track ids and mc position.
             for(unsigned int cstat = 0; cstat < ncstat; ++cstat){
@@ -945,8 +960,7 @@ namespace  trkf{
                             
                             // Get sim::IDEs for this hit.
                             
-                            std::vector<sim::IDE> ides;
-                            bt->HitToSimIDEs(phit, ides);
+                            std::vector<sim::IDE> ides = bt_serv->HitToAvgSimIDEs(phit);
                             
                             // Get sorted track ids. for this hit.
                             
@@ -959,7 +973,7 @@ namespace  trkf{
                             // Get position of ionization for this hit.
                             
                             try {
-                                mcinfo.xyz = bt->SimIDEsToXYZ(ides);
+                                mcinfo.xyz = bt_serv->SimIDEsToXYZ(ides);
                             }
                             catch(cet::exception& x) {
                                 mcinfo.xyz.clear();
@@ -1114,7 +1128,7 @@ namespace  trkf{
                             double s2 = (xyz22[1] - xyz21[1]) / (2.*hl2);
                             double c2 = (xyz22[2] - xyz21[2]) / (2.*hl2);
                             double dist2 = -xyz21[1] * c2 + xyz21[2] * s2;
-                            double pitch2 = geom->WirePitch(0, 1, plane2, tpc, cstat);
+                            double pitch2 = geom->WirePitch(plane2, tpc, cstat);
                             
                             if(!fPreferColl && hitmap[cstat][tpc][plane1].size() > hitmap[cstat][tpc][plane2].size())
                                 throw cet::exception("SpacePointAlg") << "makeSpacePoints(): hitmaps with incompatible size\n";
@@ -1218,7 +1232,7 @@ namespace  trkf{
                     double s1 = (xyz12[1] - xyz11[1]) / (2.*hl1);
                     double c1 = (xyz12[2] - xyz11[2]) / (2.*hl1);
                     double dist1 = -xyz11[1] * c1 + xyz11[2] * s1;
-                    double pitch1 = geom->WirePitch(0, 1, plane1, tpc, cstat);
+                    double pitch1 = geom->WirePitch(plane1, tpc, cstat);
                     const double TicksOffset1 = detprop->GetXTicksOffset(plane1,tpc,cstat);
                     
                     // Get angle, pitch, and offset of plane2 wires.
@@ -1232,7 +1246,7 @@ namespace  trkf{
                     double s2 = (xyz22[1] - xyz21[1]) / (2.*hl2);
                     double c2 = (xyz22[2] - xyz21[2]) / (2.*hl2);
                     double dist2 = -xyz21[1] * c2 + xyz21[2] * s2;
-                    double pitch2 = geom->WirePitch(0, 1, plane2, tpc, cstat);
+                    double pitch2 = geom->WirePitch(plane2, tpc, cstat);
                     const double TicksOffset2 = detprop->GetXTicksOffset(plane2,tpc,cstat);
                     
                     // Get angle, pitch, and offset of plane3 wires.
@@ -1246,7 +1260,7 @@ namespace  trkf{
                     double s3 = (xyz32[1] - xyz31[1]) / (2.*hl3);
                     double c3 = (xyz32[2] - xyz31[2]) / (2.*hl3);
                     double dist3 = -xyz31[1] * c3 + xyz31[2] * s3;
-                    double pitch3 = geom->WirePitch(0, 1, plane3, tpc, cstat);
+                    double pitch3 = geom->WirePitch(plane3, tpc, cstat);
                     const double TicksOffset3 = detprop->GetXTicksOffset(plane3,tpc,cstat);
                     
                     // Get sine of angle differences.

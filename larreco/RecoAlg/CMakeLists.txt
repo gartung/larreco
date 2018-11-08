@@ -1,6 +1,7 @@
 
 art_make( 
-          LIB_LIBRARIES larsim_MCCheater_BackTracker_service
+          LIB_LIBRARIES larsim_MCCheater_BackTrackerService_service
+	                larsim_MCCheater_ParticleInventoryService_service
                         lardataobj_RecoBase
                         lardata_ArtDataHelper
                         larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
@@ -22,7 +23,7 @@ art_make(
                         ${ROOT_GEOM}
 			${ROOT_BASIC_LIB_LIST}
                         larreco_RecoAlg_TCAlg
-			larreco_RecoAlg_ImagePatternAlgs_PointIdAlg
+			larreco_RecoAlg_ImagePatternAlgs_DataProvider
 			larreco_RecoAlg_PMAlg
                         nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
@@ -37,7 +38,7 @@ art_make(
 			art_Utilities
 			canvas
 			${MF_MESSAGELOGGER}
-			${MF_UTILITIES}
+			
 	                ${FHICLCPP}
 			cetlib cetlib_except
                         ${CLHEP}
@@ -52,6 +53,7 @@ add_subdirectory(Cluster3DAlgs)
 add_subdirectory(ImagePatternAlgs)
 add_subdirectory(PMAlg)
 add_subdirectory(TCAlg)
+add_subdirectory(xml)
 
 install_headers()
 install_fhicl()

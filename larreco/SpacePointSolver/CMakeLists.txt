@@ -1,13 +1,25 @@
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 art_make( BASENAME_ONLY
+          LIB_LIBRARIES larcorealg_Geometry
+                        ${ART_FRAMEWORK_CORE}
+			${ART_FRAMEWORK_PRINCIPAL}
+			${ART_FRAMEWORK_SERVICES_REGISTRY}
+			${ART_FRAMEWORK_SERVICES_OPTIONAL}
+                        canvas
+			cetlib
+                        cetlib_except
+                        ${Boost_SYSTEM_LIBRARY}
+			${ROOT_BASIC_LIB_LIST}
+
           MODULE_LIBRARIES larcorealg_Geometry
 			larcore_Geometry_Geometry_service
 	                lardata_Utilities
 			larevt_Filters
 			lardataobj_RawData
 			lardataobj_RecoBase
-                        larsim_MCCheater_BackTracker_service
+                        larsim_MCCheater_BackTrackerService_service
+	                larsim_MCCheater_ParticleInventoryService_service
 			lardata_ArtDataHelper
                         ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
@@ -18,7 +30,7 @@ art_make( BASENAME_ONLY
 			art_Persistency_Provenance canvas
 			art_Utilities canvas
 			${MF_MESSAGELOGGER}
-			${MF_UTILITIES}
+			
 	                ${FHICLCPP}
 			cetlib cetlib_except
                         ${ROOT_GEOM}
@@ -28,7 +40,7 @@ art_make( BASENAME_ONLY
                         larreco_SpacePointSolver
         )
 
-# install_headers()
+install_headers()
 install_fhicl()
 install_source()
 

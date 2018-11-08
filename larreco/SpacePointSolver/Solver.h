@@ -7,7 +7,14 @@
 
 #include "QuadExpr.h"
 
-class InductionWireHit
+/// Allow InductionWireHit and CollectionWireHit to be put in the same maps
+/// where necessary.
+class WireHit
+{
+  // Do not add any virtual functions: will increase memory usage of all wires
+};
+
+class InductionWireHit: public WireHit
 {
 public:
   InductionWireHit(int chan, double q);
@@ -52,7 +59,7 @@ public:
   double fNeiPotential; ///< Neighbour-induced potential
 };
 
-class CollectionWireHit
+class CollectionWireHit: public WireHit
 {
 public:
   CollectionWireHit(int chan, double q, const std::vector<SpaceCharge*>& cross);
@@ -74,9 +81,10 @@ double SolvePair(CollectionWireHit* cwire,
                  SpaceCharge* sci, SpaceCharge* scj,
                  double xmin, double xmax,
                  double alpha);
-void Iterate(CollectionWireHit* cwire,
-             double alpha);
+void Iterate(CollectionWireHit* cwire, double alpha);
+void Iterate(SpaceCharge* sc, double alpha);
 void Iterate(const std::vector<CollectionWireHit*>& cwires,
+             const std::vector<SpaceCharge*>& orphanSCs,
              double alpha);
 
 #endif

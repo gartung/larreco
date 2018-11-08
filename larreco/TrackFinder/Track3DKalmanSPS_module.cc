@@ -121,7 +121,7 @@ namespace trkf {
     std::string     fG4ModuleLabel;// label for input MC single particle generator
     std::string     fSortDim; // direction in which to sort spacepoints
 
-    TFile *fileGENFIT;
+  //  TFile *fileGENFIT;
     TTree *tree;
 
     TMatrixT<Double_t> *stMCT;
@@ -401,7 +401,7 @@ namespace trkf {
 	  //	  tpc1 = hit1WireID.TPC;
 	  plane1 = hit1WireID.Plane;
 	  charge = hit1.Integral();
-	  wirePitch = geom->WirePitch(0,1,plane1);
+	  wirePitch = geom->WirePitch(plane1);
 	  angleToVert = geom->Plane(plane1).Wire(0).ThetaZ(false) - 0.5*TMath::Pi();
 	}
       
@@ -1215,7 +1215,6 @@ void Track3DKalmanSPS::produce(art::Event& evt)
 	      // Get rid of redundantly Excised sppts before proceeding.
 	      std::stable_sort(spacepointss.begin(),spacepointss.end());
 	      std::stable_sort(spacepointssExcise.begin(),spacepointssExcise.end());
-	      art::PtrVector<recob::SpacePoint>::iterator uniqueSpptIt =
 	      std::set_union(spacepointssExcise.begin(),spacepointssExcise.end(),
 			     spacepointssExcise.begin(),spacepointssExcise.end(),
 			     spacepointssExcise.begin()

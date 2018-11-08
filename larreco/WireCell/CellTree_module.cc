@@ -14,6 +14,7 @@
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/PointCharge.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
@@ -77,12 +78,12 @@ public:
 
   explicit CellTree(fhicl::ParameterSet const& pset);
   virtual ~CellTree();
-  
+
   void beginJob();
   void endJob();
   void beginRun(const art::Run& run);
   void analyze(const art::Event& evt);
-  
+
   void reconfigure(fhicl::ParameterSet const& pset);
   void initOutput();
   void printEvent();
@@ -97,7 +98,7 @@ public:
   void processMC(const art::Event& evt);
   void processMCTracks();
   void processTrigger(const art::Event& evt);
-  
+
   void reset();
   void InitProcessMap();
 
@@ -120,6 +121,7 @@ private:
   std::vector<std::string> fSpacePointLabels;
   std::string fOutFileName;
   std::string mcOption;
+  int nRawSamples;
   float opMultPEThresh;
   bool fSaveMCTrackPoints;
   bool fSaveSimChannel;
@@ -166,7 +168,7 @@ private:
   vector<double> oh_bgtime;
   vector<double> oh_trigtime;
   vector<double> oh_pe;
-  
+
   int of_nFlash;
   vector<float> of_t;
   vector<float> of_peTotal;
@@ -215,7 +217,7 @@ private:
   double mc_nu_Theta; // angle relative to lepton
   float mc_nu_pos[4];  // interaction position of nu
   float mc_nu_mom[4];  // interaction momentum of nu
-  
+
   // ----- derived ---
   std::map<int, int> trackIndex;
   std::vector<std::vector<int> > trackParents;
@@ -263,6 +265,7 @@ void CellTree::reconfigure(fhicl::ParameterSet const& p){
     fSaveTrigger     = p.get<bool>("saveTrigger");
     fSaveJSON        = p.get<bool>("saveJSON");
     opMultPEThresh   = p.get<float>("opMultPEThresh");
+    nRawSamples      = p.get<int>("nRawSamples");
 }
 
 //-----------------------------------------------------------------------
@@ -305,9 +308,9 @@ void CellTree::initOutput()
 
     fEventTree->Branch("oh_nHits", &oh_nHits); // number of op hits
     fEventTree->Branch("oh_channel", &oh_channel); //opchannel id; size == no ophits
-    fEventTree->Branch("oh_bgtime", &oh_bgtime); // optical pulse peak time w.r.t. start of beam gate 
+    fEventTree->Branch("oh_bgtime", &oh_bgtime); // optical pulse peak time w.r.t. start of beam gate
     fEventTree->Branch("oh_trigtime", &oh_trigtime); // optical pulse peak time w.r.t. trigger
-    fEventTree->Branch("oh_pe", &oh_pe); // pulse PE 
+    fEventTree->Branch("oh_pe", &oh_pe); // pulse PE
 
     fEventTree->Branch("of_nFlash", &of_nFlash);
     fEventTree->Branch("of_t", &of_t); // time in us w.r.t. the trigger for each flash
@@ -315,7 +318,7 @@ void CellTree::initOutput()
     fEventTree->Branch("of_multiplicity", &of_multiplicity); // total number of PMTs above threshold for each flash
     fPEperOpDet = new TClonesArray("TH1F");
     fEventTree->Branch("pe_opdet", &fPEperOpDet, 256000, 0);
- 
+
     fEventTree->Branch("simide_size", &fSIMIDE_size);  // size of stored sim:IDE
     fEventTree->Branch("simide_channelIdY", &fSIMIDE_channelIdY);
     fEventTree->Branch("simide_trackId", &fSIMIDE_trackId);
@@ -414,8 +417,8 @@ void CellTree::analyze( const art::Event& event )
 
     if (fSaveRaw) processRaw(event);
     if (fSaveCalib) processCalib(event);
-    if (fSaveOpHit) processOpHit(event); 
-    if (fSaveOpFlash) processOpFlash(event); 
+    if (fSaveOpHit) processOpHit(event);
+    if (fSaveOpFlash) processOpFlash(event);
     if (fSaveSimChannel) processSimChannel(event);
     if (fSaveMC) processMC(event);
     if (fSaveTrigger) processTrigger(event);
@@ -476,7 +479,7 @@ void CellTree::reset()
     fSIMIDE_z.clear();
     fSIMIDE_numElectrons.clear();
 
-    mc_Ntrack = 0;  
+    mc_Ntrack = 0;
     for (int i=0; i<MAX_TRACKS; i++) {
         mc_id[i] = 0;
         mc_pdg[i] = 0;
@@ -540,11 +543,14 @@ void CellTree::processRaw( const art::Event& event )
         std::vector<short> uncompressed(nSamples);
         raw::Uncompress(wire->ADCs(), uncompressed, wire->Compression());
 
-        TH1F *h = new((*fRaw_wf)[i]) TH1F("", "", 9600, 0, 9600);
+        TH1F *h = new((*fRaw_wf)[i]) TH1F("", "", nRawSamples, 0, nRawSamples);
         for (int j=1; j<=nSamples; j++) {
             h->SetBinContent(j, uncompressed[j-1]);
         }
         i++;
+        if (i==1) {
+          cout << nSamples << " samples expanding to " << nRawSamples << endl;
+        }
     }
 
 }
@@ -570,8 +576,8 @@ void CellTree::processCalib( const art::Event& event )
         std::vector<float> calibwf = wire->Signal();
         int chanId = wire->Channel();
         fCalib_channelId.push_back(chanId);
-        TH1F *h = new((*fCalib_wf)[i]) TH1F("", "", 9600, 0, 9600);
-        for (int j=1; j<=9600; j++) {
+        TH1F *h = new((*fCalib_wf)[i]) TH1F("", "", nRawSamples, 0, nRawSamples);
+        for (int j=1; j<=nRawSamples; j++) {
             h->SetBinContent(j, calibwf[j]);
         }
         // fCalib_wf.push_back(calibwf);
@@ -581,7 +587,7 @@ void CellTree::processCalib( const art::Event& event )
 
 }
 
-  //---------------------------------------------------------------------- 
+  //----------------------------------------------------------------------
 void CellTree::processOpHit( const art::Event& event)
 {
   art::Handle<std::vector<recob::OpHit> > ophit_handle;
@@ -592,7 +598,7 @@ void CellTree::processOpHit( const art::Event& event)
   std::vector<art::Ptr<recob::OpHit> > ophits;
   art::fill_ptr_vector(ophits, ophit_handle);
   oh_nHits = (int)ophits.size();
- 
+
   for(auto const& oh : ophits){
     oh_channel.push_back(oh->OpChannel());
     oh_bgtime.push_back(oh->PeakTime());
@@ -706,7 +712,7 @@ void CellTree::processMC( const art::Event& event )
         //          << ", truth: " << mctruth->Origin()
         //          << endl;
         // }
-        // const art::Ptr<simb::MCTruth> mctruth = bt->TrackIDToMCTruth(mc_id[i]);
+        // const art::Ptr<simb::MCTruth> mctruth = bt_serv->TrackIDToMCTruth(mc_id[i]);
 
         mc_process[i] = processMap[particle->Process()];
         if (mc_process[i] == 0) cout << "unknown process: " << particle->Process() << endl;
@@ -799,27 +805,42 @@ void CellTree::processMC( const art::Event& event )
 void CellTree::processSpacePoint( const art::Event& event, TString option, ostream& out)
 {
 
-    art::Handle< std::vector<recob::SpacePoint> > handle;
-    if (! event.getByLabel(option.Data(), handle)) {
+    art::Handle< std::vector<recob::SpacePoint> > sp_handle;
+    art::Handle< std::vector<recob::PointCharge> > pc_handle;
+    bool sp_exists = event.getByLabel(option.Data(), sp_handle);
+    bool pc_exists = event.getByLabel(option.Data(), pc_handle);
+    if (! sp_exists) {
         cout << "WARNING: no label " << option << endl;
         return;
     }
     std::vector< art::Ptr<recob::SpacePoint> >  sps;
-    art::fill_ptr_vector(sps, handle);
-
+    std::vector< art::Ptr<recob::PointCharge> >  pcs;
+    art::fill_ptr_vector(sps, sp_handle);
+    if (pc_exists) {
+        art::fill_ptr_vector(pcs, pc_handle);
+	if (sps.size() != pcs.size()) {
+	    cout << "WARNING: SpacePoint and PointCharge length mismatch" << endl;
+	    return;
+	}
+    }
     double x=0, y=0, z=0, q=0, nq=1;
     vector<double> vx, vy, vz, vq, vnq;
 
-    for (auto const& sp: sps ) {
+    for (uint i=0; i < sps.size(); i++ ) {
         // cout << sp->XYZ()[0] << ", " << sp->XYZ()[1] << ", " << sp->XYZ()[2] << endl;
-        x = sp->XYZ()[0];
-        y = sp->XYZ()[1];
-        z = sp->XYZ()[2];
+        x = sps[i]->XYZ()[0];
+        y = sps[i]->XYZ()[1];
+        z = sps[i]->XYZ()[2];
+	if (pc_exists && pcs[i]->hasCharge()) {
+	  q = pcs[i]->charge();
+	} else {
+	  q = 0;
+	}
         vx.push_back(x);
         vy.push_back(y);
         vz.push_back(z);
-        vq.push_back(q);
-        vnq.push_back(nq);
+	vq.push_back(q);
+	vnq.push_back(nq);
     }
 
     out << fixed << setprecision(1);
@@ -938,7 +959,7 @@ void CellTree::processTrigger(const art::Event& event)
     fTriggertime   = 0;
     fBeamgatetime  = 0;
     fTriggerbits   = 0;
-  }    
+  }
 }
 
 //-----------------------------------------------------------------------

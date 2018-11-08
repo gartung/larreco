@@ -25,12 +25,12 @@
 #include "art/Framework/Services/Optional/TFileService.h" 
 #include "art/Framework/Principal/Event.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-#include "cetlib/exception.h"
+#include "cetlib_except/exception.h"
 
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Seed.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTrackerService.h"
 #include "lardataobj/MCBase/MCTrack.h"
  
 #include "TH2F.h"

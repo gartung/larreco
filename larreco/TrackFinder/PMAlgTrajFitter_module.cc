@@ -41,7 +41,7 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "canvas/Utilities/InputTag.h"
-//#include "lardata/Utilities/PtrMaker.h"
+//#include "art/Persistency/Common/PtrMaker.h"
 
 #include "larreco/RecoAlg/PMAlgTracking.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
@@ -218,12 +218,13 @@ void PMAlgTrajFitter::produce(art::Event& evt)
 	{
 		size_t spStart = 0, spEnd = 0;
 		double sp_pos[3], sp_err[6];
+		for (size_t i = 0; i < 3; i++) sp_pos[i] = 1.0;
 		for (size_t i = 0; i < 6; i++) sp_err[i] = 1.0;
 
 		// use the following to create PFParticle <--> Track associations;
 		std::map< size_t, std::vector< art::Ptr<recob::Track> > > pfPartToTrackVecMap;
 
-		//auto const make_trkptr = lar::PtrMaker<recob::Track>(evt, *this); // PtrMaker Step #1
+		//auto const make_trkptr = art::PtrMaker<recob::Track>(evt, *this); // PtrMaker Step #1
 
 		tracks->reserve(result.size());
 		for (size_t trkIndex = 0; trkIndex < result.size(); ++trkIndex)
@@ -236,38 +237,44 @@ void PMAlgTrajFitter::produce(art::Event& evt)
 			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kV)) trk->CompleteMissingWires(geo::kV);
 			if (fGeom->TPC(itpc, icryo).HasPlane(geo::kZ)) trk->CompleteMissingWires(geo::kZ);
 
+			//gc: make sure no tracks are created with less than 2 points
+			if (trk->size()<2) continue;
+
 			tracks->push_back(pma::convertFrom(*trk, trkIndex));
 
 			//auto const trkPtr = make_trkptr(tracks->size() - 1); // PtrMaker Step #2
 
 			size_t trkIdx = tracks->size() - 1; // stuff for assns:
-			art::ProductID trkId = getProductID< std::vector<recob::Track> >(evt);
+			art::ProductID trkId = getProductID< std::vector<recob::Track> >();
 			art::Ptr<recob::Track> trkPtr(trkId, trkIdx, evt.productGetter(trkId));
 
-			// which idx from start, except disabled, really....
-                        std::vector<unsigned int> hIdxs(trk->size(), 0);
-                        for (size_t h = 0, cnt = 0; h < hIdxs.size(); h++)
-                        {
-                        	if ((*trk)[h]->IsEnabled()) hIdxs[h] = cnt++;
-                        }
-
-			art::PtrVector< recob::Hit > sp_hits;
-			spStart = allsp->size();
-			for (int h = trk->size() - 1; h >= 0; h--)
+			//gc: save associated hits in the same order as trajectory points
+                        for (size_t h = 0, cnt = 0; h < trk->size(); h++)
 			{
 				pma::Hit3D* h3d = (*trk)[h];
 				if (!h3d->IsEnabled()) continue;
 
-				recob::TrackHitMeta metadata(hIdxs[h], h3d->Dx());
+				recob::TrackHitMeta metadata(cnt++, h3d->Dx());
 				trk2hit->addSingle(trkPtr, h3d->Hit2DPtr(), metadata);
 				trk2hit_oldway->addSingle(trkPtr, h3d->Hit2DPtr()); // ****** REMEMBER to remove when FindMany improved ******
+			}
+
+			art::PtrVector< recob::Hit > sp_hits;
+			spStart = allsp->size();
+			for (size_t h = 0; h < trk->size(); ++h)
+			{
+				pma::Hit3D* h3d = (*trk)[h];
+				if (!h3d->IsEnabled()) continue;
 
 				double hx = h3d->Point3D().X();
 				double hy = h3d->Point3D().Y();
 				double hz = h3d->Point3D().Z();
 
-				if ((h == 0) || (sp_pos[0] != hx) || (sp_pos[1] != hy) || (sp_pos[2] != hz))
-				{
+                                if ((h == 0) ||
+                                    (std::fabs(sp_pos[0] - hx) > 1.0e-5) ||
+                                    (std::fabs(sp_pos[1] - hy) > 1.0e-5) ||
+                                    (std::fabs(sp_pos[2] - hz) > 1.0e-5))
+                                {
 					if (sp_hits.size()) // hits assigned to the previous sp
 					{
 						util::CreateAssn(*this, evt, *allsp, sp_hits, *sp2hit);
@@ -291,17 +298,17 @@ void PMAlgTrajFitter::produce(art::Event& evt)
 			if (result[trkIndex].Key() > -1)
 			{
 				size_t trackIdx = tracks->size() - 1;
-				art::ProductID trackId = getProductID< std::vector<recob::Track> >(evt);
+				art::ProductID trackId = getProductID< std::vector<recob::Track> >();
 				art::Ptr<recob::Track> trackPtr(trackId, trackIdx, evt.productGetter(trackId));
 				pfPartToTrackVecMap[result[trkIndex].Key()].push_back(trackPtr);
 			}
 		}
 
-		auto vid = getProductID< std::vector<recob::Vertex> >(evt);
-		auto kid = getProductID< std::vector<recob::Vertex> >(evt, kKinksName);
+		auto vid = getProductID< std::vector<recob::Vertex> >();
+		auto kid = getProductID< std::vector<recob::Vertex> >(kKinksName);
 		auto const* kinkGetter = evt.productGetter(kid);
 
-		auto tid = getProductID< std::vector<recob::Track> >(evt);
+		auto tid = getProductID< std::vector<recob::Track> >();
 		auto const* trkGetter = evt.productGetter(tid);
 
 		auto vsel = pmalgFitter.getVertices(fSaveOnlyBranchingVtx); // vtx pos's with vector of connected track idxs

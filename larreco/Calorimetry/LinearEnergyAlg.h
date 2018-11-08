@@ -13,8 +13,8 @@
 // LArSoft libraries
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardata/DetectorInfo/DetectorProperties.h"
-#include "lardata/DetectorInfo/DetectorClocks.h"
+#include "lardataalg/DetectorInfo/DetectorProperties.h"
+#include "lardataalg/DetectorInfo/DetectorClocks.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::kModBoxA ...
 
@@ -353,7 +353,7 @@ namespace calo {
     // double fRecombk;
     // double fModBoxA;
     // double fModBoxB;
-    double fRecombFactor;
+    // double fRecombFactor;
     double fElectronLifetime;
     double fDeconNorm;
 

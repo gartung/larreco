@@ -15,7 +15,6 @@
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardata/RecoObjects/Cluster3D.h"
 
 // std includes
 #include <string>
@@ -412,7 +411,7 @@ void SkeletonAlg::AverageSkeletonPositions(reco::HitPairListPtr& skeletonHitList
             
             std::vector<const reco::ClusterHit3D*>& hit3DVec = hit2DToHit3DMap[bestPlaneIdx][hit3D->getHits()[bestPlaneIdx]];
             
-            double avePosition[3] = {hit3D->getPosition()[0],0.,0.};
+            float avePosition[3] = {hit3D->getPosition()[0],0.,0.};
             
             for(const auto& tempHit3D : hit3DVec)
             {
@@ -430,12 +429,12 @@ void SkeletonAlg::AverageSkeletonPositions(reco::HitPairListPtr& skeletonHitList
                                                             hit3D->getAvePeakTime(),
                                                             hit3D->getDeltaPeakTime(),
                                                             hit3D->getSigmaPeakTime(),
+                                                            hit3D->getHitChiSquare(),
                                                             hit3D->getDocaToAxis(),
                                                             hit3D->getArclenToPoca(),
-                                                            hit3D->getMaxOverlapFraction(),
-                                                            hit3D->getMinOverlapFraction(),
-                                                            hit3D->getWireIDs(),
-                                                            hit3D->getHits()));
+                                                            hit3D->getHits(),
+                                                            hit3D->getHitDelTSigVec(),
+                                                            hit3D->getWireIDs()));
             
             tempHitPairListPtr.push_back(&tempHitPairList.back());
             

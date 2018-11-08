@@ -25,7 +25,7 @@ art_make(
                         art_Utilities
 			canvas
                         ${MF_MESSAGELOGGER}
-                        ${MF_UTILITIES}
+                        
                         ${FHICLCPP}
                         cetlib cetlib_except
                         ${CLHEP}
@@ -36,7 +36,8 @@ art_make(
 	  		   lardataobj_MCBase
 	  		   larreco_ShowerFinder_ShowerReco3D
 	  		   larreco_RecoAlg
-                           larsim_MCCheater_BackTracker_service
+                           larsim_MCCheater_BackTrackerService_service
+	                   larsim_MCCheater_ParticleInventoryService_service
                            larevt_Filters
                            lardataobj_RecoBase
                            larcorealg_Geometry
@@ -52,7 +53,7 @@ art_make(
 			   art_Utilities
 			   canvas
 			   ${MF_MESSAGELOGGER}
-			   ${MF_UTILITIES}
+			   
 	                   ${FHICLCPP}
 			   cetlib cetlib_except
          )

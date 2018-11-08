@@ -7,7 +7,16 @@ standard_trajcluster:
 {
   module_type:          "TrajCluster"
   TrajClusterAlg:       @local::standard_trajclusteralg
-  MakeNewHits:          true    # Make a new collection of merged hits
+  DoWireAssns: true
+  DoRawDigitAssns: false
+  # configuration for non-sliced hit collection
+  HitModuleLabel: "gaushit"
+  HitTruthModuleLabel: "gaushit"
+  SlicerModuleLabel: "NA"
+  # configuration for sliced hit collection
+#  HitModuleLabel: "NA"
+#  SlicerModuleLabel: "slicermodule"
+#  HitTruthModuleLabel: "slicermodule"
 } # standard_trajcluster
 
 standard_blurredcluster:
@@ -40,6 +49,16 @@ standard_dbcluster:
  DBScanAlg:       @local::standard_dbscanalg
 }
 
+standard_dbcluster3d:
+{
+ module_type:                 "DBCluster3D"
+ HitModuleLabel:              "hitpdune"
+ SpacePointModuleLabel:       "reco3d"
+ SPHitAssnLabel:              "hitpdune"
+ DBScan3DAlg:                 @local::standard_dbscan3dalg
+ MinHitDis:                   10
+}
+
 standard_clustercrawler:
 {
  module_type:         "ClusterCrawler"
@@ -51,8 +70,19 @@ standard_linecluster:
 {
 # this is the cluster finding component of former ClusterCrawler
   module_type:          "LineCluster"
-  FilteredDataModuleLabel: "NA"
   HitFinderModuleLabel: "gaushit"
+  DoWireAssns: true
+  DoRawDigitAssns: false
+  ClusterCrawlerAlg:    @local::standard_clustercrawleralg
+} # standard_linecluster
+
+
+standard_simplelinecluster:
+{
+# this is the cluster finding component of former ClusterCrawler
+  module_type:          "SimpleLineCluster"
+  HitFinderModuleLabel: "hitpdune"
+  PFParticleModuleLabel: "dbcluster"
   ClusterCrawlerAlg:    @local::standard_clustercrawleralg
 } # standard_linecluster
 
@@ -71,9 +101,10 @@ standard_cluster3d:
   HitFinderModuleLabel:   "gaushit"
   EnableMonitoring:       false
   EnableProduction:       false
-  Hit3DBuilderAlg:        @local::standard_cluster3dhit3dbuilderalg
+  Hit3DBuilderAlg:        @local::standard_standardhit3dbuilder
   ClusterAlg:             @local::standard_cluster3dminSpanTreeAlg
   ClusterMergeAlg:        @local::standard_cluster3dMergeAlg
+  ClusterPathAlg:         @local::standard_cluster3dPathAlg
   ClusterParamsBuilder:   @local::standard_cluster3dParamsBuilder
   PrincipalComponentsAlg: @local::standard_cluster3dprincipalcomponentsalg
   SkeletonAlg:            @local::standard_cluster3dskeletonalg

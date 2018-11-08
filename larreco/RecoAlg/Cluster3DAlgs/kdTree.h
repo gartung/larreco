@@ -12,8 +12,8 @@
 // Framework Includes
 #include "fhiclcpp/ParameterSet.h"
 
-// LArSoft includes
-#include "lardata/RecoObjects/Cluster3D.h"
+// Algorithm includes
+#include "larreco/RecoAlg/Cluster3DAlgs/Cluster3D.h"
 
 // std includes
 #include <vector>
@@ -69,8 +69,8 @@ public:
     using CandPair     = std::pair<double,const reco::ClusterHit3D*>;
     using CandPairList = std::list<CandPair>;
     
-    size_t FindNearestNeighbors(const reco::ClusterHit3D*, const KdTreeNode&, CandPairList&, double&) const;
-    bool   FindEntry(const reco::ClusterHit3D*, const KdTreeNode&, CandPairList&, double&, bool&, int) const;
+    size_t FindNearestNeighbors(const reco::ClusterHit3D*, const KdTreeNode&, CandPairList&, float&) const;
+    bool   FindEntry(const reco::ClusterHit3D*, const KdTreeNode&, CandPairList&, float&, bool&, int) const;
     bool   FindEntryBrute(const reco::ClusterHit3D*, const KdTreeNode&, int) const;
     
     /**
@@ -78,6 +78,11 @@ public:
      */
     KdTreeNode BuildKdTree(const reco::HitPairList&, KdTreeNodeList&) const;
     
+    /**
+     *  @brief Given an input HitPairListPtr, build out the map of nearest neighbors
+     */
+    KdTreeNode BuildKdTree(const reco::HitPairListPtr&, KdTreeNodeList&) const;
+
     float getTimeToExecute() const {return m_timeToBuild;}
     
 private:
@@ -85,13 +90,14 @@ private:
     /**
      *  @brief The bigger question: are two pairs of hits consistent?
      */
-    bool consistentPairs(const reco::ClusterHit3D* pair1, const reco::ClusterHit3D* pair2, double& hitSeparation, int* wireDeltas) const;
+    bool consistentPairs(const reco::ClusterHit3D* pair1, const reco::ClusterHit3D* pair2, float& hitSeparation) const;
     
-    double DistanceBetweenNodes(const reco::ClusterHit3D*,const reco::ClusterHit3D*) const;
+    float DistanceBetweenNodes(const reco::ClusterHit3D*,const reco::ClusterHit3D*) const;
     
     bool           m_enableMonitoring;      ///<
     mutable float  m_timeToBuild;           ///<
-    double         m_pairSigmaPeakTime;
+    float          m_pairSigmaPeakTime;     ///< Consider hits consistent if "significance" less than this
+    float          m_refLeafBestDist;       ///< Set neighborhood distance to this when ref leaf found
 
 };
     
@@ -108,7 +114,7 @@ public:
         null
     };
     
-    KdTreeNode(SplitAxis axis, double axisVal, const KdTreeNode& left, const KdTreeNode& right) :
+    KdTreeNode(SplitAxis axis, float axisVal, const KdTreeNode& left, const KdTreeNode& right) :
     m_splitAxis(axis),
     m_axisValue(axisVal),
     m_clusterHit3D(0),
@@ -135,7 +141,7 @@ public:
     bool                      isNullNode()      const {return m_splitAxis == SplitAxis::null;}
     
     SplitAxis                 getSplitAxis()    const {return m_splitAxis;}
-    double                    getAxisValue()    const {return m_axisValue;}
+    float                     getAxisValue()    const {return m_axisValue;}
     const reco::ClusterHit3D* getClusterHit3D() const {return m_clusterHit3D;}
     const KdTreeNode&         leftTree()        const {return m_leftTree;}
     const KdTreeNode&         rightTree()       const {return m_rightTree;}
@@ -143,7 +149,7 @@ public:
 private:
     
     SplitAxis                 m_splitAxis;
-    double                    m_axisValue;
+    float                     m_axisValue;
     const reco::ClusterHit3D* m_clusterHit3D;
     const KdTreeNode&         m_leftTree;
     const KdTreeNode&         m_rightTree;

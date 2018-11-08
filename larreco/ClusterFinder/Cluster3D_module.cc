@@ -64,18 +64,18 @@
 #include "lardataobj/RecoBase/PCAxis.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Seed.h"
-#include "lardata/RecoObjects/Cluster3D.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "larcorealg/Geometry/WireGeo.h"
 
+#include "larreco/RecoAlg/Cluster3DAlgs/Cluster3D.h"
 #include "larreco/RecoAlg/Cluster3DAlgs/HoughSeedFinderAlg.h"
 #include "larreco/RecoAlg/Cluster3DAlgs/PCASeedFinderAlg.h"
 #include "larreco/RecoAlg/Cluster3DAlgs/ParallelHitsSeedFinderAlg.h"
 #include "larreco/RecoAlg/Cluster3DAlgs/ClusterParamsBuilder.h"
 #include "larreco/RecoAlg/Cluster3DAlgs/PrincipalComponentsAlg.h"
 #include "larreco/RecoAlg/Cluster3DAlgs/SkeletonAlg.h"
-#include "larreco/RecoAlg/Cluster3DAlgs/Hit3DBuilderAlg.h"
+#include "larreco/RecoAlg/Cluster3DAlgs/IHit3DBuilder.h"
 #include "larreco/RecoAlg/Cluster3DAlgs/IClusterAlg.h"
 #include "larreco/RecoAlg/Cluster3DAlgs/IClusterModAlg.h"
 #include "larreco/RecoAlg/ClusterRecoUtil/StandardClusterParamsAlg.h"
@@ -130,6 +130,117 @@ public:
     void reconfigure(fhicl::ParameterSet const &pset);
 
 private:
+    
+    class ArtOutputHandler
+    {
+    public:
+        ArtOutputHandler(const art::EDProducer& owner, art::Event& evt, std::string& instanceName, std::string& extremeName) :
+            artPCAxisVector(           new std::vector<recob::PCAxis>                         ),
+            artPFParticleVector(       new std::vector<recob::PFParticle>                     ),
+            artClusterVector(          new std::vector<recob::Cluster>                        ),
+            artSpacePointVector(       new std::vector<recob::SpacePoint>                     ),
+            artVertexPointVector(      new std::vector<recob::SpacePoint>                     ),
+            artExtremePointVector(     new std::vector<recob::SpacePoint>                     ),
+            artSeedVector(             new std::vector<recob::Seed>                           ),
+            artEdgeVector(             new std::vector<recob::Edge>                           ),
+            artVertexEdgeVector(       new std::vector<recob::Edge>                           ),
+            artClusterAssociations(    new art::Assns<recob::Cluster,    recob::Hit>          ),
+            artPFPartAxisAssociations( new art::Assns<recob::PFParticle, recob::PCAxis>       ),
+            artPFPartClusAssociations( new art::Assns<recob::PFParticle, recob::Cluster>      ),
+            artPFPartSPAssociations(   new art::Assns<recob::PFParticle, recob::SpacePoint>   ),
+            artPFPartSeedAssociations( new art::Assns<recob::PFParticle, recob::Seed>         ),
+            artPFPartEdgeAssociations( new art::Assns<recob::PFParticle, recob::Edge>         ),
+            artSeedHitAssociations(    new art::Assns<recob::Seed,       recob::Hit>          ),
+            artSPHitAssociations(      new art::Assns<recob::SpacePoint, recob::Hit>          ),
+            artEdgeSPAssociations(     new art::Assns<recob::Edge,       recob::SpacePoint>   ),
+            fOwner(owner),
+            fEvt(evt),
+            fInstanceName(instanceName),
+            fExtremeName(extremeName)
+        {}
+        
+        void makeClusterHitAssns(RecobHitVector& recobHits)
+        {
+            util::CreateAssn(fOwner, fEvt, *artClusterVector, recobHits, *artClusterAssociations);
+        }
+        
+        void makeSpacePointHitAssns(RecobHitVector& recobHits)
+        {
+            util::CreateAssn(fOwner, fEvt, *artSpacePointVector, recobHits, *artSPHitAssociations);
+        }
+        
+        void makePFPartPCAAssns()
+        {
+            util::CreateAssn(fOwner, fEvt, *artPFParticleVector, *artPCAxisVector, *artPFPartAxisAssociations, artPCAxisVector->size()-2, artPCAxisVector->size());
+        }
+        
+        void makePFPartSeedAssns(size_t numSeedsStart)
+        {
+            util::CreateAssn(fOwner, fEvt, *artPFParticleVector, *artSeedVector, *artPFPartSeedAssociations, numSeedsStart, artSeedVector->size());
+        }
+        
+        void makePFPartClusterAssns(size_t clusterStart)
+        {
+            util::CreateAssn(fOwner, fEvt, *artPFParticleVector, *artClusterVector, *artPFPartClusAssociations, clusterStart, artClusterVector->size());
+        }
+        
+        void makePFPartSpacePointAssns(size_t spacePointStart)
+        {
+            util::CreateAssn(fOwner, fEvt, *artPFParticleVector, *artSpacePointVector, *artPFPartSPAssociations, spacePointStart, artSpacePointVector->size());
+        }
+        
+        void makePFPartEdgeAssns(size_t edgeStart)
+        {
+            util::CreateAssn(fOwner, fEvt, *artPFParticleVector, *artEdgeVector, *artPFPartEdgeAssociations, edgeStart, artEdgeVector->size());
+        }
+        
+        void outputObjects()
+        {
+            fEvt.put(std::move(artPCAxisVector));
+            fEvt.put(std::move(artPFParticleVector));
+            fEvt.put(std::move(artClusterVector));
+            fEvt.put(std::move(artSpacePointVector));
+            fEvt.put(std::move(artVertexPointVector), fInstanceName);
+            fEvt.put(std::move(artExtremePointVector), fExtremeName);
+            fEvt.put(std::move(artSeedVector));
+            fEvt.put(std::move(artEdgeVector));
+            fEvt.put(std::move(artVertexEdgeVector), fInstanceName);
+            fEvt.put(std::move(artPFPartAxisAssociations));
+            fEvt.put(std::move(artPFPartClusAssociations));
+            fEvt.put(std::move(artClusterAssociations));
+            fEvt.put(std::move(artPFPartSPAssociations));
+            fEvt.put(std::move(artPFPartSeedAssociations));
+            fEvt.put(std::move(artPFPartEdgeAssociations));
+            fEvt.put(std::move(artSeedHitAssociations));
+            fEvt.put(std::move(artSPHitAssociations));
+            fEvt.put(std::move(artEdgeSPAssociations));
+        }
+        
+        std::unique_ptr< std::vector<recob::PCAxis>>                        artPCAxisVector;
+        std::unique_ptr< std::vector<recob::PFParticle>>                    artPFParticleVector;
+        std::unique_ptr< std::vector<recob::Cluster>>                       artClusterVector;
+        std::unique_ptr< std::vector<recob::SpacePoint>>                    artSpacePointVector;
+        std::unique_ptr< std::vector<recob::SpacePoint>>                    artVertexPointVector;
+        std::unique_ptr< std::vector<recob::SpacePoint>>                    artExtremePointVector;
+        std::unique_ptr< std::vector<recob::Seed>>                          artSeedVector;
+        std::unique_ptr< std::vector<recob::Edge>>                          artEdgeVector;
+        std::unique_ptr< std::vector<recob::Edge>>                          artVertexEdgeVector;
+
+        std::unique_ptr< art::Assns<recob::Cluster,    recob::Hit>>         artClusterAssociations;
+        std::unique_ptr< art::Assns<recob::PFParticle, recob::PCAxis>>      artPFPartAxisAssociations;
+        std::unique_ptr< art::Assns<recob::PFParticle, recob::Cluster>>     artPFPartClusAssociations;
+        std::unique_ptr< art::Assns<recob::PFParticle, recob::SpacePoint>>  artPFPartSPAssociations;
+        std::unique_ptr< art::Assns<recob::PFParticle, recob::Seed>>        artPFPartSeedAssociations;
+        std::unique_ptr< art::Assns<recob::PFParticle, recob::Edge>>        artPFPartEdgeAssociations;
+        std::unique_ptr< art::Assns<recob::Seed,       recob::Hit>>         artSeedHitAssociations;
+        std::unique_ptr< art::Assns<recob::SpacePoint, recob::Hit>>         artSPHitAssociations;
+        std::unique_ptr< art::Assns<recob::Edge,       recob::SpacePoint>>  artEdgeSPAssociations;
+    private:
+        const art::EDProducer& fOwner;
+        art::Event&            fEvt;
+        std::string&           fInstanceName;
+        std::string&           fExtremeName;
+    };
 
     /**
      *  @brief  Event Preparation 
@@ -137,21 +248,6 @@ private:
      *  @param  evt  the ART event 
      */
     void PrepareEvent(const art::Event &evt);  
-
-    /**
-     *  @brief  Extract the ART hits and the ART hit-particle relationships
-     * 
-     *  @param  evt                   the ART event
-     *  @param  hit2DVector           A container for the internal Cluster3D 2D hit objects
-     *  @param  PlaneToHitVectorMap   A map between view and the internal Cluster3D 2D hit objects
-     *  @param  viewToWireToHitSetMap This maps 2D hits to wires and stores by view
-     *  @param  hitToPtrMap           This maps our Cluster2D hits back to art Ptr's to reco Hits
-     */
-    void CollectArtHits(art::Event&             evt,
-                        Hit2DVector&            hit2DVector,
-                        PlaneToHitVectorMap&    planeToHitVector,
-                        PlaneToWireToHitSetMap& planeToWireToHitSetMap,
-                        RecobHitToPtrMap&       hitToPtrMap) const;
 
     /**
      *  @brief Initialize the internal monitoring
@@ -194,12 +290,86 @@ private:
     /**
      *  @brief Produces the art output from all the work done in this producer module
      *
-     *  @param evt                   the ART event
+     *  @param output                the object containting the art output
+     *  @param clusterParameters     Cluster info to output (in internal format)
+     *  @param pfParticleParent      The parent ID reference for the output PFParticle
+     *  @param hitToPtrMap           This maps our Cluster2D hits back to art Ptr's to reco Hits
+     */
+    size_t ConvertToArtOutput(ArtOutputHandler&        output,
+                              reco::ClusterParameters& clusterParameters,
+                              size_t                   pfParticleParent,
+                              RecobHitToPtrMap&        hitToPtrMap,
+                              Hit3DToSPPtrMap&         hit3DToSPPtrMap) const;
+    
+    /**
+     *  @brief Special routine to handle creating and saving space points
+     *
+     *  @param output                the object containting the art output
+     *  @param clusterParameters     Cluster info to output (in internal format)
+     *  @param pfParticleParent      The parent ID reference for the output PFParticle
+     *  @param hitToPtrMap           This maps our Cluster2D hits back to art Ptr's to reco Hits
+     */
+    void MakeAndSaveSpacePoints(ArtOutputHandler&     output,
+                                reco::HitPairListPtr& clusHitPairVector,
+                                RecobHitToPtrMap&     hitToPtrMap,
+                                Hit3DToSPPtrMap&      hit3DToSPPtrMap,
+                                int                   spacePointStart) const;
+    
+    /**
+     *  @brief Special routine to handle creating and saving space points
+     *
+     *  @param output                the object containting the art output
+     *  @param clusHitPairVector     List of 3D hits to output as "extreme" space points
+     */
+    void MakeAndSaveKinkPoints(ArtOutputHandler& output, reco::ConvexHullKinkTupleList& clusHitPairVector) const;
+
+    /**
+     *  @brief Special routine to handle creating and saving space points & edges associated to voronoi diagrams
+     *
+     *  @param output                the object containting the art output
+     *  @param vertexList            list of vertices in the diagram
+     *  @param HalfEdgeList          list of half edges in the diagram
+     */
+    void MakeAndSaveVertexPoints(ArtOutputHandler&,
+                                 dcel2d::VertexList&,
+                                 dcel2d::HalfEdgeList&) const;
+    
+    /**
+     *  @brief Special routine to handle creating and saving space points & edges PCA points
+     *
+     *  @param output                the object containting the art output
+     *  @param clusterParamsList     List of clusters to get PCA's from
+     */
+    using IdxToPCAMap = std::map<size_t,const reco::PrincipalComponents*>;
+    
+    void MakeAndSavePCAPoints(ArtOutputHandler&,
+                              const reco::PrincipalComponents&,
+                              IdxToPCAMap&) const;
+    
+    /**
+     *  @brief This will produce art output for daughters noting that it needs to be done recursively
+     *
+     *  @param output                the object containting the art output
+     *  @param clusterParameters     Cluster info to output (in internal format)
+     *  @param pfParticleParent      The parent ID reference for the output PFParticle
+     *  @param daughterList          List of PFParticle indices for stored daughters
+     *  @param hitToPtrMap           This maps our Cluster2D hits back to art Ptr's to reco Hits
+     */
+    size_t FindAndStoreDaughters(ArtOutputHandler&        output,
+                                 reco::ClusterParameters& clusterParameters,
+                                 size_t                   pfParticleParent,
+                                 IdxToPCAMap&             idxToPCAMap,
+                                 RecobHitToPtrMap&        hitToPtrMap,
+                                 Hit3DToSPPtrMap&         hit3DToSPPtrMap) const;
+
+    /**
+     *  @brief Top level output routine, allows checking cluster status
+     *
      *  @param hitPairList           List of all 3D Hits in internal Cluster3D format
      *  @param clusterParametersList Data structure containing the cluster information to output
-     *  @param  hitToPtrMap           This maps our Cluster2D hits back to art Ptr's to reco Hits
+     *  @param  hitToPtrMap          This maps our Cluster2D hits back to art Ptr's to reco Hits
      */
-    void ProduceArtClusters(art::Event&                  evt,
+    void ProduceArtClusters(ArtOutputHandler&            output,
                             reco::HitPairList&           hitPairList,
                             reco::ClusterParametersList& clusterParametersList,
                             RecobHitToPtrMap&            hitToPtrMap) const;
@@ -214,46 +384,56 @@ private:
     {
         return fabs(pca.getEigenVectors()[2][0]) > m_parallelHitsCosAng && 3. * sqrt(pca.getEigenValues()[1]) > m_parallelHitsTransWid;
     }
+    
+    /**
+     *  @brief Count number of end of line daughters
+     *
+     *  @param clusterParams input cluster parameters to look at
+     */
+    size_t countUltimateDaughters(reco::ClusterParameters& clusterParameters) const;
 
     /**
      *   Algorithm parameters
      */
-    bool                      m_enableMonitoring;      ///< Turn on monitoring of this algorithm
-    std::string               m_hitfinderModuleLabel;  ///< Producer of the reco hits
-    double                    m_parallelHitsCosAng;    ///< Cut for PCA 3rd axis angle to X axis
-    double                    m_parallelHitsTransWid;  ///< Cut on transverse width of cluster (PCA 2nd eigenvalue)
+    bool                                           m_enableMonitoring;      ///< Turn on monitoring of this algorithm
+    float                                          m_parallelHitsCosAng;    ///< Cut for PCA 3rd axis angle to X axis
+    float                                          m_parallelHitsTransWid;  ///< Cut on transverse width of cluster (PCA 2nd eigenvalue)
 
     /**
      *   Tree variables for output
      */
-    TTree*                    m_pRecoTree;             ///<
-    int                       m_run;                   ///<
-    int                       m_event;                 ///<
-    int                       m_hits;                  ///< Keeps track of the number of hits seen
-    float                     m_totalTime;             ///< Keeps track of total execution time
-    float                     m_artHitsTime;           ///< Keeps track of time to recover hits
-    float                     m_makeHitsTime;          ///< Keeps track of time to build 3D hits
-    float                     m_buildNeighborhoodTime; ///< Keeps track of time to build epsilon neighborhood
-    float                     m_dbscanTime;            ///< Keeps track of time to run DBScan
-    float                     m_pathFindingTime;       ///< Keeps track of the path finding time
-    float                     m_finishTime;            ///< Keeps track of time to run output module
+    TTree*                                         m_pRecoTree;             ///<
+    int                                            m_run;                   ///<
+    int                                            m_event;                 ///<
+    int                                            m_hits;                  ///< Keeps track of the number of hits seen
+    float                                          m_totalTime;             ///< Keeps track of total execution time
+    float                                          m_artHitsTime;           ///< Keeps track of time to recover hits
+    float                                          m_makeHitsTime;          ///< Keeps track of time to build 3D hits
+    float                                          m_buildNeighborhoodTime; ///< Keeps track of time to build epsilon neighborhood
+    float                                          m_dbscanTime;            ///< Keeps track of time to run DBScan
+    float                                          m_clusterMergeTime;      ///< Keeps track of the time to merge clusters
+    float                                          m_pathFindingTime;       ///< Keeps track of the path finding time
+    float                                          m_finishTime;            ///< Keeps track of time to run output module
+    std::string                                    m_spacePointInstance;    ///< Special instance name for vertex points
+    std::string                                    m_extremeInstance;       ///< Instance name for the extreme points
     
     /** 
      *   Other useful variables
      */
-    geo::Geometry*                     m_geometry;              ///<  pointer to the Geometry service
-    const detinfo::DetectorProperties* m_detector;              ///<  Pointer to the detector properties
+    geo::Geometry*                                 m_geometry;              ///<  pointer to the Geometry service
+    const detinfo::DetectorProperties*             m_detector;              ///<  Pointer to the detector properties
 
     // Algorithms
-    Hit3DBuilderAlg                                m_hit3DBuilderAlg;   ///<  Algorithm to build 3D hits
-    std::unique_ptr<lar_cluster3d::IClusterAlg>    m_clusterAlg;        ///<  Algorithm to do 3D space point clustering
-    std::unique_ptr<lar_cluster3d::IClusterModAlg> m_clusterMergeAlg;   ///<  Algorithm to do cluster merging
-    ClusterParamsBuilder                           m_clusterBuilder;    ///<  Common cluster builder tool
-    PrincipalComponentsAlg                         m_pcaAlg;            ///<  Principal Components algorithm
-    SkeletonAlg                                    m_skeletonAlg;       ///<  Skeleton point finder
-    HoughSeedFinderAlg                             m_seedFinderAlg;     ///<  Seed finder
-    PCASeedFinderAlg                               m_pcaSeedFinderAlg;  ///<  Use PCA axis to find seeds
-    ParallelHitsSeedFinderAlg                      m_parallelHitsAlg;   ///<  Deal with parallel hits clusters
+    std::unique_ptr<lar_cluster3d::IHit3DBuilder>  m_hit3DBuilderAlg;       ///<  Builds the 3D hits to operate on
+    std::unique_ptr<lar_cluster3d::IClusterAlg>    m_clusterAlg;            ///<  Algorithm to do 3D space point clustering
+    std::unique_ptr<lar_cluster3d::IClusterModAlg> m_clusterMergeAlg;       ///<  Algorithm to do cluster merging
+    std::unique_ptr<lar_cluster3d::IClusterModAlg> m_clusterPathAlg;        ///<  Algorithm to do cluster path finding
+    ClusterParamsBuilder                           m_clusterBuilder;        ///<  Common cluster builder tool
+    PrincipalComponentsAlg                         m_pcaAlg;                ///<  Principal Components algorithm
+    SkeletonAlg                                    m_skeletonAlg;           ///<  Skeleton point finder
+    HoughSeedFinderAlg                             m_seedFinderAlg;         ///<  Seed finder
+    PCASeedFinderAlg                               m_pcaSeedFinderAlg;      ///<  Use PCA axis to find seeds
+    ParallelHitsSeedFinderAlg                      m_parallelHitsAlg;       ///<  Deal with parallel hits clusters
 };
 
 DEFINE_ART_MODULE(Cluster3D)
@@ -266,7 +446,6 @@ DEFINE_ART_MODULE(Cluster3D)
 namespace lar_cluster3d {
 
 Cluster3D::Cluster3D(fhicl::ParameterSet const &pset) :
-    m_hit3DBuilderAlg(pset.get<fhicl::ParameterSet>("Hit3DBuilderAlg")),
     m_clusterBuilder(pset.get<fhicl::ParameterSet>("ClusterParamsBuilder")),
     m_pcaAlg(pset.get<fhicl::ParameterSet>("PrincipalComponentsAlg")),
     m_skeletonAlg(pset.get<fhicl::ParameterSet>("SkeletonAlg")),
@@ -275,13 +454,19 @@ Cluster3D::Cluster3D(fhicl::ParameterSet const &pset) :
     m_parallelHitsAlg(pset.get<fhicl::ParameterSet>("ParallelHitsAlg"))
 {
     this->reconfigure(pset);
+    
+    m_spacePointInstance = "Voronoi";
+    m_extremeInstance    = "Extreme";
 
     produces< std::vector<recob::PCAxis>>();
     produces< std::vector<recob::PFParticle>>();
     produces< std::vector<recob::Cluster>>();
     produces< std::vector<recob::SpacePoint>>();
+    produces< std::vector<recob::SpacePoint>>(m_spacePointInstance);
+    produces< std::vector<recob::SpacePoint>>(m_extremeInstance);
     produces< std::vector<recob::Seed>>();
     produces< std::vector<recob::Edge>>();
+    produces< std::vector<recob::Edge>>(m_spacePointInstance);
     produces< art::Assns<recob::PFParticle, recob::PCAxis>>();
     produces< art::Assns<recob::PFParticle, recob::Cluster>>();
     produces< art::Assns<recob::PFParticle, recob::SpacePoint>>();
@@ -303,14 +488,15 @@ Cluster3D::~Cluster3D()
 
 void Cluster3D::reconfigure(fhicl::ParameterSet const &pset)
 {
-    m_hitfinderModuleLabel = pset.get<std::string>("HitFinderModuleLabel", "gaushit");
-    m_enableMonitoring     = pset.get<bool>       ("EnableMonitoring",         false);
-    m_parallelHitsCosAng   = pset.get<double>     ("ParallelHitsCosAng",       0.999);
-    m_parallelHitsTransWid = pset.get<double>     ("ParallelHitsTransWid",      25.0);
+    m_enableMonitoring     = pset.get<bool> ("EnableMonitoring",         false);
+    m_parallelHitsCosAng   = pset.get<float>("ParallelHitsCosAng",       0.999);
+    m_parallelHitsTransWid = pset.get<float>("ParallelHitsTransWid",      25.0);
     
+    m_hit3DBuilderAlg = art::make_tool<lar_cluster3d::IHit3DBuilder>(pset.get<fhicl::ParameterSet>("Hit3DBuilderAlg"));
     m_clusterAlg      = art::make_tool<lar_cluster3d::IClusterAlg>(pset.get<fhicl::ParameterSet>("ClusterAlg"));
     m_clusterMergeAlg = art::make_tool<lar_cluster3d::IClusterModAlg>(pset.get<fhicl::ParameterSet>("ClusterMergeAlg"));
-    
+    m_clusterPathAlg  = art::make_tool<lar_cluster3d::IClusterModAlg>(pset.get<fhicl::ParameterSet>("ClusterPathAlg"));
+
     m_pcaAlg.reconfigure(pset.get<fhicl::ParameterSet>("PrincipalComponentsAlg"));
     m_skeletonAlg.reconfigure(pset.get<fhicl::ParameterSet>("SkeletonAlg"));
     m_seedFinderAlg.reconfigure(pset.get<fhicl::ParameterSet>("SeedFinderAlg"));
@@ -353,50 +539,47 @@ void Cluster3D::produce(art::Event &evt)
     // Set up for monitoring the timing... at some point this should be removed in favor of
     // external profilers
     cet::cpu_timer theClockTotal;
-    cet::cpu_timer theClockArtHits;
     cet::cpu_timer theClockFinish;
     
-    if (m_enableMonitoring)
-    {
-        theClockTotal.start();
-        theClockArtHits.start();
-    }
+    if (m_enableMonitoring) theClockTotal.start();
     
     // This really only does anything if we are monitoring since it clears our tree variables
     this->PrepareEvent(evt);
 
     // Get instances of the primary data structures needed
-    Hit2DVector                          clusterHit2DMasterVec;
-    PlaneToHitVectorMap                  planeToHitVectorMap;
-    PlaneToWireToHitSetMap               planeToWireToHitSetMap;
     reco::ClusterParametersList          clusterParametersList;
-    RecobHitToPtrMap                     clusterHitToArtPtrMap;
+    IHit3DBuilder::RecobHitToPtrMap      clusterHitToArtPtrMap;
     std::unique_ptr< reco::HitPairList > hitPairList(new reco::HitPairList); // Potentially lots of hits, use heap instead of stack
+
+    // Call the algorithm that builds 3D hits
+    m_hit3DBuilderAlg->Hit3DBuilder(evt, *hitPairList, clusterHitToArtPtrMap);
     
-    // Recover the 2D hits and then organize them into data structures which will be used in the
-    // DBscan algorithm for building the 3D clusters
-    this->CollectArtHits(evt, clusterHit2DMasterVec, planeToHitVectorMap, planeToWireToHitSetMap, clusterHitToArtPtrMap);
-    
-    if (m_enableMonitoring) theClockArtHits.stop();
-    
-    // If there are no hits in our view/wire data structure then do not proceed with the full analysis
-    if (!planeToWireToHitSetMap.empty())
-    {
-        // Call the algorithm that builds 3D hits
-        m_hit3DBuilderAlg.BuildHit3D(planeToHitVectorMap, planeToWireToHitSetMap, *hitPairList);
+    std::cout << "++> Produced: " << hitPairList->size() << " hits" << std::endl;
         
-        // Call the main workhorse algorithm for building the local version of candidate 3D clusters
-        m_clusterAlg->Cluster3DHits(*hitPairList, clusterParametersList);
+    // Call the main workhorse algorithm for building the local version of candidate 3D clusters
+    m_clusterAlg->Cluster3DHits(*hitPairList, clusterParametersList);
+    
+    std::cout << "++> Produced: " << clusterParametersList.size() << " clusters" << std::endl;
         
-        // Try merging clusters
-        m_clusterMergeAlg->ModifyClusters(clusterParametersList);
-    }
+    // Try merging clusters
+    m_clusterMergeAlg->ModifyClusters(clusterParametersList);
+    
+    // Run the path finding
+    m_clusterPathAlg->ModifyClusters(clusterParametersList);
     
     if(m_enableMonitoring) theClockFinish.start();
+    
+    // Get the art ouput object
+    ArtOutputHandler output(*this, evt, m_spacePointInstance, m_extremeInstance);
+    
+    std::cout << "++> Outputting clusters" << std::endl;
 
     // Call the module that does the end processing (of which there is quite a bit of work!)
     // This goes here to insure that something is always written to the data store
-    ProduceArtClusters(evt, *hitPairList, clusterParametersList, clusterHitToArtPtrMap);
+    ProduceArtClusters(output, *hitPairList, clusterParametersList, clusterHitToArtPtrMap);
+    
+    // Output to art
+    output.outputObjects();
     
     if (m_enableMonitoring) theClockFinish.stop();
     
@@ -408,18 +591,19 @@ void Cluster3D::produce(art::Event &evt)
         m_run                   = evt.run();
         m_event                 = evt.id().event();
         m_totalTime             = theClockTotal.accumulated_real_time();
-        m_artHitsTime           = theClockArtHits.accumulated_real_time();
-        m_makeHitsTime          = m_hit3DBuilderAlg.getTimeToExecute();
+        m_artHitsTime           = m_hit3DBuilderAlg->getTimeToExecute(IHit3DBuilder::COLLECTARTHITS);
+        m_makeHitsTime          = m_hit3DBuilderAlg->getTimeToExecute(IHit3DBuilder::BUILDTHREEDHITS);
         m_buildNeighborhoodTime = m_clusterAlg->getTimeToExecute(IClusterAlg::BUILDHITTOHITMAP);
         m_dbscanTime            = m_clusterAlg->getTimeToExecute(IClusterAlg::RUNDBSCAN) +
                                   m_clusterAlg->getTimeToExecute(IClusterAlg::BUILDCLUSTERINFO);
-        m_pathFindingTime       = m_clusterAlg->getTimeToExecute(IClusterAlg::PATHFINDING);
+        m_clusterMergeTime      = m_clusterMergeAlg->getTimeToExecute();
+        m_pathFindingTime       = m_clusterPathAlg->getTimeToExecute();
         m_finishTime            = theClockFinish.accumulated_real_time();
-        m_hits                  = static_cast<int>(clusterHit2DMasterVec.size());
+        m_hits                  = static_cast<int>(clusterHitToArtPtrMap.size());
         m_pRecoTree->Fill();
         
         mf::LogDebug("Cluster3D") << "*** Cluster3D total time: " << m_totalTime << ", art: " << m_artHitsTime << ", make: " << m_makeHitsTime
-        << ", build: " << m_buildNeighborhoodTime << ", clustering: " << m_dbscanTime << ", path: " << m_pathFindingTime << ", finish: " << m_finishTime << std::endl;
+        << ", build: " << m_buildNeighborhoodTime << ", clustering: " << m_dbscanTime << ", merge: " << m_clusterMergeTime << ", path: " << m_pathFindingTime << ", finish: " << m_finishTime << std::endl;
     }
     
     // Will we ever get here? ;-)
@@ -440,8 +624,13 @@ void Cluster3D::InitializeMonitoring()
     m_pRecoTree->Branch("makeHitsTime",         &m_makeHitsTime,          "time/F");
     m_pRecoTree->Branch("buildneigborhoodTime", &m_buildNeighborhoodTime, "time/F");
     m_pRecoTree->Branch("dbscanTime",           &m_dbscanTime,            "time/F");
+    m_pRecoTree->Branch("clusterMergeTime",     &m_clusterMergeTime,      "time/F");
     m_pRecoTree->Branch("pathfindingtime",      &m_pathFindingTime,       "time/F");
     m_pRecoTree->Branch("finishTime",           &m_finishTime,            "time/F");
+    
+    m_clusterPathAlg->initializeHistograms(*tfs.get());
+
+    return;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -461,71 +650,6 @@ void Cluster3D::PrepareEvent(const art::Event &evt)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
-bool SetHitTimeOrder(const reco::ClusterHit2D* left, const reco::ClusterHit2D* right)
-{
-    // Sort by "modified start time" of pulse
-    return left->getHit().PeakTime() < right->getHit().PeakTime();
-}
-    
-bool Hit2DSetCompare::operator() (const reco::ClusterHit2D* left, const reco::ClusterHit2D* right) const
-{
-    return left->getHit().PeakTime() < right->getHit().PeakTime();
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-void Cluster3D::CollectArtHits(art::Event&             evt,
-                               Hit2DVector&            hitVector,
-                               PlaneToHitVectorMap&    planeToHitVectorMap,
-                               PlaneToWireToHitSetMap& planeToWireToHitSetMap,
-                               RecobHitToPtrMap&       hitToPtrMap) const
-{
-    /**
-     *  @brief Recover the 2D hits from art and fill out the local data structures for the 3D clustering
-     */
-    art::Handle< std::vector<recob::Hit> > recobHitHandle;
-    evt.getByLabel(m_hitfinderModuleLabel, recobHitHandle);
-    
-    if (!recobHitHandle.isValid()) return;
-    
-    // We'll want to correct the hit times for the plane offsets
-    // (note this is already taken care of when converting to position)
-    std::map<size_t, double> planeOffsetMap;
-    
-    planeOffsetMap[0] = m_detector->GetXTicksOffset(0, 0, 0)-m_detector->TriggerOffset();
-    planeOffsetMap[1] = m_detector->GetXTicksOffset(1, 0, 0)-m_detector->TriggerOffset();
-    planeOffsetMap[2] = m_detector->GetXTicksOffset(2, 0, 0)-m_detector->TriggerOffset();
-    
-    std::cout << "***> plane 0 offset: " << planeOffsetMap[0] << ", plane 1: " << planeOffsetMap[1] << ", plane 2: " << planeOffsetMap[2] << std::endl;
-    
-    // Reserve memory for the hit vector
-    hitVector.reserve(recobHitHandle->size());
-    
-    // Cycle through the recob hits to build ClusterHit2D objects and insert
-    // them into the map
-    for (size_t cIdx = 0; cIdx < recobHitHandle->size(); cIdx++)
-    {
-        art::Ptr<recob::Hit> recobHit(recobHitHandle, cIdx);
-        
-        const geo::WireID& hitWireID(recobHit->WireID());
-        
-        double hitPeakTime(recobHit->PeakTime() - planeOffsetMap[recobHit->WireID().Plane]);
-        double xPosition(m_detector->ConvertTicksToX(recobHit->PeakTime(), hitWireID.Plane, hitWireID.TPC, hitWireID.Cryostat));
-        
-        hitVector.emplace_back(reco::ClusterHit2D(0, 0., 0., xPosition, hitPeakTime, *recobHit));
-
-        planeToHitVectorMap[recobHit->WireID().planeID()].push_back(&hitVector.back());
-        planeToWireToHitSetMap[recobHit->WireID().planeID()][recobHit->WireID().Wire].insert(&hitVector.back());
-        
-        const recob::Hit* recobHitPtr = recobHit.get();
-        hitToPtrMap[recobHitPtr]      = recobHit;
-    }
-    
-    // Make a loop through to sort the recover hits in time order
-    for(auto& hitVectorMap : planeToHitVectorMap)
-        std::sort(hitVectorMap.second.begin(), hitVectorMap.second.end(), SetHitTimeOrder);
-
-    mf::LogDebug("Cluster3D") << ">>>>> Number of ART hits: " << hitVector.size() << std::endl;
-}
     
 void Cluster3D::findTrackSeeds(art::Event&                         evt,
                                reco::ClusterParameters&            cluster,
@@ -556,10 +680,10 @@ void Cluster3D::findTrackSeeds(art::Event&                         evt,
     
     // Some combination of the elements below will be used to determine which seed finding algorithm
     // to pursue below
-    double eigenVal0 = 3. * sqrt(skeletonPCA.getEigenValues()[0]);
-    double eigenVal1 = 3. * sqrt(skeletonPCA.getEigenValues()[1]);
-    double eigenVal2 = 3. * sqrt(skeletonPCA.getEigenValues()[2]);
-    double transRMS  = sqrt(std::pow(eigenVal1,2) + std::pow(eigenVal2,2));
+    float eigenVal0 = 3. * sqrt(skeletonPCA.getEigenValues()[0]);
+    float eigenVal1 = 3. * sqrt(skeletonPCA.getEigenValues()[1]);
+    float eigenVal2 = 3. * sqrt(skeletonPCA.getEigenValues()[2]);
+    float transRMS  = sqrt(std::pow(eigenVal1,2) + std::pow(eigenVal2,2));
     
     bool   foundGoodSeed(false);
 
@@ -623,7 +747,7 @@ void Cluster3D::findTrackSeeds(art::Event&                         evt,
     
 struct Hit3DDistanceOrder
 {
-    bool operator()(const std::pair<double, const reco::ClusterHit3D*>& left, const std::pair<double, const reco::ClusterHit3D*>& right)
+    bool operator()(const std::pair<float, const reco::ClusterHit3D*>& left, const std::pair<float, const reco::ClusterHit3D*>& right)
     {
         return left.first < right.first;
     }
@@ -643,14 +767,14 @@ void Cluster3D::splitClustersWithMST(reco::ClusterParameters& clusterParameters,
     //
     // Typedef some data structures that we will use.
     // Start with the adjacency map
-    typedef std::pair<double, const reco::ClusterHit3D*>                DistanceHit3DPair;
+    typedef std::pair<float, const reco::ClusterHit3D*>                 DistanceHit3DPair;
     typedef std::list<DistanceHit3DPair >                               DistanceHit3DPairList;
     typedef std::map<const reco::ClusterHit3D*, DistanceHit3DPairList > Hit3DToDistanceMap;
     
     // Now typedef the lists we'll keep
     typedef std::list<const reco::ClusterHit3D*>                        Hit3DList;
     typedef std::pair<Hit3DList::iterator, Hit3DList::iterator>         Hit3DEdgePair;
-    typedef std::pair<double, Hit3DEdgePair >                           DistanceEdgePair;
+    typedef std::pair<float, Hit3DEdgePair >                            DistanceEdgePair;
     typedef std::list<DistanceEdgePair >                                DistanceEdgePairList;
     
     struct DistanceEdgePairOrder
@@ -688,7 +812,7 @@ void Cluster3D::splitClustersWithMST(reco::ClusterParameters& clusterParameters,
             const reco::ClusterHit3D* hit3DInner = *hit3DInnerItr;
             TVector3                  innerPos(hit3DInner->getPosition()[0], hit3DInner->getPosition()[1], hit3DInner->getPosition()[2]);
             TVector3                  deltaPos = innerPos - outerPos;
-            double                    hitDistance(deltaPos.Mag());
+            float                     hitDistance(float(deltaPos.Mag()));
             
             if (hitDistance > 20.) continue;
             
@@ -716,15 +840,15 @@ void Cluster3D::splitClustersWithMST(reco::ClusterParameters& clusterParameters,
     
     skeletonListPtr.front()->setStatusBit(reco::ClusterHit3D::SELECTEDBYMST);
     
-    double largestDistance(0.);
-    double averageDistance(0.);
+    float largestDistance(0.);
+    float averageDistance(0.);
     
     // Now run the MST
     // Basically, we loop until the MST list is the same size as the input list
     while(hit3DList.size() < skeletonListPtr.size())
     {
         Hit3DList::iterator bestHit3DIter = hit3DList.begin();
-        double              bestDist      = 10000000.;
+        float               bestDist      = 10000000.;
         
         // Loop through all hits currently in the list and look for closest hit not in the list
         for(Hit3DList::iterator hit3DIter = hit3DList.begin(); hit3DIter != hit3DList.end(); hit3DIter++)
@@ -768,9 +892,9 @@ void Cluster3D::splitClustersWithMST(reco::ClusterParameters& clusterParameters,
         nextHit3D->setStatusBit(reco::ClusterHit3D::SELECTEDBYMST);
     }
     
-    averageDistance /= double(hit3DList.size());
+    averageDistance /= float(hit3DList.size());
     
-    double thirdDist = 2.*sqrt(clusterParameters.getSkeletonPCA().getEigenValues()[2]);
+    float thirdDist = 2.*sqrt(clusterParameters.getSkeletonPCA().getEigenValues()[2]);
     
     // Ok, find the largest distance in the iterator map
     distanceEdgePairList.sort(DistanceEdgePairOrder());
@@ -809,14 +933,14 @@ void Cluster3D::splitClustersWithMST(reco::ClusterParameters& clusterParameters,
 class CopyIfInRange
 {
 public:
-    CopyIfInRange(double maxRange) : m_maxRange(maxRange) {}
+    CopyIfInRange(float maxRange) : m_maxRange(maxRange) {}
     
     bool operator()(const reco::ClusterHit3D* hit3D)
     {
         return hit3D->getDocaToAxis() < m_maxRange;
     }
 private:
-    double m_maxRange;
+    float m_maxRange;
 };
 
 void Cluster3D::splitClustersWithHough(reco::ClusterParameters&     clusterParameters,
@@ -881,7 +1005,7 @@ void Cluster3D::splitClustersWithHough(reco::ClusterParameters&     clusterParam
         m_pcaAlg.PCAAnalysis_calc3DDocas(firstHitList, firstHitListPCA);
         
         // Divine from the ether some maximum allowed range for transfering hits
-        double allowedHitRange = 6. * firstHitListPCA.getAveHitDoca();
+        float allowedHitRange = 6. * firstHitListPCA.getAveHitDoca();
         
         // Now go through and calculate the 3D doca's for ALL the hits in the original cluster
         m_pcaAlg.PCAAnalysis_calc3DDocas(hitPairListPtr, firstHitListPCA);
@@ -931,7 +1055,7 @@ void Cluster3D::splitClustersWithHough(reco::ClusterParameters&     clusterParam
             m_pcaAlg.PCAAnalysis_calc3DDocas(secondHitList, secondHitListPCA);
             
             // Since this is the "other" cluster, we'll be a bit more generous in adding back hits
-            double newAllowedHitRange = 6. * secondHitListPCA.getAveHitDoca();
+            float newAllowedHitRange = 6. * secondHitListPCA.getAveHitDoca();
             
             // Go through and calculate the 3D doca's for the hits in our new candidate cluster
             m_pcaAlg.PCAAnalysis_calc3DDocas(newClusterHitList, secondHitListPCA);
@@ -961,7 +1085,7 @@ void Cluster3D::splitClustersWithHough(reco::ClusterParameters&     clusterParam
     return;
 }
     
-void Cluster3D::ProduceArtClusters(art::Event&                  evt,
+void Cluster3D::ProduceArtClusters(ArtOutputHandler&            output,
                                    reco::HitPairList&           hitPairVector,
                                    reco::ClusterParametersList& clusterParametersList,
                                    RecobHitToPtrMap&            hitToPtrMap) const
@@ -972,295 +1096,150 @@ void Cluster3D::ProduceArtClusters(art::Event&                  evt,
     
     mf::LogDebug("Cluster3D") << " *** Cluster3D::ProduceArtClusters() *** " << std::endl;
     
-    std::unique_ptr< std::vector<recob::PCAxis>>     artPCAxisVector( new std::vector<recob::PCAxis>         );
-    std::unique_ptr< std::vector<recob::PFParticle>> artPFParticleVector( new std::vector<recob::PFParticle> );
-    std::unique_ptr< std::vector<recob::Cluster>>    artClusterVector( new std::vector<recob::Cluster>       );
-    std::unique_ptr< std::vector<recob::SpacePoint>> artSpacePointVector( new std::vector<recob::SpacePoint> );
-    std::unique_ptr< std::vector<recob::Seed>>       artSeedVector( new std::vector<recob::Seed>             );
-    std::unique_ptr< std::vector<recob::Edge>>       artEdgeVector( new std::vector<recob::Edge>             );
-    
-    std::unique_ptr< art::Assns<recob::Cluster,    recob::Hit>>         artClusterAssociations(    new art::Assns<recob::Cluster,    recob::Hit>          );
-    std::unique_ptr< art::Assns<recob::PFParticle, recob::PCAxis>>      artPFPartAxisAssociations( new art::Assns<recob::PFParticle, recob::PCAxis>       );
-    std::unique_ptr< art::Assns<recob::PFParticle, recob::Cluster>>     artPFPartClusAssociations( new art::Assns<recob::PFParticle, recob::Cluster>      );
-    std::unique_ptr< art::Assns<recob::PFParticle, recob::SpacePoint>>  artPFPartSPAssociations(   new art::Assns<recob::PFParticle, recob::SpacePoint>   );
-    std::unique_ptr< art::Assns<recob::PFParticle, recob::Seed>>        artPFPartSeedAssociations( new art::Assns<recob::PFParticle, recob::Seed>         );
-    std::unique_ptr< art::Assns<recob::PFParticle, recob::Edge>>        artPFPartEdgeAssociations( new art::Assns<recob::PFParticle, recob::Edge>         );
-    std::unique_ptr< art::Assns<recob::Seed,       recob::Hit>>         artSeedHitAssociations(    new art::Assns<recob::Seed,       recob::Hit>          );
-    std::unique_ptr< art::Assns<recob::SpacePoint, recob::Hit>>         artSPHitAssociations(      new art::Assns<recob::SpacePoint, recob::Hit>          );
-    std::unique_ptr< art::Assns<recob::Edge,       recob::SpacePoint>>  artEdgeSPAssociations(     new art::Assns<recob::Edge,       recob::SpacePoint>   );
-    
-    // prepare the algorithm to compute the cluster characteristics;
-    // we use the "standard" one here, except that we override selected items
-    // (so, thanks to metaprogramming, we finally have wrappers of wrappers);
-    // configuration would happen here, but we are using the default
-    // configuration for that algorithm
-    using OverriddenClusterParamsAlg_t = cluster::OverriddenClusterParamsAlg<cluster::StandardClusterParamsAlg>;
-    
-    cluster::ClusterParamsImportWrapper<OverriddenClusterParamsAlg_t> ClusterParamAlgo;
-    
-    // Create id for space points
-    int    spacePointID(0);
-    int    pcaAxisID(0);
-    
     // Make sure there is something to do here!
     if (!clusterParametersList.empty())
     {
-        // indices for the clusters created
-        int    clusterIdx(0);
-        size_t pfParticleIdx(0);
-        
-        // Keep track of the position of the latest added 2D clusters
-        size_t clusterStart(0);
-        size_t clusterEnd(0);
-        
-        // Create id for edges
-        size_t edgeID(0);
-        
         // This is the loop over candidate 3D clusters
         // Note that it might be that the list of candidate clusters is modified by splitting
         // So we use the following construct to make sure we get all of them
-        reco::ClusterParametersList::iterator clusterParametersListItr = clusterParametersList.begin();
-        
-        while(clusterParametersListItr != clusterParametersList.end())
+        for(auto& clusterParameters : clusterParametersList)
         {
-            // Dereference to get the cluster paramters
-            reco::ClusterParameters& clusterParameters = *clusterParametersListItr;
-            
             // It should be straightforward at this point to transfer information from our vector of clusters
             // to the larsoft objects... of course we still have some work to do first, in particular to
             // find the candidate seeds and their seed hits
             
-            // We keep track of 2 PCA axes, the first is the "full" PCA run over all the 3D hits in the
-            // candidate cluster. The second will be that derived from just using the "skeleton" hits.
-            // Make a copy of the full PCA to keep that, then get a reference for the skeleton PCA
-            reco::PrincipalComponents& fullPCA     = clusterParameters.getFullPCA();
-            reco::PrincipalComponents& skeletonPCA = clusterParameters.getSkeletonPCA();
-            
             // The chances of getting here and this condition not being true are probably zero... but check anyway
-            if (!fullPCA.getSvdOK())
+            if (!clusterParameters.getFullPCA().getSvdOK())
             {
                 mf::LogDebug("Cluster3D") << "--> no feature extraction done on this cluster!!" << std::endl;
-                clusterParametersListItr++;
                 continue;
             }
-            
-            // As tracks become more parallel to the wire plane the number of "ambiguous" 3D hits can increase
-            // rapidly. Now that we have more information we can go back through these hits and do a better job
-            // selecting "the right ones". Here we call the "medial skeleton" algorithm which uses a modification
-            // of a standard medial skeleton procedure to get the 3D hits we want
-            // But note that even this is hopeless in the worst case and, in fact, it can be a time waster
-            // So bypass when you recognize that condition
-/*
-            if (!aParallelHitsCluster(fullPCA))
-            {
-                int nSkeletonPoints = m_skeletonAlg.FindMedialSkeleton(clusterParameters.getHitPairListPtr());
-            
-                // If enough skeleton points then rerun pca with only those
-                if (nSkeletonPoints > 10)
-                {
-                    // Now rerun the principal components axis on just those points
-                    m_pcaAlg.PCAAnalysis_3D(clusterParameters.getHitPairListPtr(), skeletonPCA, true);
-                
-                    // If there was a failure (can that happen?) then restore the full PCA
-                    if (!skeletonPCA.getSvdOK()) skeletonPCA = fullPCA;
-                }
-            
-                // Here we can try to handle a specific case. It can happen that two tracks (think CR muons here) pass so
-                // close together at some point to get merged into one cluster. Now that we have skeletonized the hits and
-                // have run the PCA on the skeleton points we can try to divide these two tracks. The signature will be that
-                // their are a large number of total hits, that the PCA will have a large spread in two dimensions. The
-                // spread in the third dimension will be an indicator of the actual separation between the two tracks
-                // which we might try to exploit in the actual algorithm.
-                // hardwire for now to see what is going on...
-                if (skeletonPCA.getNumHitsUsed() > 1000 && skeletonPCA.getEigenValues()[1] > 100. && fabs(skeletonPCA.getEigenVectors()[2][0]) < m_parallelHitsCosAng)
-                {
-                    mf::LogDebug("Cluster3D") << "--> Detected crossed axes!! Total # hits: " << fullPCA.getNumHitsUsed() <<
-                        "\n    Skeleton PCA # hits: " << skeletonPCA.getNumHitsUsed() << ", eigenValues: " <<
-                        skeletonPCA.getEigenValues()[0] << ", " <<skeletonPCA.getEigenValues()[1] << ", " <<skeletonPCA.getEigenValues()[2] << std::endl;
-                    
-                    splitClustersWithHough(clusterParameters, clusterParametersList);
-                }
-            }
-*/
-
-            // Start loop over views to build out the hit lists and the 2D cluster objects
-            for(reco::PlaneToClusterParamsMap::const_iterator planeItr = clusterParameters.getClusterParams().begin(); planeItr != clusterParameters.getClusterParams().end(); planeItr++)
-            {
-                const reco::RecobClusterParameters& clusParams = planeItr->second;
-                
-                // Protect against a missing view
-                if (clusParams.m_view == geo::kUnknown) continue;
-                
-                // We love looping. In this case, our list of hits is comprised of "ClusterHits" and we need to get a RecobHitVector instead...
-                RecobHitVector recobHits;
-                
-                for(reco::HitVectorConst::const_iterator hitItr = clusParams.m_hitVector.begin(); hitItr != clusParams.m_hitVector.end(); hitItr++)
-                {
-                    art::Ptr<recob::Hit> hitPtr = hitToPtrMap[&(*hitItr)->getHit()];
-                    recobHits.push_back(hitPtr);
-                }
-                
-                // And sorting! Sorting is good for the mind, soul and body
-                // ooopsss... don't do this else event display will look funky
-//                std::sort(recobHits.begin(), recobHits.end());
-                
-                // Get the tdc/wire slope... from the unit vector...
-                double startWire(clusParams.m_startWire);
-                double endWire(clusParams.m_endWire);
-                double startTime(clusParams.m_startTime);
-                double endTime(clusParams.m_endTime);
-
-                // plane ID is not a part of clusParams... get the one from the first hit
-                geo::PlaneID plane; // invalid by default
-                if (!recobHits.empty())
-                    plane = recobHits.front()->WireID().planeID();
-                
-                // feed the algorithm with all the cluster hits
-                ClusterParamAlgo.ImportHits(recobHits);
-                
-                // create the recob::Cluster directly in the vector
-                cluster::ClusterCreator artCluster(
-                  ClusterParamAlgo,                     // algo
-                  startWire,                            // start_wire
-                  0.,                                   // sigma_start_wire
-                  startTime,                            // start_tick
-                  clusParams.m_sigmaStartTime,          // sigma_start_tick
-                  endWire,                              // end_wire
-                  0.,                                   // sigma_end_wire,
-                  endTime,                              // end_tick
-                  clusParams.m_sigmaEndTime,            // sigma_end_tick
-                  clusterIdx++,                         // ID
-                  clusParams.m_view,                    // view
-                  plane,                                // plane
-                  recob::Cluster::Sentry                // sentry
-                  );
-                
-                artClusterVector->emplace_back(artCluster.move());
-                             
-                util::CreateAssn(*this, evt, *artClusterVector, recobHits, *artClusterAssociations);
-                clusterEnd++;
-            }
-            
-            // Last, let's try to get seeds for tracking..
-            // Keep track of how many we have so far
-            size_t numSeedsStart = artSeedVector->size();
-            
-            // Call the magical algorith to do the dirty work
-//            findTrackSeeds(evt, clusterParameters, hitToPtrMap, *artSeedVector, *artSeedHitAssociations);
-            
-            // Deal with converting the Hit Pairs to art
-            // Recover the hit pairs and start looping! Love to loop!
-            reco::HitPairListPtr& clusHitPairVector = clusterParameters.getHitPairListPtr();
-//            reco::HitPairListPtr& clusHitPairVector = clusterParameters.getBestHitPairListPtr();
-            
-            // Right now error matrix is uniform...
-            double spError[] = {1., 0., 1., 0., 0., 1.};
-            
-            // Keep track of current start for space points
-            int spacePointStart(spacePointID);
             
             // Keep track of hit 3D to SP for when we do edges
             Hit3DToSPPtrMap hit3DToSPPtrMap;
             
-            // Copy these hits to the vector to be stored with the event
-            for (auto& hitPair : clusHitPairVector)
-            {
-                // Don't make space point if this hit was "rejected"
-                if (hitPair->bitsAreSet(reco::ClusterHit3D::REJECTEDHIT)) continue;
-                
-                double chisq = 1.;    // secret handshake...
-                
-                if      ( hitPair->bitsAreSet(reco::ClusterHit3D::SKELETONHIT) && !hitPair->bitsAreSet(reco::ClusterHit3D::EDGEHIT)) chisq = -1.;  // pure skeleton point
-                else if (!hitPair->bitsAreSet(reco::ClusterHit3D::SKELETONHIT) &&  hitPair->bitsAreSet(reco::ClusterHit3D::EDGEHIT)) chisq = -2.;  // pure edge point
-                else if ( hitPair->bitsAreSet(reco::ClusterHit3D::SKELETONHIT) &&  hitPair->bitsAreSet(reco::ClusterHit3D::EDGEHIT)) chisq = -3.;  // skeleton and edge point
+            // Keep track of current start for space points
+            int spacePointStart(output.artSpacePointVector->size());
+            
+            // Do a special output of voronoi vertices here...
+            dcel2d::VertexList&   vertexList   = clusterParameters.getVertexList();
+            dcel2d::HalfEdgeList& halfEdgeList = clusterParameters.getHalfEdgeList();
+            
+            std::cout << "Preparing to save the vertex point list, size: " << vertexList.size() << ", half edges: " << halfEdgeList.size() << std::endl;
+            
+            MakeAndSaveVertexPoints(output, vertexList, halfEdgeList);
 
-                if      (hitPair->bitsAreSet(reco::ClusterHit3D::SEEDHIT)                                                          ) chisq = -4.;  // Seed point
+            // Special case handling... if no daughters then call standard conversion routine to make sure space points
+            // created, etc.
+            if (clusterParameters.daughterList().empty())
+            {
+                ConvertToArtOutput(output, clusterParameters, recob::PFParticle::kPFParticlePrimary, hitToPtrMap, hit3DToSPPtrMap);
                 
-                if ((hitPair->getStatusBits() & 0x7) != 0x7) chisq = -10.;
+                // Get the extreme points
+                MakeAndSaveKinkPoints(output, clusterParameters.getConvexHull().getConvexHullKinkPoints()); //getConvexExtremePoints());
+            }
+            // Otherwise, the cluster has daughters so we handle specially
+            else
+            {
+                // Set up to keep track of parent/daughters
+                IdxToPCAMap idxToPCAMap;
+                size_t      numTotalDaughters = countUltimateDaughters(clusterParameters);
+                size_t      pfParticleIdx(output.artPFParticleVector->size() + numTotalDaughters);
                 
-                // Mark this hit pair as in use
-                hitPair->setStatusBit(reco::ClusterHit3D::MADESPACEPOINT);
+                FindAndStoreDaughters(output, clusterParameters, pfParticleIdx, idxToPCAMap, hitToPtrMap, hit3DToSPPtrMap);
                 
-                // Create and store the space point
-                double spacePointPos[] = {hitPair->getPosition()[0],hitPair->getPosition()[1],hitPair->getPosition()[2]};
-                artSpacePointVector->push_back(recob::SpacePoint(spacePointPos, spError, chisq, spacePointID));
+                // Now make the piecewise curve
+//                MakeAndSavePCAPoints(output, clusterParameters.getFullPCA(), idxToPCAMap);
+
+                // Need to make a daughter vec from our map
+                std::vector<size_t> daughterVec;
                 
-                // Update mapping
-                hit3DToSPPtrMap[hitPair] = spacePointID++;
+                for(auto& idxToPCA : idxToPCAMap) daughterVec.emplace_back(idxToPCA.first);
                 
-                // space point hits associations
-                RecobHitVector recobHits;
+                // Now create/handle the parent PFParticle
+                recob::PFParticle pfParticle(13, pfParticleIdx, recob::PFParticle::kPFParticlePrimary, daughterVec);
+                output.artPFParticleVector->push_back(pfParticle);
                 
-                for(const auto& hit : hitPair->getHits())
+                recob::PCAxis::EigenVectors eigenVecs;
+                double                      eigenVals[]   = {0.,0.,0.};
+                double                      avePosition[] = {0.,0.,0.};
+                
+                eigenVecs.resize(3);
+
+                reco::PrincipalComponents& skeletonPCA = clusterParameters.getSkeletonPCA();
+                
+                for(size_t outerIdx = 0; outerIdx < 3; outerIdx++)
                 {
-                    if (!hit) continue;
-                    art::Ptr<recob::Hit> hitPtr = hitToPtrMap[&hit->getHit()];
-                    recobHits.push_back(hitPtr);
+                    avePosition[outerIdx] = skeletonPCA.getAvePosition()[outerIdx];
+                    eigenVals[outerIdx]   = skeletonPCA.getEigenValues()[outerIdx];
+                    
+                    eigenVecs[outerIdx].resize(3);
+                    
+                    for(size_t innerIdx = 0; innerIdx < 3; innerIdx++) eigenVecs[outerIdx][innerIdx] = skeletonPCA.getEigenVectors()[outerIdx][innerIdx];
                 }
                 
-                if (!recobHits.empty()) util::CreateAssn(*this, evt, *artSpacePointVector, recobHits, *artSPHitAssociations);
+                
+                recob::PCAxis skelPcAxis(skeletonPCA.getSvdOK(),
+                                         skeletonPCA.getNumHitsUsed(),
+                                         eigenVals,                      //skeletonPCA.getEigenValues(),
+                                         eigenVecs,                      //skeletonPCA.getEigenVectors(),
+                                         avePosition,                    //skeletonPCA.getAvePosition(),
+                                         skeletonPCA.getAveHitDoca(),
+                                         output.artPCAxisVector->size());
+                
+                output.artPCAxisVector->push_back(skelPcAxis);
+                
+                reco::PrincipalComponents& fullPCA = clusterParameters.getFullPCA();
+                
+                for(size_t outerIdx = 0; outerIdx < 3; outerIdx++)
+                {
+                    avePosition[outerIdx] = fullPCA.getAvePosition()[outerIdx];
+                    eigenVals[outerIdx]   = fullPCA.getEigenValues()[outerIdx];
+                    
+                    for(size_t innerIdx = 0; innerIdx < 3; innerIdx++) eigenVecs[outerIdx][innerIdx] = fullPCA.getEigenVectors()[outerIdx][innerIdx];
+                }
+                
+                recob::PCAxis fullPcAxis(fullPCA.getSvdOK(),
+                                         fullPCA.getNumHitsUsed(),
+                                         eigenVals,                      //fullPCA.getEigenValues(),
+                                         eigenVecs,                      //fullPCA.getEigenVectors(),
+                                         avePosition,                    //fullPCA.getAvePosition(),
+                                         fullPCA.getAveHitDoca(),
+                                         output.artPCAxisVector->size());
+                
+                output.artPCAxisVector->push_back(fullPcAxis);
+                
+                // Create associations to the PFParticle
+                output.makePFPartPCAAssns();
+                
+                // Make associations to all space points for this cluster
+                MakeAndSaveSpacePoints(output, clusterParameters.getHitPairListPtr(), hitToPtrMap, hit3DToSPPtrMap, spacePointStart);
+                
+                // Get the extreme points
+                MakeAndSaveKinkPoints(output, clusterParameters.getConvexHull().getConvexHullKinkPoints()); //getConvexExtremePoints());
+
+                // Build the edges now
+                size_t edgeStart(output.artEdgeVector->size());
+                
+                for(const auto& edge : clusterParameters.getConvexHull().getConvexHullEdgeList())
+                {
+                    Hit3DToSPPtrMap::iterator hit0Itr = hit3DToSPPtrMap.find(std::get<0>(edge));
+                    Hit3DToSPPtrMap::iterator hit1Itr = hit3DToSPPtrMap.find(std::get<1>(edge));
+                    
+                    bool hit0Found = hit0Itr != hit3DToSPPtrMap.end();
+                    bool hit1Found = hit1Itr != hit3DToSPPtrMap.end();
+                    
+                    if (!hit0Found || !hit1Found) std::cout << "<<<<< Did not find matching space point " << hit0Found << ", " << hit1Found << " >>>>>>" << std::endl;
+
+                    output.artEdgeVector->push_back(recob::Edge(std::get<2>(edge), hit3DToSPPtrMap[std::get<0>(edge)], hit3DToSPPtrMap[std::get<1>(edge)], output.artEdgeVector->size()));
+                }
+                
+                output.makePFPartEdgeAssns(edgeStart);
             }
-            
-            // Build the edges now
-            size_t edgeStart(edgeID);
-            
-            for(const auto& edge : clusterParameters.getBestEdgeList())
-                artEdgeVector->push_back(recob::Edge(std::get<2>(edge), hit3DToSPPtrMap[std::get<0>(edge)], hit3DToSPPtrMap[std::get<1>(edge)], edgeID++));
-            
-            // Empty daughter vector for now
-            std::vector<size_t> nullVector;
-            
-            // Create the PFParticle to tie the pieces together
-            size_t parentID(recob::PFParticle::kPFParticlePrimary);
-            
-            recob::PFParticle pfParticle(13, pfParticleIdx++, parentID, nullVector);
-            artPFParticleVector->push_back(pfParticle);
-            
-            // Look at making the PCAxis and associations - for both the skeleton (the first) and the full
-            recob::PCAxis skelPcAxis(skeletonPCA.getSvdOK(),
-                                     skeletonPCA.getNumHitsUsed(),
-                                     skeletonPCA.getEigenValues(),
-                                     skeletonPCA.getEigenVectors(),
-                                     skeletonPCA.getAvePosition(),
-                                     skeletonPCA.getAveHitDoca(),
-                                     pcaAxisID++);
-            
-            artPCAxisVector->push_back(skelPcAxis);
-            
-            recob::PCAxis fullPcAxis(fullPCA.getSvdOK(),
-                                     fullPCA.getNumHitsUsed(),
-                                     fullPCA.getEigenValues(),
-                                     fullPCA.getEigenVectors(),
-                                     fullPCA.getAvePosition(),
-                                     fullPCA.getAveHitDoca(),
-                                     pcaAxisID++);
-            
-            artPCAxisVector->push_back(fullPcAxis);
-            
-            util::CreateAssn(*this, evt, *artPFParticleVector, *artPCAxisVector, *artPFPartAxisAssociations, artPCAxisVector->size()-2, artPCAxisVector->size());
-            
-            // Create associations to the PFParticle
-            util::CreateAssn(*this, evt, *artPFParticleVector, *artSeedVector, *artPFPartSeedAssociations, numSeedsStart, artSeedVector->size());
-            
-            // Make associations to the 2D cluster objects
-            util::CreateAssn(*this, evt, *artPFParticleVector, *artClusterVector, *artPFPartClusAssociations, clusterStart, clusterEnd);
-            
-            // Make associations to the SpacePoints
-            util::CreateAssn(*this, evt, *artPFParticleVector, *artSpacePointVector, *artPFPartSPAssociations, spacePointStart, spacePointID);
-            
-            // Make associations to the SpacePoints
-            util::CreateAssn(*this, evt, *artPFParticleVector, *artEdgeVector, *artPFPartEdgeAssociations, edgeStart, edgeID);
-            
-            // Update the start/end indices
-            clusterStart = clusterEnd;
-            
-            // Go to next cluster parameters object
-            clusterParametersListItr++;
         }
     }
     
     // Right now error matrix is uniform...
-    double spError[] = {1., 0., 1., 0., 0., 1.};
     int    nFreePoints(0);
     
     // Run through the HitPairVector and add any unused hit pairs to the list
@@ -1269,6 +1248,7 @@ void Cluster3D::ProduceArtClusters(art::Event&                  evt,
         if (hitPair->bitsAreSet(reco::ClusterHit3D::MADESPACEPOINT)) continue;
 
         double spacePointPos[] = {hitPair->getPosition()[0],hitPair->getPosition()[1],hitPair->getPosition()[2]};
+        double spacePointErr[] = {1., 0., 0., 1., 0., 1.};
         double chisq(-100.);
         
         RecobHitVector recobHits;
@@ -1287,29 +1267,514 @@ void Cluster3D::ProduceArtClusters(art::Event&                  evt,
         
         nFreePoints++;
         
-        artSpacePointVector->push_back(recob::SpacePoint(spacePointPos, spError, chisq, spacePointID++));
+        output.artSpacePointVector->push_back(recob::SpacePoint(spacePointPos, spacePointErr, chisq, output.artSpacePointVector->size()));
         
-        if (!recobHits.empty()) util::CreateAssn(*this, evt, *artSpacePointVector, recobHits, *artSPHitAssociations);
+        if (!recobHits.empty()) output.makeSpacePointHitAssns(recobHits);
     }
     
     std::cout << "++++>>>> total num hits: " << hitPairVector.size() << ", num free: " << nFreePoints << std::endl;
+
+    return;
+}
     
-    // Finaly done, now output everything to art
-    evt.put(std::move(artPCAxisVector));
-    evt.put(std::move(artPFParticleVector));
-    evt.put(std::move(artClusterVector));
-    evt.put(std::move(artSpacePointVector));
-    evt.put(std::move(artSeedVector));
-    evt.put(std::move(artEdgeVector));
-    evt.put(std::move(artPFPartAxisAssociations));
-    evt.put(std::move(artPFPartClusAssociations));
-    evt.put(std::move(artClusterAssociations));
-    evt.put(std::move(artPFPartSPAssociations));
-    evt.put(std::move(artPFPartSeedAssociations));
-    evt.put(std::move(artPFPartEdgeAssociations));
-    evt.put(std::move(artSeedHitAssociations));
-    evt.put(std::move(artSPHitAssociations));
-    evt.put(std::move(artEdgeSPAssociations));
+size_t Cluster3D::countUltimateDaughters(reco::ClusterParameters& clusterParameters) const
+{
+    size_t localCount(0);
+    
+    if (!clusterParameters.daughterList().empty())
+    {
+        for(auto& clusterParams : clusterParameters.daughterList())
+            localCount += countUltimateDaughters(clusterParams);
+    }
+    else localCount++;
+    
+    return localCount;
+}
+
+size_t Cluster3D::FindAndStoreDaughters(ArtOutputHandler&        output,
+                                        reco::ClusterParameters& clusterParameters,
+                                        size_t                   pfParticleParent,
+                                        IdxToPCAMap&             idxToPCAMap,
+                                        RecobHitToPtrMap&        hitToPtrMap,
+                                        Hit3DToSPPtrMap&         hit3DToSPPtrMap) const
+{
+    // This is a recursive routine, we keep calling ourself as long as the daughter list is non empty
+    if (!clusterParameters.daughterList().empty())
+    {
+        for(auto& clusterParams : clusterParameters.daughterList())
+            FindAndStoreDaughters(output, clusterParams, pfParticleParent, idxToPCAMap, hitToPtrMap, hit3DToSPPtrMap);
+    }
+    // Otherwise we want to store the information
+    else
+    {
+        size_t daughterIdx = ConvertToArtOutput(output, clusterParameters, pfParticleParent, hitToPtrMap, hit3DToSPPtrMap);
+        
+        idxToPCAMap[daughterIdx] = &clusterParameters.getFullPCA();
+    }
+        
+    return idxToPCAMap.size();
+}
+
+size_t Cluster3D::ConvertToArtOutput(ArtOutputHandler&        output,
+                                     reco::ClusterParameters& clusterParameters,
+                                     size_t                   pfParticleParent,
+                                     RecobHitToPtrMap&        hitToPtrMap,
+                                     Hit3DToSPPtrMap&         hit3DToSPPtrMap) const
+{
+    
+    // prepare the algorithm to compute the cluster characteristics;
+    // we use the "standard" one here, except that we override selected items
+    // (so, thanks to metaprogramming, we finally have wrappers of wrappers);
+    // configuration would happen here, but we are using the default
+    // configuration for that algorithm
+    using OverriddenClusterParamsAlg_t = cluster::OverriddenClusterParamsAlg<cluster::StandardClusterParamsAlg>;
+    
+    cluster::ClusterParamsImportWrapper<OverriddenClusterParamsAlg_t> ClusterParamAlgo;
+    
+    // It should be straightforward at this point to transfer information from our vector of clusters
+    // to the larsoft objects... of course we still have some work to do first, in particular to
+    // find the candidate seeds and their seed hits
+    
+    // We keep track of 2 PCA axes, the first is the "full" PCA run over all the 3D hits in the
+    // candidate cluster. The second will be that derived from just using the "skeleton" hits.
+    // Make a copy of the full PCA to keep that, then get a reference for the skeleton PCA
+    reco::PrincipalComponents& fullPCA     = clusterParameters.getFullPCA();
+    reco::PrincipalComponents& skeletonPCA = clusterParameters.getSkeletonPCA();
+    
+    // As tracks become more parallel to the wire plane the number of "ambiguous" 3D hits can increase
+    // rapidly. Now that we have more information we can go back through these hits and do a better job
+    // selecting "the right ones". Here we call the "medial skeleton" algorithm which uses a modification
+    // of a standard medial skeleton procedure to get the 3D hits we want
+    // But note that even this is hopeless in the worst case and, in fact, it can be a time waster
+    // So bypass when you recognize that condition
+    /*
+     if (!aParallelHitsCluster(fullPCA))
+     {
+     int nSkeletonPoints = m_skeletonAlg.FindMedialSkeleton(clusterParameters.getHitPairListPtr());
+     
+     // If enough skeleton points then rerun pca with only those
+     if (nSkeletonPoints > 10)
+     {
+     // Now rerun the principal components axis on just those points
+     m_pcaAlg.PCAAnalysis_3D(clusterParameters.getHitPairListPtr(), skeletonPCA, true);
+     
+     // If there was a failure (can that happen?) then restore the full PCA
+     if (!skeletonPCA.getSvdOK()) skeletonPCA = fullPCA;
+     }
+     
+     // Here we can try to handle a specific case. It can happen that two tracks (think CR muons here) pass so
+     // close together at some point to get merged into one cluster. Now that we have skeletonized the hits and
+     // have run the PCA on the skeleton points we can try to divide these two tracks. The signature will be that
+     // their are a large number of total hits, that the PCA will have a large spread in two dimensions. The
+     // spread in the third dimension will be an indicator of the actual separation between the two tracks
+     // which we might try to exploit in the actual algorithm.
+     // hardwire for now to see what is going on...
+     if (skeletonPCA.getNumHitsUsed() > 1000 && skeletonPCA.getEigenValues()[1] > 100. && fabs(skeletonPCA.getEigenVectors()[2][0]) < m_parallelHitsCosAng)
+     {
+     mf::LogDebug("Cluster3D") << "--> Detected crossed axes!! Total # hits: " << fullPCA.getNumHitsUsed() <<
+     "\n    Skeleton PCA # hits: " << skeletonPCA.getNumHitsUsed() << ", eigenValues: " <<
+     skeletonPCA.getEigenValues()[0] << ", " <<skeletonPCA.getEigenValues()[1] << ", " <<skeletonPCA.getEigenValues()[2] << std::endl;
+     
+     splitClustersWithHough(clusterParameters, clusterParametersList);
+     }
+     }
+     */
+    size_t clusterStart = output.artClusterVector->size();
+    
+    // Start loop over views to build out the hit lists and the 2D cluster objects
+    for(reco::PlaneToClusterParamsMap::const_iterator planeItr = clusterParameters.getClusterParams().begin(); planeItr != clusterParameters.getClusterParams().end(); planeItr++)
+    {
+        const reco::RecobClusterParameters& clusParams = planeItr->second;
+        
+        // Protect against a missing view
+        if (clusParams.m_view == geo::kUnknown) continue;
+        
+        // We love looping. In this case, our list of hits is comprised of "ClusterHits" and we need to get a RecobHitVector instead...
+        RecobHitVector recobHits;
+        
+        for(reco::ClusterHit2DVec::const_iterator hitItr = clusParams.m_hitVector.begin(); hitItr != clusParams.m_hitVector.end(); hitItr++)
+        {
+            art::Ptr<recob::Hit> hitPtr = hitToPtrMap[&(*hitItr)->getHit()];
+            recobHits.push_back(hitPtr);
+        }
+        
+        // And sorting! Sorting is good for the mind, soul and body
+        // ooopsss... don't do this else event display will look funky
+        //                std::sort(recobHits.begin(), recobHits.end());
+        
+        // Get the tdc/wire slope... from the unit vector...
+        double startWire(clusParams.m_startWire);
+        double endWire(clusParams.m_endWire);
+        double startTime(clusParams.m_startTime);
+        double endTime(clusParams.m_endTime);
+        
+        // plane ID is not a part of clusParams... get the one from the first hit
+        geo::PlaneID plane; // invalid by default
+        if (!recobHits.empty())
+            plane = recobHits.front()->WireID().planeID();
+        
+        // feed the algorithm with all the cluster hits
+        ClusterParamAlgo.ImportHits(recobHits);
+        
+        // create the recob::Cluster directly in the vector
+        cluster::ClusterCreator artCluster(
+                                           ClusterParamAlgo,                     // algo
+                                           startWire,                            // start_wire
+                                           0.,                                   // sigma_start_wire
+                                           startTime,                            // start_tick
+                                           clusParams.m_sigmaStartTime,          // sigma_start_tick
+                                           endWire,                              // end_wire
+                                           0.,                                   // sigma_end_wire,
+                                           endTime,                              // end_tick
+                                           clusParams.m_sigmaEndTime,            // sigma_end_tick
+                                           output.artClusterVector->size(),      // ID
+                                           clusParams.m_view,                    // view
+                                           plane,                                // plane
+                                           recob::Cluster::Sentry                // sentry
+                                           );
+        
+        output.artClusterVector->emplace_back(artCluster.move());
+        
+        output.makeClusterHitAssns(recobHits);
+    }
+    
+    // Last, let's try to get seeds for tracking..
+    // Keep track of how many we have so far
+    size_t numSeedsStart = output.artSeedVector->size();
+    
+    // Call the magical algorith to do the dirty work
+    //            findTrackSeeds(evt, clusterParameters, hitToPtrMap, *artSeedVector, *artSeedHitAssociations);
+
+    // Deal with converting the Hit Pairs to art
+    // Recover the hit pairs and start looping! Love to loop!
+    reco::HitPairListPtr& clusHitPairVector = clusterParameters.getHitPairListPtr();
+    //            reco::HitPairListPtr& clusHitPairVector = clusterParameters.getBestHitPairListPtr();
+    
+    // Keep track of current start for space points
+    int spacePointStart(output.artSpacePointVector->size());
+    
+    // Copy these hits to the vector to be stored with the event
+    for (auto& hitPair : clusHitPairVector)
+    {
+        // Don't make space point if this hit was "rejected"
+        if (hitPair->bitsAreSet(reco::ClusterHit3D::REJECTEDHIT)) continue;
+        
+        double chisq = hitPair->getHitChiSquare();    // secret handshake...
+        
+//        if      ( hitPair->bitsAreSet(reco::ClusterHit3D::SKELETONHIT) && !hitPair->bitsAreSet(reco::ClusterHit3D::EDGEHIT)) chisq = -1.;  // pure skeleton point
+//        else if (!hitPair->bitsAreSet(reco::ClusterHit3D::SKELETONHIT) &&  hitPair->bitsAreSet(reco::ClusterHit3D::EDGEHIT)) chisq = -2.;  // pure edge point
+//        else if ( hitPair->bitsAreSet(reco::ClusterHit3D::SKELETONHIT) &&  hitPair->bitsAreSet(reco::ClusterHit3D::EDGEHIT)) chisq = -3.;  // skeleton and edge point
+//
+//        if      (hitPair->bitsAreSet(reco::ClusterHit3D::SEEDHIT)                                                          ) chisq = -4.;  // Seed point
+//
+//        if ((hitPair->getStatusBits() & 0x7) != 0x7) chisq = -10.;
+        
+        // Mark this hit pair as in use
+        hitPair->setStatusBit(reco::ClusterHit3D::MADESPACEPOINT);
+
+        // Create and store the space point
+        size_t spacePointID    = output.artSpacePointVector->size();
+        double spacePointPos[] = {hitPair->getPosition()[0],hitPair->getPosition()[1],hitPair->getPosition()[2]};
+        double spacePointErr[] = {m_detector->GetXTicksCoefficient() * hitPair->getSigmaPeakTime(), 0., 0., 0.15, 0., 0.15};
+        output.artSpacePointVector->push_back(recob::SpacePoint(spacePointPos, spacePointErr, chisq, output.artSpacePointVector->size()));
+        
+        // Update mapping
+        hit3DToSPPtrMap[hitPair] = spacePointID;
+        
+        // space point hits associations
+        RecobHitVector recobHits;
+        
+        for(const auto& hit : hitPair->getHits())
+        {
+            if (!hit) continue;
+            art::Ptr<recob::Hit> hitPtr = hitToPtrMap[&hit->getHit()];
+            recobHits.push_back(hitPtr);
+        }
+        
+        if (!recobHits.empty()) output.makeSpacePointHitAssns(recobHits);
+    }
+
+    // Build the edges now
+    size_t edgeStart(output.artEdgeVector->size());
+    
+    for(const auto& edge : clusterParameters.getConvexHull().getConvexHullEdgeList())
+        output.artEdgeVector->emplace_back(std::get<2>(edge), hit3DToSPPtrMap[std::get<0>(edge)], hit3DToSPPtrMap[std::get<1>(edge)], output.artEdgeVector->size());
+    
+    // Empty daughter vector for now
+    std::vector<size_t> nullVector;
+    size_t              pfParticleIdx(output.artPFParticleVector->size());
+    
+    recob::PFParticle pfParticle(13, pfParticleIdx, pfParticleParent, nullVector);
+    output.artPFParticleVector->push_back(pfParticle);
+    
+    // Look at making the PCAxis and associations - for both the skeleton (the first) and the full
+    // First need some float to double conversion containers
+    recob::PCAxis::EigenVectors eigenVecs;
+    double                      eigenVals[]   = {0.,0.,0.};
+    double                      avePosition[] = {0.,0.,0.};
+    
+    eigenVecs.resize(3);
+    
+    for(size_t outerIdx = 0; outerIdx < 3; outerIdx++)
+    {
+        avePosition[outerIdx] = skeletonPCA.getAvePosition()[outerIdx];
+        eigenVals[outerIdx]   = skeletonPCA.getEigenValues()[outerIdx];
+        
+        eigenVecs[outerIdx].resize(3);
+        
+        for(size_t innerIdx = 0; innerIdx < 3; innerIdx++) eigenVecs[outerIdx][innerIdx] = skeletonPCA.getEigenVectors()[outerIdx][innerIdx];
+    }
+    
+    
+    recob::PCAxis skelPcAxis(skeletonPCA.getSvdOK(),
+                             skeletonPCA.getNumHitsUsed(),
+                             eigenVals,                      //skeletonPCA.getEigenValues(),
+                             eigenVecs,                      //skeletonPCA.getEigenVectors(),
+                             avePosition,                    //skeletonPCA.getAvePosition(),
+                             skeletonPCA.getAveHitDoca(),
+                             output.artPCAxisVector->size());
+    
+    output.artPCAxisVector->push_back(skelPcAxis);
+    
+    for(size_t outerIdx = 0; outerIdx < 3; outerIdx++)
+    {
+        avePosition[outerIdx] = fullPCA.getAvePosition()[outerIdx];
+        eigenVals[outerIdx]   = fullPCA.getEigenValues()[outerIdx];
+        
+        for(size_t innerIdx = 0; innerIdx < 3; innerIdx++) eigenVecs[outerIdx][innerIdx] = fullPCA.getEigenVectors()[outerIdx][innerIdx];
+    }
+    
+    recob::PCAxis fullPcAxis(fullPCA.getSvdOK(),
+                             fullPCA.getNumHitsUsed(),
+                             eigenVals,                      //fullPCA.getEigenValues(),
+                             eigenVecs,                      //fullPCA.getEigenVectors(),
+                             avePosition,                    //fullPCA.getAvePosition(),
+                             fullPCA.getAveHitDoca(),
+                             output.artPCAxisVector->size());
+    
+    output.artPCAxisVector->push_back(fullPcAxis);
+    
+    // Create associations to the PFParticle
+    output.makePFPartPCAAssns();
+    output.makePFPartSeedAssns(numSeedsStart);
+    output.makePFPartClusterAssns(clusterStart);
+    output.makePFPartSpacePointAssns(spacePointStart);
+    output.makePFPartEdgeAssns(edgeStart);
+
+    return pfParticleIdx;
+}
+    
+void Cluster3D::MakeAndSaveSpacePoints(ArtOutputHandler&     output,
+                                       reco::HitPairListPtr& clusHitPairVector,
+                                       RecobHitToPtrMap&     hitToPtrMap,
+                                       Hit3DToSPPtrMap&      hit3DToSPPtrMap,
+                                       int                   spacePointStart) const
+{
+    // Right now error matrix is uniform...
+    double spError[] = {1., 0., 1., 0., 0., 1.};
+    
+    // Copy these hits to the vector to be stored with the event
+    for (auto& hitPair : clusHitPairVector)
+    {
+        // Skip those space points that have already been created
+        if (hit3DToSPPtrMap.find(hitPair) != hit3DToSPPtrMap.end()) continue;
+        
+        // Don't make space point if this hit was "rejected"
+        if (hitPair->bitsAreSet(reco::ClusterHit3D::REJECTEDHIT)) continue;
+        
+        double chisq = hitPair->getHitChiSquare();    // secret handshake...
+        
+//        if      ( hitPair->bitsAreSet(reco::ClusterHit3D::SKELETONHIT) && !hitPair->bitsAreSet(reco::ClusterHit3D::EDGEHIT)) chisq = -1.;  // pure skeleton point
+//        else if (!hitPair->bitsAreSet(reco::ClusterHit3D::SKELETONHIT) &&  hitPair->bitsAreSet(reco::ClusterHit3D::EDGEHIT)) chisq = -2.;  // pure edge point
+//        else if ( hitPair->bitsAreSet(reco::ClusterHit3D::SKELETONHIT) &&  hitPair->bitsAreSet(reco::ClusterHit3D::EDGEHIT)) chisq = -3.;  // skeleton and edge point
+        
+//        if      (hitPair->bitsAreSet(reco::ClusterHit3D::SEEDHIT)                                                          ) chisq = -4.;  // Seed point
+        
+//        if ((hitPair->getStatusBits() & 0x7) != 0x7) chisq = -10.;
+        
+        // Mark this hit pair as in use
+        hitPair->setStatusBit(reco::ClusterHit3D::MADESPACEPOINT);
+        
+        // Create and store the space point
+        size_t spacePointID    = output.artSpacePointVector->size();
+        double spacePointPos[] = {hitPair->getPosition()[0],hitPair->getPosition()[1],hitPair->getPosition()[2]};
+        output.artSpacePointVector->push_back(recob::SpacePoint(spacePointPos, spError, chisq, output.artSpacePointVector->size()));
+        
+        // Update mapping
+        hit3DToSPPtrMap[hitPair] = spacePointID;
+        
+        // space point hits associations
+        RecobHitVector recobHits;
+        
+        for(const auto& hit : hitPair->getHits())
+        {
+            if (!hit) continue;
+            art::Ptr<recob::Hit> hitPtr = hitToPtrMap[&hit->getHit()];
+            recobHits.push_back(hitPtr);
+        }
+        
+        if (!recobHits.empty()) output.makeSpacePointHitAssns(recobHits);
+    }
+    
+    output.makePFPartSpacePointAssns(spacePointStart);
+
+    return;
+}
+    
+void Cluster3D::MakeAndSaveKinkPoints(ArtOutputHandler& output, reco::ConvexHullKinkTupleList& kinkTupleVec) const
+{
+    // Right now error matrix is uniform...
+    double spError[] = {1., 0., 1., 0., 0., 1.};
+    
+    // Copy these hits to the vector to be stored with the event
+    for (auto& kinkTuple : kinkTupleVec)
+    {
+        const reco::ClusterHit3D* hit = std::get<2>(std::get<0>(kinkTuple));
+        
+        double chisq = hit->getHitChiSquare();    // secret handshake...
+        
+        // Create and store the space point
+        double spacePointPos[] = {hit->getPosition()[0],hit->getPosition()[1],hit->getPosition()[2]};
+        
+        output.artExtremePointVector->push_back(recob::SpacePoint(spacePointPos, spError, chisq, output.artExtremePointVector->size()));
+    }
+    
+    return;
+}
+
+void Cluster3D::MakeAndSaveVertexPoints(ArtOutputHandler&     output,
+                                        dcel2d::VertexList&   vertexList,
+                                        dcel2d::HalfEdgeList& halfEdgeList) const
+{
+    // We actually do two things here:
+    // 1) Create space points to represent the vertex locations of the voronoi diagram
+    // 2) Create the edges that link the space points together
+    
+    // Set up the space point creation
+    // Right now error matrix is uniform...
+    double spError[] = {1., 0., 1., 0., 0., 1.};
+    double chisq     = 1.;
+    
+    // Keep track of the vertex to space point association
+    std::map<const dcel2d::Vertex*,size_t> vertexToSpacePointMap;
+    
+    // Copy these hits to the vector to be stored with the event
+    for (auto& vertex : vertexList)
+    {
+        const dcel2d::Coords& coords = vertex.getCoords();
+        
+        // Create and store the space point
+        double spacePointPos[] = {coords[0], coords[1], coords[2]};
+        
+        vertexToSpacePointMap[&vertex] = output.artVertexPointVector->size();
+
+        output.artVertexPointVector->emplace_back(spacePointPos, spError, chisq, output.artVertexPointVector->size());
+    }
+    
+    // Try to avoid double counting
+    std::set<const dcel2d::HalfEdge*> halfEdgeSet;
+
+    // Build the edges now
+    for(const auto& halfEdge : halfEdgeList)
+    {
+        // Recover twin
+        const dcel2d::HalfEdge* twin = halfEdge.getTwinHalfEdge();
+        
+        // It can happen that we have no twin... and also check that we've not been here before
+        if (twin && halfEdgeSet.find(twin) == halfEdgeSet.end())
+        {
+            // Recover the vertices
+            const dcel2d::Vertex* fromVertex = twin->getTargetVertex();
+            const dcel2d::Vertex* toVertex   = halfEdge.getTargetVertex();
+            
+            // It can happen for the open edges that there is no target vertex
+            if (!toVertex || !fromVertex) continue;
+            
+            if (vertexToSpacePointMap.find(fromVertex) == vertexToSpacePointMap.end() ||
+                vertexToSpacePointMap.find(toVertex)   == vertexToSpacePointMap.end()) continue;
+            
+            // Need the distance between vertices
+            Eigen::Vector3f distVec = toVertex->getCoords() - fromVertex->getCoords();
+            
+            output.artVertexEdgeVector->emplace_back(distVec.norm(), vertexToSpacePointMap.at(fromVertex), vertexToSpacePointMap.at(toVertex), output.artEdgeVector->size());
+            
+            halfEdgeSet.insert(&halfEdge);
+        }
+    }
+
+    return;
+}
+    
+void Cluster3D::MakeAndSavePCAPoints(ArtOutputHandler&                output,
+                                     const reco::PrincipalComponents& fullPCA,
+                                     IdxToPCAMap&                     idxToPCAMap) const
+{
+    // We actually do two things here:
+    // 1) Create space points from the centroids of the PCA for each cluster
+    // 2) Create the edges that link the space points together
+    
+    // The first task is to put the list of PCA's into some semblance of order... they may be
+    // preordered by likely they are piecewise ordered so fix that here
+    
+    // We'll need the current PCA axis to determine doca and arclen
+    Eigen::Vector3f avePosition(fullPCA.getAvePosition()[0], fullPCA.getAvePosition()[1], fullPCA.getAvePosition()[2]);
+    Eigen::Vector3f axisDirVec(fullPCA.getEigenVectors()[0][0], fullPCA.getEigenVectors()[0][1], fullPCA.getEigenVectors()[0][2]);
+    
+    using DocaToPCAPair = std::pair<float, const reco::PrincipalComponents*>;
+    using DocaToPCAVec  = std::vector<DocaToPCAPair>;
+    
+    DocaToPCAVec docaToPCAVec;
+    
+    // Outer loop over views
+    for (const auto& idxToPCA : idxToPCAMap)
+    {
+        const reco::PrincipalComponents* pca = idxToPCA.second;
+        
+        // Now we need to calculate the doca and poca...
+        // Start by getting this hits position
+        Eigen::Vector3f pcaPos(pca->getAvePosition()[0],pca->getAvePosition()[1],pca->getAvePosition()[2]);
+        
+        // Form a TVector from this to the cluster average position
+        Eigen::Vector3f pcaToAveVec = pcaPos - avePosition;
+        
+        // With this we can get the arclength to the doca point
+        float arclenToPoca = pcaToAveVec.dot(axisDirVec);
+        
+        docaToPCAVec.emplace_back(DocaToPCAPair(arclenToPoca,pca));
+    }
+
+    std::sort(docaToPCAVec.begin(),docaToPCAVec.end(),[](const auto& left, const auto& right){return left.first < right.first;});
+    
+    // Set up the space point creation
+    // Right now error matrix is uniform...
+    double spError[] = {1., 0., 1., 0., 0., 1.};
+    double chisq     = 1.;
+    
+    const reco::PrincipalComponents* lastPCA(NULL);
+    
+    // Set up to loop through the clusters
+    for(const auto& docaToPCAPair : docaToPCAVec)
+    {
+        // Recover the PCA for this cluster
+        const reco::PrincipalComponents* curPCA = docaToPCAPair.second;
+        
+        if(lastPCA)
+        {
+            double lastPointPos[] = {lastPCA->getAvePosition()[0],lastPCA->getAvePosition()[1],lastPCA->getAvePosition()[2]};
+            size_t lastPointBin   = output.artVertexPointVector->size();
+            double curPointPos[]  = {curPCA->getAvePosition()[0],curPCA->getAvePosition()[1],curPCA->getAvePosition()[2]};
+            size_t curPointBin    = lastPointBin + 1;
+        
+            output.artVertexPointVector->emplace_back(lastPointPos, spError, chisq, lastPointBin);
+            output.artVertexPointVector->emplace_back(curPointPos,  spError, chisq, curPointBin);
+        
+            Eigen::Vector3f distVec(curPointPos[0]-lastPointPos[0],curPointPos[1]-lastPointPos[1],curPointPos[2]-lastPointPos[2]);
+        
+            output.artVertexEdgeVector->emplace_back(distVec.norm(), lastPointBin, curPointBin, output.artEdgeVector->size());
+        }
+        
+        lastPCA = curPCA;
+    }
     
     return;
 }

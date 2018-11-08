@@ -14,10 +14,12 @@
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/RecoObjects/Cluster3D.h"
 
-// Root
-#include "TVector3.h"
+// Algorithm includes
+#include "larreco/RecoAlg/Cluster3DAlgs/Cluster3D.h"
+
+// Eigen
+#include <Eigen/Dense>
 
 // std includes
 #include <string>
@@ -57,7 +59,7 @@ public:
     /**
      *  @brief Run the Principal Components Analysis
      */
-    void PCAAnalysis(const reco::HitPairListPtr& hitPairVector, reco::PrincipalComponents& pca, double doca3DScl = 3.)                    const;
+    void PCAAnalysis(const reco::HitPairListPtr& hitPairVector, reco::PrincipalComponents& pca, float doca3DScl = 3.)                    const;
     
     void PCAAnalysis_3D(const reco::HitPairListPtr& hitPairList, reco::PrincipalComponents& pca, bool skeletonOnly = false)               const;
     
@@ -67,9 +69,9 @@ public:
     
     void PCAAnalysis_calc2DDocas(const reco::Hit2DListPtr& hit2DVector, const reco::PrincipalComponents& pca)                             const;
     
-    int  PCAAnalysis_reject2DOutliers(const reco::HitPairListPtr& hitPairVector, reco::PrincipalComponents& pca, double aveHitDoca)       const;
+    int  PCAAnalysis_reject2DOutliers(const reco::HitPairListPtr& hitPairVector, reco::PrincipalComponents& pca, float aveHitDoca)       const;
     
-    int  PCAAnalysis_reject3DOutliers(const reco::HitPairListPtr& hitPairVector, const reco::PrincipalComponents& pca, double aveHitDoca) const;
+    int  PCAAnalysis_reject3DOutliers(const reco::HitPairListPtr& hitPairVector, const reco::PrincipalComponents& pca, float aveHitDoca) const;
     
     
 
@@ -77,17 +79,17 @@ private:
     /**
      *  @brief This is used to get the poca, doca and arclen along cluster axis to 2D hit
      */
-    void getHit2DPocaToAxis(const TVector3&           axisPos,
-                            const TVector3&           axisDir,
+    void getHit2DPocaToAxis(const Eigen::Vector3f&    axisPos,
+                            const Eigen::Vector3f&    axisDir,
                             const reco::ClusterHit2D* hit2D,
-                            TVector3&                 poca,
-                            double&                   arcLenAxis,
-                            double&                   arcLenWire,
-                            double&                   doca);
+                            Eigen::Vector3f&          poca,
+                            float&                    arcLenAxis,
+                            float&                    arcLenWire,
+                            float&                    doca);
     
-    double                                 m_parallel;  ///< means lines are parallel
+    float                                 m_parallel;  ///< means lines are parallel
     
-    geo::Geometry*                         m_geometry;  // pointer to the Geometry service
+    geo::Geometry*                        m_geometry;  // pointer to the Geometry service
     const detinfo::DetectorProperties*    m_detector;  // Pointer to the detector properties
 };
 

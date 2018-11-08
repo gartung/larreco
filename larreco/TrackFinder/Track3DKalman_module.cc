@@ -55,7 +55,6 @@
 // GENFIT includes
 #include "larreco/Genfit/GFException.h"
 #include "larreco/Genfit/GFAbsTrackRep.h"
-#include "larreco/Genfit/GeaneTrackRep2.h"
 #include "larreco/Genfit/RKTrackRep.h"
 #include "larreco/Genfit/GFConstField.h"
 #include "larreco/Genfit/GFFieldManager.h"
@@ -100,7 +99,7 @@ namespace trkf {
     std::string     fG4ModuleLabel;// label for input MC single particle generator
     bool fGenfPRINT;
       
-    TFile *fileGENFIT;
+  //  TFile *fileGENFIT;
     TTree *tree;
 
     TMatrixT<Double_t> *stMCT;

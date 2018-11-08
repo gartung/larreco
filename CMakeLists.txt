@@ -13,8 +13,8 @@
 # ======================================================================
 
 
-# use cmake 2.8 or later
-cmake_minimum_required (VERSION 2.8)
+# use cmake 3.10 or later
+cmake_minimum_required (VERSION 3.10)
 
 project(larreco)
 
@@ -24,7 +24,7 @@ IF (NOT CETBUILDTOOLS_VERSION)
     MESSAGE (FATAL_ERROR "ERROR: setup cetbuildtools to get the cmake modules")
 ENDIF()
 
-set(CMAKE_MODULE_PATH $ENV{CANVAS_DIR}/Modules
+set(CMAKE_MODULE_PATH $ENV{CANVAS_ROOT_IO_DIR}/Modules
 		      $ENV{CETBUILDTOOLS_DIR}/Modules
 		      ${CMAKE_MODULE_PATH})
 
@@ -44,6 +44,7 @@ cet_report_compiler_flags()
 find_ups_product( larcoreobj )
 find_ups_product( larcore v1_00_00 )
 find_ups_product( lardataobj )
+find_ups_product( lardataalg )
 find_ups_product( lardata v1_00_00 )
 find_ups_product( larevt v1_00_00 )
 find_ups_product( larsim v1_00_00 )
@@ -59,6 +60,21 @@ find_ups_product( eigen )
 include(ArtDictionary)
 include(ArtMake)
 include(BuildPlugins)
+
+# not ready for c2 yet
+if( DEFINED ENV{TENSORFLOW_DIR} )
+  # find tensorflow library
+  find_ups_product( protobuf )
+  find_ups_product( tensorflow )
+  cet_find_library(TENSORFLOW NAMES tensorflow-core PATHS ENV TENSORFLOW_LIB NO_DEFAULT_PATH )
+  cet_find_library(PROTOBUF NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
+  # This is a hack for a broken tensorflow link, which 
+  # requires -lrt for glibc earlier than 2.17 (i.e. SLF6)
+  # We take advantage of OSTYPE defined by cetbuildtools
+  if ( "${OSTYPE}" MATCHES "slf6" )
+    set(FOR_TENSORFLOW "-lrt")
+  endif ()
+endif ()
 
 # source
 add_subdirectory(larreco)

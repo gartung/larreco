@@ -117,7 +117,10 @@ namespace cluster {
     
     /// Returns (and loses) the collection of reconstructed hits
     std::vector<recob::Hit>&& YieldHits() { return std::move(fHits); }
-    
+
+    /// Returns the collection of reconstructed hits
+    std::vector<recob::Hit>   GetHits() { return fHits; }
+
     /// Returns a constant reference to the clusters found
     std::vector<ClusterStore> const& GetClusters() const { return tcl; }
     
@@ -160,7 +163,7 @@ namespace cluster {
     std::vector<bool> fFindVertices;    ///< run vertexing code after clustering?
     std::vector<bool> fLACrawl;    ///< Crawl Large Angle clusters on pass?
 		bool fFindHammerClusters;					 ///< look for hammer type clusters
-    bool fFindVLAClusters;					 ///< look for Very Large Angle clusters
+  //  bool fFindVLAClusters;					 ///< look for Very Large Angle clusters
     bool fRefineVertexClusters;
 		
     std::vector<float> fMinAmp;									///< expected minimum signal in each wire plane
@@ -169,7 +172,7 @@ namespace cluster {
     bool fChkClusterDS;
     bool fVtxClusterSplit;
     bool fFindStarVertices;
-    bool fFindTrajVertices;
+  //  bool fFindTrajVertices;
 
     // global cuts and parameters 
     float fHitErrFac;   ///< hit time error = fHitErrFac * hit RMS used for cluster fit
@@ -201,7 +204,7 @@ namespace cluster {
     float clparerr[2];  ///< cluster parameter errors
     float clChisq;     ///< chisq of the current fit
     float fAveChg;  ///< average charge at leading edge of cluster
-    float fChgRMS;  ///< average charge RMS at leading edge of cluster
+  //  float fChgRMS;  ///< average charge RMS at leading edge of cluster
     float fChgSlp;  ///< slope of the  charge vs wire
     float fAveHitWidth; ///< average width (EndTick - StartTick) of hits
     

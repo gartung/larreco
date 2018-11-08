@@ -27,6 +27,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "larcorealg/Geometry/WireGeo.h"
+#include "larcorealg/CoreUtils/NumericUtils.h" // util::absDiff()
 
 #include <cmath>
 #include <iostream>
@@ -184,7 +185,7 @@ struct AcceptFindNeighbors {
     // The getSimilarity[2] wirestobridge calculation is asymmetric,
     // but is plugged into the cache symmetrically.I am assuming that
     // this is OK because the wires that are hit cannot be bad.
-    unsigned int wirestobridge = abs(fBadWireSum[wire1] - fBadWireSum[wire2]);
+    unsigned int wirestobridge = util::absDiff(fBadWireSum[wire1], fBadWireSum[wire2]);
     double cmtobridge = wirestobridge*fWireDist;
 
     // getSimilarity()
@@ -311,7 +312,7 @@ void cluster::DBScanAlg::InitScan(const std::vector< art::Ptr<recob::Hit> >& all
   art::ServiceHandle<geo::Geometry> geom;
 
   for(size_t p = 0; p < geom->Nplanes(); ++p)
-    fWirePitch.push_back(geom->WirePitch(0,1,p));
+    fWirePitch.push_back(geom->WirePitch(p));
 
   
   // Collect the bad wire list into a useful form

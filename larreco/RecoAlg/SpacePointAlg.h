@@ -45,7 +45,11 @@
 /// producing space points with more hits than the number of planes).
 ///
 /// There should eventually be a better way to specify time offsets.
-///
+/// 
+/// @bug This algorithm makes specific assumptions about geometry and views,
+///      and it is *not portable*.
+/// 
+/// 
 ////////////////////////////////////////////////////////////////////////
 
 #ifndef SPACEPOINTALG_H
@@ -58,7 +62,7 @@
 
 class TH1F;
 namespace sim {
-  class IDE;
+  struct IDE;
 }
 namespace trkf{
   class KHitTrack;
@@ -162,6 +166,9 @@ namespace trkf {
     bool fFilter;           ///< Filter flag.
     bool fMerge;            ///< Merge flag.
     bool fPreferColl;       ///< Sort by collection wire.
+    double fTickOffsetU;    ///< Tick offset for plane U.
+    double fTickOffsetV;    ///< Tick offset for plane V.
+    double fTickOffsetW;    ///< Tick offset for plane W.
 
     // Temporary variables.
 

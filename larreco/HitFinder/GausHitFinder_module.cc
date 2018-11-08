@@ -76,20 +76,18 @@ public:
     void produce(art::Event& evt) override;
     void beginJob() override;
     void endJob() override;
-    void reconfigure(fhicl::ParameterSet const& p) override;
+    void reconfigure(fhicl::ParameterSet const& p) ;
 
 private:
   
     void FillOutHitParameterVector(const std::vector<double>& input, std::vector<double>& output);
+   
+    bool                fFilterHits;
     
-    double              fThreshold          = 0.;  // minimum signal size for id'ing a hit
-    double              fMinWidth		    = 0 ;  // hit minimum width
     std::string         fCalDataModuleLabel;
     
     std::string         fAllHitsInstanceName;
 
-    std::vector<double> fMinSigVec;                ///<signal height threshold
-    std::vector<double> fMinWidthVec;              ///<Minimum hit width
     std::vector<int>    fLongMaxHitsVec;           ///<Maximum number hits on a really long pulse train
     std::vector<int>    fLongPulseWidthVec;        ///<Sets width of hits used to describe long pulses
   
@@ -100,12 +98,14 @@ private:
     double	            fChi2NDF;                  ///maximum Chisquared / NDF allowed for a hit to be saved
     
     std::vector<float>  fPulseHeightCuts;
-    std::vector<float>  fPulseWidthCuts;
+    std::vector<float>  fPulseWidthCuts;   
     std::vector<float>  fPulseRatioCuts;
     
-    std::unique_ptr<reco_tool::ICandidateHitFinder> fHitFinderTool;  ///< For finding candidate hits
-    std::unique_ptr<reco_tool::IPeakFitter>         fPeakFitterTool; ///< Perform fit to candidate peaks
-    std::unique_ptr<HitFilterAlg>                   fHitFilterAlg;   ///< algorithm used to filter out noise hits
+    size_t              fEventCount;
+    
+    std::vector<std::unique_ptr<reco_tool::ICandidateHitFinder>> fHitFinderToolVec;  ///< For finding candidate hits
+    std::unique_ptr<reco_tool::IPeakFitter>                      fPeakFitterTool;    ///< Perform fit to candidate peaks
+    std::unique_ptr<HitFilterAlg>                                fHitFilterAlg;      ///< algorithm used to filter out noise hits
   
     TH1F* fFirstChi2;
     TH1F* fChi2;
@@ -163,21 +163,19 @@ void GausHitFinder::reconfigure(fhicl::ParameterSet const& p)
     fCalDataModuleLabel = p.get< std::string  >("CalDataModuleLabel");
   
     fAllHitsInstanceName = p.get< std::string >("AllHitsInstanceName","");
+   
+    fFilterHits         = p.get< bool >("FilterHits",false);
     
-    bool const doHitFiltering = p.get<bool>("FilterHits", false);
-    if (doHitFiltering) {
-      if (fHitFilterAlg) { // create a new algorithm instance
+    if (fFilterHits) {
+      if (fHitFilterAlg) { // reconfigure existing algorithm
         fHitFilterAlg->reconfigure(p.get<fhicl::ParameterSet>("HitFilterAlg"));
       }
-      else { // reconfigure the existing instance
-        fHitFilterAlg = std::make_unique<HitFilterAlg>
-          (p.get<fhicl::ParameterSet>("HitFilterAlg"));
+      else { // create a new algorithm instance
+        fHitFilterAlg = std::make_unique<HitFilterAlg>(p.get<fhicl::ParameterSet>("HitFilterAlg"));
       }
     }
 
-    FillOutHitParameterVector(p.get< std::vector<double> >("MinSig"),         fMinSigVec);
-    FillOutHitParameterVector(p.get< std::vector<double> >("MinWidth"),       fMinWidthVec);
-    FillOutHitParameterVector(p.get< std::vector<double> >("AreaNorms"),      fAreaNormsVec);
+    FillOutHitParameterVector(p.get< std::vector<double> >("AreaNorms"), fAreaNormsVec);
 
     fLongMaxHitsVec    = p.get< std::vector<int>>("LongMaxHits",    std::vector<int>() = {25,25,25});
     fLongPulseWidthVec = p.get< std::vector<int>>("LongPulseWidth", std::vector<int>() = {16,16,16});
@@ -191,8 +189,20 @@ void GausHitFinder::reconfigure(fhicl::ParameterSet const& p)
     fPulseRatioCuts    = p.get< std::vector<float>>("PulseRatioCuts",  std::vector<float>() = {0.35, 0.40, 0.20});
     
     // recover the tool to do the candidate hit finding
-    // Recover the baseline tool
-    fHitFinderTool  = art::make_tool<reco_tool::ICandidateHitFinder>(p.get<fhicl::ParameterSet>("CandidateHits"));
+    // Recover the vector of fhicl parameters for the ROI tools
+    const fhicl::ParameterSet& hitFinderTools = p.get<fhicl::ParameterSet>("HitFinderToolVec");
+    
+    fHitFinderToolVec.resize(hitFinderTools.get_pset_names().size());
+    
+    for(const std::string& hitFinderTool : hitFinderTools.get_pset_names())
+    {
+        const fhicl::ParameterSet& hitFinderToolParamSet = hitFinderTools.get<fhicl::ParameterSet>(hitFinderTool);
+        size_t                     planeIdx              = hitFinderToolParamSet.get<size_t>("Plane");
+        
+        fHitFinderToolVec.at(planeIdx) = art::make_tool<reco_tool::ICandidateHitFinder>(hitFinderToolParamSet);
+    }
+    
+    // Recover the peak fitting tool
     fPeakFitterTool = art::make_tool<reco_tool::IPeakFitter>(p.get<fhicl::ParameterSet>("PeakFitter"));
 
     return;
@@ -248,8 +258,9 @@ void GausHitFinder::produce(art::Event& evt)
     // Handle the filtered hits collection...
     recob::HitCollectionCreator  hcol(*this, evt);
     recob::HitCollectionCreator* filteredHitCol = 0;
-    
-    if (fAllHitsInstanceName != "") filteredHitCol = &hcol;
+   
+    if( fFilterHits ) filteredHitCol = &hcol; 
+//    if (fAllHitsInstanceName != "") filteredHitCol = &hcol;
    
     // ##########################################
     // ### Reading in the Wire List object(s) ###
@@ -310,9 +321,6 @@ void GausHitFinder::produce(art::Event& evt)
         // --    for the right plane.      --
         // ----------------------------------------------------------
         
-        fThreshold = fMinSigVec.at(plane);
-        fMinWidth  = fMinWidthVec.at(plane);
-
         // #################################################
         // ### Set up to loop over ROI's for this wire   ###
         // #################################################
@@ -334,7 +342,6 @@ void GausHitFinder::produce(art::Event& evt)
            
             // ROI start time
             raw::TDCtick_t roiFirstBinTick = range.begin_index();
-            float          roiThreshold(fThreshold);
             
             // ###########################################################
             // ### Scan the waveform and find candidate peaks + merge  ###
@@ -343,8 +350,8 @@ void GausHitFinder::produce(art::Event& evt)
             reco_tool::ICandidateHitFinder::HitCandidateVec      hitCandidateVec;
             reco_tool::ICandidateHitFinder::MergeHitCandidateVec mergedCandidateHitVec;
             
-            fHitFinderTool->findHitCandidates(signal, 0, roiThreshold, hitCandidateVec);
-            fHitFinderTool->MergeHitCandidates(signal, hitCandidateVec, mergedCandidateHitVec);
+            fHitFinderToolVec.at(plane)->findHitCandidates(signal, 0, channel, fEventCount, hitCandidateVec);
+            fHitFinderToolVec.at(plane)->MergeHitCandidates(signal, hitCandidateVec, mergedCandidateHitVec);
             
             // #######################################################
             // ### Lets loop over the pulses we found on this wire ###
@@ -397,25 +404,50 @@ void GausHitFinder::produce(art::Event& evt)
                 // ###   depend on the fhicl parameter fLongPulseWidth ###
                 // ### Also do this if chi^2 is too large              ###
                 // #######################################################
-                if (mergedCands.size() > fMaxMultiHit || chi2PerNDF > fChi2NDF)
-                {                    
-                    peakParamsVec.clear();
-                    nGausForFit = mergedCands.size(); //nHitsThisPulse;
-                    chi2PerNDF  =  chi2PerNDF > fChi2NDF ? chi2PerNDF : -1.;
-
-                    for(auto& candidateHit : mergedCands)
+                if (mergedCands.size() > fMaxMultiHit || nGausForFit * chi2PerNDF > fChi2NDF)
+                {
+                    int longPulseWidth = fLongPulseWidthVec.at(plane);
+                    int nHitsThisPulse = (endT - startT) / longPulseWidth;
+                    
+                    if (nHitsThisPulse > fLongMaxHitsVec.at(plane))
                     {
+                        nHitsThisPulse = fLongMaxHitsVec.at(plane);
+                        longPulseWidth = (endT - startT) / nHitsThisPulse;
+                    }
+                    
+                    if (nHitsThisPulse * longPulseWidth < endT - startT) nHitsThisPulse++;
+                    
+                    int firstTick = startT;
+                    int lastTick  = firstTick + std::min(endT,longPulseWidth);
+                    
+                    peakParamsVec.clear();
+                    nGausForFit = nHitsThisPulse;
+                    NDF         = 1.;
+                    chi2PerNDF  =  chi2PerNDF > fChi2NDF ? chi2PerNDF : -1.;
+                    
+                    for(int hitIdx = 0; hitIdx < nHitsThisPulse; hitIdx++)
+                    {
+                        // This hit parameters
+                        double sumADC    = std::accumulate(signal.begin() + firstTick, signal.begin() + lastTick, 0.);
+                        double peakSigma = (lastTick - firstTick) / 3.;  // Set the width...
+                        double peakAmp   = 0.3989 * sumADC / peakSigma;  // Use gaussian formulation
+                        double peakMean  = (firstTick + lastTick) / 2.;
+                        
                         // Store hit params
                         reco_tool::IPeakFitter::PeakFitParams_t peakParams;
                         
-                        peakParams.peakCenter         = candidateHit.hitCenter;
-                        peakParams.peakCenterError    = 0.1 * candidateHit.hitCenter;
-                        peakParams.peakSigma          = candidateHit.hitSigma;
-                        peakParams.peakSigmaError     = 0.1 * candidateHit.hitSigma;
-                        peakParams.peakAmplitude      = candidateHit.hitHeight;
-                        peakParams.peakAmplitudeError = 0.1 * candidateHit.hitHeight;
+                        peakParams.peakCenter         = peakMean;
+                        peakParams.peakCenterError    = 0.1 * peakMean;
+                        peakParams.peakSigma          = peakSigma;
+                        peakParams.peakSigmaError     = 0.1 * peakSigma;
+                        peakParams.peakAmplitude      = peakAmp;
+                        peakParams.peakAmplitudeError = 0.1 * peakAmp;
                         
                         peakParamsVec.push_back(peakParams);
+                        
+                        // set for next loop
+                        firstTick = lastTick;
+                        lastTick  = std::min(lastTick  + longPulseWidth, endT);
                     }
                 }
 	    
@@ -489,6 +521,13 @@ void GausHitFinder::produce(art::Event& evt)
                 // Should we filter hits?
                 if (filteredHitCol && !filteredHitVec.empty())
                 {
+                    // #######################################################################
+                    // Is all this sorting really necessary?  Would it be faster to just loop 
+                    // through the hits and perform simple cuts on amplitude and width on a 
+                    // hit-by-hit basis, either here in the module (using fPulseHeightCuts and 
+                    // fPulseWidthCuts) or in HitFilterAlg?
+                    // #######################################################################
+                    
                     // Sort in ascending peak height
                     std::sort(filteredHitVec.begin(),filteredHitVec.end(),[](const auto& left, const auto& right){return left.PeakAmplitude() > right.PeakAmplitude();});
                     
@@ -528,12 +567,28 @@ void GausHitFinder::produce(art::Event& evt)
 
 
     //==================================================================================================
-    // End of the event
-   
-    // move the hit collection and the associations into the event
-    if (filteredHitCol) filteredHitCol->put_into(evt);
+    // End of the event -- move the hit collection and the associations into the event
     
-    allHitCol.put_into(evt);
+    if ( filteredHitCol ){
+      
+      // If we filtered hits but no instance name was 
+      // specified for the "all hits" collection, then 
+      // only save the filtered hits to the event
+      if( fAllHitsInstanceName == "" ) {
+        filteredHitCol->put_into(evt);
+
+      // otherwise, save both
+      } else {
+        filteredHitCol->put_into(evt);
+        allHitCol.put_into(evt);
+      }
+
+    } else {
+      allHitCol.put_into(evt);
+    }
+    
+    // Keep track of events processed
+    fEventCount++;
 
 } // End of produce() 
 

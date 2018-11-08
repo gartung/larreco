@@ -26,7 +26,7 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Shower.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTrackerService.h"
 
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
@@ -330,7 +330,7 @@ public:
   MergeEMShower3D & operator = (MergeEMShower3D const &) = delete;
   MergeEMShower3D & operator = (MergeEMShower3D &&) = delete;
 
-	void beginJob();
+	void beginJob() override;
 
 	void produce(art::Event & e) override;
 
@@ -357,18 +357,18 @@ public:
 private:
 
 	TTree* fEvTree;
-	TTree* fClTree;
+//	TTree* fClTree;
 
 	int fVtxIndex;
 
 	int fNParts[2];
 	int fNPMA; int fNConv; int fNTot;
-	int fHasConvPt;
+//	int fHasConvPt;
 	int fWhat, fEvWhat;
 	int fNMerged, fNCleanMerged;
 
 	double fDistvtxmcreco;
-	double fMcMom, fTrkLen, fAdcSum;
+	double fMcMom /*, fTrkLen *//*, fAdcSum */;
 	int fEvNumber;
 
 	TVector3 fPi0vtx;
@@ -722,12 +722,12 @@ std::vector< ems::ShowersCollection > ems::MergeEMShower3D::collectshowers(art::
 
 int ems::MergeEMShower3D::getClusterBestId(const std::vector< art::Ptr<recob::Hit> >& v)
 {
-	art::ServiceHandle< cheat::BackTracker > bt;
+	art::ServiceHandle< cheat::BackTrackerService > bt_serv;
 
 	std::map< int, size_t > ids;
 	for (auto ptr : v)
 	{
-		auto hid = bt->HitToTrackID(ptr);
+		auto hid = bt_serv->HitToTrackIDEs(ptr);
 		if (hid.size()) ids[hid.front().trackID]++;
 	}
 

@@ -40,6 +40,7 @@ extern "C" {
 #include "lardata/ArtDataHelper/TrackUtils.h" // lar::util::TrackPitchInView()
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "larcorealg/Geometry/WireGeo.h"
+#include "larcorealg/CoreUtils/NumericUtils.h" // util::absDiff()
 
 // ROOT includes
 #include <TROOT.h>
@@ -322,16 +323,28 @@ void calo::Calorimetry::produce(art::Event& evt)
 	//not all hits are associated with space points, the method uses neighboring spacepts to interpolate
 	double xyz3d[3];
 	double pitch;
+        bool fBadhit = false;
         if (fmthm.isValid()){
           auto vhit = fmthm.at(trkIter);
           auto vmeta = fmthm.data(trkIter);
           for (size_t ii = 0; ii<vhit.size(); ++ii){
             if (vhit[ii].key() == allHits[hits[ipl][ihit]].key()){
+              if (vmeta[ii]->Index() == std::numeric_limits<int>::max()){
+                fBadhit = true;
+                continue;
+              }
+              if (vmeta[ii]->Index()>=tracklist[trkIter]->NumberTrajectoryPoints()){
+                throw cet::exception("Calorimetry_module.cc") << "Requested track trajectory index "<<vmeta[ii]->Index()<<" exceeds the total number of trajectory points "<<tracklist[trkIter]->NumberTrajectoryPoints()<<" for track index "<<trkIter<<". Something is wrong with the track reconstruction. Please contact tjyang@fnal.gov";
+              }
+              if (!tracklist[trkIter]->HasValidPoint(vmeta[ii]->Index())){
+                fBadhit = true;
+                continue;
+              }
               double angleToVert = geom->WireAngleToVertical(vhit[ii]->View(), vhit[ii]->WireID().TPC, vhit[ii]->WireID().Cryostat) - 0.5*::util::pi<>();
               const TVector3& dir = tracklist[trkIter]->DirectionAtPoint(vmeta[ii]->Index());
               double cosgamma = std::abs(std::sin(angleToVert)*dir.Y() + std::cos(angleToVert)*dir.Z());
               if (cosgamma){
-                pitch = geom->WirePitch(0,1,0)/cosgamma;
+                pitch = geom->WirePitch(0)/cosgamma;
               }
               else{
                 pitch = 0;
@@ -347,6 +360,7 @@ void calo::Calorimetry::produce(art::Event& evt)
         else
           GetPitch(allHits[hits[ipl][ihit]], trkx, trky, trkz, trkw, trkx0, xyz3d, pitch, TickT0);
 
+        if (fBadhit) continue;
 	if (xyz3d[2]<-100) continue; //hit not on track
 	if (pitch<=0) pitch = fTrkPitch;
 	if (!pitch) continue;
@@ -499,7 +513,7 @@ void calo::Calorimetry::produce(art::Event& evt)
 					 << " Wire =" << iw;
 	  unsigned int closestwire = 0;
 	  unsigned int endwire = 0;
-	  int dwire = 100000;
+	  unsigned int dwire = 100000;
 	  double mindis = 100000;
 	  double goodresrange = 0;
 	  //hitCtr = 0;
@@ -523,9 +537,9 @@ void calo::Calorimetry::produce(art::Event& evt)
 	      endwire = allHits[hits[ipl][ihit]]->WireID().Wire;
 	      mindis = dis1;
 	    }
-	    if (std::abs(wire-iw) < dwire){
+	    if (util::absDiff(wire, iw) < dwire){
 	      closestwire = allHits[hits[ipl][ihit]]->WireID().Wire;
-	      dwire = abs(allHits[hits[ipl][ihit]]->WireID().Wire-iw);
+	      dwire = util::absDiff(allHits[hits[ipl][ihit]]->WireID().Wire, iw);
 	      goodresrange = dis1;
 	    }
 	  }
@@ -575,7 +589,7 @@ void calo::Calorimetry::GetPitch(art::Ptr<recob::Hit> hit, std::vector<double> t
   //save the sign of distance
   std::map<size_t, int> sptsignmap;
 
-  double wire_pitch = geom->WirePitch(0,1,0);
+  double wire_pitch = geom->WirePitch(0);
 
   double t0 = hit->PeakTime() - TickT0;
   double x0 = dp->ConvertTicksToX(t0, hit->WireID().Plane, hit->WireID().TPC, hit->WireID().Cryostat);
@@ -713,7 +727,7 @@ void calo::Calorimetry::GetPitch(art::Ptr<recob::Hit> hit, std::vector<double> t
     ky /= tot;
     kz /= tot;
     //get pitch
-    double wirePitch = geom->WirePitch(0,1,hit->WireID().Plane,hit->WireID().TPC,hit->WireID().Cryostat);
+    double wirePitch = geom->WirePitch(hit->WireID().Plane,hit->WireID().TPC,hit->WireID().Cryostat);
     double angleToVert = geom->Plane(hit->WireID().Plane,hit->WireID().TPC,hit->WireID().Cryostat).Wire(0).ThetaZ(false) - 0.5*TMath::Pi();
     double cosgamma = TMath::Abs(TMath::Sin(angleToVert)*ky+TMath::Cos(angleToVert)*kz);
     if (cosgamma>0) pitch = wirePitch/cosgamma;   

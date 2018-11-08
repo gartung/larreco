@@ -17,8 +17,8 @@
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 
 #include "larcorealg/Geometry/GeometryCore.h"
-#include "lardata/DetectorInfo/LArProperties.h"
-#include "lardata/DetectorInfo/DetectorProperties.h"
+#include "lardataalg/DetectorInfo/LArProperties.h"
+#include "lardataalg/DetectorInfo/DetectorProperties.h"
 #include "larcorealg/CoreUtils/ProviderPack.h"
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
@@ -74,7 +74,7 @@ class calo::TrackCalorimetryAlg{
     }
   };
   struct HitPropertySorter{
-    bool operator() (HitProperties const& i, HitProperties const& j) { return i.path_fraction < j.path_fraction; }
+    bool operator() (HitProperties const& i, HitProperties const& j) const { return i.path_fraction < j.path_fraction; }
   };
 
   typedef std::multiset<HitProperties,HitPropertySorter> HitPropertiesMultiset_t;

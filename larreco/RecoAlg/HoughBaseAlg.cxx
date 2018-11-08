@@ -180,7 +180,7 @@ cluster::HoughTransformCounters<K, C, S, A, SC>::unchecked_add_range_max(
     size_t n = std::min(left, Base_t::NCounters - key.counter);
     left -= n;
     while (n--) {
-      register SubCounter_t value = (block[key.counter] += delta);
+      SubCounter_t value = (block[key.counter] += delta);
       if (value > max.second) {
         max = { Base_t::make_const_iterator(iIP, key.counter), value };
       }
@@ -276,8 +276,9 @@ size_t cluster::HoughBaseAlg::Transform(
   std::vector<int> skip;  
   
   std::vector<double> wire_pitch(geom->Nplanes(t, cs), 0.);
-  for(size_t p = 0; p < wire_pitch.size(); ++p) 
-    wire_pitch[p] = geom->WirePitch(0,1,p);
+  for (size_t p = 0; p < wire_pitch.size(); ++p) {
+    wire_pitch[p] = geom->WirePitch(p);
+  }
 
   //factor to make x and y scale the same units
   std::vector<double> xyScale(geom->Nplanes(t, cs), 0.);
@@ -829,6 +830,9 @@ void cluster::HoughTransform::Init(unsigned int dx,
   m_rhoResolutionFactor = rhores;
   
   m_accum.clear();
+  //--- BEGIN issue #19494 -----------------------------------------------------
+  // BulkAllocator.h is currently broken; see issue #19494 and comment in header.
+#if 0
   // set the custom allocator for nodes to allocate large chunks of nodes;
   // one node is 40 bytes plus the size of the counters block.
   // The math over there sets a bit less than 10 MiB per chunk.
@@ -844,6 +848,8 @@ void cluster::HoughTransform::Init(unsigned int dx,
     >::SetChunkSize(
     10 * ((1048576 / (40 + sizeof(DistancesMap_t::CounterBlock_t))) & ~0x1FFU)
     );
+#endif // 0
+  //--- END issue #19494 -------------------------------------------------------
   
   //m_accum.resize(m_numAngleCells);
   m_numAccumulated = 0;   
@@ -983,7 +989,9 @@ std::array<int, 3> cluster::HoughTransform::DoAddPointReturnMax
       if (max_counter.second > max_val) {
         // DEBUG
       //  std::cout << " <NEW MAX " << max_val << " => " << max_counter.second << " >" << std::endl;
-        max = { max_counter.second, max_counter.first.key(), (int) iAngleStep };
+        // BUG the double brace syntax is required to work around clang bug 21629
+        // (https://bugs.llvm.org/show_bug.cgi?id=21629)
+        max = {{ max_counter.second, max_counter.first.key(), (int) iAngleStep }};
         max_val = max_counter.second;
       }
     }
@@ -1107,7 +1115,7 @@ size_t cluster::HoughBaseAlg::FastTransform(const std::vector<art::Ptr<recob::Cl
       /*
       //factor to make x and y scale the same units
       double xyScale  = .001*detprop->DriftVelocity(detprop->Efield(),detprop->Temperature());
-      xyScale        *= detprop->SamplingRate()/geom->WirePitch(0,1,p,t,cs);
+      xyScale        *= detprop->SamplingRate()/geom->WirePitch(p,t,cs);
       
       int x, y;
       int dx = geom->Cryostat(cs).TPC(t).Plane(p).Nwires();//number of wires 
@@ -1514,8 +1522,9 @@ size_t cluster::HoughBaseAlg::FastTransform(const std::vector<art::Ptr<recob::Cl
   }
   
   std::vector<double> wire_pitch(geom->Nplanes(t, cs), 0.);
-  for(size_t p = 0; p < wire_pitch.size(); ++p) 
-    wire_pitch[p] = geom->WirePitch(0,1,p);
+  for (size_t p = 0; p < wire_pitch.size(); ++p) {
+    wire_pitch[p] = geom->WirePitch(p);
+  }
 
   //factor to make x and y scale the same units
   std::vector<double> xyScale(geom->Nplanes(t, cs), 0.);
@@ -1785,10 +1794,7 @@ size_t cluster::HoughBaseAlg::FastTransform(const std::vector<art::Ptr<recob::Cl
         skip.at(hitTemp.at(lastHits.at(i)))=1;
       } 
       //protection against very steep uncorrelated hits
-      if(std::abs(slope)>fMaxSlope 
-         && std::abs((*clusterHits.begin())->Channel()-
-                     clusterHits.at(clusterHits.size()-1)->Channel())>=0
-         )
+      if(std::abs(slope)>fMaxSlope)
         continue;
       
       clusHitsOut.push_back(clusterHits);

@@ -260,7 +260,7 @@ void ShowerReco::beginJob()
   /// \todo the call to geo->Nplanes() assumes this is a single cryostat and single TPC detector
   /// \todo need to generalize to multiple cryostats and TPCs
   fNPlanes = geo->Nplanes();
-  fMean_wire_pitch = geo->WirePitch(0,1,0);    //wire pitch in cm
+  fMean_wire_pitch = geo->WirePitch(); //wire pitch in cm
 
   /**Get TFileService and define output Histograms*/
   art::ServiceHandle<art::TFileService> tfs;
@@ -334,7 +334,7 @@ void ShowerReco::beginRun(art::Run&)
 {
  detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
- fWirePitch = geom->WirePitch(0,1,0);    //wire pitch in cm
+ fWirePitch = geom->WirePitch(); //wire pitch in cm
  fTimeTick=detprop->SamplingRate()/1000.;  
  fDriftVelocity=detprop->DriftVelocity(detprop->Efield(),detprop->Temperature());
  fWireTimetoCmCm=(fTimeTick*fDriftVelocity)/fWirePitch; 
@@ -812,7 +812,7 @@ for(unsigned int ij = 0; ij < fNPlanes; ++ij)
   art::PtrVector < recob::Shower >  ssvec;
 	
     //for(unsigned int ip=0;ip<1;ip++)  {
-	art::ProductID aid = this->getProductID< std::vector < recob::Shower > >(evt);
+	art::ProductID aid = this->getProductID< std::vector < recob::Shower > >();
 	art::Ptr< recob::Shower > aptr(aid, 0, evt.productGetter(aid));
 	ssvec.push_back(aptr);
       //}

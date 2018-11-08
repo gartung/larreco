@@ -17,7 +17,8 @@ art_make(
 			${Boost_SYSTEM_LIBRARY}
           MODULE_LIBRARIES 
 	  		larreco_HitFinder
-                        larsim_MCCheater_BackTracker_service
+                        larsim_MCCheater_BackTrackerService_service
+	                larsim_MCCheater_ParticleInventoryService_service
 			larreco_RecoAlg
                         lardataobj_RecoBase
 			lardataobj_MCBase
@@ -36,7 +37,7 @@ art_make(
 			art_Utilities
 			canvas
 			${MF_MESSAGELOGGER}
-			${MF_UTILITIES}
+			
 	                ${FHICLCPP}
 			cetlib cetlib_except
                         ${ROOT_BASIC_LIB_LIST}

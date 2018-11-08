@@ -1,46 +1,78 @@
 #include "larreco/RecoAlg/TCAlg/DataStructs.h"
 
 namespace tca {
+  
+  TCEvent evt;
+  TCConfig tcc;
+  ShowerTreeVars stv;
+  // vector of hits, tjs, etc in each slice
+  std::vector<TCSlice> slices;
+  //    TruthMatcher tm{tjs};
+
   const std::vector<std::string> AlgBitNames {
     "MaskHits",
     "MaskBadTPs",
+    "Michel",
+    "DeltaRay",
     "CTKink",
     "CTStepChk",
     "TryNextPass",
-    "RevProp",
-    "CHMH",
-    "SplitTraj",
+    "RvPrp",
+    "CHMUH",
+    "Split",
     "Comp3DVx",
     "Comp3DVxIG",
     "HED",
     "HamVx",
     "HamVx2",
+    "JunkVx",
     "JunkTj",
     "Killed",
-    "EndMerge",
-    "TrimEndPts",
+    "Merge",
+    "TEP",
     "CHMEH",
     "FillGap",
     "Ghost",
+    "MrgGhost",
     "ChkInTraj",
     "StopBadFits",
     "FixBegin",
+    "FTBChg",
+    "BeginChg",
     "FixEnd",
-    "UseUnusedHits",
+    "UUH",
+    "MisdVxTj",
     "VtxTj",
-    "RefVtx",
+    "ChkVxTj",
+    "Photon",
+    "NoFitToVx",
+    "VxMerge",
+    "VxNeutral",
     "NoKinkChk",
     "SoftKink",
     "ChkStop",
-    "FTBRevProp",
+    "ChkStopEP",
+    "ChkChgAsym",
+    "FTBRvProp",
     "StopAtTj",
-    "Match3D",
+    "Mat3D",
+    "Mat3DMerge",
+    "Split3DKink",
+    "TjHiVx3Score",
     "VtxHitsSwap",
     "SplitHiChgHits",
-    "InShower",
+    "ShowerLike",
+    "KillInShowerVx",
     "ShowerTj",
+    "ShwrParent",
     "MergeOverlap",
-    "MergeSubShowers"
+    "MergeSubShowers",
+    "MergeSubShowersTj",
+    "MergeNrShowers",
+    "MergeShChain",
+    "CompleteShower",
+    "SplitTjCVx",
+    "SetDir"
   };
 
   const std::vector<std::string> StopFlagNames {
@@ -48,25 +80,26 @@ namespace tca {
     "AtKink",
     "AtVtx",
     "Bragg",
-    "AtTj"
+    "AtTj",
+    "OutFV"
   };
   
   const std::vector<std::string> VtxBitNames {
     "VtxTrjTried",
     "Fixed",
     "OnDeadWire",
-    "VtxRefined",
-    "InShower",
-    "VtxKilled",
-    "VtxTruMatch"
+    "HiVx3Score",
+    "VtxTruMatch",
+    "VtxMerged"
   } ;
   
   geo::PlaneID DecodeCTP(CTP_t CTP) {
-    geo::PlaneID tmp;
-    tmp.Cryostat = CTP / Cpad;
-    tmp.TPC = (CTP - tmp.Cryostat * Cpad) / Tpad;
-    tmp.Plane = (CTP % 10);
-    return tmp;
+    auto const cryo = (CTP / Cpad);
+    return geo::PlaneID(
+      /* Cryostat */ cryo,
+           /* TPC */ (CTP - cryo * Cpad) / Tpad,
+         /* Plane */ (CTP % 10)
+      );
   }
   
 } // namespace tca
