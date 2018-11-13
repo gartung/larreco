@@ -132,10 +132,14 @@ standard_showervalidation: {
  HitsModuleLabel:          "gaushit"
  TrackModuleLabel:         "pmalgtrackmaker"
  ShowerModuleLabels:        ["emshower"]
- UseBiggestShower: true
- Verbose: 0
- EnergyWidth: 0
- Energies: []
+ HitModuleLabels:           ["gaushit"]
+ UseBiggestShower:          true
+ Verbose:                   0
+ EnergyWidth:               0
+ Energies:                  []
+ MinHitSize:                20
+ SimEnergyCut:              0.1 
+ DensityCut:                1
 }
 
 
