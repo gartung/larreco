@@ -25,6 +25,8 @@ public:
   double fCharge;
 
   double fPred;
+
+  //  int fScratch;
 };
 
 class SpaceCharge;
@@ -57,6 +59,8 @@ public:
 
   double fPred;
   double fNeiPotential; ///< Neighbour-induced potential
+
+  int fScratch;
 };
 
 class CollectionWireHit: public WireHit
@@ -86,5 +90,10 @@ void Iterate(SpaceCharge* sc, double alpha);
 void Iterate(const std::vector<CollectionWireHit*>& cwires,
              const std::vector<SpaceCharge*>& orphanSCs,
              double alpha);
+
+//void IterateQuadProg(CollectionWireHit* cwire, double alpha);
+
+void SolveQuadProg(const std::vector<CollectionWireHit*>& cwires,
+                   double alpha);
 
 #endif
