@@ -25,8 +25,6 @@ public:
   double fCharge;
 
   double fPred;
-
-  //  int fScratch;
 };
 
 class SpaceCharge;
@@ -91,9 +89,6 @@ void Iterate(const std::vector<CollectionWireHit*>& cwires,
              const std::vector<SpaceCharge*>& orphanSCs,
              double alpha);
 
-//void IterateQuadProg(CollectionWireHit* cwire, double alpha);
-
-void SolveQuadProg(const std::vector<CollectionWireHit*>& cwires,
-                   double alpha);
+void IterateQuadProg(CollectionWireHit* cwire, double alpha);
 
 #endif
