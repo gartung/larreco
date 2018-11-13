@@ -239,6 +239,8 @@ AddNeighbours(const std::vector<SpaceCharge*>& spaceCharges) const
 
         // This is a pretty random guess
         const double coupling = exp(-sqrt(dist2)/2);
+        //        const double coupling = (dist2 < kCritDist*kCritDist) ? 1 : 0;
+        //        const double coupling = std::max((kCritDist-sqrt(dist2))/kCritDist, 0.);
         sc1->fNeighbours.emplace_back(sc2, coupling);
 
         if(isnan(1/sqrt(dist2)) || isinf(1/sqrt(dist2))){

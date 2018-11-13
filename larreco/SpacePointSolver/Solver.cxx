@@ -12,6 +12,10 @@
 #include "TDecompLU.h"
 #include "TDecompBK.h" // symmetric
 
+#include "TH2.h"
+#include "TPad.h"
+#include "TStyle.h"
+
 template<class T> T sqr(T x){return x*x;}
 
 // ---------------------------------------------------------------------------
@@ -291,6 +295,8 @@ void Iterate(CollectionWireHit* cwire, double alpha)
 // ---------------------------------------------------------------------------
 void IterateQuadProg(CollectionWireHit* cwire, double alpha)
 {
+  if(alpha == 0) alpha = 1e-9; // avoid singular matrix
+
   TDecompLU dc; // we'll reuse the decomp object
 
   // Clear out all neighbour indices, indicating that they're not part of the
@@ -366,10 +372,13 @@ void IterateQuadProg(CollectionWireHit* cwire, double alpha)
         const int scIdx = sc->fScratch;
 
         // Self interaction
-        Q(scIdx, scIdx) -= 2*alpha;
+        Q(scIdx, scIdx) -= alpha;
 
-        // Fixed interaction with all the points that haven't been zeroed out
-        mc(scIdx) += alpha*sc->fNeiPotential;
+        // Fixed interaction with all the points that aren't part of our
+        // minimization (others have been zeroed out and won't contribute to
+        // this expression). Count double because the potential for that other
+        // point will also be affected when we modify ours.
+        mc(scIdx) += 2*alpha*sc->fNeiPotential;
 
         for(const Neighbour& n: sc->fNeighbours){
           if(n.fSC->fScratch >= 0){
@@ -387,7 +396,7 @@ void IterateQuadProg(CollectionWireHit* cwire, double alpha)
       Q(Nscs, i) = 1;
       Q(i, Nscs) = 1;
     }
-    mc(Nscs) = cwire->fCharge; // todo factor of 2?
+    mc(Nscs) = cwire->fCharge;
 
     // Solve the system of equations
     dc.SetMatrix(Q);
@@ -411,6 +420,197 @@ void IterateQuadProg(CollectionWireHit* cwire, double alpha)
     // solving this wire, and we should put the results into place
     if(!any){
       for(SpaceCharge* sc: scsPruned) sc->AddCharge(x[sc->fScratch]);
+      return;
+    }
+  } // otherwise, try again with those points removed
+}
+
+// ---------------------------------------------------------------------------
+void IterateQuadProgMulti(const std::vector<CollectionWireHit*>& cwires,
+                          double alpha)
+{
+  if(alpha == 0) alpha = 1e-9;
+
+  TDecompLU dc; // we'll reuse the decomp object
+
+  // Clear out all neighbour indices, indicating that they're not part of the
+  // current minimization
+  for(CollectionWireHit* cwire: cwires){
+    cwire->fScratch = -1;
+    for(SpaceCharge* sc: cwire->fCrossings){
+      for(Neighbour& n: sc->fNeighbours){
+        n.fSC->fScratch = -1;
+      }
+    }
+  }
+
+  int nSpaceCharges = 0;
+  for(CollectionWireHit* cwire: cwires){
+    if(cwire->fCrossings.size() < 2) continue;
+
+    // Except for the SpaceCharges actually belonging to this wire, which we
+    // also want to zero out in preparation
+    for(SpaceCharge* sc: cwire->fCrossings){
+      sc->fScratch = 0; // activate them, will be numbered later
+      sc->AddCharge(-sc->fPred);
+    }
+    nSpaceCharges += cwire->fCrossings.size();
+    if(nSpaceCharges > 1000) break; // got enough
+  }
+
+  while(true){
+    // Accumulate the list of wires that haven't been driven to zero, and
+    // number them
+    std::vector<SpaceCharge*> scsPruned;
+    scsPruned.reserve(nSpaceCharges);
+    int Ncol = 0;
+    for(CollectionWireHit* cwire: cwires){
+      bool any = false;
+      for(SpaceCharge* sc: cwire->fCrossings){
+        if(sc->fScratch >= 0){
+          sc->fScratch = scsPruned.size();
+          scsPruned.push_back(sc);
+          any = true;
+        }
+      }
+      if(any){
+        cwire->fScratch = Ncol;
+        ++Ncol;
+      }
+      else{
+        cwire->fScratch = -1;
+      }
+    }
+
+    // With one or zero nonzero charges left, we're done
+    const unsigned int Nscs = scsPruned.size();
+    if(Nscs < 2) return;
+
+    // Vector of differences of the induction wires from expectations,
+    // assigned to the corresponding space charges.
+    TVectorD mc(Nscs+Ncol);
+    std::cout << "A" << std::endl;
+    for(SpaceCharge* sc: scsPruned){
+      if(sc->fWire1) mc(sc->fScratch) += sc->fWire1->fCharge - sc->fWire1->fPred;
+      if(sc->fWire2) mc(sc->fScratch) += sc->fWire2->fCharge - sc->fWire2->fPred;
+    }
+    std::cout << "B" << std::endl;
+
+    // Matrix encoding which space charges contribute to the same induction
+    // wires. Will be symmetric, and promising so let's us use faster
+    // decomposition methods.
+    TMatrixDSym Q(Nscs+Ncol);
+
+    // Only visit each pair once
+    for(unsigned int i = 0; i+1 < Nscs; ++i){
+      const SpaceCharge* sci = scsPruned[i];
+      for(unsigned int j = i+1; j < Nscs; ++j){
+        const SpaceCharge* scj = scsPruned[j];
+        if(sci->fWire1 && sci->fWire1 == scj->fWire1){
+          Q(i, j) += 1;
+          Q(j, i) += 1;
+        }
+        if(sci->fWire2 && sci->fWire2 == scj->fWire2){
+          Q(i, j) += 1;
+          Q(j, i) += 1;
+        }
+      }
+    }
+
+    // Fill in the diagonal
+    for(unsigned int i = 0; i < Nscs; ++i){
+      const SpaceCharge* sci = scsPruned[i];
+      if(sci->fWire1) Q(i, i) += 1;
+      if(sci->fWire2) Q(i, i) += 1;
+    }
+
+    // Interactions
+    if(alpha != 0){
+      std::cout << "c" << std::endl;
+      for(const SpaceCharge* sc: scsPruned){
+        const int scIdx = sc->fScratch;
+
+        // Self interaction
+        Q(scIdx, scIdx) -= 2*alpha;
+
+        // Fixed interaction with all the points that haven't been zeroed out
+        mc(scIdx) += alpha*sc->fNeiPotential;
+
+        for(const Neighbour& n: sc->fNeighbours){
+          if(n.fSC->fScratch >= 0){
+            // Interaction within this cwire
+            Q(scIdx, n.fSC->fScratch) -= alpha*n.fCoupling;
+            Q(n.fSC->fScratch, scIdx) -= alpha*n.fCoupling;
+          }
+        }
+      }
+      std::cout << "d" << std::endl;
+    }
+
+    // Conservation of charge. This is what the extra element in the matrix
+    // and vector are for.
+    std::cout << "E" << std::endl;
+    for(CollectionWireHit* cwire: cwires){
+      for(SpaceCharge* sc: cwire->fCrossings){
+        if(sc->fScratch >= 0){
+          Q(Nscs+cwire->fScratch, sc->fScratch) = 1;
+          Q(sc->fScratch, Nscs+cwire->fScratch) = 1;
+        }
+      }
+      if(cwire->fScratch >= 0){
+        mc(Nscs+cwire->fScratch) = cwire->fCharge;
+      }
+    }
+    std::cout << "F" << std::endl;
+
+    //    for(unsigned int i = 0; i < Nscs; ++i){
+    //      Q(Nscs, i) = 1;
+    //      Q(i, Nscs) = 1;
+    //    }
+    //    mc(Nscs) = cwire->fCharge; // todo factor of 2?
+
+    // Solve the system of equations
+    dc.SetMatrix(Q);
+
+    bool ok;
+    TVectorD x = dc.Solve(mc, ok);
+
+    if(Nscs+Ncol > 51){// && alpha != 0){
+      std::cout << Nscs << " " << Ncol << std::endl;
+      std::cout << "DET " << Q.Determinant() << std::endl;
+       //    Q.Print();
+      TH2* h = new TH2F("", "", Nscs+Ncol, 0, Nscs+Ncol, Nscs+Ncol, 0, Nscs+Ncol);
+      for(unsigned int i = 0; i < Nscs+Ncol; ++i)
+        for(unsigned int j = 0; j < Nscs+Ncol; ++j)
+          h->SetBinContent(i+1, j+1, Q(i, j));
+      gStyle->SetOptStat(0);
+      h->Draw("colz");
+      gPad->Print("Q.png");
+      //      abort();
+    }
+
+    if(!ok) return; // not clear that anything will be valid, so just punt
+
+    // Apply findings
+    bool any = false;
+
+    std::cout << "G" << std::endl;
+    for(SpaceCharge* sc: scsPruned){
+      if(x[sc->fScratch] <= 0){
+        // Set an invalid index to mark that location should be zeroed out in
+        // future iterations
+        sc->fScratch = -1;
+        any = true;
+      }
+    }
+    std::cout << "H" << std::endl;
+
+    // If all solved charges lay within the physical bounds then we're done
+    // solving this wire, and we should put the results into place
+    if(!any){
+      for(SpaceCharge* sc: scsPruned){
+        sc->AddCharge(x[sc->fScratch]);
+      }
       return;
     }
   } // otherwise, try again with those points removed
@@ -448,8 +648,18 @@ void Iterate(const std::vector<CollectionWireHit*>& cwires,
              const std::vector<SpaceCharge*>& orphanSCs,
              double alpha)
 {
-  //  for(CollectionWireHit* cwire: cwires) Iterate(cwire, alpha);
-  for(CollectionWireHit* cwire: cwires) IterateQuadProg(cwire, alpha);
+  //  IterateQuadProgMulti(cwires, alpha);
+
+  // Visiting in a "random" order should prevent local artefacts that are slow
+  // to break up.
+  unsigned int cwireIdx = 0;
+  do{
+    //    IterateQuadProg(cwires[cwireIdx], alpha);
+    Iterate(cwires[cwireIdx], alpha);
+
+    const unsigned int prime = 1299827;
+    cwireIdx = (cwireIdx+prime)%cwires.size();
+  } while(cwireIdx != 0);
 
   // Bad collection wires
   for(SpaceCharge* sc: orphanSCs) Iterate(sc, alpha);

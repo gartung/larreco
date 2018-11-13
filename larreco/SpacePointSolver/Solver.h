@@ -73,6 +73,8 @@ public:
   double fCharge;
 
   std::vector<SpaceCharge*> fCrossings;
+
+  int fScratch;
 };
 
 double Metric(const std::vector<SpaceCharge*>& scs, double alpha);
