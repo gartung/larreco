@@ -192,11 +192,13 @@ private:
   std::string fTrackModuleLabel;
 
   bool  fUseBiggestShower;
+  bool  fDrawCanvases;
   int   fVerbose;
   int   fMinHitSize;
   float fEnergyWidth;
   float fSimEnergyCut;
   float fDensityCut;
+  float fMaxSimEnergy;
 
   std::vector<float>       fEnergies;
   std::vector<std::string> fShowerModuleLabels;
@@ -217,7 +219,6 @@ private:
   std::map<std::string,TH1F*> ShowerEnergy_HistMap;
   std::map<std::string,TH1F*> ShowerHitNum_HistMap;
   std::map<std::string,TH1F*> ShowerTotalEnergyDiff_HistMap;
-  std::map<std::string,TH1F*> HitEnergy_HistMap;
   std::map<std::string,TH1F*> ShowerMag_HistMap;
   std::map<std::string,TH1F*> ShowerDirectionDiff_HistMap;
   std::map<std::string,TH1F*> ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap;
@@ -248,7 +249,6 @@ private:
   std::map<std::string,std::map<float,TH1F*> > Energies_ShowerEnergy_HistMap;
   std::map<std::string,std::map<float,TH1F*> > Energies_ShowerHitNum_HistMap;
   std::map<std::string,std::map<float,TH1F*> > Energies_ShowerTotalEnergyDiff_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_HitEnergy_HistMap;
   std::map<std::string,std::map<float,TH1F*> > Energies_ShowerMag_HistMap;
   std::map<std::string,std::map<float,TH1F*> > Energies_ShowerDirectionDiff_HistMap;
   std::map<std::string,std::map<float,TH1F*> > Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap;
@@ -280,7 +280,6 @@ private:
   std::map<std::string,TGraphErrors*> Energies_Mean_ShowerEnergy_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_Mean_ShowerHitNum_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_Mean_ShowerTotalEnergyDiff_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_HitEnergy_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_Mean_ShowerMag_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_Mean_ShowerDirectionDiff_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap;
@@ -311,7 +310,6 @@ private:
   std::map<std::string,TGraphErrors*> Energies_RMS_ShowerEnergy_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_RMS_ShowerHitNum_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_RMS_ShowerTotalEnergyDiff_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_HitEnergy_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_RMS_ShowerMag_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_RMS_ShowerDirectionDiff_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap;
@@ -343,7 +341,6 @@ private:
   TMultiGraph* Energies_Mean_ShowerEnergy_Multi;
   TMultiGraph* Energies_Mean_ShowerHitNum_Multi;
   TMultiGraph* Energies_Mean_ShowerTotalEnergyDiff_Multi;
-  TMultiGraph* Energies_Mean_HitEnergy_Multi;
   TMultiGraph* Energies_Mean_ShowerMag_Multi;
   TMultiGraph* Energies_Mean_ShowerDirectionDiff_Multi;
   TMultiGraph* Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi;
@@ -374,7 +371,6 @@ private:
   TMultiGraph* Energies_RMS_ShowerEnergy_Multi;
   TMultiGraph* Energies_RMS_ShowerHitNum_Multi;
   TMultiGraph* Energies_RMS_ShowerTotalEnergyDiff_Multi;
-  TMultiGraph* Energies_RMS_HitEnergy_Multi;
   TMultiGraph* Energies_RMS_ShowerMag_Multi;
   TMultiGraph* Energies_RMS_ShowerDirectionDiff_Multi;
   TMultiGraph* Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi;
@@ -405,7 +401,6 @@ private:
   TCanvas* Energies_Mean_ShowerPurity_canvasMulti;
   TCanvas* Energies_Mean_ShowerEnergy_canvasMulti;
   TCanvas* Energies_Mean_ShowerHitNum_canvasMulti;
-  TCanvas* Energies_Mean_HitEnergy_canvasMulti;
   TCanvas* Energies_Mean_ShowerDirectionDiff_canvasMulti;
   TCanvas* Energies_Mean_ShowerMag_canvasMulti;
   TCanvas* Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti;
@@ -436,7 +431,6 @@ private:
   TCanvas* Energies_RMS_ShowerPurity_canvasMulti;
   TCanvas* Energies_RMS_ShowerEnergy_canvasMulti;
   TCanvas* Energies_RMS_ShowerHitNum_canvasMulti;
-  TCanvas* Energies_RMS_HitEnergy_canvasMulti;
   TCanvas* Energies_RMS_ShowerDirectionDiff_canvasMulti;
   TCanvas* Energies_RMS_ShowerMag_canvasMulti;
   TCanvas* Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti;
@@ -468,7 +462,6 @@ private:
   TCanvas* ShowerPurity_canvas;
   TCanvas* ShowerEnergy_canvas;
   TCanvas* ShowerHitNum_canvas;
-  TCanvas* HitEnergy_canvas;
   TCanvas* ShowerDirectionDiff_canvas;
   TCanvas* ShowerMag_canvas;
   TCanvas* ShowerRecoEnergyVsTrueEnergyinRecoShower_canvas;
@@ -499,7 +492,6 @@ private:
   std::map<float,TCanvas*> Energies_ShowerPurity_canvasMap;
   std::map<float,TCanvas*> Energies_ShowerEnergy_canvasMap;
   std::map<float,TCanvas*> Energies_ShowerHitNum_canvasMap;
-  std::map<float,TCanvas*> Energies_HitEnergy_canvasMap;
   std::map<float,TCanvas*> Energies_ShowerDirectionDiff_canvasMap;
   std::map<float,TCanvas*> Energies_ShowerMag_canvasMap;
   std::map<float,TCanvas*> Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMap;
@@ -531,7 +523,6 @@ private:
   std::map<std::string,TH2F*> ShowerEnergy_2dHistMap;
   std::map<std::string,TH2F*> ShowerHitNum_2dHistMap;
   std::map<std::string,TH2F*> ShowerTotalEnergyDiff_2dHistMap;
-  std::map<std::string,TH2F*> HitEnergy_2dHistMap;
   std::map<std::string,TH2F*> ShowerMag_2dHistMap;
   std::map<std::string,TH2F*> ShowerDirectionDiff_2dHistMap;
   std::map<std::string,TH2F*> ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap;
@@ -562,11 +553,13 @@ private:
   std::map<std::string,TCanvas*> ShowerEnergy_2dCanvasMap;
   std::map<std::string,TCanvas*> ShowerHitNum_2dCanvasMap;
   std::map<std::string,TCanvas*> ShowerTotalEnergyDiff_2dCanvasMap;
-  std::map<std::string,TCanvas*> HitEnergy_2dCanvasMap;
   std::map<std::string,TCanvas*> ShowerMag_2dCanvasMap;
   std::map<std::string,TCanvas*> ShowerDirectionDiff_2dCanvasMap;
   std::map<std::string,TCanvas*> ShowerRecoEnergyVsTrueEnergyinRecoShower_2dCanvasMap;
   std::map<std::string,TCanvas*> TrueEnergy_2dCanvasMap;
+
+  std::map<std::string,TCanvas*> PosDir_2dCnavasMap;
+  std::map<std::string,TH2F*>    PosDir_2dHistMap;
 
   std::map<std::string,std::map<geo::PlaneID,TCanvas*> > ClusterProjectionMatchedEnergy_2dCanvasMap;
   std::map<std::string,std::map<geo::PlaneID,TCanvas*> > ClusterCompletenessEnergy_2dCanvasMap;
@@ -578,12 +571,32 @@ private:
   
   std::map<std::string,std::map<geo::PlaneID,TCanvas*> > HitCompletenessEnergy_2dCanvasMap;
   
+  TH1* ShowerMotherE_AfterCutHist;
+  TH1* ShowerMotherE_BeforeCutHist;
+  TH1* AsscoiatedShowerMotherEHist;
+  TCanvas* ShowerMotherE_AfterCutCanvas; 
+  TCanvas* ShowerMotherE_BeforeCutCanvas;
+  TCanvas* AsscoiatedShowerMotherECanvas;
 
+  TH1* BiggestShowerMotherE_AfterCutHist;
+  TH1* BiggestShowerMotherE_BeforeCutHist;
+  TH1* AsscoiatedBiggestShowerMotherEHist;
+  TCanvas* BiggestShowerMotherE_AfterCutCanvas; 
+  TCanvas* BiggestShowerMotherE_BeforeCutCanvas;
+  TCanvas* AsscoiatedBiggestShowerMotherECanvas;
+
+  TH1* SmallestShowerMotherE_AfterCutHist;
+  TH1* SmallestShowerMotherE_BeforeCutHist;
+  TH1* AsscoiatedSmallestShowerMotherEHist;
+  TCanvas* SmallestShowerMotherE_AfterCutCanvas; 
+  TCanvas* SmallestShowerMotherE_BeforeCutCanvas;
+  TCanvas* AsscoiatedSmallestShowerMotherECanvas;
 
   //Service handles   
   art::ServiceHandle<cheat::BackTrackerService> backtracker;
   art::ServiceHandle<cheat::ParticleInventoryService> particleInventory;
   art::ServiceHandle<geo::Geometry> geom;
+  art::ServiceHandle<art::TFileService> tfs;
 
 };
 
@@ -597,11 +610,13 @@ ana::ShowerValidation::ShowerValidation(const fhicl::ParameterSet& pset) : EDAna
   fHitModuleLabels       = pset.get<std::vector<std::string> >("HitModuleLabels");
   fEnergies              = pset.get<std::vector<float> >("Energies");
   fUseBiggestShower      = pset.get<bool>("UseBiggestShower");
+  fDrawCanvases          = pset.get<bool>("DrawCanvases"); 
   fVerbose               = pset.get<int>("Verbose");
   fMinHitSize            = pset.get<int>("MinHitSize");
   fEnergyWidth           = pset.get<float>("EnergyWidth");
   fSimEnergyCut          = pset.get<float>("SimEnergyCut");
   fDensityCut            = pset.get<float>("DensityCut");
+  fMaxSimEnergy          = pset.get<float>("MaxSimEnergy");
 }
 
 //This is bad. try and think of a better way. 
@@ -621,7 +636,6 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
 					    int y_numbins, float y_start, float y_end){
   
   gStyle->SetOptStat(0);
-  art::ServiceHandle<art::TFileService> tfs;
 
   //Create The histogram canvas for Each Energy. 
   for(unsigned int i=0; i<fEnergies.size(); ++i){
@@ -636,21 +650,21 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
 
     //Create the Hitogram which has all the energies in
     std::string Name_string      = Name + fShowerModuleLabels[j];
-    std::string Name_titlestring = ";" + TitleName + "Enteries";
+    std::string Name_titlestring = fShowerModuleLabels[j] + ";" + TitleName + ";Enteries";
     const char* Name_titlename   = Name_titlestring.c_str();
     const char* Name_name     =  Name_string.c_str();
     Name_HistMap[fShowerModuleLabels[j]]  = tfs->make<TH1F>(Name_name, Name_titlename,x_numbins,x_start,x_end);
     
     //Create the 2D Histogram of Energy and value 
     std::string Name_2d_string      = Name + "_2d_" + fShowerModuleLabels[j];
-    std::string Name_2d_titlestring = ";" + TitleName + ";Energy;Enteries";
+    std::string Name_2d_titlestring = ";" + TitleName + ";Energy (MeV);Enteries";
     const char* Name_2d_titlename   = Name_2d_titlestring.c_str();
     const char* Name_2d_name     =  Name_2d_string.c_str();
     Name_2dHistMap[fShowerModuleLabels[j]]  = tfs->make<TH2F>(Name_2d_name, Name_2d_titlename,x_numbins,x_start,x_end,y_numbins,y_start,y_end);
 
     //Create the 2D Histogram of Energy and value 
     std::string Name_2d_canvas_string      = Name + "_2d_canvas_" + fShowerModuleLabels[j];
-    std::string Name_2d_canvas_titlestring = ";" + TitleName + ";Energy;Enteries";
+    std::string Name_2d_canvas_titlestring = ";" + TitleName + ";Energy (MeV);Enteries";
     const char* Name_2d_canvas_titlename   = Name_2d_canvas_titlestring.c_str();
     const char* Name_2d_canvas_name     =  Name_2d_canvas_string.c_str();
     Name_2dCanvasMap[fShowerModuleLabels[j]]  = tfs->makeAndRegister<TCanvas>(Name_2d_canvas_name, Name_2d_canvas_titlename);
@@ -659,8 +673,7 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
       
       //Create the Histogram maps name and string for the different energies. 
       std::string Energies_Name_string = Name + fShowerModuleLabels[j] + " at Energy" + std::to_string(fEnergies[i]) + " (MeV)";  
-      std::string Title = "Simulated Energy " + std::to_string(fEnergies[i]) + " MeV";
-      std::string Energies_Name_titlestring  = Title +  ";" + TitleName + ";Enteries";
+      std::string Energies_Name_titlestring  =  fShowerModuleLabels[j] +  ";" + TitleName + ";Enteries";
       const char* Energies_Name_titlename    = Energies_Name_titlestring.c_str();
       const char* Energies_Name_name         = Energies_Name_string.c_str();
       Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]   = tfs->make<TH1F>(Energies_Name_name, Energies_Name_titlename, x_numbins, x_start, x_end);
@@ -669,14 +682,14 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
 
     //Create the Independent TGraphs for the Metric vs Energy graphs    
     std::string meangrapherror_string      = Name + fShowerModuleLabels[j] + "_meangrapherror";
-    std::string meangrapherror_titlestring = ";Energy (Mev);" + TitleName;
+    std::string meangrapherror_titlestring = fShowerModuleLabels[j];//+ ";Energy (Mev);" + TitleName;
     const char* meangrapherror_name        = meangrapherror_string.c_str();
     const char* meangrapherror_titlename   = meangrapherror_titlestring.c_str();
     Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]] = tfs->makeAndRegister<TGraphErrors>(meangrapherror_name,meangrapherror_titlename);
     
     //Create the Independent TGraphs for the Metric vs Energy graphs    
     std::string rmsgrapherror_string      = Name + fShowerModuleLabels[j] + "_rmsgrapherror";
-    std::string rmsgrapherror_titlestring = ";Energy (Mev);" + TitleName;
+    std::string rmsgrapherror_titlestring =  fShowerModuleLabels[j];//+ ";Energy (Mev);" + TitleName;
     const char* rmsgrapherror_name        = rmsgrapherror_string.c_str();
     const char* rmsgrapherror_titlename   = rmsgrapherror_titlestring.c_str();
     Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]] = tfs->makeAndRegister<TGraphErrors>(rmsgrapherror_name,rmsgrapherror_titlename);
@@ -738,7 +751,6 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
 					    ){
   
   gStyle->SetOptStat(0);
-  art::ServiceHandle<art::TFileService> tfs;
 
   for(geo::PlaneID plane_id: geom->IteratePlaneIDs()){
 
@@ -757,7 +769,7 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
       
       //Create the Hitogram which has all the enrgies in
       std::string Name_string      = Name + fShowerModuleLabels[j] +  Plane_string;
-      std::string Name_titlestring = ";" + TitleName + "Enteries";
+      std::string Name_titlestring = fShowerModuleLabels[j] + ";" + TitleName + ";Enteries";
       const char* Name_titlename   = Name_titlestring.c_str();
       const char* Name_name     =  Name_string.c_str();
       Name_HistMap[fShowerModuleLabels[j]][plane_id]  = tfs->make<TH1F>(Name_name, Name_titlename,x_numbins,x_start,x_end);
@@ -771,7 +783,7 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
 
       //Create the 2D Histogram of Energy and value 
       std::string Name_2d_canvas_string      = Name + "_2d_canvas_" + fShowerModuleLabels[j] + Plane_string;
-      std::string Name_2d_canvas_titlestring = ";" + TitleName + ";Energy;Enteries";
+      std::string Name_2d_canvas_titlestring = ";" + TitleName + ";Energy (MeV);Enteries";
       const char* Name_2d_canvas_titlename   = Name_2d_canvas_titlestring.c_str();
       const char* Name_2d_canvas_name     =  Name_2d_canvas_string.c_str();
       Name_2dCanvasMap[fShowerModuleLabels[j]][plane_id]  = tfs->makeAndRegister<TCanvas>(Name_2d_canvas_name, Name_2d_canvas_titlename);
@@ -780,8 +792,7 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
 	
 	//Create the Histogram maps name and string for the different energies. 
 	std::string Energies_Name_string = Name + fShowerModuleLabels[j] + " at Energy" + std::to_string(fEnergies[i]) + " (MeV)"  + " at Energy" + std::to_string(fEnergies[i]) +  Plane_string;
-	std::string Title = "Simulated Energy " + std::to_string(fEnergies[i]) + " MeV";
-	std::string Energies_Name_titlestring  = Title +  ";" + TitleName + ";Enteries";
+	std::string Energies_Name_titlestring  = fShowerModuleLabels[j] +  ";" + TitleName + ";Enteries";
 	const char* Energies_Name_titlename    = Energies_Name_titlestring.c_str();
 	const char* Energies_Name_name         = Energies_Name_string.c_str();
 	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]  = tfs->make<TH1F>(Energies_Name_name, Energies_Name_titlename, x_numbins,x_start,x_end);
@@ -790,14 +801,14 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
       
       //Create the Independent TGraphs for the Metric vs Energy graphs    
       std::string meangrapherror_string      = Name + fShowerModuleLabels[j] + Plane_string + "_meangrapherror";
-      std::string meangrapherror_titlestring = ";Energy (Mev);" + TitleName;
+      std::string meangrapherror_titlestring = fShowerModuleLabels[j];// + ";Energy (Mev);" + TitleName;
       const char* meangrapherror_name        = meangrapherror_string.c_str();
       const char* meangrapherror_titlename   = meangrapherror_titlestring.c_str();
       Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id] = tfs->makeAndRegister<TGraphErrors>(meangrapherror_name,meangrapherror_titlename);
       
       //Create the Independent TGraphs for the Metric vs Energy graphs    
       std::string rmsgrapherror_string      = Name +  fShowerModuleLabels[j] + Plane_string +  "_rmsgrapherror";
-      std::string rmsgrapherror_titlestring = ";Energy (Mev);" + TitleName;
+      std::string rmsgrapherror_titlestring = fShowerModuleLabels[j];// +  ";Energy (Mev);" + TitleName;
       const char* rmsgrapherror_name        = rmsgrapherror_string.c_str();
       const char* rmsgrapherror_titlename   = rmsgrapherror_titlestring.c_str();
       Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]][plane_id] = tfs->makeAndRegister<TGraphErrors>(rmsgrapherror_name,rmsgrapherror_titlename);
@@ -859,7 +870,6 @@ void ana::ShowerValidation::InitaliseHitGraphs(std::string Name, std::string Tit
 					       ){
   
   gStyle->SetOptStat(0);
-  art::ServiceHandle<art::TFileService> tfs;
 
   for(geo::PlaneID plane_id: geom->IteratePlaneIDs()){
 
@@ -878,7 +888,7 @@ void ana::ShowerValidation::InitaliseHitGraphs(std::string Name, std::string Tit
       
       //Create the Hitogram which has all the enrgies in
       std::string Name_string      = Name + fHitModuleLabels[j] +  Plane_string;
-      std::string Name_titlestring = ";" + TitleName + "Enteries";
+      std::string Name_titlestring = fHitModuleLabels[j] + ";" + TitleName + ";Enteries";
       const char* Name_titlename   = Name_titlestring.c_str();
       const char* Name_name     =  Name_string.c_str();
       Name_HistMap[fHitModuleLabels[j]][plane_id]  = tfs->make<TH1F>(Name_name, Name_titlename,x_numbins,x_start,x_end);
@@ -901,8 +911,7 @@ void ana::ShowerValidation::InitaliseHitGraphs(std::string Name, std::string Tit
 	
 	//Create the Histogram maps name and string for the different energies. 
 	std::string Energies_Name_string = Name + fHitModuleLabels[j] + " at Energy" + std::to_string(fEnergies[i]) + " (MeV)"  + " at Energy" + std::to_string(fEnergies[i]) +  Plane_string;
-	std::string Title = "Simulated Energy " + std::to_string(fEnergies[i]) + " MeV";
-	std::string Energies_Name_titlestring  = Title +  ";" + TitleName + ";Enteries";
+	std::string Energies_Name_titlestring  = fHitModuleLabels[j] + ";" + TitleName + ";Enteries";
 	const char* Energies_Name_titlename    = Energies_Name_titlestring.c_str();
 	const char* Energies_Name_name         = Energies_Name_string.c_str();
 	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]  = tfs->make<TH1F>(Energies_Name_name, Energies_Name_titlename, x_numbins,x_start,x_end);
@@ -911,14 +920,14 @@ void ana::ShowerValidation::InitaliseHitGraphs(std::string Name, std::string Tit
       
       //Create the Independent TGraphs for the Metric vs Energy graphs    
       std::string meangrapherror_string      = Name + fHitModuleLabels[j] + Plane_string + "_meangrapherror";
-      std::string meangrapherror_titlestring = ";Energy (Mev);" + TitleName;
+      std::string meangrapherror_titlestring = fShowerModuleLabels[j];// + ";Energy (Mev);" + TitleName;
       const char* meangrapherror_name        = meangrapherror_string.c_str();
       const char* meangrapherror_titlename   = meangrapherror_titlestring.c_str();
       Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id] = tfs->makeAndRegister<TGraphErrors>(meangrapherror_name,meangrapherror_titlename);
       
       //Create the Independent TGraphs for the Metric vs Energy graphs    
       std::string rmsgrapherror_string      = Name +  fHitModuleLabels[j] + Plane_string +  "_rmsgrapherror";
-      std::string rmsgrapherror_titlestring = ";Energy (Mev);" + TitleName;
+      std::string rmsgrapherror_titlestring = fShowerModuleLabels[j];// + ";Energy (Mev);" + TitleName;
       const char* rmsgrapherror_name        = rmsgrapherror_string.c_str();
       const char* rmsgrapherror_titlename   = rmsgrapherror_titlestring.c_str();
       Energies_RMS_Name_GraphMap[fHitModuleLabels[j]][plane_id] = tfs->makeAndRegister<TGraphErrors>(rmsgrapherror_name,rmsgrapherror_titlename);
@@ -963,62 +972,94 @@ void ana::ShowerValidation::InitaliseHitGraphs(std::string Name, std::string Tit
 
   
 void ana::ShowerValidation::beginJob() {
-
-  ana::ShowerValidation::InitaliseGraphs("ShowerDirection_X","cos(x)",ShowerDirection_X_HistMap,Energies_ShowerDirection_X_HistMap,Energies_Mean_ShowerDirection_X_GraphMap,Energies_RMS_ShowerDirection_X_GraphMap,Energies_Mean_ShowerDirection_X_Multi,Energies_RMS_ShowerDirection_X_Multi,Energies_Mean_ShowerDirection_X_canvasMulti,Energies_RMS_ShowerDirection_X_canvasMulti,Energies_ShowerDirection_X_canvasMap, ShowerDirection_X_canvas,ShowerDirection_X_2dHistMap,ShowerDirection_X_2dCanvasMap,50,-1,1,100,0,5000);
-
-  ana::ShowerValidation::InitaliseGraphs("ShowerDirection_Y","cos(y)",ShowerDirection_Y_HistMap,Energies_ShowerDirection_Y_HistMap,Energies_Mean_ShowerDirection_Y_GraphMap,Energies_RMS_ShowerDirection_Y_GraphMap,Energies_Mean_ShowerDirection_Y_Multi,Energies_RMS_ShowerDirection_Y_Multi,Energies_Mean_ShowerDirection_Y_canvasMulti,Energies_RMS_ShowerDirection_Y_canvasMulti,Energies_ShowerDirection_Y_canvasMap, ShowerDirection_Y_canvas,ShowerDirection_Y_2dHistMap,ShowerDirection_Y_2dCanvasMap,50,-1,1,100,0,5000);
   
-  ana::ShowerValidation::InitaliseGraphs("ShowerDirection_Z","cos(z)",ShowerDirection_Z_HistMap,Energies_ShowerDirection_Z_HistMap,Energies_Mean_ShowerDirection_Z_GraphMap,Energies_RMS_ShowerDirection_Z_GraphMap,Energies_Mean_ShowerDirection_Z_Multi,Energies_RMS_ShowerDirection_Z_Multi,Energies_Mean_ShowerDirection_Z_canvasMulti,Energies_RMS_ShowerDirection_Z_canvasMulti,Energies_ShowerDirection_Z_canvasMap, ShowerDirection_Z_canvas,ShowerDirection_Z_2dHistMap,ShowerDirection_Z_2dCanvasMap,50,-1,1,100,0,5000);
+  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
+    std::string PosDir_string       = "Position and direction 2D Hist";
+    std::string PosDir_titlestring  = ";Position;Direction;";
+    const char* PosDir_name         = PosDir_string.c_str();
+    const char* PosDir_titlename    = PosDir_titlestring.c_str();
+    PosDir_2dHistMap[fShowerModuleLabels[j]] = tfs->make<TH2F>(PosDir_name, PosDir_titlename,200,0,50,100,-1,1);
+  }
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerStart_X","|True Shower Start X - Reco Shower Start X|",ShowerStart_X_HistMap,Energies_ShowerStart_X_HistMap,Energies_Mean_ShowerStart_X_GraphMap,Energies_RMS_ShowerStart_X_GraphMap,Energies_Mean_ShowerStart_X_Multi,Energies_RMS_ShowerStart_X_Multi,Energies_Mean_ShowerStart_X_canvasMulti,Energies_RMS_ShowerStart_X_canvasMulti,Energies_ShowerStart_X_canvasMap, ShowerStart_X_canvas,ShowerStart_X_2dHistMap,ShowerStart_X_2dCanvasMap,200,0,50,100,0,5000);
+  ShowerMotherE_AfterCutHist  = tfs->make<TH1F>("ShowerMotherE_AfterCutHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
+  ShowerMotherE_BeforeCutHist = tfs->make<TH1F>("ShowerMotherE_BeforeCutHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
+  AsscoiatedShowerMotherEHist = tfs->make<TH1F>("AsscoiatedShowerMotherEHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerStart_Y","|True Shower Start Y - Reco Shower Start Y|",ShowerStart_Y_HistMap,Energies_ShowerStart_Y_HistMap,Energies_Mean_ShowerStart_Y_GraphMap,Energies_RMS_ShowerStart_Y_GraphMap,Energies_Mean_ShowerStart_Y_Multi,Energies_RMS_ShowerStart_Y_Multi,Energies_Mean_ShowerStart_Y_canvasMulti,Energies_RMS_ShowerStart_Y_canvasMulti,Energies_ShowerStart_Y_canvasMap, ShowerStart_Y_canvas,ShowerStart_Y_2dHistMap,ShowerStart_Y_2dCanvasMap,200,0,50,100,0,5000);
+  ShowerMotherE_AfterCutCanvas  = tfs->makeAndRegister<TCanvas>("ShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
+  ShowerMotherE_BeforeCutCanvas = tfs->makeAndRegister<TCanvas>("ShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
+  AsscoiatedShowerMotherECanvas = tfs->makeAndRegister<TCanvas>("ShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerStart_Z","|True Shower Start Z - Reco Shower Start Z|",ShowerStart_Z_HistMap,Energies_ShowerStart_Z_HistMap,Energies_Mean_ShowerStart_Z_GraphMap,Energies_RMS_ShowerStart_Z_GraphMap,Energies_Mean_ShowerStart_Z_Multi,Energies_RMS_ShowerStart_Z_Multi,Energies_Mean_ShowerStart_Z_canvasMulti,Energies_RMS_ShowerStart_Z_canvasMulti,Energies_ShowerStart_Z_canvasMap, ShowerStart_Z_canvas,ShowerStart_Z_2dHistMap,ShowerStart_Z_2dCanvasMap,200,0,50,100,0,5000);
+  BiggestShowerMotherE_AfterCutHist  = tfs->make<TH1F>("BiggestShowerMotherE_AfterCutHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
+  BiggestShowerMotherE_BeforeCutHist = tfs->make<TH1F>("BiggestShowerMotherE_BeforeCutHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
+  AsscoiatedBiggestShowerMotherEHist = tfs->make<TH1F>("AsscoiatedBiggestShowerMotherEHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
+
+  BiggestShowerMotherE_AfterCutCanvas  = tfs->makeAndRegister<TCanvas>("BiggestShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
+  BiggestShowerMotherE_BeforeCutCanvas = tfs->makeAndRegister<TCanvas>("BiggestShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
+  AsscoiatedBiggestShowerMotherECanvas = tfs->makeAndRegister<TCanvas>("BiggestShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
+
+  SmallestShowerMotherE_AfterCutHist  = tfs->make<TH1F>("SmallestShowerMotherE_AfterCutHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
+  SmallestShowerMotherE_BeforeCutHist = tfs->make<TH1F>("SmallestShowerMotherE_BeforeCutHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
+  AsscoiatedSmallestShowerMotherEHist = tfs->make<TH1F>("AsscoiatedSmallestShowerMotherEHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
+
+  SmallestShowerMotherE_AfterCutCanvas  = tfs->makeAndRegister<TCanvas>("SmallestShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
+  SmallestShowerMotherE_BeforeCutCanvas = tfs->makeAndRegister<TCanvas>("SmallestShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
+  AsscoiatedSmallestShowerMotherECanvas = tfs->makeAndRegister<TCanvas>("SmallestShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
+
+
+
+  ana::ShowerValidation::InitaliseGraphs("ShowerDirection_X","cos(x)",ShowerDirection_X_HistMap,Energies_ShowerDirection_X_HistMap,Energies_Mean_ShowerDirection_X_GraphMap,Energies_RMS_ShowerDirection_X_GraphMap,Energies_Mean_ShowerDirection_X_Multi,Energies_RMS_ShowerDirection_X_Multi,Energies_Mean_ShowerDirection_X_canvasMulti,Energies_RMS_ShowerDirection_X_canvasMulti,Energies_ShowerDirection_X_canvasMap, ShowerDirection_X_canvas,ShowerDirection_X_2dHistMap,ShowerDirection_X_2dCanvasMap,50,-1,1,100,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ShowerDirection_Y","cos(y)",ShowerDirection_Y_HistMap,Energies_ShowerDirection_Y_HistMap,Energies_Mean_ShowerDirection_Y_GraphMap,Energies_RMS_ShowerDirection_Y_GraphMap,Energies_Mean_ShowerDirection_Y_Multi,Energies_RMS_ShowerDirection_Y_Multi,Energies_Mean_ShowerDirection_Y_canvasMulti,Energies_RMS_ShowerDirection_Y_canvasMulti,Energies_ShowerDirection_Y_canvasMap, ShowerDirection_Y_canvas,ShowerDirection_Y_2dHistMap,ShowerDirection_Y_2dCanvasMap,50,-1,1,100,0,fMaxSimEnergy);
+  
+  ana::ShowerValidation::InitaliseGraphs("ShowerDirection_Z","cos(z)",ShowerDirection_Z_HistMap,Energies_ShowerDirection_Z_HistMap,Energies_Mean_ShowerDirection_Z_GraphMap,Energies_RMS_ShowerDirection_Z_GraphMap,Energies_Mean_ShowerDirection_Z_Multi,Energies_RMS_ShowerDirection_Z_Multi,Energies_Mean_ShowerDirection_Z_canvasMulti,Energies_RMS_ShowerDirection_Z_canvasMulti,Energies_ShowerDirection_Z_canvasMap, ShowerDirection_Z_canvas,ShowerDirection_Z_2dHistMap,ShowerDirection_Z_2dCanvasMap,50,-1,1,100,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ShowerStart_X","|True Shower Start X - Reco Shower Start X|",ShowerStart_X_HistMap,Energies_ShowerStart_X_HistMap,Energies_Mean_ShowerStart_X_GraphMap,Energies_RMS_ShowerStart_X_GraphMap,Energies_Mean_ShowerStart_X_Multi,Energies_RMS_ShowerStart_X_Multi,Energies_Mean_ShowerStart_X_canvasMulti,Energies_RMS_ShowerStart_X_canvasMulti,Energies_ShowerStart_X_canvasMap, ShowerStart_X_canvas,ShowerStart_X_2dHistMap,ShowerStart_X_2dCanvasMap,200,0,50,100,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ShowerStart_Y","|True Shower Start Y - Reco Shower Start Y|",ShowerStart_Y_HistMap,Energies_ShowerStart_Y_HistMap,Energies_Mean_ShowerStart_Y_GraphMap,Energies_RMS_ShowerStart_Y_GraphMap,Energies_Mean_ShowerStart_Y_Multi,Energies_RMS_ShowerStart_Y_Multi,Energies_Mean_ShowerStart_Y_canvasMulti,Energies_RMS_ShowerStart_Y_canvasMulti,Energies_ShowerStart_Y_canvasMap, ShowerStart_Y_canvas,ShowerStart_Y_2dHistMap,ShowerStart_Y_2dCanvasMap,200,0,50,100,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ShowerStart_Z","|True Shower Start Z - Reco Shower Start Z|",ShowerStart_Z_HistMap,Energies_ShowerStart_Z_HistMap,Energies_Mean_ShowerStart_Z_GraphMap,Energies_RMS_ShowerStart_Z_GraphMap,Energies_Mean_ShowerStart_Z_Multi,Energies_RMS_ShowerStart_Z_Multi,Energies_Mean_ShowerStart_Z_canvasMulti,Energies_RMS_ShowerStart_Z_canvasMulti,Energies_ShowerStart_Z_canvasMap, ShowerStart_Z_canvas,ShowerStart_Z_2dHistMap,ShowerStart_Z_2dCanvasMap,200,0,50,100,0,fMaxSimEnergy);
    
-  ana::ShowerValidation::InitaliseGraphs("ShowerLength","Shower Length (cm)",ShowerLength_HistMap,Energies_ShowerLength_HistMap,Energies_Mean_ShowerLength_GraphMap,Energies_RMS_ShowerLength_GraphMap,Energies_Mean_ShowerLength_Multi,Energies_RMS_ShowerLength_Multi,Energies_Mean_ShowerLength_canvasMulti,Energies_RMS_ShowerLength_canvasMulti,Energies_ShowerLength_canvasMap,ShowerLength_canvas,ShowerLength_2dHistMap,ShowerLength_2dCanvasMap,100,0,500,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ShowerLength","Shower Length (cm)",ShowerLength_HistMap,Energies_ShowerLength_HistMap,Energies_Mean_ShowerLength_GraphMap,Energies_RMS_ShowerLength_GraphMap,Energies_Mean_ShowerLength_Multi,Energies_RMS_ShowerLength_Multi,Energies_Mean_ShowerLength_canvasMulti,Energies_RMS_ShowerLength_canvasMulti,Energies_ShowerLength_canvasMap,ShowerLength_canvas,ShowerLength_2dHistMap,ShowerLength_2dCanvasMap,100,0,500,100,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerEnergyDiff","True Energy/Reco Energy",ShowerEnergyDiff_HistMap,Energies_ShowerEnergyDiff_HistMap,Energies_Mean_ShowerEnergyDiff_GraphMap,Energies_RMS_ShowerEnergyDiff_GraphMap,Energies_Mean_ShowerEnergyDiff_Multi,Energies_RMS_ShowerEnergyDiff_Multi,Energies_Mean_ShowerEnergyDiff_canvasMulti,Energies_RMS_ShowerEnergyDiff_canvasMulti,Energies_ShowerEnergyDiff_canvasMap, ShowerEnergyDiff_canvas,ShowerEnergyDiff_2dHistMap,ShowerEnergyDiff_2dCanvasMap,100,-3,3,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ShowerEnergyDiff","Reco Energy/True Energy",ShowerEnergyDiff_HistMap,Energies_ShowerEnergyDiff_HistMap,Energies_Mean_ShowerEnergyDiff_GraphMap,Energies_RMS_ShowerEnergyDiff_GraphMap,Energies_Mean_ShowerEnergyDiff_Multi,Energies_RMS_ShowerEnergyDiff_Multi,Energies_Mean_ShowerEnergyDiff_canvasMulti,Energies_RMS_ShowerEnergyDiff_canvasMulti,Energies_ShowerEnergyDiff_canvasMap, ShowerEnergyDiff_canvas,ShowerEnergyDiff_2dHistMap,ShowerEnergyDiff_2dCanvasMap,100,0,1.2,100,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerdEdx","dEdx (meV)",ShowerdEdx_HistMap,Energies_ShowerdEdx_HistMap,Energies_Mean_ShowerdEdx_GraphMap,Energies_RMS_ShowerdEdx_GraphMap,Energies_Mean_ShowerdEdx_Multi,Energies_RMS_ShowerdEdx_Multi,Energies_Mean_ShowerdEdx_canvasMulti,Energies_RMS_ShowerdEdx_canvasMulti,Energies_ShowerdEdx_canvasMap, ShowerdEdx_canvas,ShowerdEdx_2dHistMap,ShowerdEdx_2dCanvasMap,100,0,10,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ShowerdEdx","dEdx (meV)",ShowerdEdx_HistMap,Energies_ShowerdEdx_HistMap,Energies_Mean_ShowerdEdx_GraphMap,Energies_RMS_ShowerdEdx_GraphMap,Energies_Mean_ShowerdEdx_Multi,Energies_RMS_ShowerdEdx_Multi,Energies_Mean_ShowerdEdx_canvasMulti,Energies_RMS_ShowerdEdx_canvasMulti,Energies_ShowerdEdx_canvasMap, ShowerdEdx_canvas,ShowerdEdx_2dHistMap,ShowerdEdx_2dCanvasMap,100,0,10,100,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("EventSeggy","Shower Segmenation",EventSeggy_HistMap,Energies_EventSeggy_HistMap,Energies_Mean_EventSeggy_GraphMap,Energies_RMS_EventSeggy_GraphMap,Energies_Mean_EventSeggy_Multi,Energies_RMS_EventSeggy_Multi,Energies_Mean_EventSeggy_canvasMulti,Energies_RMS_EventSeggy_canvasMulti,Energies_EventSeggy_canvasMap, EventSeggy_canvas,EventSeggy_2dHistMap,EventSeggy_2dCanvasMap,20,0,20,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("EventSeggy","Shower Segmenation",EventSeggy_HistMap,Energies_EventSeggy_HistMap,Energies_Mean_EventSeggy_GraphMap,Energies_RMS_EventSeggy_GraphMap,Energies_Mean_EventSeggy_Multi,Energies_RMS_EventSeggy_Multi,Energies_Mean_EventSeggy_canvasMulti,Energies_RMS_EventSeggy_canvasMulti,Energies_EventSeggy_canvasMap, EventSeggy_canvas,EventSeggy_2dHistMap,EventSeggy_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerCompleteness","Completeness",ShowerCompleteness_HistMap,Energies_ShowerCompleteness_HistMap,Energies_Mean_ShowerCompleteness_GraphMap,Energies_RMS_ShowerCompleteness_GraphMap,Energies_Mean_ShowerCompleteness_Multi,Energies_RMS_ShowerCompleteness_Multi,Energies_Mean_ShowerCompleteness_canvasMulti,Energies_RMS_ShowerCompleteness_canvasMulti,Energies_ShowerCompleteness_canvasMap, ShowerCompleteness_canvas,ShowerCompleteness_2dHistMap,ShowerCompleteness_2dCanvasMap,100,-3,3,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ShowerCompleteness","Completeness",ShowerCompleteness_HistMap,Energies_ShowerCompleteness_HistMap,Energies_Mean_ShowerCompleteness_GraphMap,Energies_RMS_ShowerCompleteness_GraphMap,Energies_Mean_ShowerCompleteness_Multi,Energies_RMS_ShowerCompleteness_Multi,Energies_Mean_ShowerCompleteness_canvasMulti,Energies_RMS_ShowerCompleteness_canvasMulti,Energies_ShowerCompleteness_canvasMap, ShowerCompleteness_canvas,ShowerCompleteness_2dHistMap,ShowerCompleteness_2dCanvasMap,100,-1.2,1.2,100,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerPurity","Purity",ShowerPurity_HistMap,Energies_ShowerPurity_HistMap,Energies_Mean_ShowerPurity_GraphMap,Energies_RMS_ShowerPurity_GraphMap,Energies_Mean_ShowerPurity_Multi,Energies_RMS_ShowerPurity_Multi,Energies_Mean_ShowerPurity_canvasMulti,Energies_RMS_ShowerPurity_canvasMulti,Energies_ShowerPurity_canvasMap, ShowerPurity_canvas,ShowerPurity_2dHistMap,ShowerPurity_2dCanvasMap,100,-3,3,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ShowerPurity","Purity",ShowerPurity_HistMap,Energies_ShowerPurity_HistMap,Energies_Mean_ShowerPurity_GraphMap,Energies_RMS_ShowerPurity_GraphMap,Energies_Mean_ShowerPurity_Multi,Energies_RMS_ShowerPurity_Multi,Energies_Mean_ShowerPurity_canvasMulti,Energies_RMS_ShowerPurity_canvasMulti,Energies_ShowerPurity_canvasMap, ShowerPurity_canvas,ShowerPurity_2dHistMap,ShowerPurity_2dCanvasMap,100,-1.2,1.2,100,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerEnergy","Shower Energy (MeV)",ShowerEnergy_HistMap,Energies_ShowerEnergy_HistMap,Energies_Mean_ShowerEnergy_GraphMap,Energies_RMS_ShowerEnergy_GraphMap,Energies_Mean_ShowerEnergy_Multi,Energies_RMS_ShowerEnergy_Multi,Energies_Mean_ShowerEnergy_canvasMulti,Energies_RMS_ShowerEnergy_canvasMulti,Energies_ShowerEnergy_canvasMap,ShowerEnergy_canvas,ShowerEnergy_2dHistMap,ShowerEnergy_2dCanvasMap,100,0,5000,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ShowerEnergy","Shower Energy (MeV)",ShowerEnergy_HistMap,Energies_ShowerEnergy_HistMap,Energies_Mean_ShowerEnergy_GraphMap,Energies_RMS_ShowerEnergy_GraphMap,Energies_Mean_ShowerEnergy_Multi,Energies_RMS_ShowerEnergy_Multi,Energies_Mean_ShowerEnergy_canvasMulti,Energies_RMS_ShowerEnergy_canvasMulti,Energies_ShowerEnergy_canvasMap,ShowerEnergy_canvas,ShowerEnergy_2dHistMap,ShowerEnergy_2dCanvasMap,100,0,fMaxSimEnergy,100,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerHitNum","Hit Number",ShowerHitNum_HistMap,Energies_ShowerHitNum_HistMap,Energies_Mean_ShowerHitNum_GraphMap,Energies_RMS_ShowerHitNum_GraphMap,Energies_Mean_ShowerHitNum_Multi,Energies_RMS_ShowerHitNum_Multi,Energies_Mean_ShowerHitNum_canvasMulti,Energies_RMS_ShowerHitNum_canvasMulti,Energies_ShowerHitNum_canvasMap, ShowerHitNum_canvas,ShowerHitNum_2dHistMap,ShowerHitNum_2dCanvasMap,200,0,10000,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ShowerHitNum","Hit Number",ShowerHitNum_HistMap,Energies_ShowerHitNum_HistMap,Energies_Mean_ShowerHitNum_GraphMap,Energies_RMS_ShowerHitNum_GraphMap,Energies_Mean_ShowerHitNum_Multi,Energies_RMS_ShowerHitNum_Multi,Energies_Mean_ShowerHitNum_canvasMulti,Energies_RMS_ShowerHitNum_canvasMulti,Energies_ShowerHitNum_canvasMap, ShowerHitNum_canvas,ShowerHitNum_2dHistMap,ShowerHitNum_2dCanvasMap,200,0,10000,100,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerTotalEnergyDiff","True Energy/Reco Energy",ShowerTotalEnergyDiff_HistMap,Energies_ShowerTotalEnergyDiff_HistMap,Energies_Mean_ShowerTotalEnergyDiff_GraphMap,Energies_RMS_ShowerTotalEnergyDiff_GraphMap,Energies_Mean_ShowerTotalEnergyDiff_Multi,Energies_RMS_ShowerTotalEnergyDiff_Multi,Energies_Mean_ShowerTotalEnergyDiff_canvasMulti,Energies_RMS_ShowerTotalEnergyDiff_canvasMulti,Energies_ShowerTotalEnergyDiff_canvasMap, ShowerTotalEnergyDiff_canvas,ShowerTotalEnergyDiff_2dHistMap,ShowerTotalEnergyDiff_2dCanvasMap,100,-3,3,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ShowerTotalEnergyDiff","(Reco Energy - True Energy)/True Energy",ShowerTotalEnergyDiff_HistMap,Energies_ShowerTotalEnergyDiff_HistMap,Energies_Mean_ShowerTotalEnergyDiff_GraphMap,Energies_RMS_ShowerTotalEnergyDiff_GraphMap,Energies_Mean_ShowerTotalEnergyDiff_Multi,Energies_RMS_ShowerTotalEnergyDiff_Multi,Energies_Mean_ShowerTotalEnergyDiff_canvasMulti,Energies_RMS_ShowerTotalEnergyDiff_canvasMulti,Energies_ShowerTotalEnergyDiff_canvasMap, ShowerTotalEnergyDiff_canvas,ShowerTotalEnergyDiff_2dHistMap,ShowerTotalEnergyDiff_2dCanvasMap,100,-1.2,1.2,100,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("HitEnergy","Hit Energy",HitEnergy_HistMap,Energies_HitEnergy_HistMap,Energies_Mean_HitEnergy_GraphMap,Energies_RMS_HitEnergy_GraphMap,Energies_Mean_HitEnergy_Multi,Energies_RMS_HitEnergy_Multi,Energies_Mean_HitEnergy_canvasMulti,Energies_RMS_HitEnergy_canvasMulti,Energies_HitEnergy_canvasMap, HitEnergy_canvas,HitEnergy_2dHistMap,HitEnergy_2dCanvasMap,100,0,1000,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ShowerMag","|True Start - Reco Start| (cm)",ShowerMag_HistMap,Energies_ShowerMag_HistMap,Energies_Mean_ShowerMag_GraphMap,Energies_RMS_ShowerMag_GraphMap,Energies_Mean_ShowerMag_Multi,Energies_RMS_ShowerMag_Multi,Energies_Mean_ShowerMag_canvasMulti,Energies_RMS_ShowerMag_canvasMulti,Energies_ShowerMag_canvasMap, ShowerMag_canvas,ShowerMag_2dHistMap,ShowerMag_2dCanvasMap,100,0,50,100,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ShowerDirectionDiff","cos(x)",ShowerDirectionDiff_HistMap,Energies_ShowerDirectionDiff_HistMap,Energies_Mean_ShowerDirectionDiff_GraphMap,Energies_RMS_ShowerDirectionDiff_GraphMap,Energies_Mean_ShowerDirectionDiff_Multi,Energies_RMS_ShowerDirectionDiff_Multi,Energies_Mean_ShowerDirectionDiff_canvasMulti,Energies_RMS_ShowerDirectionDiff_canvasMulti,Energies_ShowerDirectionDiff_canvasMap, ShowerDirectionDiff_canvas,ShowerDirectionDiff_2dHistMap,ShowerDirectionDiff_2dCanvasMap,100,-1,1,100,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ShowerRecoEnergyVsTrueEnergyinRecoShower","TrueEnergyinRecoShower/ShowerRecoEnergy",ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap,Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti,Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMap, ShowerRecoEnergyVsTrueEnergyinRecoShower_canvas,ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap,ShowerRecoEnergyVsTrueEnergyinRecoShower_2dCanvasMap,100,0,3,100,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("TrueEnergy","True Energy (MeV)",TrueEnergy_HistMap,Energies_TrueEnergy_HistMap,Energies_Mean_TrueEnergy_GraphMap,Energies_RMS_TrueEnergy_GraphMap,Energies_Mean_TrueEnergy_Multi,Energies_RMS_TrueEnergy_Multi,Energies_Mean_TrueEnergy_canvasMulti,Energies_RMS_TrueEnergy_canvasMulti,Energies_TrueEnergy_canvasMap, TrueEnergy_canvas,TrueEnergy_2dHistMap,TrueEnergy_2dCanvasMap,100,0,fMaxSimEnergy,100,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ClusterProjectionMatchedEnergy","Projection Matched",ClusterProjectionMatchedEnergy_HistMap,Energies_ClusterProjectionMatchedEnergy_HistMap,Energies_Mean_ClusterProjectionMatchedEnergy_GraphMap,Energies_RMS_ClusterProjectionMatchedEnergy_GraphMap,Energies_Mean_ClusterProjectionMatchedEnergy_Multi,Energies_RMS_ClusterProjectionMatchedEnergy_Multi,Energies_Mean_ClusterProjectionMatchedEnergy_canvasMulti,Energies_RMS_ClusterProjectionMatchedEnergy_canvasMulti,Energies_ClusterProjectionMatchedEnergy_canvasMap, ClusterProjectionMatchedEnergy_canvas,ClusterProjectionMatchedEnergy_2dHistMap,ClusterProjectionMatchedEnergy_2dCanvasMap,4,-1,2,100,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ClusterCompletenessEnergy","Energy Completness ",ClusterCompletenessEnergy_HistMap,Energies_ClusterCompletenessEnergy_HistMap,Energies_Mean_ClusterCompletenessEnergy_GraphMap,Energies_RMS_ClusterCompletenessEnergy_GraphMap,Energies_Mean_ClusterCompletenessEnergy_Multi,Energies_RMS_ClusterCompletenessEnergy_Multi,Energies_Mean_ClusterCompletenessEnergy_canvasMulti,Energies_RMS_ClusterCompletenessEnergy_canvasMulti,Energies_ClusterCompletenessEnergy_canvasMap, ClusterCompletenessEnergy_canvas,ClusterCompletenessEnergy_2dHistMap,ClusterCompletenessEnergy_2dCanvasMap,200,-1.2,1.2,200,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ClusterCompletenessHits","Hit Completeness",ClusterCompletenessHits_HistMap,Energies_ClusterCompletenessHits_HistMap,Energies_Mean_ClusterCompletenessHits_GraphMap,Energies_RMS_ClusterCompletenessHits_GraphMap,Energies_Mean_ClusterCompletenessHits_Multi,Energies_RMS_ClusterCompletenessHits_Multi,Energies_Mean_ClusterCompletenessHits_canvasMulti,Energies_RMS_ClusterCompletenessHits_canvasMulti,Energies_ClusterCompletenessHits_canvasMap, ClusterCompletenessHits_canvas,ClusterCompletenessHits_2dHistMap,ClusterCompletenessHits_2dCanvasMap,200,0,1.2,200,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ClusterPurityEnergy","Energy Purity",ClusterPurityEnergy_HistMap,Energies_ClusterPurityEnergy_HistMap,Energies_Mean_ClusterPurityEnergy_GraphMap,Energies_RMS_ClusterPurityEnergy_GraphMap,Energies_Mean_ClusterPurityEnergy_Multi,Energies_RMS_ClusterPurityEnergy_Multi,Energies_Mean_ClusterPurityEnergy_canvasMulti,Energies_RMS_ClusterPurityEnergy_canvasMulti,Energies_ClusterPurityEnergy_canvasMap, ClusterPurityEnergy_canvas,ClusterPurityEnergy_2dHistMap,ClusterPurityEnergy_2dCanvasMap,200,0,1.2,200,0,fMaxSimEnergy);
+
+  ana::ShowerValidation::InitaliseGraphs("ClusterPurityHits","Hit Purity",ClusterPurityHits_HistMap,Energies_ClusterPurityHits_HistMap,Energies_Mean_ClusterPurityHits_GraphMap,Energies_RMS_ClusterPurityHits_GraphMap,Energies_Mean_ClusterPurityHits_Multi,Energies_RMS_ClusterPurityHits_Multi,Energies_Mean_ClusterPurityHits_canvasMulti,Energies_RMS_ClusterPurityHits_canvasMulti,Energies_ClusterPurityHits_canvasMap, ClusterPurityHits_canvas,ClusterPurityHits_2dHistMap,ClusterPurityHits_2dCanvasMap,200,0,1.2,200,0,fMaxSimEnergy);
   
-  ana::ShowerValidation::InitaliseGraphs("ShowerMag","|True Start - Reco Start| (cm)",ShowerMag_HistMap,Energies_ShowerMag_HistMap,Energies_Mean_ShowerMag_GraphMap,Energies_RMS_ShowerMag_GraphMap,Energies_Mean_ShowerMag_Multi,Energies_RMS_ShowerMag_Multi,Energies_Mean_ShowerMag_canvasMulti,Energies_RMS_ShowerMag_canvasMulti,Energies_ShowerMag_canvasMap, ShowerMag_canvas,ShowerMag_2dHistMap,ShowerMag_2dCanvasMap,100,0,50,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ClusterCompPurityEnergy","Energy Completeness*Purity",ClusterCompPurityEnergy_HistMap,Energies_ClusterCompPurityEnergy_HistMap,Energies_Mean_ClusterCompPurityEnergy_GraphMap,Energies_RMS_ClusterCompPurityEnergy_GraphMap,Energies_Mean_ClusterCompPurityEnergy_Multi,Energies_RMS_ClusterCompPurityEnergy_Multi,Energies_Mean_ClusterCompPurityEnergy_canvasMulti,Energies_RMS_ClusterCompPurityEnergy_canvasMulti,Energies_ClusterCompPurityEnergy_canvasMap, ClusterCompPurityEnergy_canvas,ClusterCompPurityEnergy_2dHistMap,ClusterCompPurityEnergy_2dCanvasMap,100,0,1.2,200,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerDirectionDiff",";cos(x);Enteries",ShowerDirectionDiff_HistMap,Energies_ShowerDirectionDiff_HistMap,Energies_Mean_ShowerDirectionDiff_GraphMap,Energies_RMS_ShowerDirectionDiff_GraphMap,Energies_Mean_ShowerDirectionDiff_Multi,Energies_RMS_ShowerDirectionDiff_Multi,Energies_Mean_ShowerDirectionDiff_canvasMulti,Energies_RMS_ShowerDirectionDiff_canvasMulti,Energies_ShowerDirectionDiff_canvasMap, ShowerDirectionDiff_canvas,ShowerDirectionDiff_2dHistMap,ShowerDirectionDiff_2dCanvasMap,100,-1,1,100,0,5000);
+  ana::ShowerValidation::InitaliseGraphs("ClusterCompPurityHits","Hit Completeness*Purity",ClusterCompPurityHits_HistMap,Energies_ClusterCompPurityHits_HistMap,Energies_Mean_ClusterCompPurityHits_GraphMap,Energies_RMS_ClusterCompPurityHits_GraphMap,Energies_Mean_ClusterCompPurityHits_Multi,Energies_RMS_ClusterCompPurityHits_Multi,Energies_Mean_ClusterCompPurityHits_canvasMulti,Energies_RMS_ClusterCompPurityHits_canvasMulti,Energies_ClusterCompPurityHits_canvasMap, ClusterCompPurityHits_canvas,ClusterCompPurityHits_2dHistMap,ClusterCompPurityHits_2dCanvasMap,200,0,1.2,200,0,fMaxSimEnergy);
 
-  ana::ShowerValidation::InitaliseGraphs("ShowerRecoEnergyVsTrueEnergyinRecoShower","ShowerRecoEnergy/TrueEnergyinRecoShower",ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap,Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti,Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMap, ShowerRecoEnergyVsTrueEnergyinRecoShower_canvas,ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap,ShowerRecoEnergyVsTrueEnergyinRecoShower_2dCanvasMap,100,0,3,100,0,5000);
-
-  ana::ShowerValidation::InitaliseGraphs("TrueEnergy",";cos(x);Enteries",TrueEnergy_HistMap,Energies_TrueEnergy_HistMap,Energies_Mean_TrueEnergy_GraphMap,Energies_RMS_TrueEnergy_GraphMap,Energies_Mean_TrueEnergy_Multi,Energies_RMS_TrueEnergy_Multi,Energies_Mean_TrueEnergy_canvasMulti,Energies_RMS_TrueEnergy_canvasMulti,Energies_TrueEnergy_canvasMap, TrueEnergy_canvas,TrueEnergy_2dHistMap,TrueEnergy_2dCanvasMap,100,0,5000,100,0,5000);
-
-  ana::ShowerValidation::InitaliseGraphs("ClusterProjectionMatchedEnergy","Projection Matched",ClusterProjectionMatchedEnergy_HistMap,Energies_ClusterProjectionMatchedEnergy_HistMap,Energies_Mean_ClusterProjectionMatchedEnergy_GraphMap,Energies_RMS_ClusterProjectionMatchedEnergy_GraphMap,Energies_Mean_ClusterProjectionMatchedEnergy_Multi,Energies_RMS_ClusterProjectionMatchedEnergy_Multi,Energies_Mean_ClusterProjectionMatchedEnergy_canvasMulti,Energies_RMS_ClusterProjectionMatchedEnergy_canvasMulti,Energies_ClusterProjectionMatchedEnergy_canvasMap, ClusterProjectionMatchedEnergy_canvas,ClusterProjectionMatchedEnergy_2dHistMap,ClusterProjectionMatchedEnergy_2dCanvasMap,2,0,1,100,0,5000);
-
-  ana::ShowerValidation::InitaliseGraphs("ClusterCompletenessEnergy","Energy Completness ",ClusterCompletenessEnergy_HistMap,Energies_ClusterCompletenessEnergy_HistMap,Energies_Mean_ClusterCompletenessEnergy_GraphMap,Energies_RMS_ClusterCompletenessEnergy_GraphMap,Energies_Mean_ClusterCompletenessEnergy_Multi,Energies_RMS_ClusterCompletenessEnergy_Multi,Energies_Mean_ClusterCompletenessEnergy_canvasMulti,Energies_RMS_ClusterCompletenessEnergy_canvasMulti,Energies_ClusterCompletenessEnergy_canvasMap, ClusterCompletenessEnergy_canvas,ClusterCompletenessEnergy_2dHistMap,ClusterCompletenessEnergy_2dCanvasMap,100,-3,3,100,0,5000);
-
-  ana::ShowerValidation::InitaliseGraphs("ClusterCompletenessHits","Hit Completeness",ClusterCompletenessHits_HistMap,Energies_ClusterCompletenessHits_HistMap,Energies_Mean_ClusterCompletenessHits_GraphMap,Energies_RMS_ClusterCompletenessHits_GraphMap,Energies_Mean_ClusterCompletenessHits_Multi,Energies_RMS_ClusterCompletenessHits_Multi,Energies_Mean_ClusterCompletenessHits_canvasMulti,Energies_RMS_ClusterCompletenessHits_canvasMulti,Energies_ClusterCompletenessHits_canvasMap, ClusterCompletenessHits_canvas,ClusterCompletenessHits_2dHistMap,ClusterCompletenessHits_2dCanvasMap,100,-3,3,100,0,5000);
-
-  ana::ShowerValidation::InitaliseGraphs("ClusterPurityEnergy","Energy Purity",ClusterPurityEnergy_HistMap,Energies_ClusterPurityEnergy_HistMap,Energies_Mean_ClusterPurityEnergy_GraphMap,Energies_RMS_ClusterPurityEnergy_GraphMap,Energies_Mean_ClusterPurityEnergy_Multi,Energies_RMS_ClusterPurityEnergy_Multi,Energies_Mean_ClusterPurityEnergy_canvasMulti,Energies_RMS_ClusterPurityEnergy_canvasMulti,Energies_ClusterPurityEnergy_canvasMap, ClusterPurityEnergy_canvas,ClusterPurityEnergy_2dHistMap,ClusterPurityEnergy_2dCanvasMap,100,-3,3,100,0,5000);
-
-  ana::ShowerValidation::InitaliseGraphs("ClusterPurityHits","Hit Purity",ClusterPurityHits_HistMap,Energies_ClusterPurityHits_HistMap,Energies_Mean_ClusterPurityHits_GraphMap,Energies_RMS_ClusterPurityHits_GraphMap,Energies_Mean_ClusterPurityHits_Multi,Energies_RMS_ClusterPurityHits_Multi,Energies_Mean_ClusterPurityHits_canvasMulti,Energies_RMS_ClusterPurityHits_canvasMulti,Energies_ClusterPurityHits_canvasMap, ClusterPurityHits_canvas,ClusterPurityHits_2dHistMap,ClusterPurityHits_2dCanvasMap,100,-3,3,100,0,5000);
-  
-  ana::ShowerValidation::InitaliseGraphs("ClusterCompPurityEnergy","Energy Completeness*Purity",ClusterCompPurityEnergy_HistMap,Energies_ClusterCompPurityEnergy_HistMap,Energies_Mean_ClusterCompPurityEnergy_GraphMap,Energies_RMS_ClusterCompPurityEnergy_GraphMap,Energies_Mean_ClusterCompPurityEnergy_Multi,Energies_RMS_ClusterCompPurityEnergy_Multi,Energies_Mean_ClusterCompPurityEnergy_canvasMulti,Energies_RMS_ClusterCompPurityEnergy_canvasMulti,Energies_ClusterCompPurityEnergy_canvasMap, ClusterCompPurityEnergy_canvas,ClusterCompPurityEnergy_2dHistMap,ClusterCompPurityEnergy_2dCanvasMap,100,-3,3,100,0,5000);
-
-  ana::ShowerValidation::InitaliseGraphs("ClusterCompPurityHits","Hit Completeness*Purity",ClusterCompPurityHits_HistMap,Energies_ClusterCompPurityHits_HistMap,Energies_Mean_ClusterCompPurityHits_GraphMap,Energies_RMS_ClusterCompPurityHits_GraphMap,Energies_Mean_ClusterCompPurityHits_Multi,Energies_RMS_ClusterCompPurityHits_Multi,Energies_Mean_ClusterCompPurityHits_canvasMulti,Energies_RMS_ClusterCompPurityHits_canvasMulti,Energies_ClusterCompPurityHits_canvasMap, ClusterCompPurityHits_canvas,ClusterCompPurityHits_2dHistMap,ClusterCompPurityHits_2dCanvasMap,100,-3,3,100,0,5000);
-
-  ana::ShowerValidation::InitaliseHitGraphs("HitCompletenessEnergy","Total True Energy Desposited/ Total True Energy Deposited in Hits",HitCompletenessEnergy_HistMap,Energies_HitCompletenessEnergy_HistMap,Energies_Mean_HitCompletenessEnergy_GraphMap,Energies_RMS_HitCompletenessEnergy_GraphMap,Energies_Mean_HitCompletenessEnergy_Multi,Energies_RMS_HitCompletenessEnergy_Multi,Energies_Mean_HitCompletenessEnergy_canvasMulti,Energies_RMS_HitCompletenessEnergy_canvasMulti,Energies_HitCompletenessEnergy_canvasMap, HitCompletenessEnergy_canvas,HitCompletenessEnergy_2dHistMap,HitCompletenessEnergy_2dCanvasMap,100,-3,3,100,0,5000);
+  ana::ShowerValidation::InitaliseHitGraphs("HitCompletenessEnergy","True Energy Deposited/True Energy Deposited in Hits",HitCompletenessEnergy_HistMap,Energies_HitCompletenessEnergy_HistMap,Energies_Mean_HitCompletenessEnergy_GraphMap,Energies_RMS_HitCompletenessEnergy_GraphMap,Energies_Mean_HitCompletenessEnergy_Multi,Energies_RMS_HitCompletenessEnergy_Multi,Energies_Mean_HitCompletenessEnergy_canvasMulti,Energies_RMS_HitCompletenessEnergy_canvasMulti,Energies_HitCompletenessEnergy_canvasMap, HitCompletenessEnergy_canvas,HitCompletenessEnergy_2dHistMap,HitCompletenessEnergy_2dCanvasMap,200,0,1.2,200,0,fMaxSimEnergy);
 
 }
 
@@ -1058,9 +1099,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
   //Get all the pfparticles
   std::vector<art::Handle<std::vector<recob::PFParticle> > > pfpHandles;
   evt.getManyByType(pfpHandles);
-
-  //Get the energy deposited in the hits.
-  float EnergyinHits = RecoUtils::TotalEnergyDepinHits(hits,2);
 
   //###############################################
   //### Get the Truth information for the event ### 
@@ -1184,7 +1222,10 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
     }
   }
-   
+
+  float SmallestShowerE_Before = 999;
+  float BiggestShowerE_Before  = -999;
+
   //Time to cut the true showers and make sure they are a shower.
   for(std::map<int,std::vector<int> >::iterator showermother=ShowersMothers.begin(); showermother!=ShowersMothers.end();){
   
@@ -1194,7 +1235,12 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     const simb::MCParticle *motherparticle = trueParticles[showermother->first];
     int pdgcode = motherparticle->PdgCode();
     if(pdgcode == 11 || pdgcode == 22){
-      
+  
+      //Fill the true Energy Histograms
+      ShowerMotherE_BeforeCutHist->Fill(motherparticle->E()*1000); 
+      if(motherparticle->E() < SmallestShowerE_Before){SmallestShowerE_Before = motherparticle->E();}
+      if(motherparticle->E() > BiggestShowerE_Before){BiggestShowerE_Before = motherparticle->E();}
+
       if(motherparticle->E() > fSimEnergyCut){
 	++num_of_showers_viaEcut;
       
@@ -1237,6 +1283,23 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       showermother = ShowersMothers.erase(showermother);
     }
   }
+
+  BiggestShowerMotherE_BeforeCutHist->Fill(BiggestShowerE_Before*1000);
+  SmallestShowerMotherE_BeforeCutHist->Fill(SmallestShowerE_Before*1000);
+
+  float SmallestShowerE_After = 999;
+  float BiggestShowerE_After  = -999;
+
+  for(std::map<int,std::vector<int> >::iterator showermother=ShowersMothers.begin(); showermother!=ShowersMothers.end();++showermother){
+    const simb::MCParticle *motherparticle = trueParticles[showermother->first];
+    ShowerMotherE_AfterCutHist->Fill(motherparticle->E()*1000);
+    if(motherparticle->E() < SmallestShowerE_After){SmallestShowerE_After = motherparticle->E();}
+    if(motherparticle->E() > BiggestShowerE_After){BiggestShowerE_After = motherparticle->E();}
+  }
+
+  BiggestShowerMotherE_AfterCutHist->Fill(BiggestShowerE_After*1000);
+  SmallestShowerMotherE_AfterCutHist->Fill(SmallestShowerE_After*1000);
+
 
   //Get the MC Energy deposited for each MC track. 
   std::map<int,float> MCTrack_Energy_map = RecoUtils::TrueEnergyDepositedFromMCTracks(simchannels);
@@ -1335,8 +1398,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     //Association between Showers and pfParticle                                                                                            
     art::FindManyP<recob::PFParticle> fmpf(showerListHandle, evt, fShowerModuleLabel);
 
-    HitEnergy_HistMap[fShowerModuleLabel]->Fill(EnergyinHits/1000*simenergy);
-
     std::vector< art::Ptr<recob::Hit> > showerhits; //hits in the shower    
     unsigned int max_hitnum=0;
     unsigned int biggest_shower_iter = 9999;
@@ -1376,9 +1437,11 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
 
       if((int) showerhits.size() < fMinHitSize) {continue;}
+
+      const int ShowerBest_Plane = shower->best_plane();
       
       //Function from RecoUtils, finds the most probable track ID associated with the set of hits from there true energy depositons. The pair returns the energy as well. 
-      std::pair<int,double> ShowerTrackInfo = ShowerUtils::TrueParticleIDFromTrueChain(ShowersMothers,showerhits,2); 
+      std::pair<int,double> ShowerTrackInfo = ShowerUtils::TrueParticleIDFromTrueChain(ShowersMothers,showerhits,ShowerBest_Plane); 
       int ShowerTrackID = ShowerTrackInfo.first;
       double TrueEnergyDepWithinShower_FromTrueShower = ShowerTrackInfo.second;
 
@@ -1391,13 +1454,16 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       //Energy deposited within the set of Hits associated to the shower.
       double TrueEnergyDep_WithinRecoShower = 0; 
       
-      //Loop over the hits and find the IDEs 
+      //Loop over the hits and find the IDEs
+
+      if(fVerbose > 1){std::cout << "shower hits size: " << showerhits.size() << std::endl;}
+ 
       for(std::vector< art::Ptr<recob::Hit> >::iterator hitIt=showerhits.begin(); hitIt!=showerhits.end(); ++hitIt){
 	
 	//Get the plane ID 
 	geo::WireID wireid = (*hitIt)->WireID();
 	int PlaneID = wireid.Plane;
-	if(PlaneID != 2){continue;}
+	if(PlaneID != ShowerBest_Plane){continue;}
 	
 	//Split the Hit into its IDE for each track it associates with.                               
 	std::vector<sim::TrackIDE> trackIDEs = backtracker->HitToTrackIDEs((*hitIt));
@@ -1413,13 +1479,20 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       //Add to the respective hitograms.
       ShowerCompleteness_HistMap[fShowerModuleLabel]->Fill(completeness);
       ShowerPurity_HistMap[fShowerModuleLabel]->Fill(purity);
+
+      ShowerCompleteness_2dHistMap[fShowerModuleLabel]->Fill(completeness,simenergy*1000);
+      ShowerPurity_2dHistMap[fShowerModuleLabel]->Fill(purity,simenergy*1000);
+     
       
       //Find the MCParticle this shower associates to
       const simb::MCParticle* MCShowerParticle = trueParticles.at(ShowerTrackID);
       
       //Find the Energy of the particle: 
-      //double Energy = MCShowerParticle->E();
-      
+      float Energy = MCShowerParticle->E();
+      AsscoiatedShowerMotherEHist->Fill(Energy*1000);
+      if(Energy == SmallestShowerE_After){AsscoiatedSmallestShowerMotherEHist->Fill(Energy*1000);}
+      else if(Energy == BiggestShowerE_After){AsscoiatedBiggestShowerMotherEHist->Fill(Energy*1000);}
+
       //Get the number of Traj points to loop over                                                    
       unsigned int TrajPoints = MCShowerParticle->NumberTrajectoryPoints();
       
@@ -1435,7 +1508,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       double TrueTrackLength = TrueShowerDirection.Mag();
       
       //Get the information for the shower  
-      const int ShowerBest_Plane                       = shower->best_plane(); 
       const TVector3 & ShowerDirection                 = shower->Direction();
       const TVector3 & ShowerStart                     = shower->ShowerStart();//cm
       const double   & ShowerTrackLength               = shower->Length();//cm        
@@ -1462,6 +1534,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       ShowerDirectionDiff_HistMap[fShowerModuleLabel]->Fill(TrueShowerDirection.Dot(ShowerDirection)/(TrueShowerDirection.Mag()*ShowerDirection.Mag()));
       ShowerLength_HistMap[fShowerModuleLabel]->Fill(TMath::Abs(TrueTrackLength-ShowerTrackLength));
       ShowerEnergyDiff_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDep_FromShower);
+      ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes_remove[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower);
       ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower);
       ShowerEnergy_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]);
       ShowerHitNum_HistMap[fShowerModuleLabel]->Fill(showerhits.size());
@@ -1479,10 +1552,13 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       ShowerDirectionDiff_2dHistMap[fShowerModuleLabel]->Fill(TrueShowerDirection.Dot(ShowerDirection)/(TrueShowerDirection.Mag()*ShowerDirection.Mag()),simenergy*1000);
       ShowerLength_2dHistMap[fShowerModuleLabel]->Fill(TMath::Abs(TrueTrackLength-ShowerTrackLength),simenergy*1000);
       ShowerEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDep_FromShower,simenergy*1000);
+      ShowerTotalEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes_remove[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
       ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower,simenergy*1000);
       ShowerEnergy_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane],simenergy*1000);
       ShowerHitNum_2dHistMap[fShowerModuleLabel]->Fill(showerhits.size(),simenergy*1000);
       ShowerdEdx_2dHistMap[fShowerModuleLabel]->Fill((ShowerdEdX_vec[ShowerBest_Plane]),simenergy*1000);
+      
+      PosDir_2dHistMap[fShowerModuleLabel]->Fill(Start_diff,TrueShowerDirection.Dot(ShowerDirection)/(TrueShowerDirection.Mag()*ShowerDirection.Mag()));
 
       //Fill the Energy dependent Histograms. 
       if(fEnergies.size() != 0){
@@ -1500,6 +1576,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    Energies_ShowerEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]);
 	    Energies_ShowerLength_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(TMath::Abs(TrueTrackLength-ShowerTrackLength));
 	    Energies_ShowerEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDep_FromShower);
+	    Energies_ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill((ShowerEnergyPlanes_remove[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
 	    Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/3/TrueEnergyDepWithinShower_FromTrueShower);
 	    Energies_ShowerHitNum_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(showerhits.size());
 	    Energies_ShowerCompleteness_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(completeness);
@@ -1512,6 +1589,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       if(fVerbose > 0){
 	std::cout << "#################################################" << std::endl;
 	std::cout << "Shower Label: " <<  fShowerModuleLabel << std::endl;
+	std::cout << "Number of showers: " << showers.size() << std::endl;
 	std::cout << "True Start: " << PositionTrajStart.X() << " Shower Start: " << ShowerStart.X() << std::endl;
 	std::cout << "X Poisition: " <<  ShowerStart.X() << "Y Position " << ShowerStart.Y() << " Z Poistion: " << ShowerDirection.Z() << std::endl;
 	std::cout << "ShowerBest_Plane: " << ShowerBest_Plane << std::endl;
@@ -1524,7 +1602,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	std::cout << "TrueEnergy deposited by hits in shower: " <<  TrueEnergyDep_WithinRecoShower << std::endl;
 	std::cout << "Purity: " << purity << " completeness: " << completeness << std::endl;
 	std::cout << "Hit Size: " << showerhits.size() << std::endl;
-	std::cout << "Energy in Hits: " << EnergyinHits << std::endl;
 	std::cout << "Energy Simulated: " << simenergy << std::endl;
 	std::cout << "#################################################" <<std::endl;
       }
@@ -1592,7 +1669,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     if(fEnergies.size() != 0){
       for(unsigned int i=0; i<fEnergies.size(); ++i){
 	if(TMath::Abs(simenergy*1000 - fEnergies[i])< fEnergyWidth){
-	  Energies_HitEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(EnergyinHits/simenergy*1000);
 	  Energies_EventSeggy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(showers.size()/num_of_showers_viaDensitycut);
 	  Energies_TrueEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(simenergy*1000);
 	}
@@ -1710,52 +1786,62 @@ void ana::ShowerValidation::DrawGraphs(std::map<std::string,TH1F*>& Name_HistMap
 				       std::map<std::string,TH2F*>& Name_2dHistMap,
 				       std::map<std::string,TCanvas*>& Name_2dCanvasMap
 				       ){
-  
-  int fillstyle = 3003;  
-  std::vector<int> colours;
-  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-    colours.push_back(j+2);
+
+  std::vector<int> colours = {600,632,800,880,840};
+  if((int)fShowerModuleLabels.size() > 5){
+    for(unsigned int j=0; j<fShowerModuleLabels.size() -5 ; ++j){
+      colours.push_back(j);
+    }
   }
   
-  //Create the legend                                   
-  TLegend *leg = new TLegend(0.65, 0.1, 0.9, 0.35);
+  
+  int Name_HistMap_Max = 0;
+  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
+    if(Name_HistMap[fShowerModuleLabels[j]]->GetMaximum() > Name_HistMap_Max){
+      Name_HistMap_Max = Name_HistMap[fShowerModuleLabels[j]]->GetMaximum();
+    }
+  }
+  
 
   for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
     
-    ++fillstyle; 
-    
-    const char* name_legend = fShowerModuleLabels[j].c_str();
-    leg->AddEntry(Name_HistMap[fShowerModuleLabels[j]], name_legend);
-    
     Name_canvas->cd();
-    Name_HistMap[fShowerModuleLabels[j]]->SetFillColor(colours[j]);
-    Name_HistMap[fShowerModuleLabels[j]]->SetFillStyle(fillstyle);
-    Name_HistMap[fShowerModuleLabels[j]]->SetLineColor(1);
+    Name_HistMap[fShowerModuleLabels[j]]->SetLineColor(colours[j]);
+    Name_HistMap[fShowerModuleLabels[j]]->SetLineWidth(2);
     Name_HistMap[fShowerModuleLabels[j]]->Draw("SAME");
-    leg->Draw();
-    
+    Name_HistMap[fShowerModuleLabels[j]]->SetMinimum(0);
+    Name_HistMap[fShowerModuleLabels[j]]->SetMaximum(Name_HistMap_Max+1);
+    Name_canvas->Update();
+
     Name_2dCanvasMap[fShowerModuleLabels[j]]->cd();
-    gStyle->SetPalette(kBird);
     Name_2dHistMap[fShowerModuleLabels[j]]->Draw("COLZ");
+
+    if(fDrawCanvases){
+      std::string canvasname(Name_2dCanvasMap[fShowerModuleLabels[j]]->GetName());
+      std::string pngstring = canvasname + ".png";
+      const char* pngname = pngstring.c_str();
+      Name_2dCanvasMap[fShowerModuleLabels[j]]->Print(pngname);
+    }
+
 
     Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]] ->SetMarkerStyle(8);
     Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]]->SetMarkerStyle(8);
     Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]]->SetMarkerColor(colours[j]);    
     Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]] ->SetMarkerColor(colours[j]);
 
+
     for(unsigned int i=0; i<fEnergies.size(); ++i){
 
       float Enteries = Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetEntries();
       
       if(Enteries == 0){continue;}
-      
-      
+            
       Energies_Name_canvasMap[fEnergies[i]]->cd();
-      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetFillColor(colours[j]);
-      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetFillStyle(fillstyle);
-      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetLineColor(1);
+      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetLineWidth(2);
+      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetLineColor(colours[j]);
       Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->Draw("SAME");
-      leg->Draw();
+      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetMinimum(0);
+      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetMaximum(Name_HistMap_Max+1);
 
       float Energies_TrueEnergy_Mean = Energies_TrueEnergy_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetMean();
       float Energies_TrueEnergy_RMS = Energies_TrueEnergy_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetRMS();
@@ -1771,15 +1857,48 @@ void ana::ShowerValidation::DrawGraphs(std::map<std::string,TH1F*>& Name_HistMap
     
     Energies_Mean_Name_Multi->Add(Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]]);
     Energies_RMS_Name_Multi->Add(Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]]);
+
   }//Shower Labels Loop
+
+
+  Name_canvas->cd();
+  Name_canvas->BuildLegend();
+  if(fDrawCanvases){
+    std::string canvasname(Name_canvas->GetName());
+    std::string pngstring = canvasname + ".png";
+    std::cout << "pngstring: " << pngstring << std::endl;
+    const char* pngname = pngstring.c_str();
+    Name_canvas->Print(pngname);
+  }
+  
+  for(unsigned int i=0; i<fEnergies.size(); ++i){
+    Energies_Name_canvasMap[fEnergies[i]]->cd();
+    Energies_Name_canvasMap[fEnergies[i]]->BuildLegend();
+  }
 
   Energies_Mean_Name_canvasMulti->cd();
   Energies_Mean_Name_Multi->Draw("AP");
-  leg->Draw();
+  Energies_Mean_Name_canvasMulti->Update();
+  Energies_Mean_Name_canvasMulti->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
+  
+  if(fDrawCanvases){
+    std::string canvasname(Energies_Mean_Name_canvasMulti->GetName());
+    std::string pngstring = canvasname + ".png";
+    const char* pngname = pngstring.c_str();
+    Energies_Mean_Name_canvasMulti->Print(pngname);
+  }
+
   Energies_RMS_Name_canvasMulti->cd();
   Energies_RMS_Name_Multi->Draw("AP");
-  leg->Draw();
+  Energies_RMS_Name_canvasMulti->Update();
+  Energies_RMS_Name_canvasMulti->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
 
+  if(fDrawCanvases){
+    std::string canvasname(Energies_RMS_Name_canvasMulti->GetName());
+    std::string pngstring = canvasname + ".png";
+    const char* pngname = pngstring.c_str();
+    Energies_RMS_Name_canvasMulti->Print(pngname);
+  }
 }
 
 
@@ -1797,37 +1916,45 @@ void ana::ShowerValidation::DrawGraphs(std::map<std::string,std::map<geo::PlaneI
 				       std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap
 				       ){
 
-  //Create the legend                                                                                                 
-  TLegend *leg = new TLegend(0.65, 0.1, 0.9, 0.35);
 
-
-  std::vector<int> colours;
-  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-    colours.push_back(j+2);
-    const char* name_legend = fShowerModuleLabels[j].c_str();
-    leg->AddEntry(ShowerDirection_X_HistMap[fShowerModuleLabels[j]], name_legend);
+  std::vector<int> colours = {600,632,800,880,840};
+  if((int)fShowerModuleLabels.size() > 5){
+    for(unsigned int j=0; j<fShowerModuleLabels.size() -5 ; ++j){
+      colours.push_back(j);
+    }
   }
 
   for(geo::PlaneID plane_id: geom->IteratePlaneIDs()){
     
-    int fillstyle = 3003;
+    int Name_HistMap_Max = 0;
+    for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
+      if(Name_HistMap[fShowerModuleLabels[j]][plane_id]->GetMaximum() > Name_HistMap_Max){
+	Name_HistMap_Max = Name_HistMap[fShowerModuleLabels[j]][plane_id]->GetMaximum();
+      }
+    }
+
     
     for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
 
-      ++fillstyle;
-      
       Name_canvas[plane_id]->cd();
-      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetFillColor(colours[j]);
-      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetFillStyle(fillstyle);
-      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetLineColor(1);
+      gStyle->SetPalette(kBird);
+      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetLineWidth(2);
+      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetLineColor(colours[j]);
       Name_HistMap[fShowerModuleLabels[j]][plane_id]->Draw("SAME");
-      leg->Draw();
-
-      
+      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetMinimum(0);
+      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetMaximum(Name_HistMap_Max +1);
+          
       Name_2dCanvasMap[fShowerModuleLabels[j]][plane_id]->cd();
       gStyle->SetPalette(kBird);
       Name_2dHistMap[fShowerModuleLabels[j]][plane_id]->Draw("COLZ");
       
+      if(fDrawCanvases){
+	std::string canvasname(Name_2dCanvasMap[fShowerModuleLabels[j]][plane_id]->GetName());
+	std::string pngstring = canvasname + ".png";
+        const char* pngname = pngstring.c_str();
+        Name_2dCanvasMap[fShowerModuleLabels[j]][plane_id]->Print(pngname);
+      }
+
       Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id]->SetMarkerStyle(8);
       Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]][plane_id] ->SetMarkerStyle(8);
       Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id]->SetMarkerColor(colours[j]);    
@@ -1841,11 +1968,12 @@ void ana::ShowerValidation::DrawGraphs(std::map<std::string,std::map<geo::PlaneI
 	
 	
 	Energies_Name_canvasMap[fEnergies[i]][plane_id]->cd();
-	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetFillColor(colours[j]);
-	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetFillStyle(fillstyle);
-	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetLineColor(1);
+	gStyle->SetPalette(kBird);
+	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetLineWidth(2);
+	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetLineColor(colours[j]);
 	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->Draw("SAME");
-	leg->Draw();
+	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetMinimum(0);
+        Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetMaximum(Name_HistMap_Max+1);
 	
 	float Energies_TrueEnergy_Mean = Energies_TrueEnergy_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetMean();   
 	float Energies_TrueEnergy_RMS = Energies_TrueEnergy_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetRMS();
@@ -1862,13 +1990,52 @@ void ana::ShowerValidation::DrawGraphs(std::map<std::string,std::map<geo::PlaneI
       Energies_Mean_Name_Multi[plane_id]->Add(Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id]);
       Energies_RMS_Name_Multi[plane_id]->Add(Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]][plane_id]);
     }//Shower Labels Loop
+
+    Name_canvas[plane_id]->cd();
+    Name_canvas[plane_id]->BuildLegend();
+    if(fDrawCanvases){
+      std::string canvasname(Name_canvas[plane_id]->GetName());
+      std::string pngstring = canvasname + ".png";
+      const char* pngname = pngstring.c_str();
+      Name_canvas[plane_id]->Print(pngname);
+    }
+
+
+
+    for(unsigned int i=0; i<fEnergies.size(); ++i){
+      Energies_Name_canvasMap[fEnergies[i]][plane_id]->cd();
+      Energies_Name_canvasMap[fEnergies[i]][plane_id]->BuildLegend();
+      if(fDrawCanvases){
+	std::string canvasname(Energies_Name_canvasMap[fEnergies[i]][plane_id]->GetName());
+	std::string pngstring = canvasname + ".png";
+	const char* pngname = pngstring.c_str();
+	Energies_Name_canvasMap[fEnergies[i]][plane_id]->Print(pngname);
+      }
+    }
     
     Energies_Mean_Name_canvasMulti[plane_id]->cd();
     Energies_Mean_Name_Multi[plane_id]->Draw("AP");
-    leg->Draw();
+    Energies_Mean_Name_canvasMulti[plane_id]->Update();
+    Energies_Mean_Name_canvasMulti[plane_id]->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
+
+    if(fDrawCanvases){
+      std::string canvasname(Energies_Mean_Name_canvasMulti[plane_id]->GetName());
+      std::string pngstring = canvasname + ".png";
+      const char* pngname = pngstring.c_str();
+      Energies_Mean_Name_canvasMulti[plane_id]->Print(pngname);
+    }
+
     Energies_RMS_Name_canvasMulti[plane_id]->cd();
     Energies_RMS_Name_Multi[plane_id]->Draw("AP");
-    leg->Draw();
+    Energies_RMS_Name_canvasMulti[plane_id]->Update();
+    Energies_RMS_Name_canvasMulti[plane_id]->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
+
+    if(fDrawCanvases){
+      std::string canvasname(Energies_RMS_Name_canvasMulti[plane_id]->GetName());
+      std::string pngstring = canvasname + ".png";
+      const char* pngname = pngstring.c_str();
+      Energies_RMS_Name_canvasMulti[plane_id]->Print(pngname);
+    }
   }
 }
 
@@ -1886,34 +2053,49 @@ void ana::ShowerValidation::DrawHitGraphs(std::map<std::string,std::map<geo::Pla
 					  std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap
 					  ){
 
-  //Create the legend                                                                                                 
-  TLegend *leg = new TLegend(0.65, 0.1, 0.9, 0.35);
-
-  std::vector<int> colours;
+  //Create the legend  
+  TLegend *leg = new TLegend();
   for(unsigned int j=0; j<fHitModuleLabels.size(); ++j){
-    colours.push_back(j+2);
     const char* name_legend = fHitModuleLabels[j].c_str();
     leg->AddEntry(Name_HistMap[fHitModuleLabels[j]][geo::PlaneID(0,0,2)], name_legend);
   }
 
+
+  std::vector<int> colours = {600,632,800,880,840};
+  if((int)fHitModuleLabels.size() > 5){
+    for(unsigned int j=0; j<fShowerModuleLabels.size() -5 ; ++j){
+      colours.push_back(j);
+    }
+  }
+
   for(geo::PlaneID plane_id: geom->IteratePlaneIDs()){
     
-    int fillstyle = 3003;
-    
+    int Name_HistMap_Max = 0;
+    for(unsigned int j=0; j<fHitModuleLabels.size(); ++j){
+      if(Name_HistMap[fHitModuleLabels[j]][plane_id]->GetMaximum() > Name_HistMap_Max){
+	Name_HistMap_Max = Name_HistMap[fHitModuleLabels[j]][plane_id]->GetMaximum();
+      }
+    }
+
     for(unsigned int j=0; j<fHitModuleLabels.size(); ++j){
       
-      ++fillstyle;
-
       Name_canvas[plane_id]->cd();
-      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetFillColor(colours[j]);
-      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetFillStyle(fillstyle);
-      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetLineColor(1);
+      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetLineWidth(2);
+      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetLineColor(colours[j]);
       Name_HistMap[fHitModuleLabels[j]][plane_id]->Draw("SAME");
-      leg->Draw();
+      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetMinimum(0);
+      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetMaximum(Name_HistMap_Max+1); 
 
       Name_2dCanvasMap[fHitModuleLabels[j]][plane_id]->cd();
       gStyle->SetPalette(kBird);
       Name_2dHistMap[fHitModuleLabels[j]][plane_id]->Draw("COLZ");
+
+      if(fDrawCanvases){
+	std::string canvasname(Name_2dCanvasMap[fHitModuleLabels[j]][plane_id]->GetName());
+	std::string pngstring = canvasname + ".png";
+        const char* pngname = pngstring.c_str();
+        Name_2dCanvasMap[fHitModuleLabels[j]][plane_id]->Print(pngname);
+      }
 
       Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id]->SetMarkerStyle(8);
       Energies_RMS_Name_GraphMap[fHitModuleLabels[j]][plane_id] ->SetMarkerStyle(8);
@@ -1927,11 +2109,11 @@ void ana::ShowerValidation::DrawHitGraphs(std::map<std::string,std::map<geo::Pla
 	if(Enteries == 0){continue;}
 	
 	Energies_Name_canvasMap[fEnergies[i]][plane_id]->cd();
-	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetFillColor(colours[j]);
-	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetFillStyle(fillstyle);
-	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetLineColor(1);
+	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetLineWidth(2);
+	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetLineColor(colours[j]);
 	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->Draw("SAME");
-	leg->Draw();
+	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetMinimum(0);
+	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetMaximum(Name_HistMap_Max +1);
 
 	float Energies_TrueEnergy_Mean = Energies_TrueEnergy_HistMap[fShowerModuleLabels[0]][fEnergies[i]]->GetMean();   
 	float Energies_TrueEnergy_RMS = Energies_TrueEnergy_HistMap[fShowerModuleLabels[0]][fEnergies[i]]->GetRMS();
@@ -1948,21 +2130,101 @@ void ana::ShowerValidation::DrawHitGraphs(std::map<std::string,std::map<geo::Pla
       Energies_Mean_Name_Multi[plane_id]->Add(Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id]);
       Energies_RMS_Name_Multi[plane_id]->Add(Energies_RMS_Name_GraphMap[fHitModuleLabels[j]][plane_id]);
     }//Shower Labels Loop
+
+    Name_canvas[plane_id]->cd();
+    Name_canvas[plane_id]->BuildLegend();
+
+    if(fDrawCanvases){
+	std::string canvasname(Name_canvas[plane_id]->GetName());
+	std::string pngstring = canvasname + ".png";
+        const char* pngname = pngstring.c_str();
+        Name_canvas[plane_id]->Print(pngname);
+      }
+
+    for(unsigned int i=0; i<fEnergies.size(); ++i){
+      Energies_Name_canvasMap[fEnergies[i]][plane_id]->cd();
+      Energies_Name_canvasMap[fEnergies[i]][plane_id]->BuildLegend();
+      if(fDrawCanvases){
+	std::string canvasname(Energies_Name_canvasMap[fEnergies[i]][plane_id]->GetName());
+	std::string pngstring = canvasname + ".png";
+        const char* pngname = pngstring.c_str();
+        Energies_Name_canvasMap[fEnergies[i]][plane_id]->Print(pngname);
+      }
+    }
     
     Energies_Mean_Name_canvasMulti[plane_id]->cd();
     Energies_Mean_Name_Multi[plane_id]->Draw("AP");
-    leg->Draw();
+    Energies_Mean_Name_canvasMulti[plane_id]->Update();
+    Energies_Mean_Name_canvasMulti[plane_id]->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
+
+    if(fDrawCanvases){
+      std::string canvasname(Energies_Mean_Name_canvasMulti[plane_id]->GetName());
+      std::string pngstring = canvasname + ".png";
+      const char* pngname = pngstring.c_str();
+      Energies_Mean_Name_canvasMulti[plane_id]->Print(pngname);
+    }
+
     Energies_RMS_Name_canvasMulti[plane_id]->cd();
     Energies_RMS_Name_Multi[plane_id]->Draw("AP");
-    leg->Draw();
+    Energies_RMS_Name_canvasMulti[plane_id]->Update();
+    Energies_RMS_Name_canvasMulti[plane_id]->BuildLegend();
+    Energies_RMS_Name_canvasMulti[plane_id]->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
+
+    if(fDrawCanvases){
+      std::string canvasname(Energies_RMS_Name_canvasMulti[plane_id]->GetName());
+      std::string pngstring = canvasname + ".png";
+      const char* pngname = pngstring.c_str();
+      Energies_RMS_Name_canvasMulti[plane_id]->Print(pngname);
+    }
   }
 }
 
 
 
 void ana::ShowerValidation::endJob() {
-
   
+  gStyle->SetOptTitle(0);
+
+  ShowerMotherE_AfterCutCanvas->cd();
+  ShowerMotherE_AfterCutHist->Draw();
+  if(fDrawCanvases){ShowerMotherE_AfterCutCanvas->Print("ShowerMotherE_AfterCutHist.png");}
+
+  ShowerMotherE_BeforeCutCanvas->cd();
+  ShowerMotherE_BeforeCutHist->Draw();
+  if(fDrawCanvases){ShowerMotherE_BeforeCutCanvas->Print("ShowerMotherE_BeforeCutHist.png");}
+
+  AsscoiatedShowerMotherECanvas->cd();
+  AsscoiatedShowerMotherEHist->Draw();
+  if(fDrawCanvases){AsscoiatedShowerMotherECanvas->Print("AsscoiatedShowerMotherEHist.png");}
+
+  BiggestShowerMotherE_AfterCutCanvas->cd();
+  BiggestShowerMotherE_AfterCutHist->Draw();
+  if(fDrawCanvases){BiggestShowerMotherE_AfterCutCanvas->Print("BiggestShowerMotherE_AfterCutCanvas.png");}
+
+  BiggestShowerMotherE_BeforeCutCanvas->cd();
+  BiggestShowerMotherE_BeforeCutHist->Draw();
+  if(fDrawCanvases){BiggestShowerMotherE_BeforeCutCanvas->Print("BiggestShowerMotherE_BeforeCutHist.png");}
+
+  AsscoiatedBiggestShowerMotherECanvas->cd();
+  AsscoiatedBiggestShowerMotherEHist->Draw();
+  if(fDrawCanvases){AsscoiatedBiggestShowerMotherECanvas->Print("AsscoiatedBiggestShowerMotherEHist.png");}
+
+  SmallestShowerMotherE_AfterCutCanvas->cd();
+  SmallestShowerMotherE_AfterCutHist->Draw();
+  if(fDrawCanvases){SmallestShowerMotherE_AfterCutCanvas->Print("SmallestShowerMotherE_AfterCutHist.png");}
+  
+  SmallestShowerMotherE_BeforeCutCanvas->cd();
+  SmallestShowerMotherE_BeforeCutHist->Draw();
+  if(fDrawCanvases){SmallestShowerMotherE_BeforeCutCanvas->Print("SmallestShowerMotherE_BeforeCutHist.png");}
+
+  AsscoiatedSmallestShowerMotherECanvas->cd();
+  AsscoiatedSmallestShowerMotherEHist->Draw();
+  if(fDrawCanvases){AsscoiatedSmallestShowerMotherECanvas->Print("AsscoiatedSmallestShowerMotherEHist.png");}
+
+
+
+  gStyle->SetPalette(kBird);
+
   ana::ShowerValidation::DrawGraphs(ShowerDirection_X_HistMap,Energies_ShowerDirection_X_HistMap,Energies_Mean_ShowerDirection_X_GraphMap,Energies_RMS_ShowerDirection_X_GraphMap,Energies_Mean_ShowerDirection_X_Multi,Energies_RMS_ShowerDirection_X_Multi,Energies_Mean_ShowerDirection_X_canvasMulti,Energies_RMS_ShowerDirection_X_canvasMulti,Energies_ShowerDirection_X_canvasMap, ShowerDirection_X_canvas,ShowerDirection_X_2dHistMap,ShowerDirection_X_2dCanvasMap);
 
   ana::ShowerValidation::DrawGraphs(ShowerDirection_Y_HistMap,Energies_ShowerDirection_Y_HistMap,Energies_Mean_ShowerDirection_Y_GraphMap,Energies_RMS_ShowerDirection_Y_GraphMap,Energies_Mean_ShowerDirection_Y_Multi,Energies_RMS_ShowerDirection_Y_Multi,Energies_Mean_ShowerDirection_Y_canvasMulti,Energies_RMS_ShowerDirection_Y_canvasMulti,Energies_ShowerDirection_Y_canvasMap, ShowerDirection_Y_canvas,ShowerDirection_Y_2dHistMap,ShowerDirection_Y_2dCanvasMap);
@@ -1992,8 +2254,6 @@ void ana::ShowerValidation::endJob() {
   ana::ShowerValidation::DrawGraphs(ShowerHitNum_HistMap,Energies_ShowerHitNum_HistMap,Energies_Mean_ShowerHitNum_GraphMap,Energies_RMS_ShowerHitNum_GraphMap,Energies_Mean_ShowerHitNum_Multi,Energies_RMS_ShowerHitNum_Multi,Energies_Mean_ShowerHitNum_canvasMulti,Energies_RMS_ShowerHitNum_canvasMulti,Energies_ShowerHitNum_canvasMap, ShowerHitNum_canvas,ShowerHitNum_2dHistMap,ShowerHitNum_2dCanvasMap);
 
   ana::ShowerValidation::DrawGraphs(ShowerTotalEnergyDiff_HistMap,Energies_ShowerTotalEnergyDiff_HistMap,Energies_Mean_ShowerTotalEnergyDiff_GraphMap,Energies_RMS_ShowerTotalEnergyDiff_GraphMap,Energies_Mean_ShowerTotalEnergyDiff_Multi,Energies_RMS_ShowerTotalEnergyDiff_Multi,Energies_Mean_ShowerTotalEnergyDiff_canvasMulti,Energies_RMS_ShowerTotalEnergyDiff_canvasMulti,Energies_ShowerTotalEnergyDiff_canvasMap,ShowerTotalEnergyDiff_canvas,ShowerTotalEnergyDiff_2dHistMap,ShowerTotalEnergyDiff_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(HitEnergy_HistMap,Energies_HitEnergy_HistMap,Energies_Mean_HitEnergy_GraphMap,Energies_RMS_HitEnergy_GraphMap,Energies_Mean_HitEnergy_Multi,Energies_RMS_HitEnergy_Multi,Energies_Mean_HitEnergy_canvasMulti,Energies_RMS_HitEnergy_canvasMulti,Energies_HitEnergy_canvasMap, HitEnergy_canvas,HitEnergy_2dHistMap,HitEnergy_2dCanvasMap);
 
   ana::ShowerValidation::DrawGraphs(ShowerMag_HistMap,Energies_ShowerMag_HistMap,Energies_Mean_ShowerMag_GraphMap,Energies_RMS_ShowerMag_GraphMap,Energies_Mean_ShowerMag_Multi,Energies_RMS_ShowerMag_Multi,Energies_Mean_ShowerMag_canvasMulti,Energies_RMS_ShowerMag_canvasMulti,Energies_ShowerMag_canvasMap, ShowerMag_canvas,ShowerMag_2dHistMap,ShowerMag_2dCanvasMap);
 

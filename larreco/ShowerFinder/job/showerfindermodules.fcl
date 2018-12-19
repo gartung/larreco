@@ -134,12 +134,14 @@ standard_showervalidation: {
  ShowerModuleLabels:        ["emshower"]
  HitModuleLabels:           ["gaushit"]
  UseBiggestShower:          true
+ DrawCanvases:              false
  Verbose:                   0
  EnergyWidth:               0
  Energies:                  []
  MinHitSize:                20
  SimEnergyCut:              0.1 
  DensityCut:                1
+ MaxSimEnergy:              1500
 }
 
 
