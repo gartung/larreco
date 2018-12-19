@@ -163,15 +163,15 @@ namespace shwf {
   std::vector< std::vector<double> > fNPitch;   // double array, to use each plane for each set of angles
 
   //calorimetry variables  
-  double Kin_En;
-  std::vector<double> vdEdx;
-  std::vector<double> vresRange;
-  std::vector<double> vdQdx;
-  std::vector<double> deadwire; //residual range for dead wires
-  double Trk_Length;
-  double fTrkPitchC;
-  double fdEdxlength;	   //distance that gets used to determine e/gamma separation
-  double fcalodEdxlength;  // cutoff distance for hits saved to the calo object.  
+  float Kin_En;
+  std::vector<float> vdEdx;
+  std::vector<float> vresRange;
+  std::vector<float> vdQdx;
+  std::vector<float> deadwire; //residual range for dead wires
+  float Trk_Length;
+  float fTrkPitchC;
+  float fdEdxlength;	   //distance that gets used to determine e/gamma separation
+  float fcalodEdxlength;  // cutoff distance for hits saved to the calo object.  
   bool fUseArea;
   
   double xphi,xtheta;   // new calculated angles.
@@ -812,7 +812,7 @@ for(unsigned int ij = 0; ij < fNPlanes; ++ij)
   art::PtrVector < recob::Shower >  ssvec;
 	
     //for(unsigned int ip=0;ip<1;ip++)  {
-	art::ProductID aid = this->getProductID< std::vector < recob::Shower > >();
+        art::ProductID aid = evt.getProductID< std::vector < recob::Shower > >();
 	art::Ptr< recob::Shower > aptr(aid, 0, evt.productGetter(aid));
 	ssvec.push_back(aptr);
       //}
@@ -1228,11 +1228,3 @@ void   ShowerReco::GetVertexAndAnglesFromCluster(art::Ptr< recob::Cluster > clus
 }
 
 #endif // SHOWERRECO_H
-
-
-
-
-
-
-
-
