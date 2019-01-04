@@ -135,6 +135,7 @@ standard_showervalidation: {
  HitModuleLabels:           ["gaushit"]
  UseBiggestShower:          true
  DrawCanvases:              false
+ FillOnlyClosestShower:     true
  Verbose:                   0
  EnergyWidth:               0
  Energies:                  []
