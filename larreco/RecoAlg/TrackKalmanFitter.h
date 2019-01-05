@@ -100,9 +100,24 @@ namespace trkf {
 	Comment("In case skipNegProp is true and the track fit fails, make a second attempt to fit the track with skipNegProp=false in order to attempt to avoid losing efficiency."),
 	true
       };
+      fhicl::Atom<bool> tryBothDirs {
+        Name("tryBothDirs"),
+	Comment("Try fit in both with default and reversed direction, choose the track with highest score=CountValidPoints/(Length*Chi2PerNdof)."),
+	true
+      };
+      fhicl::Atom<bool> pickBestHitOnWire {
+        Name("pickBestHitOnWire"),
+	Comment("If there is >1 consecutive hit on the same wire, choose the one with best chi2 and exclude the others."),
+	true
+      };
       fhicl::Atom<float> maxResidue {
         Name("maxResidue"),
        Comment("Reject hits with residue > maxResidue [cm]. If negative, it is set to std::numeric_limits<float>::max()."),
+       -1.
+      };
+      fhicl::Atom<float> maxResidueFirstHit {
+        Name("maxResidueFirstHit"),
+       Comment("Reject firt hit if has residue > maxResidueFirstHit [cm]. If negative, it is set to std::numeric_limits<float>::max()."),
        -1.
       };
       fhicl::Atom<float> maxChi2 {
@@ -115,6 +130,11 @@ namespace trkf {
        Comment("Reject hits with propagation distance > maxDist [cm]. If negative, it is set to std::numeric_limits<float>::max()."),
        -1.
       };
+      fhicl::Atom<float> negDistTolerance {
+        Name("negDistTolerance"),
+       Comment("Tolerance for negative propagation distance to avoid hit rejection (so this is expected to be a small negative number)."),
+       0.
+      };
       fhicl::Atom<int> dumpLevel {
         Name("dumpLevel"),
 	Comment("0 for no debug printouts, 1 for moderate, 2 for maximum."),
@@ -125,8 +145,8 @@ namespace trkf {
 
     /// Constructor from TrackStatePropagator and values of configuration parameters
     TrackKalmanFitter(const TrackStatePropagator* prop, bool useRMS, bool sortHitsByPlane, bool sortHitsByWire, bool sortOutputHitsMinLength, bool skipNegProp, bool cleanZigzag,
-		      bool rejectHighMultHits, bool rejectHitsNegativeGOF, float hitErr2ScaleFact, bool tryNoSkipWhenFails,
-		      float maxResidue, float maxChi2, float maxDist, int dumpLevel){
+		      bool rejectHighMultHits, bool rejectHitsNegativeGOF, float hitErr2ScaleFact, bool tryNoSkipWhenFails, bool tryBothDirs, bool pickBestHitOnWire,
+		      float maxResidue, float maxResidueFirstHit, float maxChi2, float maxDist, float negDistTolerance, int dumpLevel){
       propagator=prop;
       useRMS_=useRMS;
       sortHitsByPlane_=sortHitsByPlane;
@@ -138,9 +158,13 @@ namespace trkf {
       rejectHitsNegativeGOF_=rejectHitsNegativeGOF;
       hitErr2ScaleFact_=hitErr2ScaleFact;
       tryNoSkipWhenFails_=tryNoSkipWhenFails;
+      tryBothDirs_=tryBothDirs;
+      pickBestHitOnWire_=pickBestHitOnWire;
       maxResidue_ = (maxResidue>0 ? maxResidue : std::numeric_limits<float>::max());
+      maxResidueFirstHit_ = (maxResidueFirstHit>0 ? maxResidueFirstHit : std::numeric_limits<float>::max());
       maxChi2_ = (maxChi2>0 ? maxChi2 : std::numeric_limits<float>::max());
       maxDist_ = (maxDist>0 ? maxDist : std::numeric_limits<float>::max());
+      negDistTolerance_ = negDistTolerance;
       dumpLevel_=dumpLevel;
       detprop = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
     }
@@ -148,8 +172,8 @@ namespace trkf {
     /// Constructor from TrackStatePropagator and Parameters table
     explicit TrackKalmanFitter(const TrackStatePropagator* prop, Parameters const & p)
       : TrackKalmanFitter(prop,p().useRMS(),p().sortHitsByPlane(),p().sortHitsByWire(),p().sortOutputHitsMinLength(),p().skipNegProp(),p().cleanZigzag(),
-			  p().rejectHighMultHits(),p().rejectHitsNegativeGOF(),p().hitErr2ScaleFact(),p().tryNoSkipWhenFails(),
-			  p().maxResidue(),p().maxChi2(),p().maxDist(),p().dumpLevel()) {}
+			  p().rejectHighMultHits(),p().rejectHitsNegativeGOF(),p().hitErr2ScaleFact(),p().tryNoSkipWhenFails(),p().tryBothDirs(),p().pickBestHitOnWire(),
+			  p().maxResidue(),p().maxResidueFirstHit(),p().maxChi2(),p().maxDist(),p().negDistTolerance(),p().dumpLevel()) {}
 
     /// Fit track starting from TrackTrajectory
     bool fitTrack(const recob::TrackTrajectory& traj, int tkID,  const SMatrixSym55& covVtx, const SMatrixSym55& covEnd,
@@ -174,7 +198,7 @@ namespace trkf {
 
     /// Setup vectors of HitState and Masks to be used during the fit
     bool setupInputStates(const std::vector<art::Ptr<recob::Hit> >& hits, const std::vector<recob::TrajectoryPointFlags>& flags,
-			  const KFTrackState& trackState, bool& reverseHits,
+			  const KFTrackState& trackState,
 			  std::vector<HitState>& hitstatev, std::vector<recob::TrajectoryPointFlags::Mask_t>& hitflagsv) const;
 
     /// Sort the output states
@@ -183,7 +207,7 @@ namespace trkf {
 		    std::vector<unsigned int>& sortedtksidx, bool applySkipClean = true) const;
 
     /// Fill the output objects
-    bool fillResult(const std::vector<art::Ptr<recob::Hit> >& inHits, const int tkID, const int pdgid, const bool reverseHits,
+    bool fillResult(const std::vector<art::Ptr<recob::Hit> >& inHits, const int tkID, const int pdgid,
 		    std::vector<HitState>& hitstatev, std::vector<recob::TrajectoryPointFlags::Mask_t>& hitflagsv,
 		    std::vector<KFTrackState>& fwdPrdTkState, std::vector<KFTrackState>& fwdUpdTkState,
 		    std::vector<unsigned int>& hitstateidx, std::vector<unsigned int>& rejectedhsidx, std::vector<unsigned int>& sortedtksidx,
@@ -202,9 +226,13 @@ namespace trkf {
     bool rejectHitsNegativeGOF_;
     float hitErr2ScaleFact_;
     bool tryNoSkipWhenFails_;
+    bool tryBothDirs_;
+    bool pickBestHitOnWire_;
     float maxResidue_;
+    float maxResidueFirstHit_;
     float maxChi2_;
     float maxDist_;
+    float negDistTolerance_;
     int dumpLevel_;
   };
 
