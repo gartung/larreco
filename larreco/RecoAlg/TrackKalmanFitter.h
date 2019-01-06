@@ -108,7 +108,7 @@ namespace trkf {
       fhicl::Atom<bool> pickBestHitOnWire {
         Name("pickBestHitOnWire"),
 	Comment("If there is >1 consecutive hit on the same wire, choose the one with best chi2 and exclude the others."),
-	true
+	false
       };
       fhicl::Atom<float> maxResidue {
         Name("maxResidue"),
