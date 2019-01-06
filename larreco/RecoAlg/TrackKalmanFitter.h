@@ -103,7 +103,7 @@ namespace trkf {
       fhicl::Atom<bool> tryBothDirs {
         Name("tryBothDirs"),
 	Comment("Try fit in both with default and reversed direction, choose the track with highest score=CountValidPoints/(Length*Chi2PerNdof)."),
-	true
+	false
       };
       fhicl::Atom<bool> pickBestHitOnWire {
         Name("pickBestHitOnWire"),
