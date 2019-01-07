@@ -636,7 +636,7 @@ ana::ShowerValidation::ShowerValidation(const fhicl::ParameterSet& pset) : EDAna
   fEnergies              = pset.get<std::vector<float> >("Energies");
   fUseBiggestShower      = pset.get<bool>("UseBiggestShower");
   fDrawCanvases          = pset.get<bool>("DrawCanvases"); 
-  fFillOnlyClosestShower = pset.get<bool>("fFillOnlyClosestShower");
+  fFillOnlyClosestShower = pset.get<bool>("FillOnlyClosestShower");
   fVerbose               = pset.get<int>("Verbose");
   fMinHitSize            = pset.get<int>("MinHitSize");
   fEnergyWidth           = pset.get<float>("EnergyWidth");
