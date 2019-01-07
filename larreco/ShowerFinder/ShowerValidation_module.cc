@@ -182,15 +182,6 @@ public:
 			 std::string & fShowerModuleLabel
 			 );
 
-  void EvaluateShowerDirection(TVector3& TrueShowerDirection, TVector3& ShowerDirection);
-  void EvaluateShowerStating  (TVector3& PositionTrajStart,TVector3& ShowerStart);
-  void EvaluateShowerLength   (double& TrueShowerLength,double& ShowerLength);
-  void EvaluateShowerEnergy   (std::vector<double>& ShowerEnergyPlanes, double& TrueEnergyDepWithinShower_FromTrueShower, double& TrueEnergyDep_FromShower);
-  void EvaluateShowerdEdx     (std::vector<double>& ShowerdEdX_vec);
-
-  void FillHistograms(double& MetricValue);
-  
-
 private:
 
   //fcl parameters 
@@ -1617,9 +1608,9 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       bool EvaluateShowerdEdx      = false;
 
       //Evaulate 3D Shower Reconstruction Dependent Metrics
-      if(!std::isnan(ShowerDirection.X()))                      {EvaluateShowerDirection = true; ++MinEvaluateShowerDirection;}
-      if(!std::isnan(ShowerStart.X()))                          {EvaluateShowerStart     = true; ++MinEvaluateShowerStart;}
-      if(!std::isnan(ShowerTrackLength) || shower->has_length()){EvaluateShowerLength    = true;}
+      if(!std::isnan(ShowerDirection.X()) || ShowerDirection.Mag() == 0) {EvaluateShowerDirection = true; ++MinEvaluateShowerDirection;}
+      if(!std::isnan(ShowerStart.X()))                                   {EvaluateShowerStart     = true; ++MinEvaluateShowerStart;}
+      if(!std::isnan(ShowerTrackLength) || shower->has_length())         {EvaluateShowerLength    = true;}
       if(ShowerEnergyPlanes.size() != 0){
 	if(!std::isnan(ShowerEnergyPlanes.at(0))){
 	  EvaluateShowerEnergy = true;
@@ -1632,20 +1623,30 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
 
       //Get the angles between the direction
-      float ShowerDirection_Xdiff = (TrueShowerDirection.Y()*ShowerDirection.Y() + TrueShowerDirection.Z()*ShowerDirection.Z())/(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.Z()*ShowerDirection.Z())));
-      float ShowerDirection_Ydiff = (TrueShowerDirection.X()*ShowerDirection.X() + TrueShowerDirection.Z()*ShowerDirection.Z())/(TMath::Sqrt((TrueShowerDirection.X()*TrueShowerDirection.X() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.X()*ShowerDirection.X() + ShowerDirection.Z()*ShowerDirection.Z())));
-      float ShowerDirection_Zdiff = (TrueShowerDirection.Y()*ShowerDirection.Y() + TrueShowerDirection.X()*ShowerDirection.X())/(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.X()*TrueShowerDirection.X()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.X()*ShowerDirection.X())));
-      float ShowerDirection_diff  = TrueShowerDirection.Dot(ShowerDirection)/(TrueShowerDirection.Mag()*ShowerDirection.Mag());
+      float ShowerDirection_Xdiff = -99999;
+      float ShowerDirection_Ydiff = -99999;
+      float ShowerDirection_Zdiff = -99999;
+      float ShowerDirection_diff  = -99999;
 
-      //Get the Error in the position 
+      if(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.Z()*ShowerDirection.Z())) !=0){
+	ShowerDirection_Xdiff = (TrueShowerDirection.Y()*ShowerDirection.Y() + TrueShowerDirection.Z()*ShowerDirection.Z())/(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.Z()*ShowerDirection.Z())));
+      }
+
+      if(TMath::Sqrt((TrueShowerDirection.X()*TrueShowerDirection.X() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.X()*ShowerDirection.X() + ShowerDirection.Z()*ShowerDirection.Z())) !=0){
+	ShowerDirection_Ydiff = (TrueShowerDirection.X()*ShowerDirection.X() + TrueShowerDirection.Z()*ShowerDirection.Z())/(TMath::Sqrt((TrueShowerDirection.X()*TrueShowerDirection.X() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.X()*ShowerDirection.X() + ShowerDirection.Z()*ShowerDirection.Z())));
+      }
+      
+      if(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.X()*TrueShowerDirection.X()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.X()*ShowerDirection.X())) !=0){
+	ShowerDirection_Zdiff = (TrueShowerDirection.Y()*ShowerDirection.Y() + TrueShowerDirection.X()*ShowerDirection.X())/(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.X()*TrueShowerDirection.X()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.X()*ShowerDirection.X())));
+      }
+	
+      if(TrueShowerDirection.Mag() != 0 || ShowerDirection.Mag() !=0){ 
+	ShowerDirection_diff  = TrueShowerDirection.Dot(ShowerDirection)/(TrueShowerDirection.Mag()*ShowerDirection.Mag());
+      }
+
+      //Get the Error in the position. intialised as 0,0,0 this is a problem here. 
       double Start_diff     =  TMath::Sqrt(TMath::Power(PositionTrajStart.X()-ShowerStart.X(),2) + TMath::Power(PositionTrajStart.Y()-ShowerStart.Y(),2) + TMath::Power(PositionTrajStart.Z()-ShowerStart.Z(),2));
 
-      
-      std::vector<double> ShowerEnergyPlanes_remove(3);
-      ShowerEnergyPlanes_remove[0] = ShowerEnergyPlanes[0];
-      ShowerEnergyPlanes_remove[1] = ShowerEnergyPlanes[1];
-      ShowerEnergyPlanes_remove[2] = (ShowerEnergyPlanes[2] - 0.00155171)*0.00155171/4.39964 + 4.39964;
-      
       //Fill the histograms.
       if(fFillOnlyClosestShower){
 	if(Start_diff < MinStartDiff){
@@ -1696,16 +1697,16 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }      
 
       if(TrueEnergyDep_FromShower != 0 && EvaluateShowerEnergy){
-	ShowerEnergyDiff_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDep_FromShower);
-	ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes_remove[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower);
+	ShowerEnergyDiff_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower);
+	ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower);
       }
       
       if(TrueEnergyDepWithinShower_FromTrueShower != 0 && EvaluateShowerEnergy){
-	ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower);
+	ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower);
       }
 
       if(EvaluateShowerEnergy){
-	ShowerEnergy_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]);
+	ShowerEnergy_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]);
       }
 
       ShowerHitNum_HistMap[fShowerModuleLabel]->Fill(showerhits.size());
@@ -1721,16 +1722,16 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
 
       if(TrueEnergyDep_FromShower != 0 && EvaluateShowerEnergy){
-	ShowerEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDep_FromShower,simenergy*1000);
-	ShowerTotalEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes_remove[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
+	ShowerEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower,simenergy*1000);
+	ShowerTotalEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
       }
 
       if(TrueEnergyDepWithinShower_FromTrueShower != 0 && EvaluateShowerEnergy){
-	ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower,simenergy*1000);
+	ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower,simenergy*1000);
       }
 
       if(EvaluateShowerEnergy){
-	ShowerEnergy_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane],simenergy*1000);
+	ShowerEnergy_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane],simenergy*1000);
       }
      
       ShowerHitNum_2dHistMap[fShowerModuleLabel]->Fill(showerhits.size(),simenergy*1000);
@@ -1762,7 +1763,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    }
 	    
 	    if(EvaluateShowerEnergy){
-	      Energies_ShowerEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]);
+	      Energies_ShowerEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]);
 	    }
 
 	    if(EvaluateShowerLength){
@@ -1770,12 +1771,12 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    }
 
 	    if(TrueEnergyDep_FromShower != 0 && EvaluateShowerEnergy){
-	      Energies_ShowerEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDep_FromShower);
-	      Energies_ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill((ShowerEnergyPlanes_remove[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
+	      Energies_ShowerEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower);
+	      Energies_ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
 	    }
 	    
 	    if(TrueEnergyDepWithinShower_FromTrueShower != 0 && EvaluateShowerEnergy){
-	      Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/3/TrueEnergyDepWithinShower_FromTrueShower);
+	      Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/3/TrueEnergyDepWithinShower_FromTrueShower);
 	    }
 
 	    Energies_ShowerHitNum_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(showerhits.size());
@@ -1793,22 +1794,33 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
       if(fVerbose > 0){
 	std::cout << "#################################################" << std::endl;
+	std::cout << "Global Event Information" << std::endl;
+	std::cout << "#################################################" << std::endl;
 	std::cout << "Shower Label: " <<  fShowerModuleLabel << std::endl;
-	std::cout << "Number of showers: " << showers.size() << std::endl;
-	std::cout << "True Start: " << PositionTrajStart.X() << " Shower Start: " << ShowerStart.X() << std::endl;
-	std::cout << "X Poisition: " <<  ShowerStart.X() << "Y Position " << ShowerStart.Y() << " Z Poistion: " << ShowerDirection.Z() << std::endl;
-	std::cout << "ShowerBest_Plane: " << ShowerBest_Plane << std::endl;
-	std::cout << "TrueTrackLength: " << TrueTrackLength << " ShowerTrackLength: " << ShowerTrackLength << std::endl;
+	std::cout << "Number of Reco showers: " << showers.size() << std::endl;
+	std::cout << "Energy Simulated: " << simenergy << std::endl;
 	std::cout << "Number of True Showers That pass the E cut: " <<  num_of_showers_viaEcut << std::endl;
 	std::cout << "Number of True Showers That pass the Density cut: " << num_of_showers_viaDensitycut << std::endl;
-	std::cout << "Best Plane Shower energy " << ShowerEnergyPlanes_remove[ShowerBest_Plane] << std::endl;
-	std::cout << "TrueEnergyDepWithinShower_FromTrueShower : " <<  TrueEnergyDepWithinShower_FromTrueShower  << std::endl;
-	std::cout << "TrueEnergyDep_FromShower: " << TrueEnergyDep_FromShower << std::endl;
-	std::cout << "TrueEnergy deposited by hits in shower: " <<  TrueEnergyDep_WithinRecoShower << std::endl;
+	std::cout << "Number of True Showers in the Event: " << ShowersMothers.size() << std::endl;
+	std::cout << "#################################################" << std::endl;
+	std::cout << "Reconstructed/Associated Truth Information" << std::endl;
+	std::cout << "#################################################" << std::endl;
+	std::cout << "Hit Size: " << showerhits.size() << std::endl;
+	std::cout << "ShowerBest_Plane: " << ShowerBest_Plane << std::endl;
+	if(EvaluateShowerDirection){
+	  std::cout << "True Start: " << PositionTrajStart.X() << " Shower Start: " << ShowerStart.X() << std::endl;
+	  std::cout << "X Poisition: " <<  ShowerStart.X() << "Y Position " << ShowerStart.Y() << " Z Poistion: " << ShowerStart.Z() << std::endl;
+	}
+	if(EvaluateShowerLength){
+	  std::cout << "TrueTrackLength: " << TrueTrackLength << " ShowerTrackLength: " << ShowerTrackLength << std::endl;
+	}
+	if(EvaluateShowerEnergy){
+	  std::cout << "Best Plane Reco Shower Energy " << ShowerEnergyPlanes[ShowerBest_Plane] << std::endl;
+	}
+	std::cout << "True Energy Deposited From true associated Shower: " << TrueEnergyDep_FromShower << std::endl;
+	std::cout << "True Energy Deposited by hits in shower: " <<  TrueEnergyDep_WithinRecoShower << std::endl;
 	std::cout << "Energy Purity: " << energypurity << " Energy completeness: " << energycompleteness << std::endl;
 	std::cout << "Hit Purity: " << hitpurity << "Hit Completeness: " << hitcompleteness << std::endl;
-	std::cout << "Hit Size: " << showerhits.size() << std::endl;
-	std::cout << "Energy Simulated: " << simenergy << std::endl;
 	std::cout << "#################################################" <<std::endl;
       }
 
@@ -1945,12 +1957,16 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
 
   //Get the Hits Handle used for this cluster type 
   art::Handle<std::vector<recob::Hit > > hitHandle;
-  evt.get(fmhc.at(0).front().id(),hitHandle);
+  evt.get(fmhc.at(clusters.at(0).key()).front().id(),hitHandle);
   
+  std::cout << "test 3" << std::endl;
   if(!hitHandle.isValid()){   
     mf::LogError("ShowerValidation") << "Hits handle is stale. No clustering validation done" << std::endl;
     return; 
   }
+
+    std::cout << "test 2" << std::endl;
+
 
   //Get the hits vector from the shower
   for(auto const& cluster : clusters){
@@ -1962,6 +1978,7 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
     float TotalTrueEnergy = 0;
     float signalhits      = 0;
     float totalhits       = 0;
+
     for(std::vector<int>::iterator daughterID=ShowerMotherTrackIDs[ShowerTrackInfo.first].begin(); daughterID!=ShowerMotherTrackIDs[ShowerTrackInfo.first].end(); ++daughterID){
       
       //Calculate the true Energy deposited By Shower  
@@ -1987,6 +2004,7 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
     float purity_energy      = 0;
     
     float TotalEnergyDepinHits = RecoUtils::TotalEnergyDepinHits(clusterhits,cluster->Plane().Plane);
+
 
     if(totalhits != 0){
       completeness_hits = signalhits/totalhits;
