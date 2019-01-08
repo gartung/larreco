@@ -150,7 +150,11 @@ bool trkf::TrackKalmanFitter::setupInputStates(const std::vector<art::Ptr<recob:
       hitflagsv.back().set(recob::TrajectoryPointFlagTraits::ExcludedFromFit);
     }
     //
-    if (dumpLevel_>2) std::cout << "pushed flag mask=" << hitflagsv.back() << std::endl;
+    if (dumpLevel_>2) std::cout << "pushed flag mask=" << hitflagsv.back()
+				<< " merged=" << hitflagsv.back().isSet(recob::TrajectoryPointFlagTraits::Merged)
+				<< " suspicious=" << hitflagsv.back().isSet(recob::TrajectoryPointFlagTraits::Suspicious)
+				<< " nopoint=" << hitflagsv.back().isSet(recob::TrajectoryPointFlagTraits::NoPoint)
+				<< std::endl;
   }
   if (dumpLevel_>2) assert(hits.size()==hitstatev.size());
   return true;
@@ -198,6 +202,7 @@ bool trkf::TrackKalmanFitter::doFitWork(KFTrackState& trackState, std::vector<Hi
        }
       }
     }
+
     //dump hits sorted in each plane
     if (dumpLevel_>1) {
       int ch = 0;
@@ -212,7 +217,7 @@ bool trkf::TrackKalmanFitter::doFitWork(KFTrackState& trackState, std::vector<Hi
     std::vector<unsigned int> iterHitsInPlanes(nplanes,0);
     for (unsigned int p = 0; p<hitstatev.size(); ++p) {
       if (dumpLevel_>1) std::cout << std::endl << "processing hit #" << p << std::endl;
-      //std::cout << "hit sizes: rej=" << rejectedhsidx.size() << " good=" << hitstateidx.size() << " input=" <<  hitstatev.size() << std::endl;
+      if (dumpLevel_>1) std::cout << "hit sizes: rej=" << rejectedhsidx.size() << " good=" << hitstateidx.size() << " input=" <<  hitstatev.size() << std::endl;
       if (dumpLevel_>1) {
 	std::cout << "compute distance from state=" << std::endl; trackState.dump();
       }
@@ -257,7 +262,10 @@ bool trkf::TrackKalmanFitter::doFitWork(KFTrackState& trackState, std::vector<Hi
       if (dumpLevel_>1) std::cout << "pick min_dist=" << min_dist << " min_plane=" << min_plane << " wire=" << (min_plane<0 ? -1 : hitstatev[hitsInPlanes[min_plane][iterHitsInPlanes[min_plane]]].wireId().Wire) << std::endl;
       //
       //now we know which is the closest wire: get the hitstate and increment the iterator
-      if (min_plane<0) continue;
+      if (min_plane<0) {
+	if (rejectedhsidx.size()+hitstateidx.size()==hitstatev.size()) break;
+	else continue;
+      }
       unsigned int ihit = hitsInPlanes[min_plane][iterHitsInPlanes[min_plane]];
       const auto* hitstate = &hitstatev[ihit];
       iterHitsInPlanes[min_plane]++;
@@ -282,6 +290,7 @@ bool trkf::TrackKalmanFitter::doFitWork(KFTrackState& trackState, std::vector<Hi
 	if (applySkipClean && fwdUpdTkState.size()==0 && std::abs(trackState.residual(*hitstate))>maxResidueFirstHit_) {
 	  if (dumpLevel_>1) std::cout << "rejecting first hit with residual=" << trackState.residual(*hitstate) << std::endl;
 	  rejectedhsidx.push_back(ihit);
+	  trackState = startState;
 	  continue;
 	}
 
@@ -310,20 +319,31 @@ bool trkf::TrackKalmanFitter::doFitWork(KFTrackState& trackState, std::vector<Hi
 	hitstate = &hitstatev[ihit];
 	auto& hitflags = hitflagsv[ihit];
 
+	//reject hits failing maxResidue, maxChi2, or maxDist cuts
+	if (fwdUpdTkState.size()>0 && applySkipClean &&
+	    (std::abs(trackState.residual(*hitstate))>maxResidue_ || trackState.chi2(*hitstate)>maxChi2_ || min_dist>maxDist_ )) {
+	  //
+	  if (dumpLevel_>1) std::cout << "rejecting hit with res=" << std::abs(trackState.residual(*hitstate)) << " chi2=" << trackState.chi2(*hitstate) << " dist=" << min_dist << std::endl;
+	  // reset the current state, do not update the hit, and mark as excluded from the fit
+	  if (fwdUpdTkState.size()>0) trackState = fwdUpdTkState.back();
+	  else trackState = startState;
+	  rejectedhsidx.push_back(ihit);
+	  hitflags.set(recob::TrajectoryPointFlagTraits::ExcludedFromFit);
+	  hitflags.set(recob::TrajectoryPointFlagTraits::NoPoint);//fixme: this is only for event display, also needed by current definition of ValidPoint
+	  continue;
+	}
+
 	hitstateidx.push_back(ihit);
 	fwdPrdTkState.push_back(trackState);
-	//
+
+	//hits with problematic flags are kept but not used for update and flagged as excluded from fit
 	if (hitflags.isSet(recob::TrajectoryPointFlagTraits::HitIgnored   ) ||
 	    hitflags.isSet(recob::TrajectoryPointFlagTraits::Merged       ) ||
 	    hitflags.isSet(recob::TrajectoryPointFlagTraits::Shared       ) ||
 	    hitflags.isSet(recob::TrajectoryPointFlagTraits::DeltaRay     ) ||
 	    hitflags.isSet(recob::TrajectoryPointFlagTraits::DetectorIssue) ||
-	    hitflags.isSet(recob::TrajectoryPointFlagTraits::Suspicious   ) ||
-	    (fwdUpdTkState.size()>0 && applySkipClean && (std::abs(trackState.residual(*hitstate))>maxResidue_ ||
-							  trackState.chi2(*hitstate)>maxChi2_ ||
-							  min_dist>maxDist_ )) ) {
+	    hitflags.isSet(recob::TrajectoryPointFlagTraits::Suspicious   ) ) {
 	  //
-	  if (dumpLevel_>1) std::cout << "rejecting hit with res=" << std::abs(trackState.residual(*hitstate)) << " chi2=" << trackState.chi2(*hitstate) << " dist=" << min_dist << std::endl;
 	  // reset the current state, do not update the hit, and mark as excluded from the fit
 	  if (fwdUpdTkState.size()>0) trackState = fwdUpdTkState.back();
 	  else trackState = startState;
@@ -490,7 +510,7 @@ bool trkf::TrackKalmanFitter::doFitWork(KFTrackState& trackState, std::vector<Hi
       // but we can still use its position from the forward fit, so just mark it as ExcludedFromFit
       hitflags.set(recob::TrajectoryPointFlagTraits::ExcludedFromFit);
       hitflags.set(recob::TrajectoryPointFlagTraits::NoPoint);//fixme: this is only for event display, also needed by current definition of ValidPoint
-      if (dumpLevel_>0) std::cout << "WARNING: backward propagation failed. Skip this hit..." << std::endl;;
+      if (dumpLevel_>0) std::cout << "WARNING: backward propagation failed. Skip this hit... hitstateidx[itk]=" << hitstateidx[itk] << " itk=" << itk << std::endl;;
       // restore the last successful propagation
       trackState = startState;
       continue;
@@ -505,7 +525,7 @@ bool trkf::TrackKalmanFitter::doFitWork(KFTrackState& trackState, std::vector<Hi
   if (dumpLevel_>1) std::cout << "sort output with nvalidhits=" << nvalidhits << std::endl;
 
   // sort output states
-  sortOutput(hitstatev, fwdUpdTkState, hitstateidx, rejectedhsidx, sortedtksidx, applySkipClean);
+  sortOutput(hitstatev, fwdUpdTkState, hitstateidx, rejectedhsidx, sortedtksidx, hitflagsv, applySkipClean);
   size_t nsortvalid = 0;
   for (auto& idx : sortedtksidx) {
     auto& hitflags = hitflagsv[hitstateidx[idx]];
@@ -522,7 +542,7 @@ bool trkf::TrackKalmanFitter::doFitWork(KFTrackState& trackState, std::vector<Hi
 
 void trkf::TrackKalmanFitter::sortOutput(std::vector<HitState>& hitstatev, std::vector<KFTrackState>& fwdUpdTkState, 
 					 std::vector<unsigned int>& hitstateidx, std::vector<unsigned int>& rejectedhsidx,
-					 std::vector<unsigned int>& sortedtksidx, bool applySkipClean) const {
+					 std::vector<unsigned int>& sortedtksidx, std::vector<recob::TrajectoryPointFlags::Mask_t>& hitflagsv, bool applySkipClean) const {
   //
   if (sortOutputHitsMinLength_) {
     //sort hits keeping fixed the order on planes and picking the closest next plane
@@ -532,12 +552,30 @@ void trkf::TrackKalmanFitter::sortOutput(std::vector<HitState>& hitstatev, std::
       const auto& hitstate = hitstatev[hitstateidx[p]];
       tracksInPlanes[hitstate.wireId().Plane].push_back(p);
     }
-    //this assumes that the first hit/state is a good one, may want to check if that's the case
+    if (dumpLevel_>2) {
+      for (auto s : fwdUpdTkState) {
+	std::cout << "state pos=" << s.position() << std::endl;
+      }
+    }
+    //find good starting point
     std::vector<unsigned int> iterTracksInPlanes;
     for (auto it : tracksInPlanes) iterTracksInPlanes.push_back(0);
     auto pos = fwdUpdTkState.front().position();
     auto dir = fwdUpdTkState.front().momentum();
-    for (unsigned int p = 0; p<fwdUpdTkState.size(); ++p) {
+    unsigned int p = 0;
+    for (; p<fwdUpdTkState.size(); ++p) {
+      if (hitflagsv[hitstateidx[p]].isSet(recob::TrajectoryPointFlagTraits::ExcludedFromFit)==0) {
+	pos = fwdUpdTkState[p].position();
+	dir = fwdUpdTkState[p].momentum();
+	if (dumpLevel_>2) std::cout << "sort output found point not excluded with p=" << p << " hitstateidx[p]=" << hitstateidx[p] << " pos=" << pos << std::endl;
+	break;
+      } else {
+	rejectedhsidx.push_back(hitstateidx[p]);
+      }
+    }
+    if (dumpLevel_>1) std::cout << "sort output init with pos=" << pos << " dir=" << dir << std::endl;
+    //pick hits based on minimum dot product with respect to position and direction at previous hit
+    for (; p<fwdUpdTkState.size(); ++p) {
       int min_plane = -1;
       double min_dotp = DBL_MAX;
       for (unsigned int iplane = 0; iplane<iterTracksInPlanes.size(); ++iplane) {
@@ -545,6 +583,7 @@ void trkf::TrackKalmanFitter::sortOutput(std::vector<HitState>& hitstatev, std::
 	  auto& trackstate = fwdUpdTkState[tracksInPlanes[iplane][iterTracksInPlanes[iplane]]];
 	  auto& tmppos = trackstate.position();
 	  const double dotp = dir.Dot(tmppos-pos);
+	  if (dumpLevel_>2) std::cout << "iplane=" << iplane << " tmppos=" << tmppos << " tmpdir=" << tmppos-pos << " dotp=" << dotp << std::endl;
 	  if (dotp<min_dotp) {
 	    min_plane = iplane;
 	    min_dotp = dotp;
@@ -555,6 +594,7 @@ void trkf::TrackKalmanFitter::sortOutput(std::vector<HitState>& hitstatev, std::
       if (min_plane<0) continue;
       const unsigned int ihit = tracksInPlanes[min_plane][iterTracksInPlanes[min_plane]];
       if (applySkipClean && skipNegProp_ && min_dotp<negDistTolerance_) {
+	if (dumpLevel_>2) std::cout << "sort output rejecting hit #" << p << " with min_dotp=" << min_dotp << std::endl;
 	rejectedhsidx.push_back(hitstateidx[ihit]);
 	iterTracksInPlanes[min_plane]++;
 	continue;
@@ -631,7 +671,7 @@ bool trkf::TrackKalmanFitter::fillResult(const std::vector<art::Ptr<recob::Hit> 
     tcbk.addPoint(trackstate.position(), trackstate.momentum(), inHits[originalPos],
 		  recob::TrajectoryPointFlags(originalPos,hitflags), chi2, ope);
   }
-  if (dumpLevel_>1) std::cout << "fillResult nvalidhits=" << nvalidhits << std::endl;
+  if (dumpLevel_>0) std::cout << "fillResult nvalidhits=" << nvalidhits << std::endl;
 
   // fill also with rejected hits information
   SMatrixSym55 fakeCov55;
@@ -653,7 +693,7 @@ bool trkf::TrackKalmanFitter::fillResult(const std::vector<art::Ptr<recob::Hit> 
 		  recob::TrajectoryPointFlags(originalPos,mask), -1., ope);
   }
 
-  if (dumpLevel_>1) std::cout << "outHits.size()=" << outHits.size() << " inHits.size()=" << inHits.size() << std::endl;
+  if (dumpLevel_>0) std::cout << "outHits.size()=" << outHits.size() << " inHits.size()=" << inHits.size() << std::endl;
   if (dumpLevel_>2) assert(outHits.size()==inHits.size());
 
   bool propok = true;

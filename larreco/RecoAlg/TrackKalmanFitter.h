@@ -204,7 +204,7 @@ namespace trkf {
     /// Sort the output states
     void sortOutput(std::vector<HitState>& hitstatev, std::vector<KFTrackState>& fwdUpdTkState,
 		    std::vector<unsigned int>& hitstateidx, std::vector<unsigned int>& rejectedhsidx,
-		    std::vector<unsigned int>& sortedtksidx, bool applySkipClean = true) const;
+		    std::vector<unsigned int>& sortedtksidx, std::vector<recob::TrajectoryPointFlags::Mask_t>& hitflagsv, bool applySkipClean = true) const;
 
     /// Fill the output objects
     bool fillResult(const std::vector<art::Ptr<recob::Hit> >& inHits, const int tkID, const int pdgid,
