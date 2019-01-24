@@ -274,6 +274,14 @@ standard_spacepts:
  vertexclusterWindow:   100.
 }
 
+standard_sptana:
+{
+module_type:             "SptAna"
+HitModuleLabel:          "gaushit"
+HitTruthModuleLabel:     "gaushitTruthMatch"
+SpacePointModuleLabel:   "sps3d"
+}
+
 standard_spacepointana:
 {
   module_type:             "SpacePointAna"
