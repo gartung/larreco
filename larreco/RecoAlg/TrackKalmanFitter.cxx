@@ -297,7 +297,7 @@ bool trkf::TrackKalmanFitter::doFitWork(KFTrackState& trackState, std::vector<Hi
 	//if there is >1 consecutive hit on the same wire, choose the one with best chi2 and exclude the others (should this be optional?)
 	if (pickBestHitOnWire_) {
 	  int wire = hitstate->wireId().Wire;
-	  float min_chi2_wire = std::numeric_limits<float>::max();
+	  float min_chi2_wire = trackState.chi2(*hitstate);
 	  for (unsigned int jh = iterHitsInPlanes[min_plane]; jh<hitsInPlanes[min_plane].size(); ++jh) {
 	    const unsigned int jhit = hitsInPlanes[min_plane][jh];
 	    const auto& jhitstate = hitstatev[jhit];
@@ -593,12 +593,13 @@ void trkf::TrackKalmanFitter::sortOutput(std::vector<HitState>& hitstatev, std::
       }
       if (min_plane<0) continue;
       const unsigned int ihit = tracksInPlanes[min_plane][iterTracksInPlanes[min_plane]];
-      if (applySkipClean && skipNegProp_ && min_dotp<negDistTolerance_) {
-	if (dumpLevel_>2) std::cout << "sort output rejecting hit #" << p << " with min_dotp=" << min_dotp << std::endl;
+      if (applySkipClean && skipNegProp_ && min_dotp<negDistTolerance_ && sortedtksidx.size()>0) {
+	if (dumpLevel_>2) std::cout << "sort output rejecting hit #" << ihit << " plane=" << min_plane << " with min_dotp=" << min_dotp << std::endl;
 	rejectedhsidx.push_back(hitstateidx[ihit]);
 	iterTracksInPlanes[min_plane]++;
 	continue;
       }
+      if (dumpLevel_>2) std::cout << "sort output picking hit #" << ihit << " plane=" << min_plane << " with min_dotp=" << min_dotp << std::endl;
       auto& trackstate = fwdUpdTkState[ihit];
       pos = trackstate.position();
       dir = trackstate.momentum();
