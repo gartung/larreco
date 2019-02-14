@@ -1755,7 +1755,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	  TrueEnergyDep_WithinRecoShower += trackIDEs.at(idIt).energy;
 	}
       }//Hit Loop
-      
+
       double energycompleteness = 0;
       if(TrueEnergyDep_FromShower != 0){
 	energycompleteness =  (TrueEnergyDepWithinShower_FromTrueShower)/TrueEnergyDep_FromShower;
@@ -1786,7 +1786,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       if(std::find(SmallestShowerMotherE_AfterCut_TreeVal.begin(),SmallestShowerMotherE_AfterCut_TreeVal.end(),Energy*1000) != SmallestShowerMotherE_AfterCut_TreeVal.end()){AsscoiatedSmallestShowerMotherEHist->Fill(Energy*1000);}
     else if(std::find(BiggestShowerMotherE_AfterCut_TreeVal.begin(),BiggestShowerMotherE_AfterCut_TreeVal.end(),Energy*1000) != BiggestShowerMotherE_AfterCut_TreeVal.end()){AsscoiatedBiggestShowerMotherEHist->Fill(Energy*1000);}
       
-
       //Get the number of Traj points to loop over                                                    
       unsigned int TrajPoints = MCShowerParticle->NumberTrajectoryPoints();
       
@@ -1835,19 +1834,13 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	  EvaluateShowerdEdx = true;
 	}
       }
-   
+
       //Get the angles between the direction
       float ShowerDirection_Xdiff = -99999;
       float ShowerDirection_Ydiff = -99999;
       float ShowerDirection_Zdiff = -99999;
       float ShowerDirection_diff  = -99999;
 
-      std::vector<double> ShowerEnergyPlanes_remove(3);
-      
-	ShowerEnergyPlanes_remove[0] = ShowerEnergyPlanes[0];
-      	ShowerEnergyPlanes_remove[1] = ShowerEnergyPlanes[1];
-      	ShowerEnergyPlanes_remove[2] = (ShowerEnergyPlanes[2] - 0.00155171)*0.00155171/4.39964 + 4.39964;
-      
       if(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.Z()*ShowerDirection.Z())) !=0){
 	ShowerDirection_Xdiff = (TrueShowerDirection.Y()*ShowerDirection.Y() + TrueShowerDirection.Z()*ShowerDirection.Z())/(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.Z()*ShowerDirection.Z())));
       }
@@ -1947,10 +1940,10 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
 
       if(TrueEnergyDep_FromShower != 0 && EvaluateShowerEnergy){
-	ShowerEnergyDiff_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDep_FromShower);
- 	ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes_remove[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower);
- 	ShowerEnergyDiff_TreeVal[fShowerModuleLabel].push_back(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDep_FromShower);
- 	ShowerTotalEnergyDiff_TreeVal[fShowerModuleLabel].push_back((ShowerEnergyPlanes_remove[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower);
+	ShowerEnergyDiff_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower);
+ 	ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower);
+ 	ShowerEnergyDiff_TreeVal[fShowerModuleLabel].push_back(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower);
+ 	ShowerTotalEnergyDiff_TreeVal[fShowerModuleLabel].push_back((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower);
       }
       else{
 	ShowerEnergyDiff_TreeVal[fShowerModuleLabel].push_back(-99999);
@@ -1958,16 +1951,16 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
       
       if(TrueEnergyDepWithinShower_FromTrueShower != 0 && EvaluateShowerEnergy){
- 	ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower);
-	ShowerRecoEnergyVsTrueEnergyinRecoShower_TreeVal[fShowerModuleLabel].push_back(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower);
+ 	ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower);
+	ShowerRecoEnergyVsTrueEnergyinRecoShower_TreeVal[fShowerModuleLabel].push_back(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower);
       }
       else{
 	ShowerRecoEnergyVsTrueEnergyinRecoShower_TreeVal[fShowerModuleLabel].push_back(-99999);
       }
 
       if(EvaluateShowerEnergy){
-	ShowerEnergy_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]);
-	ShowerEnergy_TreeVal[fShowerModuleLabel].push_back(ShowerEnergyPlanes_remove[ShowerBest_Plane]);
+	ShowerEnergy_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]);
+	ShowerEnergy_TreeVal[fShowerModuleLabel].push_back(ShowerEnergyPlanes[ShowerBest_Plane]);
       }
       else{
 	ShowerEnergy_TreeVal[fShowerModuleLabel].push_back(-99999);
@@ -1990,16 +1983,16 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
 
       if(TrueEnergyDep_FromShower != 0 && EvaluateShowerEnergy){
-	ShowerEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDep_FromShower,simenergy*1000);
-	ShowerTotalEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes_remove[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
+	ShowerEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower,simenergy*1000);
+	ShowerTotalEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
       }
 
       if(TrueEnergyDepWithinShower_FromTrueShower != 0 && EvaluateShowerEnergy){
-	ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower,simenergy*1000);
+	ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower,simenergy*1000);
       }
 
       if(EvaluateShowerEnergy){
-	ShowerEnergy_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane],simenergy*1000);
+	ShowerEnergy_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane],simenergy*1000);
       }
      
       ShowerHitNum_2dHistMap[fShowerModuleLabel]->Fill(showerhits.size(),simenergy*1000);
@@ -2031,7 +2024,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    }
 	    
 	    if(EvaluateShowerEnergy){
-	      Energies_ShowerEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]);
+	      Energies_ShowerEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]);
 	    }
 
 	    if(EvaluateShowerLength){
@@ -2039,12 +2032,12 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    }
 
 	    if(TrueEnergyDep_FromShower != 0 && EvaluateShowerEnergy){
-	      Energies_ShowerEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/TrueEnergyDep_FromShower);
-	      Energies_ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill((ShowerEnergyPlanes_remove[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
+	      Energies_ShowerEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower);
+	      Energies_ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
 	    }
 	    
 	    if(TrueEnergyDepWithinShower_FromTrueShower != 0 && EvaluateShowerEnergy){
-	      Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes_remove[ShowerBest_Plane]/3/TrueEnergyDepWithinShower_FromTrueShower);
+	      Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/3/TrueEnergyDepWithinShower_FromTrueShower);
 	    }
 	 
 	    Energies_ShowerHitNum_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(showerhits.size());
@@ -2085,7 +2078,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	  std::cout << "TrueTrackLength: " << TrueTrackLength << " ShowerTrackLength: " << ShowerTrackLength << std::endl;
 	}
 	if(EvaluateShowerEnergy){
-	  std::cout << "Best Plane Reco Shower Energy " << ShowerEnergyPlanes_remove[ShowerBest_Plane] << std::endl;
+	  std::cout << "Best Plane Reco Shower Energy " << ShowerEnergyPlanes[ShowerBest_Plane] << std::endl;
 	}
 	std::cout << "True Energy Deposited from true shower within Shower: " << TrueEnergyDepWithinShower_FromTrueShower << std::endl;
 	std::cout << "True Energy Deposited From true associated Shower: " << TrueEnergyDep_FromShower << std::endl;
