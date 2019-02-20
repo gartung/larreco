@@ -114,7 +114,7 @@ public:
 		       std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap,
 		       int x_numbins, float x_start, float x_end,
 		       int y_numbins, float y_start, float y_end,
-		       std::map<std::string,std::vector<std::vector<float> > >& MetricVector
+		       std::map<std::string,std::vector<std::vector<std::vector<float> > > >& MetricVector
 		      );
   
   void InitaliseHitGraphs(std::string Name, std::string TitleName,
@@ -682,13 +682,13 @@ private:
   //      fShowerModule RecoShower   NClusters         Plane  Value
   //  std::map<std::string,std::vector<std::vector<std::pair<int,float> > > > 
 
-  std::map<std::string,std::vector<std::vector<float> > >  ClusterProjectionMatchedEnergy_TreeVal;
-  std::map<std::string,std::vector<std::vector<float> > >  ClusterCompletenessEnergy_TreeVal;
-  std::map<std::string,std::vector<std::vector<float> > >  ClusterPurityEnergy_TreeVal;
-  std::map<std::string,std::vector<std::vector<float> > >  ClusterCompletenessHits_TreeVal;
-  std::map<std::string,std::vector<std::vector<float> > >  ClusterPurityHits_TreeVal;
-  std::map<std::string,std::vector<std::vector<float> > >  ClusterCompPurityEnergy_TreeVal;
-  std::map<std::string,std::vector<std::vector<float> > >  ClusterCompPurityHits_TreeVal;
+  std::map<std::string,std::vector<std::vector<std::vector<float> > > >  ClusterProjectionMatchedEnergy_TreeVal;
+  std::map<std::string,std::vector<std::vector<std::vector<float> > > >  ClusterCompletenessEnergy_TreeVal;
+  std::map<std::string,std::vector<std::vector<std::vector<float> > > >  ClusterPurityEnergy_TreeVal;
+  std::map<std::string,std::vector<std::vector<std::vector<float> > > >  ClusterCompletenessHits_TreeVal;
+  std::map<std::string,std::vector<std::vector<std::vector<float> > > >  ClusterPurityHits_TreeVal;
+  std::map<std::string,std::vector<std::vector<std::vector<float> > > >  ClusterCompPurityEnergy_TreeVal;
+  std::map<std::string,std::vector<std::vector<std::vector<float> > > >  ClusterCompPurityHits_TreeVal;
 
   std::map<std::string,std::vector<std::vector<float> > > HitCompletenessEnergy_TreeVal;
 
@@ -881,7 +881,7 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
 					    std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap,
 					    int x_numbins, float x_start, float x_end,
 					    int y_numbins, float y_start, float y_end,
-					    std::map<std::string,std::vector<std::vector<float > > >& MetricVector
+					    std::map<std::string,std::vector<std::vector<std::vector<float> > > >& MetricVector
 					    ){
   
   gStyle->SetOptStat(0);
@@ -904,7 +904,7 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
       //Create the Tree Branch
       std::string Tree_string = Name + "_" +fShowerModuleLabels[j];
       const char* Tree_name   = Tree_string.c_str();
-      Tree->Branch(Tree_name,"std::vector<std::vector<float> >", &MetricVector[fShowerModuleLabels[j]],256000,0);
+      Tree->Branch(Tree_name,"std::vector<std::vector<std::vector<float> > >", &MetricVector[fShowerModuleLabels[j]],256000,0);
       
       //Create the Hitogram which has all the enrgies in
       std::string Name_string      = Name + fShowerModuleLabels[j] +  Plane_string;
@@ -1125,6 +1125,8 @@ void ana::ShowerValidation::InitaliseHitGraphs(std::string Name, std::string Tit
 void ana::ShowerValidation::beginJob() {
   
   Tree = tfs->make<TTree>("MetricTree", "Tree Holding all metric information");
+  gInterpreter->GenerateDictionary("vector<vector<vector<float> > >","vector");
+
 
   for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
 
@@ -2347,7 +2349,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
   BiggestShowerMotherE_BeforeCut_TreeVal.clear();
   SmallestShowerMotherE_AfterCut_TreeVal.clear();
   BiggestShowerMotherE_AfterCut_TreeVal.clear();
-
+  EventNum_name_TreeVal.clear();
 
   return; 
 }
@@ -2363,16 +2365,15 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
 					      float& simenergy,
 					      std::string& fShowerModuleLabel){
 
-  //Initialise Trees                                                                                                                                                               
-  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-    ClusterCompletenessEnergy_TreeVal     [fShowerModuleLabel].push_back(std::vector<float>(clusters.size(),-99999));
-    //    ClusterPurityEnergy_TreeVal           [fShowerModuleLabel].push_back(std::vector<std::vector<float> >((int)geom->Nplanes()));
-    //ClusterCompletenessHits_TreeVal       [fShowerModuleLabel].push_back(std::vector<std::vector<float> >((int)geom->Nplanes()));
-    //ClusterPurityHits_TreeVal             [fShowerModuleLabel].push_back(std::vector<std::vector<float> >((int)geom->Nplanes()));
-    //ClusterCompPurityEnergy_TreeVal       [fShowerModuleLabel].push_back(std::vector<std::vector<float> >((int)geom->Nplanes()));
-    //ClusterCompPurityHits_TreeVal         [fShowerModuleLabel].push_back(std::vector<std::vector<float> >((int)geom->Nplanes()));
-  }
-
+  //Initialise Trees     
+  std::vector<std::vector<float> > ClusterProjectionMatchedEnergy_TreeVec((int)geom->Nplanes());
+  std::vector<std::vector<float> > ClusterCompletenessEnergy_TreeVec((int)geom->Nplanes()); 
+  std::vector<std::vector<float> > ClusterPurityEnergy_TreeVec((int)geom->Nplanes()); 
+  std::vector<std::vector<float> > ClusterCompletenessHits_TreeVec((int)geom->Nplanes()); 
+  std::vector<std::vector<float> > ClusterPurityHits_TreeVec((int)geom->Nplanes());
+  std::vector<std::vector<float> > ClusterCompPurityEnergy_TreeVec((int)geom->Nplanes());
+  std::vector<std::vector<float> > ClusterCompPurityHits_TreeVec((int)geom->Nplanes());   
+   
   //Get the associated hits 
   art::FindManyP<recob::Hit> fmhc(clusterHandle, evt, clusterHandle.provenance()->moduleLabel());
 
@@ -2418,62 +2419,63 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
       totalhits += MCTrack_hit_map[hitHandle.id()][*daughterID][cluster->Plane()];
     }
 
-    int projection_match = -999;
+    int projection_match = -99999;
     
     //Have we matched the 2D cluster to the correct shower correctly. In terms of Energy depositions: 
     if(ShowerTrackInfo.first == TrueShowerID){projection_match = 1;}
     else{projection_match = 0;}
 
     //Calculate the purity and completeness metrics
-    float completeness_hits   = 0;
-    float purity_hits         = 0;
-    float completeness_energy = 0;
-    float purity_energy       = 0;
+    float completeness_hits   = -99999;
+    float purity_hits         = -99999;
+    float completeness_energy = -99999;
+    float purity_energy       = -99999;
     
     float TotalEnergyDepinHits = RecoUtils::TotalEnergyDepinHits(clusterhits,cluster->Plane().Plane);
     
     ClusterProjectionMatchedEnergy_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(projection_match);
     ClusterProjectionMatchedEnergy_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(projection_match,simenergy*1000);
-    //    ClusterProjectionMatchedEnergy_TreeVal[fShowerModuleLabel][ClusterProjectionMatchedEnergy_TreeVal.size()-1][cluster->Plane().Plane].push_back(projection_match);
-
+    ClusterProjectionMatchedEnergy_TreeVec[cluster->Plane().Plane].push_back(projection_match);
+    
     if(totalhits != 0){
       completeness_hits = (signalhits)/totalhits;
       ClusterCompletenessHits_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(completeness_hits);
       ClusterCompletenessHits_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(completeness_hits,simenergy*1000);
-      //      ClusterCompletenessHits_TreeVal[fShowerModuleLabel][ClusterCompletenessHits_TreeVal.size()-1][cluster->Plane().Plane].push_back(completeness_hits);
+      ClusterCompletenessHits_TreeVec[cluster->Plane().Plane].push_back(completeness_hits);
     }
 
     if(clusterhits.size() != 0){
       purity_hits = signalhits/clusterhits.size();
       ClusterPurityHits_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(purity_hits);
       ClusterPurityHits_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(purity_hits,simenergy*1000);
-      //ClusterPurityHits_TreeVal[fShowerModuleLabel][ClusterPurityHits_TreeVal.size()-1][cluster->Plane().Plane].push_back(purity_hits);
+      ClusterPurityHits_TreeVec[cluster->Plane().Plane].push_back(purity_hits);
+
     }
 
     if(TotalTrueEnergy != 0){
       completeness_energy = (ShowerTrackInfo.second)/TotalTrueEnergy; 
       ClusterCompletenessEnergy_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(completeness_energy);
       ClusterCompletenessEnergy_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(completeness_energy,simenergy*1000);
-      //      ClusterCompletenessEnergy_TreeVal[fShowerModuleLabel][ClusterCompletenessEnergy_TreeVal.size()-1][cluster->Plane().Plane].push_back(completeness_energy);
+      ClusterCompletenessEnergy_TreeVec[cluster->Plane().Plane].push_back(completeness_energy);
     }
 
     if(TotalEnergyDepinHits != 0){
       purity_energy = ShowerTrackInfo.second/TotalEnergyDepinHits;
       ClusterPurityEnergy_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(purity_energy);
       ClusterPurityEnergy_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(purity_energy,simenergy*1000);
-      //      ClusterPurityEnergy_TreeVal[fShowerModuleLabel][ClusterPurityEnergy_TreeVal.size()-1][cluster->Plane().Plane].push_back(purity_energy);
+      ClusterPurityEnergy_TreeVec[cluster->Plane().Plane].push_back(purity_energy);
     }
 
     if(totalhits != 0 && clusterhits.size() != 0){
       ClusterCompPurityHits_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(completeness_hits*purity_hits);
       ClusterCompPurityHits_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(completeness_hits*purity_hits,simenergy*1000);
-      //ClusterCompPurityHits_TreeVal[fShowerModuleLabel][ClusterCompPurityHits_TreeVal.size()-1][cluster->Plane().Plane].push_back(completeness_hits*purity_hits);
+      ClusterCompPurityHits_TreeVec[cluster->Plane().Plane].push_back(completeness_hits*purity_hits);
     }
 
     if(TotalTrueEnergy != 0 && TotalEnergyDepinHits != 0){
       ClusterCompPurityEnergy_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(completeness_energy*purity_energy);
       ClusterCompPurityEnergy_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(completeness_energy*purity_energy,simenergy*1000);
-      // ClusterCompPurityEnergy_TreeVal[fShowerModuleLabel][ClusterCompPurityEnergy_TreeVal.size()-1][cluster->Plane().Plane].push_back(completeness_energy*purity_energy);
+      ClusterCompPurityEnergy_TreeVec[cluster->Plane().Plane].push_back(completeness_energy*purity_energy);
     }
 
     if(fVerbose>1){
@@ -2504,6 +2506,15 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
     }
 
   }//Cluster Loop
+
+  ClusterProjectionMatchedEnergy_TreeVal[fShowerModuleLabel].push_back(ClusterProjectionMatchedEnergy_TreeVec);    
+  ClusterCompletenessEnergy_TreeVal[fShowerModuleLabel].push_back(ClusterCompletenessEnergy_TreeVec);
+  ClusterPurityEnergy_TreeVal[fShowerModuleLabel].push_back(ClusterPurityEnergy_TreeVec);
+  ClusterCompletenessHits_TreeVal[fShowerModuleLabel].push_back(ClusterCompletenessHits_TreeVec);
+  ClusterPurityHits_TreeVal[fShowerModuleLabel].push_back(ClusterPurityHits_TreeVec);
+  ClusterCompPurityEnergy_TreeVal[fShowerModuleLabel].push_back(ClusterCompPurityEnergy_TreeVec);
+  ClusterCompPurityHits_TreeVal[fShowerModuleLabel].push_back(ClusterCompPurityHits_TreeVec);
+
   return;
 }
 
