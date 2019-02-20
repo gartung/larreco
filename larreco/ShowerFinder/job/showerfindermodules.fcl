@@ -130,7 +130,7 @@ standard_showervalidation: {
  GenieGenModuleLabel:      "generator"
  LArGeantModuleLabel:      "largeant"
  HitsModuleLabel:          "gaushit"
- TrackModuleLabel:         "pmalgtrackmaker"
+ TrackModuleLabel:         "pandoraTrack"
  ShowerModuleLabels:        ["emshower"]
  HitModuleLabels:           ["gaushit"]
  UseBiggestShower:          true

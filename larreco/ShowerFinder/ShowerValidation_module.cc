@@ -235,6 +235,8 @@ private:
   std::map<std::string,TH1F*> ShowerBestPlane_HistMap;
   std::map<std::string,TH1F*> GeoProjectionMatched_HistMap;
 
+  std::map<std::string,TH1F*> PandoraTrackNum_HistMap;
+
   std::map<std::string,std::map<geo::PlaneID,TH1F*> > ClusterProjectionMatchedEnergy_HistMap;
   std::map<std::string,std::map<geo::PlaneID,TH1F*> > ClusterCompletenessEnergy_HistMap;
   std::map<std::string,std::map<geo::PlaneID,TH1F*> > ClusterPurityEnergy_HistMap;
@@ -270,6 +272,8 @@ private:
   std::map<std::string,std::map<float,TH1F*> > Energies_TrueHitNum_HistMap;
   std::map<std::string,std::map<float,TH1F*> > Energies_ShowerBestPlane_HistMap;
   std::map<std::string,std::map<float,TH1F*> > Energies_GeoProjectionMatched_HistMap;
+  std::map<std::string,std::map<float,TH1F*> > Energies_PandoraTrackNum_HistMap;
+
 
   std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > > Energies_ClusterProjectionMatchedEnergy_HistMap;
   std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > > Energies_ClusterCompletenessEnergy_HistMap;
@@ -307,6 +311,7 @@ private:
   std::map<std::string,TGraphErrors*> Energies_Mean_TrueHitNum_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_Mean_ShowerBestPlane_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_Mean_GeoProjectionMatched_GraphMap;
+  std::map<std::string,TGraphErrors*> Energies_Mean_PandoraTrackNum_GraphMap;
 
   std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_Mean_ClusterProjectionMatchedEnergy_GraphMap;
   std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_Mean_ClusterCompletenessEnergy_GraphMap;
@@ -343,6 +348,7 @@ private:
   std::map<std::string,TGraphErrors*> Energies_RMS_TrueHitNum_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_RMS_ShowerBestPlane_GraphMap;
   std::map<std::string,TGraphErrors*> Energies_RMS_GeoProjectionMatched_GraphMap;
+  std::map<std::string,TGraphErrors*> Energies_RMS_PandoraTrackNum_GraphMap;
 
   std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_RMS_ClusterProjectionMatchedEnergy_GraphMap;
   std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_RMS_ClusterCompletenessEnergy_GraphMap;
@@ -380,6 +386,7 @@ private:
   TMultiGraph* Energies_Mean_TrueHitNum_Multi;
   TMultiGraph* Energies_Mean_ShowerBestPlane_Multi;
   TMultiGraph* Energies_Mean_GeoProjectionMatched_Multi;
+  TMultiGraph* Energies_Mean_PandoraTrackNum_Multi;
 
   std::map<geo::PlaneID,TMultiGraph*> Energies_Mean_ClusterProjectionMatchedEnergy_Multi;
   std::map<geo::PlaneID,TMultiGraph*> Energies_Mean_ClusterCompletenessEnergy_Multi;
@@ -416,6 +423,7 @@ private:
   TMultiGraph* Energies_RMS_TrueHitNum_Multi;
   TMultiGraph* Energies_RMS_ShowerBestPlane_Multi;
   TMultiGraph* Energies_RMS_GeoProjectionMatched_Multi;
+  TMultiGraph* Energies_RMS_PandoraTrackNum_Multi;
 
   std::map<geo::PlaneID,TMultiGraph*> Energies_RMS_ClusterProjectionMatchedEnergy_Multi;
   std::map<geo::PlaneID,TMultiGraph*> Energies_RMS_ClusterCompletenessEnergy_Multi;
@@ -452,6 +460,7 @@ private:
   TCanvas* Energies_Mean_TrueHitNum_canvasMulti;
   TCanvas* Energies_Mean_ShowerBestPlane_canvasMulti;
   TCanvas* Energies_Mean_GeoProjectionMatched_canvasMulti;
+  TCanvas* Energies_Mean_PandoraTrackNum_canvasMulti;
 
   std::map<geo::PlaneID,TCanvas*> Energies_Mean_ClusterProjectionMatchedEnergy_canvasMulti;
   std::map<geo::PlaneID,TCanvas*> Energies_Mean_ClusterCompletenessEnergy_canvasMulti;
@@ -488,6 +497,7 @@ private:
   TCanvas* Energies_RMS_TrueHitNum_canvasMulti;
   TCanvas* Energies_RMS_ShowerBestPlane_canvasMulti;
   TCanvas* Energies_RMS_GeoProjectionMatched_canvasMulti;
+  TCanvas* Energies_RMS_PandoraTrackNum_canvasMulti;
 
   std::map<geo::PlaneID,TCanvas*> Energies_RMS_ClusterProjectionMatchedEnergy_canvasMulti;
   std::map<geo::PlaneID,TCanvas*> Energies_RMS_ClusterCompletenessEnergy_canvasMulti;
@@ -525,6 +535,7 @@ private:
   TCanvas* TrueHitNum_canvas;
   TCanvas* ShowerBestPlane_canvas;
   TCanvas* GeoProjectionMatched_canvas;
+  TCanvas* PandoraTrackNum_canvas;
 
   std::map<geo::PlaneID,TCanvas*> ClusterProjectionMatchedEnergy_canvas;
   std::map<geo::PlaneID,TCanvas*> ClusterCompletenessEnergy_canvas;
@@ -561,6 +572,7 @@ private:
   std::map<float,TCanvas*> Energies_TrueHitNum_canvasMap;
   std::map<float,TCanvas*> Energies_ShowerBestPlane_canvasMap;
   std::map<float,TCanvas*> Energies_GeoProjectionMatched_canvasMap;
+  std::map<float,TCanvas*> Energies_PandoraTrackNum_canvasMap;
 
   std::map<float,std::map<geo::PlaneID,TCanvas*> > Energies_ClusterProjectionMatchedEnergy_canvasMap;
   std::map<float,std::map<geo::PlaneID,TCanvas*> > Energies_ClusterCompletenessEnergy_canvasMap;
@@ -598,6 +610,7 @@ private:
   std::map<std::string,TH2F*> TrueHitNum_2dHistMap;
   std::map<std::string,TH2F*> ShowerBestPlane_2dHistMap;
   std::map<std::string,TH2F*> GeoProjectionMatched_2dHistMap;
+  std::map<std::string,TH2F*> PandoraTrackNum_2dHistMap;
 
   std::map<std::string,std::map<geo::PlaneID,TH2F*> > ClusterProjectionMatchedEnergy_2dHistMap;
   std::map<std::string,std::map<geo::PlaneID,TH2F*> > ClusterCompletenessEnergy_2dHistMap;
@@ -634,6 +647,7 @@ private:
   std::map<std::string,TCanvas*> TrueHitNum_2dCanvasMap;
   std::map<std::string,TCanvas*> ShowerBestPlane_2dCanvasMap;
   std::map<std::string,TCanvas*> GeoProjectionMatched_2dCanvasMap;
+  std::map<std::string,TCanvas*> PandoraTrackNum_2dCanvasMap;
 
   std::map<std::string,TCanvas*> PosDir_2dCanvasMap;
   std::map<std::string,TH2F*>    PosDir_2dHistMap;
@@ -673,6 +687,7 @@ private:
   std::map<std::string,std::vector<float> > TrueHitNum_TreeVal;
   std::map<std::string,std::vector<float> > ShowerBestPlane_TreeVal;
   std::map<std::string,std::vector<float> > GeoProjectionMatched_TreeVal;
+  std::map<std::string,std::vector<float> > PandoraTrackNum_TreeVal;
   
   std::map<std::string,std::vector<float> > PosDir_TreeVal;
 
@@ -722,7 +737,6 @@ private:
   art::ServiceHandle<cheat::ParticleInventoryService> particleInventory;
   art::ServiceHandle<geo::Geometry> geom;
   art::ServiceHandle<art::TFileService> tfs;
-
 
 };
 
@@ -1218,6 +1232,7 @@ void ana::ShowerValidation::beginJob() {
 
   ana::ShowerValidation::InitaliseGraphs("GeoProjectionMatched","Projection matching score",GeoProjectionMatched_HistMap,Energies_GeoProjectionMatched_HistMap,Energies_Mean_GeoProjectionMatched_GraphMap,Energies_RMS_GeoProjectionMatched_GraphMap,Energies_Mean_GeoProjectionMatched_Multi,Energies_RMS_GeoProjectionMatched_Multi,Energies_Mean_GeoProjectionMatched_canvasMulti,Energies_RMS_GeoProjectionMatched_canvasMulti,Energies_GeoProjectionMatched_canvasMap, GeoProjectionMatched_canvas,GeoProjectionMatched_2dHistMap,GeoProjectionMatched_2dCanvasMap,200,0,1,100,0,fMaxSimEnergy,GeoProjectionMatched_TreeVal);
 
+  ana::ShowerValidation::InitaliseGraphs("PandoraTrackNum","Projection matching score",PandoraTrackNum_HistMap,Energies_PandoraTrackNum_HistMap,Energies_Mean_PandoraTrackNum_GraphMap,Energies_RMS_PandoraTrackNum_GraphMap,Energies_Mean_PandoraTrackNum_Multi,Energies_RMS_PandoraTrackNum_Multi,Energies_Mean_PandoraTrackNum_canvasMulti,Energies_RMS_PandoraTrackNum_canvasMulti,Energies_PandoraTrackNum_canvasMap, PandoraTrackNum_canvas,PandoraTrackNum_2dHistMap,PandoraTrackNum_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PandoraTrackNum_TreeVal);
 
   ana::ShowerValidation::InitaliseGraphs("ClusterProjectionMatchedEnergy","Projection Matched",ClusterProjectionMatchedEnergy_HistMap,Energies_ClusterProjectionMatchedEnergy_HistMap,Energies_Mean_ClusterProjectionMatchedEnergy_GraphMap,Energies_RMS_ClusterProjectionMatchedEnergy_GraphMap,Energies_Mean_ClusterProjectionMatchedEnergy_Multi,Energies_RMS_ClusterProjectionMatchedEnergy_Multi,Energies_Mean_ClusterProjectionMatchedEnergy_canvasMulti,Energies_RMS_ClusterProjectionMatchedEnergy_canvasMulti,Energies_ClusterProjectionMatchedEnergy_canvasMap, ClusterProjectionMatchedEnergy_canvas,ClusterProjectionMatchedEnergy_2dHistMap,ClusterProjectionMatchedEnergy_2dCanvasMap,4,-1.5,2.5,100,0,fMaxSimEnergy,ClusterProjectionMatchedEnergy_TreeVal);
 
@@ -1264,6 +1279,13 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
   if(evt.getByLabel(fHitsModuleLabel,hitListHandle))
     {art::fill_ptr_vector(hits, hitListHandle);}
   std::cout << "hits.size(): " << hits.size() << std::endl;
+
+  //Get the track Information (hopfully you have pandora track)
+  art::Handle<std::vector<recob::Track> > trackListHandle;
+  std::vector<art::Ptr<recob::Track> > tracks;
+  if(evt.getByLabel(fTrackModuleLabel,trackListHandle))
+    {art::fill_ptr_vector(tracks, trackListHandle);}
+
 
   //I think that doing getManyByType kind of initalises the handles giving every particle product id. Doing this allows us to find handles for the individal hits later.
 
@@ -1576,7 +1598,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     }
   }
 
-
+  
   if(fVerbose > 1){std::cout << "Hit Validation Complete" << std::endl;} 
 		
   //##############################################
@@ -2182,8 +2204,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
       
       if(EvalulateGeoProjectionMatched){
-	std::cout << "numclusters: " << numclusters << std::endl;
-	std::cout << "geoprojectionmatched_score: " << geoprojectionmatched_score << std::endl;
+
 	GeoProjectionMatched_HistMap[fShowerModuleLabel]->Fill(geoprojectionmatched_score);
 	GeoProjectionMatched_2dHistMap[fShowerModuleLabel]->Fill(geoprojectionmatched_score,simenergy*1000);
 	GeoProjectionMatched_TreeVal[fShowerModuleLabel].push_back(geoprojectionmatched_score);
@@ -2229,6 +2250,11 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
     }
 
+
+    //This is rather pandora track specific for tuning pandora so lets add it if the shower module used pandora and the track module Pandora track is used. Very horrid and sorry for that.
+    PandoraTrackNum_HistMap[fShowerModuleLabel]->Fill(tracks.size());
+    PandoraTrackNum_TreeVal[fShowerModuleLabel].push_back(tracks.size());
+
     //Whats the segementyness of the event.
     EventSeggy_HistMap[fShowerModuleLabel]  ->Fill(showers.size()/num_of_showers_viaDensitycut);
     TrueEnergy_HistMap[fShowerModuleLabel]  ->Fill(simenergy*1000);
@@ -2242,6 +2268,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	if(TMath::Abs(simenergy*1000 - fEnergies[i])< fEnergyWidth){
 	  Energies_EventSeggy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(showers.size()/num_of_showers_viaDensitycut);
 	  Energies_TrueEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(simenergy*1000);
+	  Energies_PandoraTrackNum_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(tracks.size());
 	}
       }
     }
@@ -2328,6 +2355,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     TrueEnergy_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     TrueHitNum_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     PosDir_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
+    PandoraTrackNum_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
 
     ClusterProjectionMatchedEnergy_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     ClusterCompletenessEnergy_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
@@ -3001,6 +3029,9 @@ void ana::ShowerValidation::endJob() {
   ana::ShowerValidation::DrawGraphs(ShowerHitNum_HistMap,Energies_ShowerHitNum_HistMap,Energies_Mean_ShowerHitNum_GraphMap,Energies_RMS_ShowerHitNum_GraphMap,Energies_Mean_ShowerHitNum_Multi,Energies_RMS_ShowerHitNum_Multi,Energies_Mean_ShowerHitNum_canvasMulti,Energies_RMS_ShowerHitNum_canvasMulti,Energies_ShowerHitNum_canvasMap, ShowerHitNum_canvas,ShowerHitNum_2dHistMap,ShowerHitNum_2dCanvasMap);
 
   ana::ShowerValidation::DrawGraphs(GeoProjectionMatched_HistMap,Energies_GeoProjectionMatched_HistMap,Energies_Mean_GeoProjectionMatched_GraphMap,Energies_RMS_GeoProjectionMatched_GraphMap,Energies_Mean_GeoProjectionMatched_Multi,Energies_RMS_GeoProjectionMatched_Multi,Energies_Mean_GeoProjectionMatched_canvasMulti,Energies_RMS_GeoProjectionMatched_canvasMulti,Energies_GeoProjectionMatched_canvasMap, GeoProjectionMatched_canvas,GeoProjectionMatched_2dHistMap,GeoProjectionMatched_2dCanvasMap);
+
+    ana::ShowerValidation::DrawGraphs(PandoraTrackNum_HistMap,Energies_PandoraTrackNum_HistMap,Energies_Mean_PandoraTrackNum_GraphMap,Energies_RMS_PandoraTrackNum_GraphMap,Energies_Mean_PandoraTrackNum_Multi,Energies_RMS_PandoraTrackNum_Multi,Energies_Mean_PandoraTrackNum_canvasMulti,Energies_RMS_PandoraTrackNum_canvasMulti,Energies_PandoraTrackNum_canvasMap, PandoraTrackNum_canvas,PandoraTrackNum_2dHistMap,PandoraTrackNum_2dCanvasMap);
+
 
   ana::ShowerValidation::DrawGraphs(ShowerTotalEnergyDiff_HistMap,Energies_ShowerTotalEnergyDiff_HistMap,Energies_Mean_ShowerTotalEnergyDiff_GraphMap,Energies_RMS_ShowerTotalEnergyDiff_GraphMap,Energies_Mean_ShowerTotalEnergyDiff_Multi,Energies_RMS_ShowerTotalEnergyDiff_Multi,Energies_Mean_ShowerTotalEnergyDiff_canvasMulti,Energies_RMS_ShowerTotalEnergyDiff_canvasMulti,Energies_ShowerTotalEnergyDiff_canvasMap,ShowerTotalEnergyDiff_canvas,ShowerTotalEnergyDiff_2dHistMap,ShowerTotalEnergyDiff_2dCanvasMap);
 
