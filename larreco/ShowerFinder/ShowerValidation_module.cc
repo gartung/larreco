@@ -1184,6 +1184,7 @@ void ana::ShowerValidation::beginJob() {
     Tree->Branch(Process_name,"std::vector<std::string>",&ShowerStartEndProcess_TreeVal[fShowerModuleLabels[j]],32000,0);
   }
 
+
   ana::ShowerValidation::InitaliseGraphs("ShowerDirection_X","cos(x)",ShowerDirection_X_HistMap,Energies_ShowerDirection_X_HistMap,Energies_Mean_ShowerDirection_X_GraphMap,Energies_RMS_ShowerDirection_X_GraphMap,Energies_Mean_ShowerDirection_X_Multi,Energies_RMS_ShowerDirection_X_Multi,Energies_Mean_ShowerDirection_X_canvasMulti,Energies_RMS_ShowerDirection_X_canvasMulti,Energies_ShowerDirection_X_canvasMap, ShowerDirection_X_canvas,ShowerDirection_X_2dHistMap,ShowerDirection_X_2dCanvasMap,100,-1,1,200,0,fMaxSimEnergy,ShowerDirection_X_TreeVal);
 
   ana::ShowerValidation::InitaliseGraphs("ShowerDirection_Y","cos(y)",ShowerDirection_Y_HistMap,Energies_ShowerDirection_Y_HistMap,Energies_Mean_ShowerDirection_Y_GraphMap,Energies_RMS_ShowerDirection_Y_GraphMap,Energies_Mean_ShowerDirection_Y_Multi,Energies_RMS_ShowerDirection_Y_Multi,Energies_Mean_ShowerDirection_Y_canvasMulti,Energies_RMS_ShowerDirection_Y_canvasMulti,Energies_ShowerDirection_Y_canvasMap, ShowerDirection_Y_canvas,ShowerDirection_Y_2dHistMap,ShowerDirection_Y_2dCanvasMap,100,-1,1,200,0,fMaxSimEnergy,ShowerDirection_Y_TreeVal);
@@ -1278,8 +1279,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
   std::vector<art::Ptr<recob::Hit> > hits;
   if(evt.getByLabel(fHitsModuleLabel,hitListHandle))
     {art::fill_ptr_vector(hits, hitListHandle);}
-  std::cout << "hits.size(): " << hits.size() << std::endl;
-
+  
   //Get the track Information (hopfully you have pandora track)
   art::Handle<std::vector<recob::Track> > trackListHandle;
   std::vector<art::Ptr<recob::Track> > tracks;
@@ -2136,15 +2136,16 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	  if(fVerbose>1){std::cout << "Noise Hit" << std::endl;}
 	}
       }
+
     
       //Get the clusters associated to the shower.
       if(fmch.isValid()){
+	
 	art::Handle<std::vector<recob::Cluster > > clusterHandle;
 	evt.get(fmch.at(shower.key()).front().id(),clusterHandle);
 	if(clusterHandle.isValid()){
 	  std::vector<art::Ptr<recob::Cluster> > showerclusters = fmch.at(shower.key());
 	  ana::ShowerValidation::ClusterValidation(showerclusters,evt,clusterHandle,ShowersMothers,MCTrack_Energy_map,MCTrack_hit_map,ShowerTrackID,simenergy,fShowerModuleLabel);
-
 
 	  //Loop over the hit coordinate map where there there is a hit on every plane give a 1.
 	  numclusters = showerclusters.size();
@@ -2162,7 +2163,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	}
       }
       else if(fmpf.isValid()){
-      
+
 	//Find the Clusters associated to PF particle.
 	art::Handle<std::vector<recob::PFParticle> > pfpHandle;  
 	evt.get(fmpf.at(shower.key()).front().id(),pfpHandle);
@@ -2174,7 +2175,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    if(clusterHandle.isValid()){
 	      std::vector< art::Ptr<recob::Cluster> > showerclusters = fmcpf.at(shower.key());
 	      ana::ShowerValidation::ClusterValidation(showerclusters,evt,clusterHandle,ShowersMothers,MCTrack_Energy_map,MCTrack_hit_map,ShowerTrackID,simenergy,fShowerModuleLabel);
-	      
 	      //Loop over the hit coordinate map where there there is a hit on every plane give a 1.
 	      numclusters = showerclusters.size();
 	      int geoprojectionmatched = 0;  
@@ -2401,7 +2401,7 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
   std::vector<std::vector<float> > ClusterPurityHits_TreeVec((int)geom->Nplanes());
   std::vector<std::vector<float> > ClusterCompPurityEnergy_TreeVec((int)geom->Nplanes());
   std::vector<std::vector<float> > ClusterCompPurityHits_TreeVec((int)geom->Nplanes());   
-   
+  
   //Get the associated hits 
   art::FindManyP<recob::Hit> fmhc(clusterHandle, evt, clusterHandle.provenance()->moduleLabel());
 
