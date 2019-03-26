@@ -551,3 +551,5 @@ float RecoUtils::TotalEnergyDepinHitsFromTrack(const std::vector<art::Ptr<recob:
 
   return DepEnergy;
 }
+
+

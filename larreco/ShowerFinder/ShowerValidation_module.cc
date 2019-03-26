@@ -198,13 +198,14 @@ private:
   bool  fUseBiggestShower;
   bool  fDrawCanvases;
   bool  fFillOnlyClosestShower;
+  bool  fRemoveNonContainedParticles;
   int   fVerbose;
   int   fMinHitSize;
   float fEnergyWidth;
   float fSimEnergyCut;
   float fDensityCut;
   float fMaxSimEnergy;
-
+  
   std::vector<float>       fEnergies;
   std::vector<std::string> fShowerModuleLabels;
   std::vector<std::string> fHitModuleLabels;
@@ -738,26 +739,37 @@ private:
   art::ServiceHandle<geo::Geometry> geom;
   art::ServiceHandle<art::TFileService> tfs;
 
+  int numevents;
+  int numshowers;
+  int numshowerspassTPC;
+  int numshowerspassdensity;
+  int numshoowerspassenergy;
+  int numrecoshowers; 
+  int numrecoshowersana;
+
+
+
 };
 
 ana::ShowerValidation::ShowerValidation(const fhicl::ParameterSet& pset) : EDAnalyzer(pset){
 
-  fGenieGenModuleLabel   = pset.get<std::string>("GenieGenModuleLabel");
-  fLArGeantModuleLabel   = pset.get<std::string>("LArGeantModuleLabel"); 
-  fHitsModuleLabel       = pset.get<std::string>("HitsModuleLabel");
-  fTrackModuleLabel      = pset.get<std::string>("TrackModuleLabel");
-  fShowerModuleLabels    = pset.get<std::vector<std::string> >("ShowerModuleLabels");
-  fHitModuleLabels       = pset.get<std::vector<std::string> >("HitModuleLabels");
-  fEnergies              = pset.get<std::vector<float> >("Energies");
-  fUseBiggestShower      = pset.get<bool>("UseBiggestShower");
-  fDrawCanvases          = pset.get<bool>("DrawCanvases"); 
-  fFillOnlyClosestShower = pset.get<bool>("FillOnlyClosestShower");
-  fVerbose               = pset.get<int>("Verbose");
-  fMinHitSize            = pset.get<int>("MinHitSize");
-  fEnergyWidth           = pset.get<float>("EnergyWidth");
-  fSimEnergyCut          = pset.get<float>("SimEnergyCut");
-  fDensityCut            = pset.get<float>("DensityCut");
-  fMaxSimEnergy          = pset.get<float>("MaxSimEnergy");
+  fGenieGenModuleLabel         = pset.get<std::string>("GenieGenModuleLabel");
+  fLArGeantModuleLabel         = pset.get<std::string>("LArGeantModuleLabel"); 
+  fHitsModuleLabel             = pset.get<std::string>("HitsModuleLabel");
+  fTrackModuleLabel            = pset.get<std::string>("TrackModuleLabel");
+  fShowerModuleLabels          = pset.get<std::vector<std::string> >("ShowerModuleLabels");
+  fHitModuleLabels             = pset.get<std::vector<std::string> >("HitModuleLabels");
+  fEnergies                    = pset.get<std::vector<float> >("Energies");
+  fUseBiggestShower            = pset.get<bool>("UseBiggestShower");
+  fDrawCanvases                = pset.get<bool>("DrawCanvases"); 
+  fFillOnlyClosestShower       = pset.get<bool>("FillOnlyClosestShower");
+  fRemoveNonContainedParticles = pset.get<bool>("RemoveNonContainedParticles");
+  fVerbose                     = pset.get<int>("Verbose");
+  fMinHitSize                  = pset.get<int>("MinHitSize");
+  fEnergyWidth                 = pset.get<float>("EnergyWidth");
+  fSimEnergyCut                = pset.get<float>("SimEnergyCut");
+  fDensityCut                  = pset.get<float>("DensityCut");
+  fMaxSimEnergy                = pset.get<float>("MaxSimEnergy");
 }
 
 //This is bad. try and think of a better way. 
@@ -1138,6 +1150,14 @@ void ana::ShowerValidation::InitaliseHitGraphs(std::string Name, std::string Tit
   
 void ana::ShowerValidation::beginJob() {
   
+   numevents = 0;
+   numshowers = 0;
+   numshowerspassTPC = 0;
+   numshowerspassdensity = 0;
+   numshoowerspassenergy = 0;
+   numrecoshowers = 0; 
+   numrecoshowersana = 0;
+
   Tree = tfs->make<TTree>("MetricTree", "Tree Holding all metric information");
   gInterpreter->GenerateDictionary("vector<vector<vector<float> > >","vector");
 
@@ -1203,7 +1223,7 @@ void ana::ShowerValidation::beginJob() {
 
   ana::ShowerValidation::InitaliseGraphs("ShowerdEdx","dEdx (meV)",ShowerdEdx_HistMap,Energies_ShowerdEdx_HistMap,Energies_Mean_ShowerdEdx_GraphMap,Energies_RMS_ShowerdEdx_GraphMap,Energies_Mean_ShowerdEdx_Multi,Energies_RMS_ShowerdEdx_Multi,Energies_Mean_ShowerdEdx_canvasMulti,Energies_RMS_ShowerdEdx_canvasMulti,Energies_ShowerdEdx_canvasMap, ShowerdEdx_canvas,ShowerdEdx_2dHistMap,ShowerdEdx_2dCanvasMap,100,0,10,100,0,fMaxSimEnergy,ShowerdEdx_TreeVal);
 
-  ana::ShowerValidation::InitaliseGraphs("EventSeggy","Shower Segmenation",EventSeggy_HistMap,Energies_EventSeggy_HistMap,Energies_Mean_EventSeggy_GraphMap,Energies_RMS_EventSeggy_GraphMap,Energies_Mean_EventSeggy_Multi,Energies_RMS_EventSeggy_Multi,Energies_Mean_EventSeggy_canvasMulti,Energies_RMS_EventSeggy_canvasMulti,Energies_EventSeggy_canvasMap, EventSeggy_canvas,EventSeggy_2dHistMap,EventSeggy_2dCanvasMap,20,-0.5,20.5,100,0,fMaxSimEnergy,EventSeggy_TreeVal);
+  ana::ShowerValidation::InitaliseGraphs("EventSeggy","Shower Segmenation",EventSeggy_HistMap,Energies_EventSeggy_HistMap,Energies_Mean_EventSeggy_GraphMap,Energies_RMS_EventSeggy_GraphMap,Energies_Mean_EventSeggy_Multi,Energies_RMS_EventSeggy_Multi,Energies_Mean_EventSeggy_canvasMulti,Energies_RMS_EventSeggy_canvasMulti,Energies_EventSeggy_canvasMap, EventSeggy_canvas,EventSeggy_2dHistMap,EventSeggy_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,EventSeggy_TreeVal);
 
   ana::ShowerValidation::InitaliseGraphs("ShowerEnergyCompleteness"," Energy Completeness",ShowerEnergyCompleteness_HistMap,Energies_ShowerEnergyCompleteness_HistMap,Energies_Mean_ShowerEnergyCompleteness_GraphMap,Energies_RMS_ShowerEnergyCompleteness_GraphMap,Energies_Mean_ShowerEnergyCompleteness_Multi,Energies_RMS_ShowerEnergyCompleteness_Multi,Energies_Mean_ShowerEnergyCompleteness_canvasMulti,Energies_RMS_ShowerEnergyCompleteness_canvasMulti,Energies_ShowerEnergyCompleteness_canvasMap, ShowerEnergyCompleteness_canvas,ShowerEnergyCompleteness_2dHistMap,ShowerEnergyCompleteness_2dCanvasMap,100,-0.2,1.2,100,0,fMaxSimEnergy,ShowerEnergyCompleteness_TreeVal);
 
@@ -1256,6 +1276,8 @@ void ana::ShowerValidation::beginJob() {
 
 void ana::ShowerValidation::analyze(const art::Event& evt) {
 
+  ++numevents;
+  
   //Fill the Event Number info 
   EventNum_name_TreeVal.push_back(evt.run());
   EventNum_name_TreeVal.push_back(evt.subRun());
@@ -1311,6 +1333,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
   //Loop over the particles       
   std::map<int,const simb::MCParticle*> trueParticles;
   std::map<int,const simb::MCParticle*> trueInitialParticles;
+  std::map<int,bool> mcparticlescontained;
   std::map<int,float> trueParticleEnergy;
   std::map<int,std::vector<int> > ShowersMothers; //Mothers are the key Daughters are in the vector. 
   int num_of_showers_viaEcut = 0;
@@ -1329,35 +1352,37 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
   for (sim::ParticleList::const_iterator particleIt = particles.begin(); particleIt != particles.end(); ++particleIt){
     const simb::MCParticle *particle = particleIt->second;
     
-    //Particles with mother 0 are the initial particles (neutrino events this is the particles generated after the interaction. Keep note of these. 
-    if(particle->Mother() == 0){
-      
-      simenergy = particle->E(); 
-      trueInitialParticles[particle->TrackId()] = particle;
-      
-      //Check to see if the particle is contained and find the trajectory of the particle                                                                                                                                            
-      //Get the number of Traj points to loop over       
-      unsigned int TrajPoints = particle->NumberTrajectoryPoints();
-      
-      //Get the startpoistion so we can get the initial tpc.
-      const TLorentzVector StartPositionTrajP = particle->Position(0);
-      double start_vtx[3] = {StartPositionTrajP.X() ,StartPositionTrajP.Y(), StartPositionTrajP.Z()};
-      geo::TPCID init_idtpc = geom->FindTPCAtPosition(start_vtx);
-      
-      //Loop over the trajectory points (they are in order). Loop to find the start point. 
-      for(unsigned int TrajPoints_it=0; TrajPoints_it<TrajPoints; ++TrajPoints_it){
-	
-	//Find the vertex of the vector                                                            
-	const TLorentzVector PositionTrajP = particle->Position(TrajPoints_it);
-	double vtx[3] = {PositionTrajP.X() ,PositionTrajP.Y(), PositionTrajP.Z()};
-	
-	//Find if the vertex is in the TPC. If so make it the start point.                 
-	geo::TPCID idtpc = geom->FindTPCAtPosition(vtx);
-	
-	if(idtpc != init_idtpc ){std::cout <<"Particle outside the TPC" << std::endl; continue;}
-      }
-    }
+    bool contained = true; 
 
+    //Particles with mother 0 are the initial particles (neutrino events this is the particles generated after the interaction. Keep note of these. 
+    simenergy = particle->E(); 
+    trueInitialParticles[particle->TrackId()] = particle;
+    
+    //Check to see if the particle is contained and find the trajectory of the particle                                                                                                                                            
+    //Get the number of Traj points to loop over       
+    unsigned int TrajPoints = particle->NumberTrajectoryPoints();
+    
+    //Get the startpoistion so we can get the initial tpc.
+    const TLorentzVector StartPositionTrajP = particle->Position(0);
+    double start_vtx[3] = {StartPositionTrajP.X() ,StartPositionTrajP.Y(), StartPositionTrajP.Z()};
+    geo::TPCID init_idtpc = geom->FindTPCAtPosition(start_vtx);
+    
+    //Loop over the trajectory points (they are in order). Loop to find the start point. 
+    for(unsigned int TrajPoints_it=0; TrajPoints_it<TrajPoints; ++TrajPoints_it){
+      
+      //Find the vertex of the vector                                                            
+      const TLorentzVector PositionTrajP = particle->Position(TrajPoints_it);
+      double vtx[3] = {PositionTrajP.X() ,PositionTrajP.Y(), PositionTrajP.Z()};
+      
+      //Find if the vertex is in the TPC. If so make it the start point.                 
+      geo::TPCID idtpc = geom->FindTPCAtPosition(vtx);
+      
+      if(idtpc != init_idtpc ){std::cout <<"Particle outside the TPC" << std::endl; contained=false; break;}
+    }
+    
+    if(contained){mcparticlescontained[particle->TrackId()] = true;}
+    else{mcparticlescontained[particle->TrackId()] = false;}
+ 
     if(fVerbose > 1){std::cout << "True Particle with track ID: " << particle->TrackId() << " Has code of: " << particle->PdgCode() << " and Energy of: " << particle->E() << " With Mother: " << particle->Mother() << " Proccess: " << particle->Process() << " End Process: "  << particle->EndProcess() << std::endl;}
 
 
@@ -1387,6 +1412,8 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
   //Find the all the daughter particles associated with the mothers
   for(std::map<int,std::vector<int> >::iterator showermother=ShowersMothers.begin(); showermother!=ShowersMothers.end(); ++showermother){
+
+    ++numshowers;
 
     int Gen_Num = 0;
     int Daughter_id = showermother->first;
@@ -1424,7 +1451,19 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
   //Time to cut the true showers and make sure they are a shower.
   for(std::map<int,std::vector<int> >::iterator showermother=ShowersMothers.begin(); showermother!=ShowersMothers.end();){
-  
+
+    //Should we remove shower mothers if the  they are not contained in one TPC and one TPC only 
+    if(fRemoveNonContainedParticles){
+      bool showercontained = true;
+      for(std::vector<int>::iterator showerdaughter=(showermother->second).begin(); showerdaughter!=(showermother->second).end(); ++showerdaughter){
+	showercontained = showercontained && mcparticlescontained[*showerdaughter];
+      }
+      if(!showercontained){
+	if(fVerbose > 0){std::cout << "Mother removed with id: " << showermother->first << " becuase it was not contained" << std::endl;}
+	showermother = ShowersMothers.erase(showermother);
+      }
+    }
+
     //I've read that pair production starts to dominate at around ~100 MeV so to find how many showers we expect loop over the mother particle. Pi0=143.97 MeV min gammas = 71.985 MeV which is greater than that from electrons at ~100MeV so pi0 should always shower? So cut on anything below 100MeV in energy.
       
     //It ain't a shower I'm interested in if it didn't start with a pi0 or electron...probably.
@@ -1455,6 +1494,8 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    break;
 	  }
 	}
+
+	++numshoowerspassenergy;
       
       	//If we don't have a density bigger than one in at least one plane then it aint a shower. This could be due to hit reco. 
 	if(low_density == 0){
@@ -1462,6 +1503,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       	  showermother = ShowersMothers.erase(showermother);
 	  continue;
 	}
+	++numshowerspassdensity;
 	++showermother;
       }
       else {
@@ -1642,6 +1684,9 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     unsigned int biggest_shower_iter = 9999;
 
     for(unsigned int shower_iter = 0; shower_iter < showers.size(); ++shower_iter){
+      
+      ++numrecoshowers;
+
       //Get the shower  
       art::Ptr<recob::Shower>& shower = showers.at(shower_iter);
       
@@ -1834,7 +1879,10 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       TVector3  ShowerStart                      = shower->ShowerStart();//cm
       double ShowerTrackLength                   = shower->Length();//cm        
       std::vector< double >  ShowerEnergyPlanes  = shower->Energy();//MeV
-      std::vector< double >  ShowerdEdX_vec      = shower->dEdx();//MeV/cm  
+      std::vector< double >  ShowerdEdX_vec      = shower->dEdx();//MeV/cm 
+
+      //Remove this 
+      ShowerEnergyPlanes[2] = (ShowerEnergyPlanes[2] - 0.00155171)*0.00155171/4.39964 + 4.39964;
 
       //Bools to fill metric histrograms wheen needed.
       bool EvaluateShowerDirection       = false;
@@ -2223,6 +2271,8 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
       
       if(fVerbose > 1){std::cout << "Cluster Validation Complete" << std::endl;}     
+
+      ++numrecoshowersana;
 
     }//Shower Loop 
    
@@ -2950,119 +3000,128 @@ void ana::ShowerValidation::DrawHitGraphs(std::map<std::string,std::map<geo::Pla
 
 
 void ana::ShowerValidation::endJob() {
-  
-  gStyle->SetOptTitle(0);
 
-  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-    PosDir_2dCanvasMap[fShowerModuleLabels[j]]->cd();
-    gStyle->SetPalette(kBird);
-    PosDir_2dHistMap[fShowerModuleLabels[j]]->Draw("COLZ");
+  std::cout << "Number of events ran over: " <<  numevents  << std::endl;
+  std::cout << "Number of initial MC Showers: " <<  numshowers  << std::endl;
+  std::cout << "Number of MC showers that pass the containment cut: " <<  numshowerspassTPC  << std::endl;
+  std::cout << "Number of MC showers that pass the density cut: " << numshowerspassdensity  << std::endl;
+  std::cout << "Number of MC showers that pass the energy cut: " <<  numshoowerspassenergy  << std::endl;
+  std::cout << "Number of reco showrs: " << numrecoshowers  << std::endl;
+  std::cout << "Number of reco showers analysed: " << numrecoshowersana  << std::endl;
+ 
+ 
+  // gStyle->SetOptTitle(0);
+
+  // for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
+  //   PosDir_2dCanvasMap[fShowerModuleLabels[j]]->cd();
+  //   gStyle->SetPalette(kBird);
+  //   PosDir_2dHistMap[fShowerModuleLabels[j]]->Draw("COLZ");
     
-    if(fDrawCanvases){
-      std::string canvasname(PosDir_2dCanvasMap[fShowerModuleLabels[j]]->GetName());
-      std::string pngstring = canvasname + ".png";
-      const char* pngname = pngstring.c_str();
-      PosDir_2dCanvasMap[fShowerModuleLabels[j]]->Print(pngname);
-    }
-  }
+  //   if(fDrawCanvases){
+  //     std::string canvasname(PosDir_2dCanvasMap[fShowerModuleLabels[j]]->GetName());
+  //     std::string pngstring = canvasname + ".png";
+  //     const char* pngname = pngstring.c_str();
+  //     PosDir_2dCanvasMap[fShowerModuleLabels[j]]->Print(pngname);
+  //   }
+  // }
     
 
-  BiggestShowerMotherE_AfterCutCanvas->cd();
-  BiggestShowerMotherE_AfterCutHist->Draw();
-  if(fDrawCanvases){BiggestShowerMotherE_AfterCutCanvas->Print("BiggestShowerMotherE_AfterCutCanvas.png");}
+  // BiggestShowerMotherE_AfterCutCanvas->cd();
+  // BiggestShowerMotherE_AfterCutHist->Draw();
+  // if(fDrawCanvases){BiggestShowerMotherE_AfterCutCanvas->Print("BiggestShowerMotherE_AfterCutCanvas.png");}
 
-  BiggestShowerMotherE_BeforeCutCanvas->cd();
-  BiggestShowerMotherE_BeforeCutHist->Draw();
-  if(fDrawCanvases){BiggestShowerMotherE_BeforeCutCanvas->Print("BiggestShowerMotherE_BeforeCutHist.png");}
+  // BiggestShowerMotherE_BeforeCutCanvas->cd();
+  // BiggestShowerMotherE_BeforeCutHist->Draw();
+  // if(fDrawCanvases){BiggestShowerMotherE_BeforeCutCanvas->Print("BiggestShowerMotherE_BeforeCutHist.png");}
 
-  AsscoiatedBiggestShowerMotherECanvas->cd();
-  AsscoiatedBiggestShowerMotherEHist->Draw();
-  if(fDrawCanvases){AsscoiatedBiggestShowerMotherECanvas->Print("AsscoiatedBiggestShowerMotherEHist.png");}
+  // AsscoiatedBiggestShowerMotherECanvas->cd();
+  // AsscoiatedBiggestShowerMotherEHist->Draw();
+  // if(fDrawCanvases){AsscoiatedBiggestShowerMotherECanvas->Print("AsscoiatedBiggestShowerMotherEHist.png");}
 
-  SmallestShowerMotherE_AfterCutCanvas->cd();
-  SmallestShowerMotherE_AfterCutHist->Draw();
-  if(fDrawCanvases){SmallestShowerMotherE_AfterCutCanvas->Print("SmallestShowerMotherE_AfterCutHist.png");}
+  // SmallestShowerMotherE_AfterCutCanvas->cd();
+  // SmallestShowerMotherE_AfterCutHist->Draw();
+  // if(fDrawCanvases){SmallestShowerMotherE_AfterCutCanvas->Print("SmallestShowerMotherE_AfterCutHist.png");}
   
-  SmallestShowerMotherE_BeforeCutCanvas->cd();
-  SmallestShowerMotherE_BeforeCutHist->Draw();
-  if(fDrawCanvases){SmallestShowerMotherE_BeforeCutCanvas->Print("SmallestShowerMotherE_BeforeCutHist.png");}
+  // SmallestShowerMotherE_BeforeCutCanvas->cd();
+  // SmallestShowerMotherE_BeforeCutHist->Draw();
+  // if(fDrawCanvases){SmallestShowerMotherE_BeforeCutCanvas->Print("SmallestShowerMotherE_BeforeCutHist.png");}
 
-  AsscoiatedSmallestShowerMotherECanvas->cd();
-  AsscoiatedSmallestShowerMotherEHist->Draw();
-  if(fDrawCanvases){AsscoiatedSmallestShowerMotherECanvas->Print("AsscoiatedSmallestShowerMotherEHist.png");}
-
-
-
-  gStyle->SetPalette(kBird);
-
-  ana::ShowerValidation::DrawGraphs(ShowerDirection_X_HistMap,Energies_ShowerDirection_X_HistMap,Energies_Mean_ShowerDirection_X_GraphMap,Energies_RMS_ShowerDirection_X_GraphMap,Energies_Mean_ShowerDirection_X_Multi,Energies_RMS_ShowerDirection_X_Multi,Energies_Mean_ShowerDirection_X_canvasMulti,Energies_RMS_ShowerDirection_X_canvasMulti,Energies_ShowerDirection_X_canvasMap, ShowerDirection_X_canvas,ShowerDirection_X_2dHistMap,ShowerDirection_X_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerDirection_Y_HistMap,Energies_ShowerDirection_Y_HistMap,Energies_Mean_ShowerDirection_Y_GraphMap,Energies_RMS_ShowerDirection_Y_GraphMap,Energies_Mean_ShowerDirection_Y_Multi,Energies_RMS_ShowerDirection_Y_Multi,Energies_Mean_ShowerDirection_Y_canvasMulti,Energies_RMS_ShowerDirection_Y_canvasMulti,Energies_ShowerDirection_Y_canvasMap, ShowerDirection_Y_canvas,ShowerDirection_Y_2dHistMap,ShowerDirection_Y_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerDirection_Z_HistMap,Energies_ShowerDirection_Z_HistMap,Energies_Mean_ShowerDirection_Z_GraphMap,Energies_RMS_ShowerDirection_Z_GraphMap,Energies_Mean_ShowerDirection_Z_Multi,Energies_RMS_ShowerDirection_Z_Multi,Energies_Mean_ShowerDirection_Z_canvasMulti,Energies_RMS_ShowerDirection_Z_canvasMulti,Energies_ShowerDirection_Z_canvasMap, ShowerDirection_Z_canvas,ShowerDirection_Z_2dHistMap,ShowerDirection_Z_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerStart_X_HistMap,Energies_ShowerStart_X_HistMap,Energies_Mean_ShowerStart_X_GraphMap,Energies_RMS_ShowerStart_X_GraphMap,Energies_Mean_ShowerStart_X_Multi,Energies_RMS_ShowerStart_X_Multi,Energies_Mean_ShowerStart_X_canvasMulti,Energies_RMS_ShowerStart_X_canvasMulti,Energies_ShowerStart_X_canvasMap, ShowerStart_X_canvas,ShowerStart_X_2dHistMap,ShowerStart_X_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerStart_Y_HistMap,Energies_ShowerStart_Y_HistMap,Energies_Mean_ShowerStart_Y_GraphMap,Energies_RMS_ShowerStart_Y_GraphMap,Energies_Mean_ShowerStart_Y_Multi,Energies_RMS_ShowerStart_Y_Multi,Energies_Mean_ShowerStart_Y_canvasMulti,Energies_RMS_ShowerStart_Y_canvasMulti,Energies_ShowerStart_Y_canvasMap, ShowerStart_Y_canvas,ShowerStart_Y_2dHistMap,ShowerStart_Y_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerStart_Z_HistMap,Energies_ShowerStart_Z_HistMap,Energies_Mean_ShowerStart_Z_GraphMap,Energies_RMS_ShowerStart_Z_GraphMap,Energies_Mean_ShowerStart_Z_Multi,Energies_RMS_ShowerStart_Z_Multi,Energies_Mean_ShowerStart_Z_canvasMulti,Energies_RMS_ShowerStart_Z_canvasMulti,Energies_ShowerStart_Z_canvasMap, ShowerStart_Z_canvas,ShowerStart_Z_2dHistMap,ShowerStart_Z_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerLength_HistMap,Energies_ShowerLength_HistMap,Energies_Mean_ShowerLength_GraphMap,Energies_RMS_ShowerLength_GraphMap,Energies_Mean_ShowerLength_Multi,Energies_RMS_ShowerLength_Multi,Energies_Mean_ShowerLength_canvasMulti,Energies_RMS_ShowerLength_canvasMulti,Energies_ShowerLength_canvasMap, ShowerLength_canvas,ShowerLength_2dHistMap,ShowerLength_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerEnergyDiff_HistMap,Energies_ShowerEnergyDiff_HistMap,Energies_Mean_ShowerEnergyDiff_GraphMap,Energies_RMS_ShowerEnergyDiff_GraphMap,Energies_Mean_ShowerEnergyDiff_Multi,Energies_RMS_ShowerEnergyDiff_Multi,Energies_Mean_ShowerEnergyDiff_canvasMulti,Energies_RMS_ShowerEnergyDiff_canvasMulti,Energies_ShowerEnergyDiff_canvasMap, ShowerEnergyDiff_canvas,ShowerEnergyDiff_2dHistMap,ShowerEnergyDiff_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerdEdx_HistMap,Energies_ShowerdEdx_HistMap,Energies_Mean_ShowerdEdx_GraphMap,Energies_RMS_ShowerdEdx_GraphMap,Energies_Mean_ShowerdEdx_Multi,Energies_RMS_ShowerdEdx_Multi,Energies_Mean_ShowerdEdx_canvasMulti,Energies_RMS_ShowerdEdx_canvasMulti,Energies_ShowerdEdx_canvasMap, ShowerdEdx_canvas,ShowerdEdx_2dHistMap,ShowerdEdx_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(EventSeggy_HistMap,Energies_EventSeggy_HistMap,Energies_Mean_EventSeggy_GraphMap,Energies_RMS_EventSeggy_GraphMap,Energies_Mean_EventSeggy_Multi,Energies_RMS_EventSeggy_Multi,Energies_Mean_EventSeggy_canvasMulti,Energies_RMS_EventSeggy_canvasMulti,Energies_EventSeggy_canvasMap, EventSeggy_canvas,EventSeggy_2dHistMap,EventSeggy_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerEnergyCompleteness_HistMap,Energies_ShowerEnergyCompleteness_HistMap,Energies_Mean_ShowerEnergyCompleteness_GraphMap,Energies_RMS_ShowerEnergyCompleteness_GraphMap,Energies_Mean_ShowerEnergyCompleteness_Multi,Energies_RMS_ShowerEnergyCompleteness_Multi,Energies_Mean_ShowerEnergyCompleteness_canvasMulti,Energies_RMS_ShowerEnergyCompleteness_canvasMulti,Energies_ShowerEnergyCompleteness_canvasMap, ShowerEnergyCompleteness_canvas,ShowerEnergyCompleteness_2dHistMap,ShowerEnergyCompleteness_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerEnergyPurity_HistMap,Energies_ShowerEnergyPurity_HistMap,Energies_Mean_ShowerEnergyPurity_GraphMap,Energies_RMS_ShowerEnergyPurity_GraphMap,Energies_Mean_ShowerEnergyPurity_Multi,Energies_RMS_ShowerEnergyPurity_Multi,Energies_Mean_ShowerEnergyPurity_canvasMulti,Energies_RMS_ShowerEnergyPurity_canvasMulti,Energies_ShowerEnergyPurity_canvasMap, ShowerEnergyPurity_canvas,ShowerEnergyPurity_2dHistMap,ShowerEnergyPurity_2dCanvasMap);
-
-    ana::ShowerValidation::DrawGraphs(ShowerHitsCompleteness_HistMap,Energies_ShowerHitsCompleteness_HistMap,Energies_Mean_ShowerHitsCompleteness_GraphMap,Energies_RMS_ShowerHitsCompleteness_GraphMap,Energies_Mean_ShowerHitsCompleteness_Multi,Energies_RMS_ShowerHitsCompleteness_Multi,Energies_Mean_ShowerHitsCompleteness_canvasMulti,Energies_RMS_ShowerHitsCompleteness_canvasMulti,Energies_ShowerHitsCompleteness_canvasMap, ShowerHitsCompleteness_canvas,ShowerHitsCompleteness_2dHistMap,ShowerHitsCompleteness_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerHitsPurity_HistMap,Energies_ShowerHitsPurity_HistMap,Energies_Mean_ShowerHitsPurity_GraphMap,Energies_RMS_ShowerHitsPurity_GraphMap,Energies_Mean_ShowerHitsPurity_Multi,Energies_RMS_ShowerHitsPurity_Multi,Energies_Mean_ShowerHitsPurity_canvasMulti,Energies_RMS_ShowerHitsPurity_canvasMulti,Energies_ShowerHitsPurity_canvasMap, ShowerHitsPurity_canvas,ShowerHitsPurity_2dHistMap,ShowerHitsPurity_2dCanvasMap);
+  // AsscoiatedSmallestShowerMotherECanvas->cd();
+  // AsscoiatedSmallestShowerMotherEHist->Draw();
+  // if(fDrawCanvases){AsscoiatedSmallestShowerMotherECanvas->Print("AsscoiatedSmallestShowerMotherEHist.png");}
 
 
-  ana::ShowerValidation::DrawGraphs(ShowerEnergy_HistMap,Energies_ShowerEnergy_HistMap,Energies_Mean_ShowerEnergy_GraphMap,Energies_RMS_ShowerEnergy_GraphMap,Energies_Mean_ShowerEnergy_Multi,Energies_RMS_ShowerEnergy_Multi,Energies_Mean_ShowerEnergy_canvasMulti,Energies_RMS_ShowerEnergy_canvasMulti,Energies_ShowerEnergy_canvasMap, ShowerEnergy_canvas,ShowerEnergy_2dHistMap,ShowerEnergy_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ShowerHitNum_HistMap,Energies_ShowerHitNum_HistMap,Energies_Mean_ShowerHitNum_GraphMap,Energies_RMS_ShowerHitNum_GraphMap,Energies_Mean_ShowerHitNum_Multi,Energies_RMS_ShowerHitNum_Multi,Energies_Mean_ShowerHitNum_canvasMulti,Energies_RMS_ShowerHitNum_canvasMulti,Energies_ShowerHitNum_canvasMap, ShowerHitNum_canvas,ShowerHitNum_2dHistMap,ShowerHitNum_2dCanvasMap);
+  // gStyle->SetPalette(kBird);
 
-  ana::ShowerValidation::DrawGraphs(GeoProjectionMatched_HistMap,Energies_GeoProjectionMatched_HistMap,Energies_Mean_GeoProjectionMatched_GraphMap,Energies_RMS_GeoProjectionMatched_GraphMap,Energies_Mean_GeoProjectionMatched_Multi,Energies_RMS_GeoProjectionMatched_Multi,Energies_Mean_GeoProjectionMatched_canvasMulti,Energies_RMS_GeoProjectionMatched_canvasMulti,Energies_GeoProjectionMatched_canvasMap, GeoProjectionMatched_canvas,GeoProjectionMatched_2dHistMap,GeoProjectionMatched_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(ShowerDirection_X_HistMap,Energies_ShowerDirection_X_HistMap,Energies_Mean_ShowerDirection_X_GraphMap,Energies_RMS_ShowerDirection_X_GraphMap,Energies_Mean_ShowerDirection_X_Multi,Energies_RMS_ShowerDirection_X_Multi,Energies_Mean_ShowerDirection_X_canvasMulti,Energies_RMS_ShowerDirection_X_canvasMulti,Energies_ShowerDirection_X_canvasMap, ShowerDirection_X_canvas,ShowerDirection_X_2dHistMap,ShowerDirection_X_2dCanvasMap);
 
-    ana::ShowerValidation::DrawGraphs(PandoraTrackNum_HistMap,Energies_PandoraTrackNum_HistMap,Energies_Mean_PandoraTrackNum_GraphMap,Energies_RMS_PandoraTrackNum_GraphMap,Energies_Mean_PandoraTrackNum_Multi,Energies_RMS_PandoraTrackNum_Multi,Energies_Mean_PandoraTrackNum_canvasMulti,Energies_RMS_PandoraTrackNum_canvasMulti,Energies_PandoraTrackNum_canvasMap, PandoraTrackNum_canvas,PandoraTrackNum_2dHistMap,PandoraTrackNum_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(ShowerDirection_Y_HistMap,Energies_ShowerDirection_Y_HistMap,Energies_Mean_ShowerDirection_Y_GraphMap,Energies_RMS_ShowerDirection_Y_GraphMap,Energies_Mean_ShowerDirection_Y_Multi,Energies_RMS_ShowerDirection_Y_Multi,Energies_Mean_ShowerDirection_Y_canvasMulti,Energies_RMS_ShowerDirection_Y_canvasMulti,Energies_ShowerDirection_Y_canvasMap, ShowerDirection_Y_canvas,ShowerDirection_Y_2dHistMap,ShowerDirection_Y_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ShowerDirection_Z_HistMap,Energies_ShowerDirection_Z_HistMap,Energies_Mean_ShowerDirection_Z_GraphMap,Energies_RMS_ShowerDirection_Z_GraphMap,Energies_Mean_ShowerDirection_Z_Multi,Energies_RMS_ShowerDirection_Z_Multi,Energies_Mean_ShowerDirection_Z_canvasMulti,Energies_RMS_ShowerDirection_Z_canvasMulti,Energies_ShowerDirection_Z_canvasMap, ShowerDirection_Z_canvas,ShowerDirection_Z_2dHistMap,ShowerDirection_Z_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ShowerStart_X_HistMap,Energies_ShowerStart_X_HistMap,Energies_Mean_ShowerStart_X_GraphMap,Energies_RMS_ShowerStart_X_GraphMap,Energies_Mean_ShowerStart_X_Multi,Energies_RMS_ShowerStart_X_Multi,Energies_Mean_ShowerStart_X_canvasMulti,Energies_RMS_ShowerStart_X_canvasMulti,Energies_ShowerStart_X_canvasMap, ShowerStart_X_canvas,ShowerStart_X_2dHistMap,ShowerStart_X_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ShowerStart_Y_HistMap,Energies_ShowerStart_Y_HistMap,Energies_Mean_ShowerStart_Y_GraphMap,Energies_RMS_ShowerStart_Y_GraphMap,Energies_Mean_ShowerStart_Y_Multi,Energies_RMS_ShowerStart_Y_Multi,Energies_Mean_ShowerStart_Y_canvasMulti,Energies_RMS_ShowerStart_Y_canvasMulti,Energies_ShowerStart_Y_canvasMap, ShowerStart_Y_canvas,ShowerStart_Y_2dHistMap,ShowerStart_Y_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ShowerStart_Z_HistMap,Energies_ShowerStart_Z_HistMap,Energies_Mean_ShowerStart_Z_GraphMap,Energies_RMS_ShowerStart_Z_GraphMap,Energies_Mean_ShowerStart_Z_Multi,Energies_RMS_ShowerStart_Z_Multi,Energies_Mean_ShowerStart_Z_canvasMulti,Energies_RMS_ShowerStart_Z_canvasMulti,Energies_ShowerStart_Z_canvasMap, ShowerStart_Z_canvas,ShowerStart_Z_2dHistMap,ShowerStart_Z_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ShowerLength_HistMap,Energies_ShowerLength_HistMap,Energies_Mean_ShowerLength_GraphMap,Energies_RMS_ShowerLength_GraphMap,Energies_Mean_ShowerLength_Multi,Energies_RMS_ShowerLength_Multi,Energies_Mean_ShowerLength_canvasMulti,Energies_RMS_ShowerLength_canvasMulti,Energies_ShowerLength_canvasMap, ShowerLength_canvas,ShowerLength_2dHistMap,ShowerLength_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ShowerEnergyDiff_HistMap,Energies_ShowerEnergyDiff_HistMap,Energies_Mean_ShowerEnergyDiff_GraphMap,Energies_RMS_ShowerEnergyDiff_GraphMap,Energies_Mean_ShowerEnergyDiff_Multi,Energies_RMS_ShowerEnergyDiff_Multi,Energies_Mean_ShowerEnergyDiff_canvasMulti,Energies_RMS_ShowerEnergyDiff_canvasMulti,Energies_ShowerEnergyDiff_canvasMap, ShowerEnergyDiff_canvas,ShowerEnergyDiff_2dHistMap,ShowerEnergyDiff_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ShowerdEdx_HistMap,Energies_ShowerdEdx_HistMap,Energies_Mean_ShowerdEdx_GraphMap,Energies_RMS_ShowerdEdx_GraphMap,Energies_Mean_ShowerdEdx_Multi,Energies_RMS_ShowerdEdx_Multi,Energies_Mean_ShowerdEdx_canvasMulti,Energies_RMS_ShowerdEdx_canvasMulti,Energies_ShowerdEdx_canvasMap, ShowerdEdx_canvas,ShowerdEdx_2dHistMap,ShowerdEdx_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(EventSeggy_HistMap,Energies_EventSeggy_HistMap,Energies_Mean_EventSeggy_GraphMap,Energies_RMS_EventSeggy_GraphMap,Energies_Mean_EventSeggy_Multi,Energies_RMS_EventSeggy_Multi,Energies_Mean_EventSeggy_canvasMulti,Energies_RMS_EventSeggy_canvasMulti,Energies_EventSeggy_canvasMap, EventSeggy_canvas,EventSeggy_2dHistMap,EventSeggy_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ShowerEnergyCompleteness_HistMap,Energies_ShowerEnergyCompleteness_HistMap,Energies_Mean_ShowerEnergyCompleteness_GraphMap,Energies_RMS_ShowerEnergyCompleteness_GraphMap,Energies_Mean_ShowerEnergyCompleteness_Multi,Energies_RMS_ShowerEnergyCompleteness_Multi,Energies_Mean_ShowerEnergyCompleteness_canvasMulti,Energies_RMS_ShowerEnergyCompleteness_canvasMulti,Energies_ShowerEnergyCompleteness_canvasMap, ShowerEnergyCompleteness_canvas,ShowerEnergyCompleteness_2dHistMap,ShowerEnergyCompleteness_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ShowerEnergyPurity_HistMap,Energies_ShowerEnergyPurity_HistMap,Energies_Mean_ShowerEnergyPurity_GraphMap,Energies_RMS_ShowerEnergyPurity_GraphMap,Energies_Mean_ShowerEnergyPurity_Multi,Energies_RMS_ShowerEnergyPurity_Multi,Energies_Mean_ShowerEnergyPurity_canvasMulti,Energies_RMS_ShowerEnergyPurity_canvasMulti,Energies_ShowerEnergyPurity_canvasMap, ShowerEnergyPurity_canvas,ShowerEnergyPurity_2dHistMap,ShowerEnergyPurity_2dCanvasMap);
+
+  //   ana::ShowerValidation::DrawGraphs(ShowerHitsCompleteness_HistMap,Energies_ShowerHitsCompleteness_HistMap,Energies_Mean_ShowerHitsCompleteness_GraphMap,Energies_RMS_ShowerHitsCompleteness_GraphMap,Energies_Mean_ShowerHitsCompleteness_Multi,Energies_RMS_ShowerHitsCompleteness_Multi,Energies_Mean_ShowerHitsCompleteness_canvasMulti,Energies_RMS_ShowerHitsCompleteness_canvasMulti,Energies_ShowerHitsCompleteness_canvasMap, ShowerHitsCompleteness_canvas,ShowerHitsCompleteness_2dHistMap,ShowerHitsCompleteness_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ShowerHitsPurity_HistMap,Energies_ShowerHitsPurity_HistMap,Energies_Mean_ShowerHitsPurity_GraphMap,Energies_RMS_ShowerHitsPurity_GraphMap,Energies_Mean_ShowerHitsPurity_Multi,Energies_RMS_ShowerHitsPurity_Multi,Energies_Mean_ShowerHitsPurity_canvasMulti,Energies_RMS_ShowerHitsPurity_canvasMulti,Energies_ShowerHitsPurity_canvasMap, ShowerHitsPurity_canvas,ShowerHitsPurity_2dHistMap,ShowerHitsPurity_2dCanvasMap);
 
 
-  ana::ShowerValidation::DrawGraphs(ShowerTotalEnergyDiff_HistMap,Energies_ShowerTotalEnergyDiff_HistMap,Energies_Mean_ShowerTotalEnergyDiff_GraphMap,Energies_RMS_ShowerTotalEnergyDiff_GraphMap,Energies_Mean_ShowerTotalEnergyDiff_Multi,Energies_RMS_ShowerTotalEnergyDiff_Multi,Energies_Mean_ShowerTotalEnergyDiff_canvasMulti,Energies_RMS_ShowerTotalEnergyDiff_canvasMulti,Energies_ShowerTotalEnergyDiff_canvasMap,ShowerTotalEnergyDiff_canvas,ShowerTotalEnergyDiff_2dHistMap,ShowerTotalEnergyDiff_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(ShowerEnergy_HistMap,Energies_ShowerEnergy_HistMap,Energies_Mean_ShowerEnergy_GraphMap,Energies_RMS_ShowerEnergy_GraphMap,Energies_Mean_ShowerEnergy_Multi,Energies_RMS_ShowerEnergy_Multi,Energies_Mean_ShowerEnergy_canvasMulti,Energies_RMS_ShowerEnergy_canvasMulti,Energies_ShowerEnergy_canvasMap, ShowerEnergy_canvas,ShowerEnergy_2dHistMap,ShowerEnergy_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ShowerMag_HistMap,Energies_ShowerMag_HistMap,Energies_Mean_ShowerMag_GraphMap,Energies_RMS_ShowerMag_GraphMap,Energies_Mean_ShowerMag_Multi,Energies_RMS_ShowerMag_Multi,Energies_Mean_ShowerMag_canvasMulti,Energies_RMS_ShowerMag_canvasMulti,Energies_ShowerMag_canvasMap, ShowerMag_canvas,ShowerMag_2dHistMap,ShowerMag_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(ShowerHitNum_HistMap,Energies_ShowerHitNum_HistMap,Energies_Mean_ShowerHitNum_GraphMap,Energies_RMS_ShowerHitNum_GraphMap,Energies_Mean_ShowerHitNum_Multi,Energies_RMS_ShowerHitNum_Multi,Energies_Mean_ShowerHitNum_canvasMulti,Energies_RMS_ShowerHitNum_canvasMulti,Energies_ShowerHitNum_canvasMap, ShowerHitNum_canvas,ShowerHitNum_2dHistMap,ShowerHitNum_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ShowerDirectionDiff_HistMap,Energies_ShowerDirectionDiff_HistMap,Energies_Mean_ShowerDirectionDiff_GraphMap,Energies_RMS_ShowerDirectionDiff_GraphMap,Energies_Mean_ShowerDirectionDiff_Multi,Energies_RMS_ShowerDirectionDiff_Multi,Energies_Mean_ShowerDirectionDiff_canvasMulti,Energies_RMS_ShowerDirectionDiff_canvasMulti,Energies_ShowerDirectionDiff_canvasMap, ShowerDirectionDiff_canvas,ShowerDirectionDiff_2dHistMap,ShowerDirectionDiff_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(GeoProjectionMatched_HistMap,Energies_GeoProjectionMatched_HistMap,Energies_Mean_GeoProjectionMatched_GraphMap,Energies_RMS_GeoProjectionMatched_GraphMap,Energies_Mean_GeoProjectionMatched_Multi,Energies_RMS_GeoProjectionMatched_Multi,Energies_Mean_GeoProjectionMatched_canvasMulti,Energies_RMS_GeoProjectionMatched_canvasMulti,Energies_GeoProjectionMatched_canvasMap, GeoProjectionMatched_canvas,GeoProjectionMatched_2dHistMap,GeoProjectionMatched_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap,Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti,Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMap, ShowerRecoEnergyVsTrueEnergyinRecoShower_canvas,ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap,ShowerRecoEnergyVsTrueEnergyinRecoShower_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(ShowerTrueEnergy_HistMap,Energies_ShowerTrueEnergy_HistMap,Energies_Mean_ShowerTrueEnergy_GraphMap,Energies_RMS_ShowerTrueEnergy_GraphMap,Energies_Mean_ShowerTrueEnergy_Multi,Energies_RMS_ShowerTrueEnergy_Multi,Energies_Mean_ShowerTrueEnergy_canvasMulti,Energies_RMS_ShowerTrueEnergy_canvasMulti,Energies_ShowerTrueEnergy_canvasMap, ShowerTrueEnergy_canvas,ShowerTrueEnergy_2dHistMap,ShowerTrueEnergy_2dCanvasMap);
-
-  ana::ShowerValidation::DrawGraphs(TrueEnergy_HistMap,Energies_TrueEnergy_HistMap,Energies_Mean_TrueEnergy_GraphMap,Energies_RMS_TrueEnergy_GraphMap,Energies_Mean_TrueEnergy_Multi,Energies_RMS_TrueEnergy_Multi,Energies_Mean_TrueEnergy_canvasMulti,Energies_RMS_TrueEnergy_canvasMulti,Energies_TrueEnergy_canvasMap, TrueEnergy_canvas,TrueEnergy_2dHistMap,TrueEnergy_2dCanvasMap);
+  //   ana::ShowerValidation::DrawGraphs(PandoraTrackNum_HistMap,Energies_PandoraTrackNum_HistMap,Energies_Mean_PandoraTrackNum_GraphMap,Energies_RMS_PandoraTrackNum_GraphMap,Energies_Mean_PandoraTrackNum_Multi,Energies_RMS_PandoraTrackNum_Multi,Energies_Mean_PandoraTrackNum_canvasMulti,Energies_RMS_PandoraTrackNum_canvasMulti,Energies_PandoraTrackNum_canvasMap, PandoraTrackNum_canvas,PandoraTrackNum_2dHistMap,PandoraTrackNum_2dCanvasMap);
 
 
-  ana::ShowerValidation::DrawGraphs(TrueHitNum_HistMap,Energies_TrueHitNum_HistMap,Energies_Mean_TrueHitNum_GraphMap,Energies_RMS_TrueHitNum_GraphMap,Energies_Mean_TrueHitNum_Multi,Energies_RMS_TrueHitNum_Multi,Energies_Mean_TrueHitNum_canvasMulti,Energies_RMS_TrueHitNum_canvasMulti,Energies_TrueHitNum_canvasMap, TrueHitNum_canvas,TrueHitNum_2dHistMap,TrueHitNum_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(ShowerTotalEnergyDiff_HistMap,Energies_ShowerTotalEnergyDiff_HistMap,Energies_Mean_ShowerTotalEnergyDiff_GraphMap,Energies_RMS_ShowerTotalEnergyDiff_GraphMap,Energies_Mean_ShowerTotalEnergyDiff_Multi,Energies_RMS_ShowerTotalEnergyDiff_Multi,Energies_Mean_ShowerTotalEnergyDiff_canvasMulti,Energies_RMS_ShowerTotalEnergyDiff_canvasMulti,Energies_ShowerTotalEnergyDiff_canvasMap,ShowerTotalEnergyDiff_canvas,ShowerTotalEnergyDiff_2dHistMap,ShowerTotalEnergyDiff_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ClusterProjectionMatchedEnergy_HistMap,Energies_ClusterProjectionMatchedEnergy_HistMap,Energies_Mean_ClusterProjectionMatchedEnergy_GraphMap,Energies_RMS_ClusterProjectionMatchedEnergy_GraphMap,Energies_Mean_ClusterProjectionMatchedEnergy_Multi,Energies_RMS_ClusterProjectionMatchedEnergy_Multi,Energies_Mean_ClusterProjectionMatchedEnergy_canvasMulti,Energies_RMS_ClusterProjectionMatchedEnergy_canvasMulti,Energies_ClusterProjectionMatchedEnergy_canvasMap, ClusterProjectionMatchedEnergy_canvas,ClusterProjectionMatchedEnergy_2dHistMap,ClusterProjectionMatchedEnergy_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(ShowerMag_HistMap,Energies_ShowerMag_HistMap,Energies_Mean_ShowerMag_GraphMap,Energies_RMS_ShowerMag_GraphMap,Energies_Mean_ShowerMag_Multi,Energies_RMS_ShowerMag_Multi,Energies_Mean_ShowerMag_canvasMulti,Energies_RMS_ShowerMag_canvasMulti,Energies_ShowerMag_canvasMap, ShowerMag_canvas,ShowerMag_2dHistMap,ShowerMag_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ClusterCompletenessEnergy_HistMap,Energies_ClusterCompletenessEnergy_HistMap,Energies_Mean_ClusterCompletenessEnergy_GraphMap,Energies_RMS_ClusterCompletenessEnergy_GraphMap,Energies_Mean_ClusterCompletenessEnergy_Multi,Energies_RMS_ClusterCompletenessEnergy_Multi,Energies_Mean_ClusterCompletenessEnergy_canvasMulti,Energies_RMS_ClusterCompletenessEnergy_canvasMulti,Energies_ClusterCompletenessEnergy_canvasMap, ClusterCompletenessEnergy_canvas,ClusterCompletenessEnergy_2dHistMap,ClusterCompletenessEnergy_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(ShowerDirectionDiff_HistMap,Energies_ShowerDirectionDiff_HistMap,Energies_Mean_ShowerDirectionDiff_GraphMap,Energies_RMS_ShowerDirectionDiff_GraphMap,Energies_Mean_ShowerDirectionDiff_Multi,Energies_RMS_ShowerDirectionDiff_Multi,Energies_Mean_ShowerDirectionDiff_canvasMulti,Energies_RMS_ShowerDirectionDiff_canvasMulti,Energies_ShowerDirectionDiff_canvasMap, ShowerDirectionDiff_canvas,ShowerDirectionDiff_2dHistMap,ShowerDirectionDiff_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ClusterCompletenessHits_HistMap,Energies_ClusterCompletenessHits_HistMap,Energies_Mean_ClusterCompletenessHits_GraphMap,Energies_RMS_ClusterCompletenessHits_GraphMap,Energies_Mean_ClusterCompletenessHits_Multi,Energies_RMS_ClusterCompletenessHits_Multi,Energies_Mean_ClusterCompletenessHits_canvasMulti,Energies_RMS_ClusterCompletenessHits_canvasMulti,Energies_ClusterCompletenessHits_canvasMap, ClusterCompletenessHits_canvas,ClusterCompletenessHits_2dHistMap,ClusterCompletenessHits_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap,Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti,Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMap, ShowerRecoEnergyVsTrueEnergyinRecoShower_canvas,ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap,ShowerRecoEnergyVsTrueEnergyinRecoShower_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ClusterPurityEnergy_HistMap,Energies_ClusterPurityEnergy_HistMap,Energies_Mean_ClusterPurityEnergy_GraphMap,Energies_RMS_ClusterPurityEnergy_GraphMap,Energies_Mean_ClusterPurityEnergy_Multi,Energies_RMS_ClusterPurityEnergy_Multi,Energies_Mean_ClusterPurityEnergy_canvasMulti,Energies_RMS_ClusterPurityEnergy_canvasMulti,Energies_ClusterPurityEnergy_canvasMap, ClusterPurityEnergy_canvas,ClusterPurityEnergy_2dHistMap,ClusterPurityEnergy_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(ShowerTrueEnergy_HistMap,Energies_ShowerTrueEnergy_HistMap,Energies_Mean_ShowerTrueEnergy_GraphMap,Energies_RMS_ShowerTrueEnergy_GraphMap,Energies_Mean_ShowerTrueEnergy_Multi,Energies_RMS_ShowerTrueEnergy_Multi,Energies_Mean_ShowerTrueEnergy_canvasMulti,Energies_RMS_ShowerTrueEnergy_canvasMulti,Energies_ShowerTrueEnergy_canvasMap, ShowerTrueEnergy_canvas,ShowerTrueEnergy_2dHistMap,ShowerTrueEnergy_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ClusterPurityHits_HistMap,Energies_ClusterPurityHits_HistMap,Energies_Mean_ClusterPurityHits_GraphMap,Energies_RMS_ClusterPurityHits_GraphMap,Energies_Mean_ClusterPurityHits_Multi,Energies_RMS_ClusterPurityHits_Multi,Energies_Mean_ClusterPurityHits_canvasMulti,Energies_RMS_ClusterPurityHits_canvasMulti,Energies_ClusterPurityHits_canvasMap, ClusterPurityHits_canvas,ClusterPurityHits_2dHistMap,ClusterPurityHits_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(TrueEnergy_HistMap,Energies_TrueEnergy_HistMap,Energies_Mean_TrueEnergy_GraphMap,Energies_RMS_TrueEnergy_GraphMap,Energies_Mean_TrueEnergy_Multi,Energies_RMS_TrueEnergy_Multi,Energies_Mean_TrueEnergy_canvasMulti,Energies_RMS_TrueEnergy_canvasMulti,Energies_TrueEnergy_canvasMap, TrueEnergy_canvas,TrueEnergy_2dHistMap,TrueEnergy_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ClusterCompPurityEnergy_HistMap,Energies_ClusterCompPurityEnergy_HistMap,Energies_Mean_ClusterCompPurityEnergy_GraphMap,Energies_RMS_ClusterCompPurityEnergy_GraphMap,Energies_Mean_ClusterCompPurityEnergy_Multi,Energies_RMS_ClusterCompPurityEnergy_Multi,Energies_Mean_ClusterCompPurityEnergy_canvasMulti,Energies_RMS_ClusterCompPurityEnergy_canvasMulti,Energies_ClusterCompPurityEnergy_canvasMap, ClusterCompPurityEnergy_canvas,ClusterCompPurityEnergy_2dHistMap,ClusterCompPurityEnergy_2dCanvasMap);
 
-  ana::ShowerValidation::DrawGraphs(ClusterCompPurityHits_HistMap,Energies_ClusterCompPurityHits_HistMap,Energies_Mean_ClusterCompPurityHits_GraphMap,Energies_RMS_ClusterCompPurityHits_GraphMap,Energies_Mean_ClusterCompPurityHits_Multi,Energies_RMS_ClusterCompPurityHits_Multi,Energies_Mean_ClusterCompPurityHits_canvasMulti,Energies_RMS_ClusterCompPurityHits_canvasMulti,Energies_ClusterCompPurityHits_canvasMap, ClusterCompPurityHits_canvas,ClusterCompPurityHits_2dHistMap,ClusterCompPurityHits_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(TrueHitNum_HistMap,Energies_TrueHitNum_HistMap,Energies_Mean_TrueHitNum_GraphMap,Energies_RMS_TrueHitNum_GraphMap,Energies_Mean_TrueHitNum_Multi,Energies_RMS_TrueHitNum_Multi,Energies_Mean_TrueHitNum_canvasMulti,Energies_RMS_TrueHitNum_canvasMulti,Energies_TrueHitNum_canvasMap, TrueHitNum_canvas,TrueHitNum_2dHistMap,TrueHitNum_2dCanvasMap);
 
-  ana::ShowerValidation::DrawHitGraphs(HitCompletenessEnergy_HistMap,Energies_HitCompletenessEnergy_HistMap,Energies_Mean_HitCompletenessEnergy_GraphMap,Energies_RMS_HitCompletenessEnergy_GraphMap,Energies_Mean_HitCompletenessEnergy_Multi,Energies_RMS_HitCompletenessEnergy_Multi,Energies_Mean_HitCompletenessEnergy_canvasMulti,Energies_RMS_HitCompletenessEnergy_canvasMulti,Energies_HitCompletenessEnergy_canvasMap, HitCompletenessEnergy_canvas,HitCompletenessEnergy_2dHistMap,HitCompletenessEnergy_2dCanvasMap);
+  // ana::ShowerValidation::DrawGraphs(ClusterProjectionMatchedEnergy_HistMap,Energies_ClusterProjectionMatchedEnergy_HistMap,Energies_Mean_ClusterProjectionMatchedEnergy_GraphMap,Energies_RMS_ClusterProjectionMatchedEnergy_GraphMap,Energies_Mean_ClusterProjectionMatchedEnergy_Multi,Energies_RMS_ClusterProjectionMatchedEnergy_Multi,Energies_Mean_ClusterProjectionMatchedEnergy_canvasMulti,Energies_RMS_ClusterProjectionMatchedEnergy_canvasMulti,Energies_ClusterProjectionMatchedEnergy_canvasMap, ClusterProjectionMatchedEnergy_canvas,ClusterProjectionMatchedEnergy_2dHistMap,ClusterProjectionMatchedEnergy_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ClusterCompletenessEnergy_HistMap,Energies_ClusterCompletenessEnergy_HistMap,Energies_Mean_ClusterCompletenessEnergy_GraphMap,Energies_RMS_ClusterCompletenessEnergy_GraphMap,Energies_Mean_ClusterCompletenessEnergy_Multi,Energies_RMS_ClusterCompletenessEnergy_Multi,Energies_Mean_ClusterCompletenessEnergy_canvasMulti,Energies_RMS_ClusterCompletenessEnergy_canvasMulti,Energies_ClusterCompletenessEnergy_canvasMap, ClusterCompletenessEnergy_canvas,ClusterCompletenessEnergy_2dHistMap,ClusterCompletenessEnergy_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ClusterCompletenessHits_HistMap,Energies_ClusterCompletenessHits_HistMap,Energies_Mean_ClusterCompletenessHits_GraphMap,Energies_RMS_ClusterCompletenessHits_GraphMap,Energies_Mean_ClusterCompletenessHits_Multi,Energies_RMS_ClusterCompletenessHits_Multi,Energies_Mean_ClusterCompletenessHits_canvasMulti,Energies_RMS_ClusterCompletenessHits_canvasMulti,Energies_ClusterCompletenessHits_canvasMap, ClusterCompletenessHits_canvas,ClusterCompletenessHits_2dHistMap,ClusterCompletenessHits_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ClusterPurityEnergy_HistMap,Energies_ClusterPurityEnergy_HistMap,Energies_Mean_ClusterPurityEnergy_GraphMap,Energies_RMS_ClusterPurityEnergy_GraphMap,Energies_Mean_ClusterPurityEnergy_Multi,Energies_RMS_ClusterPurityEnergy_Multi,Energies_Mean_ClusterPurityEnergy_canvasMulti,Energies_RMS_ClusterPurityEnergy_canvasMulti,Energies_ClusterPurityEnergy_canvasMap, ClusterPurityEnergy_canvas,ClusterPurityEnergy_2dHistMap,ClusterPurityEnergy_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ClusterPurityHits_HistMap,Energies_ClusterPurityHits_HistMap,Energies_Mean_ClusterPurityHits_GraphMap,Energies_RMS_ClusterPurityHits_GraphMap,Energies_Mean_ClusterPurityHits_Multi,Energies_RMS_ClusterPurityHits_Multi,Energies_Mean_ClusterPurityHits_canvasMulti,Energies_RMS_ClusterPurityHits_canvasMulti,Energies_ClusterPurityHits_canvasMap, ClusterPurityHits_canvas,ClusterPurityHits_2dHistMap,ClusterPurityHits_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ClusterCompPurityEnergy_HistMap,Energies_ClusterCompPurityEnergy_HistMap,Energies_Mean_ClusterCompPurityEnergy_GraphMap,Energies_RMS_ClusterCompPurityEnergy_GraphMap,Energies_Mean_ClusterCompPurityEnergy_Multi,Energies_RMS_ClusterCompPurityEnergy_Multi,Energies_Mean_ClusterCompPurityEnergy_canvasMulti,Energies_RMS_ClusterCompPurityEnergy_canvasMulti,Energies_ClusterCompPurityEnergy_canvasMap, ClusterCompPurityEnergy_canvas,ClusterCompPurityEnergy_2dHistMap,ClusterCompPurityEnergy_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawGraphs(ClusterCompPurityHits_HistMap,Energies_ClusterCompPurityHits_HistMap,Energies_Mean_ClusterCompPurityHits_GraphMap,Energies_RMS_ClusterCompPurityHits_GraphMap,Energies_Mean_ClusterCompPurityHits_Multi,Energies_RMS_ClusterCompPurityHits_Multi,Energies_Mean_ClusterCompPurityHits_canvasMulti,Energies_RMS_ClusterCompPurityHits_canvasMulti,Energies_ClusterCompPurityHits_canvasMap, ClusterCompPurityHits_canvas,ClusterCompPurityHits_2dHistMap,ClusterCompPurityHits_2dCanvasMap);
+
+  // ana::ShowerValidation::DrawHitGraphs(HitCompletenessEnergy_HistMap,Energies_HitCompletenessEnergy_HistMap,Energies_Mean_HitCompletenessEnergy_GraphMap,Energies_RMS_HitCompletenessEnergy_GraphMap,Energies_Mean_HitCompletenessEnergy_Multi,Energies_RMS_HitCompletenessEnergy_Multi,Energies_Mean_HitCompletenessEnergy_canvasMulti,Energies_RMS_HitCompletenessEnergy_canvasMulti,Energies_HitCompletenessEnergy_canvasMap, HitCompletenessEnergy_canvas,HitCompletenessEnergy_2dHistMap,HitCompletenessEnergy_2dCanvasMap);
 
 }
 

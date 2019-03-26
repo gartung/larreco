@@ -136,12 +136,13 @@ standard_showervalidation: {
  UseBiggestShower:          true
  DrawCanvases:              false
  FillOnlyClosestShower:     true
+ RemoveNonContainedParticles: true
  Verbose:                   0
  EnergyWidth:               0
  Energies:                  []
  MinHitSize:                20
  SimEnergyCut:              0.1 
- DensityCut:                1
+ DensityCut:                1.2
  MaxSimEnergy:              1500
 }
 
