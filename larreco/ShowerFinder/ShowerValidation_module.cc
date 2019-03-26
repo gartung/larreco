@@ -851,8 +851,7 @@ void ana::ShowerValidation::InitaliseGraphs(std::string Name, std::string TitleN
     std::string rmsgrapherror_titlestring =  fShowerModuleLabels[j];//+ ";Energy (Mev);" + TitleName;
     const char* rmsgrapherror_name        = rmsgrapherror_string.c_str();
     const char* rmsgrapherror_titlename   = rmsgrapherror_titlestring.c_str();
-    Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]] = tfs->makeAndRegister<TGraphErrors>(rmsgrapherror_name,rmsgrapherror_titlename);
-  
+    Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]] = tfs->makeAndRegister<TGraphErrors>(rmsgrapherror_name,rmsgrapherror_titlename);  
   }  
   
   //Canvas for all energy histogram
@@ -1461,8 +1460,11 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       if(!showercontained){
 	if(fVerbose > 0){std::cout << "Mother removed with id: " << showermother->first << " becuase it was not contained" << std::endl;}
 	showermother = ShowersMothers.erase(showermother);
+	continue;
       }
     }
+    
+    ++numshowerspassTPC;
 
     //I've read that pair production starts to dominate at around ~100 MeV so to find how many showers we expect loop over the mother particle. Pi0=143.97 MeV min gammas = 71.985 MeV which is greater than that from electrons at ~100MeV so pi0 should always shower? So cut on anything below 100MeV in energy.
       
@@ -1518,7 +1520,10 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
   }
 
   //If there are no true showers we can't validate 
-  if(ShowersMothers.size() == 0){return;}
+  if(ShowersMothers.size() == 0){
+    if(fVerbose > 0){std::cout << " No Mothers finishing" << std::endl;}
+    return;
+  }
 
   //If we are looking at a pion then fill the smallest and largest showers
   for (sim::ParticleList::const_iterator particleIt = particles.begin(); particleIt != particles.end(); ++particleIt){
