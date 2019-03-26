@@ -64,7 +64,7 @@ namespace RecoUtils{
 
   float TotalEnergyDepinHits(const std::vector<art::Ptr<recob::Hit> >& hits, int Plane); //Returns the amount of energy deposited in the detector (before recombination and lifetime effects) in the hits. 
 
-  float TotalEnergyDepinHitsFromTrack(const std::vector<art::Ptr<recob::Hit> >& hits, int TrackID); //Returns the amount of energy deposited in the detector (before recombination and lifetime effects)in the hits from a given particle. 
+  float TotalEnergyDepinHitsFromTrack(const std::vector<art::Ptr<recob::Hit> >& hits, int TrackID, int Plane); //Returns the amount of energy deposited in the detector (before recombination and lifetime effects)in the hits from a given particle. 
 
   std::map<int,float> TrueEnergyDepositedFromMCTracks(const std::vector<art::Ptr<sim::SimChannel> >& simchannels); //Returns a map of the Energies depsoited by each track id.
 
