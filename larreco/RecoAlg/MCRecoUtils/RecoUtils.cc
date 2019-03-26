@@ -524,7 +524,7 @@ float RecoUtils::TotalEnergyDepinHits(const std::vector<art::Ptr<recob::Hit> >& 
 }           
 
 
-float RecoUtils::TotalEnergyDepinHitsFromTrack(const std::vector<art::Ptr<recob::Hit> >& hits, int TrackID){
+float RecoUtils::TotalEnergyDepinHitsFromTrack(const std::vector<art::Ptr<recob::Hit> >& hits, int TrackID, int Plane){
 
   float DepEnergy = 0; 
   art::ServiceHandle<cheat::BackTrackerService> bt_serv;
@@ -535,7 +535,7 @@ float RecoUtils::TotalEnergyDepinHitsFromTrack(const std::vector<art::Ptr<recob:
     //Get the plane ID      
     geo::WireID wireid = (*hitIt)->WireID();
     int PlaneID = wireid.Plane;
-    if(PlaneID != 2){continue;}
+    if(PlaneID != Plane){continue;}
 
     //Split the Hit into its IDE for each track it associates with. 
     std::vector<sim::TrackIDE> trackIDEs = bt_serv->HitToTrackIDEs((*hitIt));
