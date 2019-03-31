@@ -132,6 +132,7 @@ standard_showervalidation: {
  HitsModuleLabel:          "gaushit"
  TrackModuleLabel:         "pandoraTrack"
  PFParticleLabel:          "pandora"
+ PFPValidation:             true
  ShowerModuleLabels:        ["emshower"]
  HitModuleLabels:           ["gaushit"]
  UseBiggestShower:          true
