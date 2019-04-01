@@ -2657,6 +2657,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       float numclusters = -9999;
       float geoprojectionmatched_score = -99999;
       for(std::vector< art::Ptr<recob::Hit> >::iterator hitIt=showerhits.begin(); hitIt!=showerhits.end(); ++hitIt){
+	std::cout<<"clusters"<<std::endl;
 	try{
 	  const std::vector<sim::IDE> hitIDEs = backtracker->HitToAvgSimIDEs(*hitIt);
 	  for(unsigned int hitIDE=0; hitIDE<hitIDEs.size(); ++hitIDE){
@@ -2710,6 +2711,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	      ana::ShowerValidation::ClusterValidation(showerclusters,evt,clusterHandle,ShowersMothers,MCTrack_Energy_map,MCTrack_hit_map,ShowerTrackID,simenergy,fShowerModuleLabel);
 	      //Loop over the hit coordinate map where there there is a hit on every plane give a 1.
 	      numclusters = showerclusters.size();
+
 	      int geoprojectionmatched = 0;
 	      for(std::map<std::vector<double>, int>::iterator coord=HitCoord_map.begin(); coord!=HitCoord_map.end(); ++coord){
 		if(coord->second == numclusters){++geoprojectionmatched;}
@@ -2760,7 +2762,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       if(fVerbose > 1){std::cout << "Cluster Validation Complete" << std::endl;}
 
     }//Shower Loop
-
+    
     //#########################
     //###   Event Metric    ###
     //#########################
@@ -2963,6 +2965,7 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
 					      float& simenergy,
 					      std::string& fShowerModuleLabel){
 
+
   //Initialise Trees
   std::vector<std::vector<float> > ClusterProjectionMatchedEnergy_TreeVec((int)geom->Nplanes());
   std::vector<std::vector<float> > ClusterCompletenessEnergy_TreeVec((int)geom->Nplanes());
@@ -2975,23 +2978,23 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
   //Get the associated hits
   art::FindManyP<recob::Hit> fmhc(clusterHandle, evt, clusterHandle.provenance()->moduleLabel());
 
-  //Holder for cluster hits
+  //Holder for cluster its
   std::vector< art::Ptr<recob::Hit> > clusterhits;
 
-  //Get the Hits Handle used for this cluster type
   art::Handle<std::vector<recob::Hit > > hitHandle;
-  evt.get(fmhc.at(clusters.at(0).key()).front().id(),hitHandle);
-
+  
   if(!hitHandle.isValid()){
     mf::LogError("ShowerValidation") << "Hits handle is stale. No clustering validation done" << std::endl;
     return;
   }
 
+  //Get the Hits Handle used for this cluster type WARNING 
+  evt.get(fmhc.at(clusters.at(0).key()).front().id(),hitHandle);
+
   //Get the hits vector from the shower
   for(auto const& cluster : clusters){
 
     clusterhits = fmhc.at(cluster.key());
-
     //Function from RecoUtils, finds the most probable track ID associated with the set of hits from there true energy depositons. The pair returns the energy in the hits as well.
     std::pair<int,double> ShowerTrackInfo = ShowerUtils::TrueParticleIDFromTrueChain(ShowerMotherTrackIDs,clusterhits, cluster->Plane().Plane);
 
@@ -3009,7 +3012,6 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
 
       //Calculate the true Energy deposited By Shower
       TotalTrueEnergy += MCTrack_Energy_map[*daughterID];
-
       // Get the map of planeIDs to number of hits
       std::map<geo::PlaneID, int> hitPlaneMap = RecoUtils::NumberofPlaneHitsFromTrack(*daughterID, clusterhits);
 
