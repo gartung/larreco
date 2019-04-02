@@ -161,21 +161,21 @@ std::vector<double> calo::LinearEnergyAlg::CalculateEnergy(
   clusterEnergies.resize
     (geom->TPC(refTPC).Nplanes(), std::numeric_limits<double>::lowest());
   
-  if ( clusters.size() > clusterEnergies.size() ) {
-    mf::LogError("LinearEnergyAlg") << clusters.size() << " clusters for "
-      << clusterEnergies.size() << " wire planes!";
-  }
+  // if ( clusters.size() > clusterEnergies.size() ) {
+  //   mf::LogError("LinearEnergyAlg") << clusters.size() << " clusters for "
+  //     << clusterEnergies.size() << " wire planes!";
+  // }
 
   for (art::Ptr<recob::Cluster> const& cluster: clusters) {
     
     auto const plane = cluster->Plane();
-    if (plane != refTPC) {
-      throw std::runtime_error(
-        "Cluster ID=" + std::to_string(cluster->ID())
-        + " is expected on TPC " + std::string(refTPC)
-        + " but is found on plane " + std::string(plane)
-        );
-    }
+    // if (plane != refTPC) {
+    //   throw std::runtime_error(
+    //     "Cluster ID=" + std::to_string(cluster->ID())
+    //     + " is expected on TPC " + std::string(refTPC)
+    //     + " but is found on plane " + std::string(plane)
+    //     );
+    // }
     
     // hitsAssociatedWith() searches for the right association links
     // to the cluster we are processing
@@ -189,7 +189,7 @@ std::vector<double> calo::LinearEnergyAlg::CalculateEnergy(
         << plane << "! (the last with energy " << E
         << ", the previous " << clusterEnergies[planeNo] << " GeV)";
     }
-    clusterEnergies[planeNo] = E;
+    clusterEnergies[planeNo] += E;
     
   } // for all clusters
   
