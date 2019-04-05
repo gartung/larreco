@@ -1,6 +1,6 @@
 
-art_make( 
-          
+art_make(
+
           LIB_LIBRARIES larcorealg_Geometry
                         lardataobj_RecoBase
                         larreco_RecoAlg_ClusterRecoUtil
@@ -9,7 +9,7 @@ art_make(
                            larreco_RecoAlg_ClusterRecoUtil
                            larreco_ClusterFinder
                            larsim_MCCheater_BackTrackerService_service
-	                   larsim_MCCheater_ParticleInventoryService_service
+                           larsim_MCCheater_ParticleInventoryService_service
                            larevt_Filters
                            lardataobj_RecoBase
                            larcorealg_Geometry
@@ -20,14 +20,14 @@ art_make(
                            ${ART_FRAMEWORK_PRINCIPAL}
                            ${ART_FRAMEWORK_SERVICES_REGISTRY}
                            ${ART_FRAMEWORK_SERVICES_BASIC}
-                           ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
+                           ${ART_ROOT_IO_TFILE_SUPPORT}
                            ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+                           ${ROOT_Core_LIBRARY}
                            art_Persistency_Common
                            art_Persistency_Provenance
                            art_Utilities
-			   canvas
+                           canvas
                            ${MF_MESSAGELOGGER}
-                           
                            ${FHICLCPP}
                            cetlib cetlib_except
          )

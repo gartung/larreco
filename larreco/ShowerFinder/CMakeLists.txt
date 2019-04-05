@@ -2,12 +2,12 @@
 add_subdirectory(ShowerReco3D)
 add_subdirectory(job)
 
-art_make( 
-#          EXCLUDE ShowerSelectorFilter_module.cc
+art_make(
+#           EXCLUDE ShowerSelectorFilter_module.cc
           MODULE_LIBRARIES
-			larreco_RecoAlg
+                        larreco_RecoAlg
                         larsim_MCCheater_BackTrackerService_service
-	                larsim_MCCheater_ParticleInventoryService_service
+                        larsim_MCCheater_ParticleInventoryService_service
                         lardataobj_AnalysisBase
                         lardataobj_RecoBase
                         larcorealg_Geometry
@@ -18,28 +18,26 @@ art_make(
                         lardata_Utilities
                         nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
-			${ART_FRAMEWORK_PRINCIPAL}
-			${ART_FRAMEWORK_SERVICES_REGISTRY}
-			${ART_FRAMEWORK_SERVICES_BASIC}
-			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-			${ART_ROOT_IO_TFILESERVICE_SERVICE}
-			art_Persistency_Common
-			art_Utilities
-			canvas
-			${MF_MESSAGELOGGER}
-			
-	                ${FHICLCPP}
-			cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
+                        ${ART_FRAMEWORK_PRINCIPAL}
+                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                        ${ART_FRAMEWORK_SERVICES_BASIC}
+                        ${ART_ROOT_IO_TFILE_SUPPORT}
+                        ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+                        art_Persistency_Common
+                        art_Utilities
+                        canvas
+                        ${MF_MESSAGELOGGER}
+                        ${FHICLCPP}
+                        cetlib cetlib_except
+                        ${ROOT_LIBRARIES}
          )
 
 #simple_plugin( ShowerSelectorFilter "module"
-#         		  larevt_Filters
-# 			  larreco_RecoAlg
-# 		    	  lardataobj_RawData
-# 			  nusimdata_SimulationBase
-#                
-# 	     )     
+#                 larevt_Filters
+#                 larreco_RecoAlg
+#                 lardataobj_RawData
+#                 nusimdata_SimulationBase
+#         )
 
 install_headers()
 install_fhicl()
