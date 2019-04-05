@@ -8,7 +8,7 @@ simple_plugin(TrackShowerHits   "module"
 		 	larcorealg_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-               ${ART_FRAMEWORK_CORE}
+                        ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
 			${ART_FRAMEWORK_SERVICES_REGISTRY}
          		${ART_ROOT_IO_TFILE_SUPPORT} ROOT::Core
@@ -18,7 +18,6 @@ simple_plugin(TrackShowerHits   "module"
 			art_Utilities
 			canvas
 			${MF_MESSAGELOGGER}
-
 			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}
 

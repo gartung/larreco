@@ -1,4 +1,7 @@
-include_directories ($ENV{G4INCLUDE})
+include(${Geant4_USE_FILE})
+include_directories ( ${Geant4_INCLUDE_DIRS} )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Geant4_CXX_FLAGS} -Wno-shadow -Wno-unused-parameter -Wno-ignored-qualifiers")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-misleading-indentation -Wno-maybe-uninitialized -Wno-overloaded-virtual")
 
 art_make(EXCLUDE
            Track3DKalman_module.cc

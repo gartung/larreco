@@ -1,5 +1,5 @@
 cet_enable_asserts()
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-int-in-bool-context")
 add_subdirectory(ConvexHull)
 add_subdirectory(Voronoi)
 add_subdirectory(PathFinding)

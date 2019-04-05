@@ -1,3 +1,5 @@
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-misleading-indentation -Wno-maybe-uninitialized -Wno-overloaded-virtual")
+
 art_make(EXCLUDE FeatureVertexFinder_module.cc
          MODULE_LIBRARIES
            larsim_MCCheater_ParticleInventoryService_service

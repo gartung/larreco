@@ -14,18 +14,17 @@ set( hitfinder_tool_lib_list
                         art_Persistency_Provenance
                         ${ART_FRAMEWORK_SERVICES_BASIC}
                         ${ART_ROOT_IO_TFILE_SUPPORT} ROOT::Core
-            ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
+                        ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
                         ${ART_ROOT_IO_TFILESERVICE_SERVICE}
                         ${ART_FRAMEWORK_SERVICES_SYSTEM_FILECATALOGMETADATA_SERVICE}
                         art_Utilities
                         canvas
                         ${MF_MESSAGELOGGER}
-
                         ${FHICLCPP}
                         ${CETLIB}
                         Boost::filesystem
-            ${CLHEP}
-                        ${ROOT_BASIC_LIB_LIST}
+                        ${CLHEP_LIBRARIES}
+                        ${ROOT_LIBRARIES}
     )
 
 include(FindOpenMP)
