@@ -18,8 +18,8 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Framework/Services/Optional/TFileService.h"
-#include "art/Framework/Services/Optional/TFileDirectory.h"
+#include "art_root_io/TFileService.h"
+#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/EDProducer.h"
 
@@ -44,7 +44,6 @@
 
 // ROOT & C++ includes
 #include <string>
-#include <vector>
 #include <map>
 
 namespace cluster {
@@ -68,7 +67,8 @@ private:
 };
 
 cluster::BlurredClustering::BlurredClustering(fhicl::ParameterSet const &pset)
-  : fHitsModuleLabel{pset.get<std::string>("HitsModuleLabel")}
+  : EDProducer{pset}
+  , fHitsModuleLabel{pset.get<std::string>("HitsModuleLabel")}
   , fTrackModuleLabel{pset.get<std::string>("TrackModuleLabel")}
   , fVertexModuleLabel{pset.get<std::string>("VertexModuleLabel")}
   , fPFParticleModuleLabel{pset.get<std::string>("PFParticleModuleLabel")}
@@ -99,7 +99,7 @@ void cluster::BlurredClustering::produce(art::Event &evt)
   ClusterParamsImportWrapper<StandardClusterParamsAlg> ClusterParamAlgo;
 
   // Create geometry handle
-  art::ServiceHandle<geo::Geometry> geom;
+  art::ServiceHandle<geo::Geometry const> geom;
 
   // Get the hits from the event
   art::Handle<std::vector<recob::Hit>> hitCollection;

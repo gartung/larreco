@@ -74,24 +74,25 @@ namespace trkf {
     using Parameters = art::EDProducer::Table<Config>;
 
     explicit VertexFitter(Parameters const & p);
-    
+
     // Plugins should not be copied or assigned.
     VertexFitter(VertexFitter const &) = delete;
     VertexFitter(VertexFitter &&) = delete;
     VertexFitter & operator = (VertexFitter const &) = delete;
     VertexFitter & operator = (VertexFitter &&) = delete;
-    
+
     void produce(art::Event & e) override;
 
   private:
     art::InputTag pfParticleInputTag;
-    art::InputTag trackInputTag;    
+    art::InputTag trackInputTag;
     Geometric3DVertexFitter fitter;
   };
 }
 
 trkf::VertexFitter::VertexFitter(Parameters const & p)
-  : pfParticleInputTag(p().inputs().inputPFParticleLabel())
+  : EDProducer{p}
+  , pfParticleInputTag(p().inputs().inputPFParticleLabel())
   , trackInputTag(p().inputs().inputTracksLabel())
   , fitter(p().geom3dvtxfit,p().propagator)
 {
@@ -122,9 +123,16 @@ void trkf::VertexFitter::produce(art::Event & e)
     vector< art::Ptr<recob::Track> > tracks;
     auto& pfd = pfp->Daughters();
     for (auto ipfd : pfd) {
-      vector< art::Ptr<recob::Track> > pftracks = assocTracks->at(ipfd);
-      for (auto t : pftracks) {
-	tracks.push_back(t);
+      // Daugthers returns the id as in pfp->Self() not the key
+      // so need to find the key for the pfp with Self==ipfd
+      for (size_t jPF = 0; jPF < inputPFParticle->size(); ++jPF) {
+	art::Ptr<recob::PFParticle> pfpd(inputPFParticle, jPF);
+	if (pfpd->Self()!=ipfd) continue;
+	vector< art::Ptr<recob::Track> > pftracks = assocTracks->at(jPF);
+	for (auto t : pftracks) {
+	  tracks.push_back(t);
+	}
+	break;
       }
     }
     if (tracks.size()<2) continue;

@@ -97,6 +97,7 @@ private:
 // ------------------------------------------------------
 
 ParticleDecayId::ParticleDecayId(ParticleDecayId::Parameters const& config) :
+        EDProducer{config},
 	fPointIdAlg(config().PointIdAlg()),
 	fWireProducerLabel(config().WireLabel()),
 	fTrackModuleLabel(config().TrackModuleLabel()),
@@ -149,7 +150,7 @@ void ParticleDecayId::produce(art::Event & evt)
     double xyz[3];
     for (const auto & p3d : decays)
     {
-    
+
         xyz[0] = p3d.first.X(); xyz[1] = p3d.first.Y(); xyz[2] = p3d.first.Z();
         std::cout << "   detected: [" << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << "] p:" << p3d.second << std::endl;
 
@@ -286,4 +287,3 @@ bool ParticleDecayId::DetectDecay(
 DEFINE_ART_MODULE(ParticleDecayId)
 
 }
-
