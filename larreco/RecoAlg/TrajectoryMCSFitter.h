@@ -9,6 +9,8 @@
 #include "lardataobj/RecoBase/MCSFitResult.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardata/RecoObjects/TrackState.h"
+#include "larevt/SpaceChargeServices/SpaceChargeService.h"
+#include "larcore/Geometry/Geometry.h"
 
 namespace trkf {
   /**
@@ -174,6 +176,15 @@ namespace trkf {
     double GetE(const double initial_E, const double length_travelled, const double mass) const;
     //
   private:
+    //::detinfo::DetectorProperties const* _detector_properties;
+    //::detinfo::DetectorClocks const* _detector_clocks;
+    spacecharge::SpaceCharge const* _SCE;
+    //_detector_properties = lar::providerFrom<detinfo::DetectorPropertiesService>(); 
+    //_detector_clocks = lar::providerFrom<detinfo::DetectorClocksService>();
+    _SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
+
+    ::art::ServiceHandle<geo::Geometry> geo;
+
     int    pIdHyp_;
     int    minNSegs_;
     double segLen_;

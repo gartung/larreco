@@ -1,6 +1,7 @@
 #include "TrajectoryMCSFitter.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "larcorealg/Geometry/geo_vectors_utils.h"
+#include "larevt/SpaceChargeServices/SpaceChargeService.h"
 #include "TMatrixDSym.h"
 #include "TMatrixDSymEigen.h"
 
@@ -69,12 +70,24 @@ void TrajectoryMCSFitter::breakTrajInSegments(const recob::TrackTrajectory& traj
   auto nextValid=traj.FirstValidPoint();
   breakpoints.push_back(nextValid);
   auto pos0 = traj.LocationAtPoint(nextValid);
+  auto pos0_offset = _SCE->GetPosOffsets(geo::Point_t(pos0.X(), pos0.Y(), pos0.Z()));
+  //double g4Ticks = _detector_clocks->TPCG4Time2Tick(mclist[iList]->GetNeutrino().Nu().T()) + _detector_properties->GetXTicksOffset(0,0,0) - _detector_properties->TriggerOffset();
+  // SCE correction X has an unusual sign
+  // Version 1 Get neutrino time for all the tracks
+  pos0.X() = pos0.X() - pos0_offset.X();
+  //pos0.X() = pos0.X() - pos0_offset.X() + _detector_properties->ConvertTicksToX(g4Ticks, 0, 0, 0);
+  pos0.Y() = pos0.Y() + pos0_offset.Y();
+  pos0.Z() = pos0.Z() + pos0_offset.Z();
   auto dir0 = traj.DirectionAtPoint(nextValid);
   nextValid = traj.NextValidPoint(nextValid+1);
   int npoints = 0;
   while (nextValid!=recob::TrackTrajectory::InvalidIndex) {
     if (npoints==0) dir0 = traj.DirectionAtPoint(nextValid);
     auto pos1 = traj.LocationAtPoint(nextValid);
+    auto pos1_offset = _SCE->GetPosOffsets(geo::Point_t(pos1.X(), pos1.Y(), pos1.Z()));
+    pos1.X() = pos1.X() - pos1_offset.X();
+    pos1.Y() = pos1.Y() + pos1_offset.Y();
+    pos1.Z() = pos1.Z() + pos1_offset.Z();
     //increments along the initial direction of the segment
     auto step = (pos1-pos0).R();
     thislen += dir0.Dot(pos1-pos0);
@@ -176,7 +189,14 @@ void TrajectoryMCSFitter::linearRegression(const recob::TrackTrajectory& traj, c
   //fixme explore a max number of points to use for linear regression
   //while (nextValid<std::min(firstPoint+10,lastPoint)) {
   while (nextValid<lastPoint) {
-    middlePointCalc.add(traj.LocationAtPoint(nextValid));
+    auto tempP = traj.LocationAtPoint(nextValid);
+    auto tempP_offset = _SCE->GetPosOffsets(geo::Point_t(tempP.X(), tempP.Y(), tempP.Z()));
+    tempP.X() = tempP.X() - tempP_offset.X();
+    tempP.Y() = tempP.Y() + tempP_offset.Y();
+    tempP.Z() = tempP.Z() + tempP_offset.Z();
+
+    //middlePointCalc.add(traj.LocationAtPoint(nextValid));
+    middlePointCalc.add(tempP);
     nextValid = traj.NextValidPoint(nextValid+1);
     npoints++;
   }
@@ -188,7 +208,13 @@ void TrajectoryMCSFitter::linearRegression(const recob::TrackTrajectory& traj, c
   TMatrixDSym m(3);
   nextValid = firstPoint;
   while (nextValid<lastPoint) {
-    const auto p = traj.LocationAtPoint(nextValid);
+    //const auto p = traj.LocationAtPoint(nextValid);
+    auto pp = traj.LocationAtPoint(nextValid);
+    auto pp_offset = _SCE->GetPosOffsets(geo::Point_t(pp.X(), pp.Y(), pp.Z()));
+    pp.X() = pp.X() - pp_offset.X();
+    pp.Y() = pp.Y() + pp_offset.Y();
+    pp.Z() = pp.Z() + pp_offset.Z();   
+    const TVector3 p = pp;
     const double xxw0 = p.X()-avgpos.X();
     const double yyw0 = p.Y()-avgpos.Y();
     const double zzw0 = p.Z()-avgpos.Z();
