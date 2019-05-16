@@ -1,6 +1,7 @@
 #include "showeralgorithms.fcl"
 #include "clusteralgorithms.fcl"
 #include "calorimetry.fcl" 
+#include "showertools.fcl"
 
 BEGIN_PROLOG
 
@@ -148,6 +149,19 @@ standard_showervalidation: {
  MaxSimEnergy:              1500
 }
 
+standard_sbnshower: {
+ 
+    module_type: "SBNShower"
+
+    ShowerDirectionFinder:     @local::showerpcadirection
+    ShowerEnergyFinder:        @local::showerlinearenergy
+    ShowerInitialTrackFinder:  @local::showertrackfinder
+    ShowerStartPositionFinder: @local::showerstartposition
+    ShowerdEdxFinder:          @local::showerstandardcalodedx
+    
+    PFParticleModuleLabel:      "pandora"
+    SecondInteration: false
+}
 
 
 END_PROLOG

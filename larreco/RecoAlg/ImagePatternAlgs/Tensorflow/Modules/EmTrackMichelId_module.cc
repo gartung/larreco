@@ -113,6 +113,7 @@ private:
 // ------------------------------------------------------
 
 EmTrackMichelId::EmTrackMichelId(EmTrackMichelId::Parameters const& config) :
+        EDProducer{config},
 	fBatchSize(config().BatchSize()),
 	fPointIdAlg(config().PointIdAlg()), fMVAWriter(this, "emtrkmichel"),
 	fWireProducerLabel(config().WireLabel()),
@@ -123,7 +124,7 @@ EmTrackMichelId::EmTrackMichelId(EmTrackMichelId::Parameters const& config) :
 
 	fNewClustersTag(
 	    config.get_PSet().get<std::string>("module_label"), "",
-	    art::ServiceHandle<art::TriggerNamesService>()->getProcessName())
+	    art::ServiceHandle<art::TriggerNamesService const>()->getProcessName())
 {
     fMVAWriter.produces_using< recob::Hit >();
 
@@ -260,7 +261,7 @@ void EmTrackMichelId::produce(art::Event & evt)
                 {
                     view = pview.first;
                     if (!isViewSelected(view)) continue; // should not happen, clusters were pre-selected
-                
+
                     for (size_t c : pview.second) // c is the Ptr< recob::Cluster >::key()
                     {
 		                auto v = hitsFromClusters.at(c);
@@ -375,4 +376,3 @@ bool EmTrackMichelId::isViewSelected(int view) const
 DEFINE_ART_MODULE(EmTrackMichelId)
 
 }
-

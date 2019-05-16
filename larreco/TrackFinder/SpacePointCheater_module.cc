@@ -14,13 +14,12 @@
 //
 
 #include <cassert>
-#include <vector>
 
-#include "art/Framework/Core/ModuleMacros.h" 
+#include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDProducer.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "art/Framework/Principal/Event.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h" 
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "larreco/RecoAlg/SpacePointAlg.h"
@@ -35,20 +34,12 @@ namespace trkf {
   class SpacePointCheater : public art::EDProducer
   {
   public:
- 
-    // Constructors, destructor
-
     explicit SpacePointCheater(fhicl::ParameterSet const& pset);
-    virtual ~SpacePointCheater();
-
-    // Overrides.
-
-    void reconfigure(fhicl::ParameterSet const& pset);
-    void beginJob();
-    void produce(art::Event& evt);
-    void endJob();
 
   private:
+    void reconfigure(fhicl::ParameterSet const& pset);
+    void produce(art::Event& evt) override;
+    void endJob() override;
 
     // Fcl Attributes.
 
@@ -73,7 +64,8 @@ namespace trkf {
     //
     // Arguments: pset - Module parameters.
     //
-    : fSptalg(pset.get<fhicl::ParameterSet>("SpacePointAlg"))
+    : EDProducer{pset}
+    , fSptalg(pset.get<fhicl::ParameterSet>("SpacePointAlg"))
     , fMinHits(0)
     , fClusterAssns(false)
     , fNumEvent(0)
@@ -89,19 +81,12 @@ namespace trkf {
 
     // Report.
 
-    mf::LogInfo("SpacePointCheater") 
+    mf::LogInfo("SpacePointCheater")
       << "SpacePointCheater configured with the following parameters:\n"
       << "  ClusterModuleLabel = " << fClusterModuleLabel << "\n"
       << "  Minimum Hits per Cluster = " << fMinHits << "\n"
       << "  Cluster associations = " << fClusterAssns;
   }
-
-  //----------------------------------------------------------------------------
-  SpacePointCheater::~SpacePointCheater()
-  //
-  // Purpose: Destructor.
-  //
-  {}
 
   //----------------------------------------------------------------------------
   void SpacePointCheater::reconfigure(fhicl::ParameterSet const& pset)
@@ -118,10 +103,6 @@ namespace trkf {
   }
 
   //----------------------------------------------------------------------------
-  void SpacePointCheater::beginJob()
-  {}
-
-  //----------------------------------------------------------------------------
   void SpacePointCheater::produce(art::Event& evt)
   //
   // Purpose: Produce method.
@@ -133,7 +114,7 @@ namespace trkf {
 
     // Get Services.
 
-    art::ServiceHandle<geo::Geometry> geom;
+    art::ServiceHandle<geo::Geometry const> geom;
 
     // Get clusters.
 
@@ -155,7 +136,7 @@ namespace trkf {
       // Make a hit vector which will be used to store hits to be passed
       // to SpacePointAlg.
 
-      art::PtrVector<recob::Hit> hits;      
+      art::PtrVector<recob::Hit> hits;
       art::FindManyP<recob::Hit> fm(clusterh, evt, fClusterModuleLabel);
 
       // Loop over first cluster.
@@ -182,7 +163,7 @@ namespace trkf {
 	  for(std::vector< art::Ptr<recob::Hit> >::const_iterator i = ihits.begin();
 	      i != ihits.end(); ++i)
 	    hits.push_back(*i);
-	  
+
 	  // Loop over second cluster.
 
 	  for(int jclus = 0; jclus < iclus; ++jclus) {
@@ -211,7 +192,7 @@ namespace trkf {
 	      for(std::vector< art::Ptr<recob::Hit> >::const_iterator j = jhits.begin();
 		  j != jhits.end(); ++j)
 		hits.push_back(*j);
-	  
+
 	      // If two-view space points are allowed, make them here.
 
 	      if(fSptalg.minViews() <= 2) {
@@ -344,7 +325,7 @@ namespace trkf {
   // Purpose: Print summary.
   //
   {
-    mf::LogInfo("SpacePointCheater") 
+    mf::LogInfo("SpacePointCheater")
       << "SpacePointCheater statistics:\n"
       << "  Number of events = " << fNumEvent << "\n"
       << "  Number of 2-view space points created = " << fNumSpt2 << "\n"
