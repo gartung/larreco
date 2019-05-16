@@ -87,97 +87,8 @@ public:
   void endJob();
   void beginJob();
 
-  void InitialiseGraphs(std::string Name, std::string TitleName,std::map<std::string,TH1F*>& Name_HistMap,
-			std::map<std::string,std::map<float,TH1F*> >& Energies_name_HistMap,
-			std::map<std::string,TGraphErrors*>& Energies_Mean_Name_GraphMap,
-			std::map<std::string,TGraphErrors*>& Energies_RMS_Name_GraphMap,
-			TMultiGraph*& Energies_Mean_Name_Multi,TMultiGraph*& Energies_RMS_Name_Multi,
-			TCanvas*& Energies_Name_canvasMulti,TCanvas*& Energies_RMS_Name_canvasMulti,
-			std::map<float,TCanvas*>& Energies_Mean_Name_canvasMap, TCanvas*& Name_canvas,
-			std::map<std::string,TH2F*>& Name_2dHistMap,
-			std::map<std::string,TCanvas*>& Name_2dCanvasMap,
-			int x_numbins, float x_start, float x_end,
-			int y_numbins, float y_start, float y_end,
-			std::map<std::string, std::vector<float> >& MetricVector
-			);
-
-  void InitialiseGraphs(std::string Name, std::string TitleName,
-			std::map<std::string,std::map<geo::PlaneID,TH1F*> >& Name_HistMap,
-			std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > >& Energies_Name_HistMap,
-			std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_Mean_Name_GraphMap,
-			std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_RMS_Name_GraphMap,
-			std::map<geo::PlaneID,TMultiGraph*>& Energies_Mean_Name_Multi,
-			std::map<geo::PlaneID,TMultiGraph*>& Energies_RMS_Name_Multi,
-			std::map<geo::PlaneID,TCanvas*>& Energies_Mean_Name_canvasMulti,
-			std::map<geo::PlaneID,TCanvas*>& Energies_RMS_Name_canvasMulti,
-			std::map<float,std::map<geo::PlaneID,TCanvas*> >& Energies_Name_canvasMap,
-			std::map<geo::PlaneID,TCanvas*>& Name_canvas,
-			std::map<std::string,std::map<geo::PlaneID,TH2F*> >& Name_2dHistMap,
-			std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap,
-			int x_numbins, float x_start, float x_end,
-			int y_numbins, float y_start, float y_end,
-			std::map<std::string,std::vector<std::vector<std::vector<float> > > >& MetricVector
-			);
-
-  void InitialiseHitGraphs(std::string Name, std::string TitleName,
-			   std::map<std::string,std::map<geo::PlaneID,TH1F*> >& Name_HistMap,
-			   std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > >& Energies_Name_HistMap,
-			   std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_Mean_Name_GraphMap,
-			   std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_RMS_Name_GraphMap,
-			   std::map<geo::PlaneID,TMultiGraph*>& Energies_Mean_Name_Multi,
-			   std::map<geo::PlaneID,TMultiGraph*>& Energies_RMS_Name_Multi,
-			   std::map<geo::PlaneID,TCanvas*>& Energies_Mean_Name_canvasMulti,
-			   std::map<geo::PlaneID,TCanvas*>& Energies_RMS_Name_canvasMulti,
-			   std::map<float,std::map<geo::PlaneID,TCanvas*> >& Energies_Name_canvasMap,
-			   std::map<geo::PlaneID,TCanvas*>& Name_canvas,
-			   std::map<std::string,std::map<geo::PlaneID,TH2F*> >& Name_2dHistMap,
-			   std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap,
-			   int x_numbins, float x_start, float x_end,
-			   int y_numbins, float y_start, float y_end,
-			   std::map<std::string,std::vector<std::vector<float> > >& MetricVector
-			   );
-
-
-  void DrawGraphs(std::map<std::string,TH1F*>& Name_HistMap,
-		  std::map<std::string,std::map<float,TH1F*> >& Energies_name_HistMap,
-		  std::map<std::string,TGraphErrors*>& Energies_Mean_Name_GraphMap,
-		  std::map<std::string,TGraphErrors*>& Energies_RMS_Name_GraphMap,
-		  TMultiGraph*& Energies_Mean_Name_Multi,TMultiGraph*& Energies_RMS_Name_Multi,
-		  TCanvas*& Energies_Name_canvasMulti,TCanvas*& Energies_RMS_Name_canvasMulti,
-		  std::map<float,TCanvas*>& Energies_Mean_Name_canvasMap, TCanvas*& Name_canvas,
-		  std::map<std::string,TH2F*>& Name_2dHistMap,
-		  std::map<std::string,TCanvas*>& Name_2dCanvasMap
-		  );
-
-  void DrawGraphs(std::map<std::string,std::map<geo::PlaneID,TH1F*> >& Name_HistMap,
-		  std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > >& Energies_Name_HistMap,
-		  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_Mean_Name_GraphMap,
-		  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_RMS_Name_GraphMap,
-		  std::map<geo::PlaneID,TMultiGraph*>& Energies_Mean_Name_Multi,
-		  std::map<geo::PlaneID,TMultiGraph*>& Energies_RMS_Name_Multi,
-		  std::map<geo::PlaneID,TCanvas*>& Energies_Mean_Name_canvasMulti,
-		  std::map<geo::PlaneID,TCanvas*>& Energies_RMS_Name_canvasMulti,
-		  std::map<float,std::map<geo::PlaneID,TCanvas*> >& Energies_Mean_Name_canvasMap,
-		  std::map<geo::PlaneID,TCanvas*>& Name_canvas,
-		  std::map<std::string,std::map<geo::PlaneID,TH2F*> >& Name_2dHistMap,
-		  std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap
-		  );
-
-  void DrawHitGraphs(std::map<std::string,std::map<geo::PlaneID,TH1F*> >& Name_HistMap,
-		     std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > >& Energies_Name_HistMap,
-		     std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_Mean_Name_GraphMap,
-		     std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_RMS_Name_GraphMap,
-		     std::map<geo::PlaneID,TMultiGraph*>& Energies_Mean_Name_Multi,
-		     std::map<geo::PlaneID,TMultiGraph*>& Energies_RMS_Name_Multi,
-		     std::map<geo::PlaneID,TCanvas*>& Energies_Mean_Name_canvasMulti,
-		     std::map<geo::PlaneID,TCanvas*>& Energies_RMS_Name_canvasMulti,
-		     std::map<float,std::map<geo::PlaneID,TCanvas*> >& Energies_Mean_Name_canvasMap,
-		     std::map<geo::PlaneID,TCanvas*>& Name_canvas,
-		     std::map<std::string,std::map<geo::PlaneID,TH2F*> >& Name_2dHistMap,
-		     std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap
-		     );
-
-
+  void initTree(TTree* Tree, std::string branchName, std::map<std::string,std::vector<float> >& Metric, std::vector<std::string> fShowerModuleLabels);
+  void initClusterTree(TTree* Tree,  std::string branchName,  std::map<std::string,std::vector<std::vector<std::vector<float> > > >& Metric, std::vector<std::string> fShowerModuleLabels);
 
   void ClusterValidation(std::vector<art::Ptr<recob::Cluster> >& clusters,
 			 const art::Event& evt,
@@ -223,758 +134,6 @@ private:
   std::vector<float>       fEnergies;
   std::vector<std::string> fShowerModuleLabels;
   std::vector<std::string> fHitModuleLabels;
-
-  std::map<std::string,TH1F*> ShowerDirection_X_HistMap;
-  std::map<std::string,TH1F*> ShowerDirection_Y_HistMap;
-  std::map<std::string,TH1F*> ShowerDirection_Z_HistMap;
-  std::map<std::string,TH1F*> ShowerStart_X_HistMap;
-  std::map<std::string,TH1F*> ShowerStart_Y_HistMap;
-  std::map<std::string,TH1F*> ShowerStart_Z_HistMap;
-  std::map<std::string,TH1F*> ShowerLength_HistMap;
-  std::map<std::string,TH1F*> ShowerEnergyDiff_HistMap;
-  std::map<std::string,TH1F*> ShowerdEdx_HistMap;
-  std::map<std::string,TH1F*> EventSeggy_HistMap;
-  std::map<std::string,TH1F*> ShowerEnergyCompleteness_HistMap;
-  std::map<std::string,TH1F*> ShowerEnergyPurity_HistMap;
-  std::map<std::string,TH1F*> ShowerHitsCompleteness_HistMap;
-  std::map<std::string,TH1F*> ShowerHitsPurity_HistMap;
-  std::map<std::string,TH1F*> ShowerEnergy_HistMap;
-  std::map<std::string,TH1F*> ShowerHitNum_HistMap;
-  std::map<std::string,TH1F*> ShowerTotalEnergyDiff_HistMap;
-  std::map<std::string,TH1F*> ShowerMag_HistMap;
-  std::map<std::string,TH1F*> ShowerDirectionDiff_HistMap;
-  std::map<std::string,TH1F*> ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap;
-  std::map<std::string,TH1F*> ShowerTrueEnergy_HistMap;
-  std::map<std::string,TH1F*> TrueEnergy_HistMap;
-  std::map<std::string,TH1F*> TrueHitNum_HistMap;
-  std::map<std::string,TH1F*> ShowerBestPlane_HistMap;
-  std::map<std::string,TH1F*> GeoProjectionMatched_HistMap;
-
-  std::map<std::string,TH1F*> PandoraTrackNum_HistMap;
-  std::map<std::string,TH1F*> PFP_Tracks_HistMap;
-  std::map<std::string,TH1F*> PFP_Showers_HistMap;
-  std::map<std::string,TH1F*> PFP_ProjectionMatched_HistMap;
-  std::map<std::string,TH1F*> PFP_HitsCompleteness_HistMap;
-  std::map<std::string,TH1F*> PFP_EnergyCompleteness_HistMap;
-  std::map<std::string,TH1F*> PFP_HitsPurity_HistMap;
-  std::map<std::string,TH1F*> PFP_EnergyPurity_HistMap;
-  std::map<std::string,TH1F*> PFP_Track_ProjectionMatched_HistMap;
-  std::map<std::string,TH1F*> PFP_Track_HitsCompleteness_HistMap;
-  std::map<std::string,TH1F*> PFP_Track_EnergyCompleteness_HistMap;
-  std::map<std::string,TH1F*> PFP_Track_HitsPurity_HistMap;
-  std::map<std::string,TH1F*> PFP_Track_EnergyPurity_HistMap;
-  std::map<std::string,TH1F*> PFP_Shower_ProjectionMatched_HistMap;
-  std::map<std::string,TH1F*> PFP_Shower_HitsCompleteness_HistMap;
-  std::map<std::string,TH1F*> PFP_Shower_EnergyCompleteness_HistMap;
-  std::map<std::string,TH1F*> PFP_Shower_HitsPurity_HistMap;
-  std::map<std::string,TH1F*> PFP_Shower_EnergyPurity_HistMap;
-
-  std::map<std::string,TH1F*> Event_NumTrueShowers_HistMap;
-  std::map<std::string,TH1F*> Event_NumTrueShowers_EnergyCut_HistMap;
-  std::map<std::string,TH1F*> Event_NumTrueShowers_DensityCut_HistMap;
-  std::map<std::string,TH1F*> Event_TrueShowerE_HistMap;
-  std::map<std::string,TH1F*> Event_TrueShowerE_EnergyCut_HistMap;
-  std::map<std::string,TH1F*> Event_TrueShowerE_DensityCut_HistMap;
-
-  std::map<std::string,std::map<geo::PlaneID,TH1F*> > ClusterProjectionMatchedEnergy_HistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH1F*> > ClusterCompletenessEnergy_HistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH1F*> > ClusterPurityEnergy_HistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH1F*> > ClusterCompletenessHits_HistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH1F*> > ClusterPurityHits_HistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH1F*> > ClusterCompPurityEnergy_HistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH1F*> > ClusterCompPurityHits_HistMap;
-
-  std::map<std::string,std::map<geo::PlaneID,TH1F*> > HitCompletenessEnergy_HistMap;
-
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerDirection_X_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerDirection_Y_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerDirection_Z_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerStart_X_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerStart_Y_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerStart_Z_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerLength_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerEnergyDiff_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerdEdx_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_EventSeggy_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerEnergyCompleteness_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerEnergyPurity_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerHitsCompleteness_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerHitsPurity_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerEnergy_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerHitNum_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerTotalEnergyDiff_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerMag_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerDirectionDiff_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerTrueEnergy_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_TrueEnergy_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_TrueHitNum_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_ShowerBestPlane_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_GeoProjectionMatched_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PandoraTrackNum_HistMap;
-
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Tracks_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Showers_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_ProjectionMatched_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_HitsCompleteness_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_EnergyCompleteness_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_HitsPurity_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_EnergyPurity_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Track_ProjectionMatched_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Track_HitsCompleteness_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Track_EnergyCompleteness_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Track_HitsPurity_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Track_EnergyPurity_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Shower_ProjectionMatched_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Shower_HitsCompleteness_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Shower_EnergyCompleteness_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Shower_HitsPurity_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_PFP_Shower_EnergyPurity_HistMap;
-
-  std::map<std::string,std::map<float,TH1F*> > Energies_Event_NumTrueShowers_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_Event_NumTrueShowers_EnergyCut_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_Event_NumTrueShowers_DensityCut_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_Event_TrueShowerE_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_Event_TrueShowerE_EnergyCut_HistMap;
-  std::map<std::string,std::map<float,TH1F*> > Energies_Event_TrueShowerE_DensityCut_HistMap;
-
-  std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > > Energies_ClusterProjectionMatchedEnergy_HistMap;
-  std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > > Energies_ClusterCompletenessEnergy_HistMap;
-  std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > > Energies_ClusterPurityEnergy_HistMap;
-  std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > > Energies_ClusterCompletenessHits_HistMap;
-  std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > > Energies_ClusterPurityHits_HistMap;
-  std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > > Energies_ClusterCompPurityEnergy_HistMap;
-  std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > > Energies_ClusterCompPurityHits_HistMap;
-
-  std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > > Energies_HitCompletenessEnergy_HistMap;
-
-
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerDirection_X_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerDirection_Y_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerDirection_Z_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerStart_X_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerStart_Y_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerStart_Z_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerLength_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerEnergyDiff_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerdEdx_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_EventSeggy_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerEnergyCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerEnergyPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerHitsCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerHitsPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerEnergy_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerHitNum_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerTotalEnergyDiff_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerMag_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerDirectionDiff_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerTrueEnergy_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_TrueEnergy_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_TrueHitNum_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_ShowerBestPlane_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_GeoProjectionMatched_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PandoraTrackNum_GraphMap;
-
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Tracks_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Showers_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_ProjectionMatched_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_HitsCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_EnergyCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_HitsPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_EnergyPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Track_ProjectionMatched_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Track_HitsCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Track_EnergyCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Track_HitsPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Track_EnergyPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Shower_ProjectionMatched_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Shower_HitsCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Shower_EnergyCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Shower_HitsPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_PFP_Shower_EnergyPurity_GraphMap;
-
-  std::map<std::string,TGraphErrors*> Energies_Mean_Event_NumTrueShowers_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_Event_NumTrueShowers_EnergyCut_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_Event_NumTrueShowers_DensityCut_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_Event_TrueShowerE_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_Event_TrueShowerE_EnergyCut_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_Mean_Event_TrueShowerE_DensityCut_GraphMap;
-
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_Mean_ClusterProjectionMatchedEnergy_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_Mean_ClusterCompletenessEnergy_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_Mean_ClusterPurityEnergy_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_Mean_ClusterCompletenessHits_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_Mean_ClusterPurityHits_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_Mean_ClusterCompPurityEnergy_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_Mean_ClusterCompPurityHits_GraphMap;
-
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_Mean_HitCompletenessEnergy_GraphMap;
-
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerDirection_X_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerDirection_Y_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerDirection_Z_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerStart_X_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerStart_Y_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerStart_Z_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerLength_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerEnergyDiff_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerdEdx_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_EventSeggy_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerEnergyCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerEnergyPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerHitsCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerHitsPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerEnergy_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerHitNum_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerTotalEnergyDiff_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerMag_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerDirectionDiff_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerTrueEnergy_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_TrueEnergy_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_TrueHitNum_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_ShowerBestPlane_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_GeoProjectionMatched_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PandoraTrackNum_GraphMap;
-
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Tracks_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Showers_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_ProjectionMatched_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_HitsCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_EnergyCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_HitsPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_EnergyPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Track_ProjectionMatched_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Track_HitsCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Track_EnergyCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Track_HitsPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Track_EnergyPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Shower_ProjectionMatched_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Shower_HitsCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Shower_EnergyCompleteness_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Shower_HitsPurity_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_PFP_Shower_EnergyPurity_GraphMap;
-
-  std::map<std::string,TGraphErrors*> Energies_RMS_Event_NumTrueShowers_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_Event_NumTrueShowers_EnergyCut_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_Event_NumTrueShowers_DensityCut_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_Event_TrueShowerE_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_Event_TrueShowerE_EnergyCut_GraphMap;
-  std::map<std::string,TGraphErrors*> Energies_RMS_Event_TrueShowerE_DensityCut_GraphMap;
-
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_RMS_ClusterProjectionMatchedEnergy_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_RMS_ClusterCompletenessEnergy_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_RMS_ClusterPurityEnergy_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_RMS_ClusterCompletenessHits_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_RMS_ClusterPurityHits_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_RMS_ClusterCompPurityEnergy_GraphMap;
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_RMS_ClusterCompPurityHits_GraphMap;
-
-  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> > Energies_RMS_HitCompletenessEnergy_GraphMap;
-
-
-  TMultiGraph* Energies_Mean_ShowerDirection_X_Multi;
-  TMultiGraph* Energies_Mean_ShowerDirection_Y_Multi;
-  TMultiGraph* Energies_Mean_ShowerDirection_Z_Multi;
-  TMultiGraph* Energies_Mean_ShowerStart_X_Multi;
-  TMultiGraph* Energies_Mean_ShowerStart_Y_Multi;
-  TMultiGraph* Energies_Mean_ShowerStart_Z_Multi;
-  TMultiGraph* Energies_Mean_ShowerLength_Multi;
-  TMultiGraph* Energies_Mean_ShowerEnergyDiff_Multi;
-  TMultiGraph* Energies_Mean_ShowerdEdx_Multi;
-  TMultiGraph* Energies_Mean_EventSeggy_Multi;
-  TMultiGraph* Energies_Mean_ShowerEnergyCompleteness_Multi;
-  TMultiGraph* Energies_Mean_ShowerEnergyPurity_Multi;
-  TMultiGraph* Energies_Mean_ShowerHitsCompleteness_Multi;
-  TMultiGraph* Energies_Mean_ShowerHitsPurity_Multi;
-  TMultiGraph* Energies_Mean_ShowerEnergy_Multi;
-  TMultiGraph* Energies_Mean_ShowerHitNum_Multi;
-  TMultiGraph* Energies_Mean_ShowerTotalEnergyDiff_Multi;
-  TMultiGraph* Energies_Mean_ShowerMag_Multi;
-  TMultiGraph* Energies_Mean_ShowerDirectionDiff_Multi;
-  TMultiGraph* Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi;
-  TMultiGraph* Energies_Mean_ShowerTrueEnergy_Multi;
-  TMultiGraph* Energies_Mean_TrueEnergy_Multi;
-  TMultiGraph* Energies_Mean_TrueHitNum_Multi;
-  TMultiGraph* Energies_Mean_ShowerBestPlane_Multi;
-  TMultiGraph* Energies_Mean_GeoProjectionMatched_Multi;
-  TMultiGraph* Energies_Mean_PandoraTrackNum_Multi;
-
-  TMultiGraph* Energies_Mean_PFP_Tracks_Multi;
-  TMultiGraph* Energies_Mean_PFP_Showers_Multi;
-  TMultiGraph* Energies_Mean_PFP_ProjectionMatched_Multi;
-  TMultiGraph* Energies_Mean_PFP_HitsCompleteness_Multi;
-  TMultiGraph* Energies_Mean_PFP_EnergyCompleteness_Multi;
-  TMultiGraph* Energies_Mean_PFP_HitsPurity_Multi;
-  TMultiGraph* Energies_Mean_PFP_EnergyPurity_Multi;
-  TMultiGraph* Energies_Mean_PFP_Track_ProjectionMatched_Multi;
-  TMultiGraph* Energies_Mean_PFP_Track_HitsCompleteness_Multi;
-  TMultiGraph* Energies_Mean_PFP_Track_EnergyCompleteness_Multi;
-  TMultiGraph* Energies_Mean_PFP_Track_HitsPurity_Multi;
-  TMultiGraph* Energies_Mean_PFP_Track_EnergyPurity_Multi;
-  TMultiGraph* Energies_Mean_PFP_Shower_ProjectionMatched_Multi;
-  TMultiGraph* Energies_Mean_PFP_Shower_HitsCompleteness_Multi;
-  TMultiGraph* Energies_Mean_PFP_Shower_EnergyCompleteness_Multi;
-  TMultiGraph* Energies_Mean_PFP_Shower_HitsPurity_Multi;
-  TMultiGraph* Energies_Mean_PFP_Shower_EnergyPurity_Multi;
-
-  TMultiGraph* Energies_Mean_Event_NumTrueShowers_Multi;
-  TMultiGraph* Energies_Mean_Event_NumTrueShowers_EnergyCut_Multi;
-  TMultiGraph* Energies_Mean_Event_NumTrueShowers_DensityCut_Multi;
-  TMultiGraph* Energies_Mean_Event_TrueShowerE_Multi;
-  TMultiGraph* Energies_Mean_Event_TrueShowerE_EnergyCut_Multi;
-  TMultiGraph* Energies_Mean_Event_TrueShowerE_DensityCut_Multi;
-
-  std::map<geo::PlaneID,TMultiGraph*> Energies_Mean_ClusterProjectionMatchedEnergy_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_Mean_ClusterCompletenessEnergy_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_Mean_ClusterPurityEnergy_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_Mean_ClusterCompletenessHits_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_Mean_ClusterPurityHits_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_Mean_ClusterCompPurityEnergy_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_Mean_ClusterCompPurityHits_Multi;
-
-  std::map<geo::PlaneID,TMultiGraph*> Energies_Mean_HitCompletenessEnergy_Multi;
-
-  TMultiGraph* Energies_RMS_ShowerDirection_X_Multi;
-  TMultiGraph* Energies_RMS_ShowerDirection_Y_Multi;
-  TMultiGraph* Energies_RMS_ShowerDirection_Z_Multi;
-  TMultiGraph* Energies_RMS_ShowerStart_X_Multi;
-  TMultiGraph* Energies_RMS_ShowerStart_Y_Multi;
-  TMultiGraph* Energies_RMS_ShowerStart_Z_Multi;
-  TMultiGraph* Energies_RMS_ShowerLength_Multi;
-  TMultiGraph* Energies_RMS_ShowerEnergyDiff_Multi;
-  TMultiGraph* Energies_RMS_ShowerdEdx_Multi;
-  TMultiGraph* Energies_RMS_EventSeggy_Multi;
-  TMultiGraph* Energies_RMS_ShowerEnergyCompleteness_Multi;
-  TMultiGraph* Energies_RMS_ShowerEnergyPurity_Multi;
-  TMultiGraph* Energies_RMS_ShowerHitsCompleteness_Multi;
-  TMultiGraph* Energies_RMS_ShowerHitsPurity_Multi;
-  TMultiGraph* Energies_RMS_ShowerEnergy_Multi;
-  TMultiGraph* Energies_RMS_ShowerHitNum_Multi;
-  TMultiGraph* Energies_RMS_ShowerTotalEnergyDiff_Multi;
-  TMultiGraph* Energies_RMS_ShowerMag_Multi;
-  TMultiGraph* Energies_RMS_ShowerDirectionDiff_Multi;
-  TMultiGraph* Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi;
-  TMultiGraph* Energies_RMS_ShowerTrueEnergy_Multi;
-  TMultiGraph* Energies_RMS_TrueEnergy_Multi;
-  TMultiGraph* Energies_RMS_TrueHitNum_Multi;
-  TMultiGraph* Energies_RMS_ShowerBestPlane_Multi;
-  TMultiGraph* Energies_RMS_GeoProjectionMatched_Multi;
-  TMultiGraph* Energies_RMS_PandoraTrackNum_Multi;
-
-  TMultiGraph* Energies_RMS_PFP_Tracks_Multi;
-  TMultiGraph* Energies_RMS_PFP_Showers_Multi;
-  TMultiGraph* Energies_RMS_PFP_ProjectionMatched_Multi;
-  TMultiGraph* Energies_RMS_PFP_HitsCompleteness_Multi;
-  TMultiGraph* Energies_RMS_PFP_EnergyCompleteness_Multi;
-  TMultiGraph* Energies_RMS_PFP_HitsPurity_Multi;
-  TMultiGraph* Energies_RMS_PFP_EnergyPurity_Multi;
-  TMultiGraph* Energies_RMS_PFP_Track_ProjectionMatched_Multi;
-  TMultiGraph* Energies_RMS_PFP_Track_HitsCompleteness_Multi;
-  TMultiGraph* Energies_RMS_PFP_Track_EnergyCompleteness_Multi;
-  TMultiGraph* Energies_RMS_PFP_Track_HitsPurity_Multi;
-  TMultiGraph* Energies_RMS_PFP_Track_EnergyPurity_Multi;
-  TMultiGraph* Energies_RMS_PFP_Shower_ProjectionMatched_Multi;
-  TMultiGraph* Energies_RMS_PFP_Shower_HitsCompleteness_Multi;
-  TMultiGraph* Energies_RMS_PFP_Shower_EnergyCompleteness_Multi;
-  TMultiGraph* Energies_RMS_PFP_Shower_HitsPurity_Multi;
-  TMultiGraph* Energies_RMS_PFP_Shower_EnergyPurity_Multi;
-
-
-  TMultiGraph* Energies_RMS_Event_NumTrueShowers_Multi;
-  TMultiGraph* Energies_RMS_Event_NumTrueShowers_EnergyCut_Multi;
-  TMultiGraph* Energies_RMS_Event_NumTrueShowers_DensityCut_Multi;
-  TMultiGraph* Energies_RMS_Event_TrueShowerE_Multi;
-  TMultiGraph* Energies_RMS_Event_TrueShowerE_EnergyCut_Multi;
-  TMultiGraph* Energies_RMS_Event_TrueShowerE_DensityCut_Multi;
-
-  std::map<geo::PlaneID,TMultiGraph*> Energies_RMS_ClusterProjectionMatchedEnergy_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_RMS_ClusterCompletenessEnergy_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_RMS_ClusterPurityEnergy_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_RMS_ClusterCompletenessHits_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_RMS_ClusterPurityHits_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_RMS_ClusterCompPurityEnergy_Multi;
-  std::map<geo::PlaneID,TMultiGraph*> Energies_RMS_ClusterCompPurityHits_Multi;
-
-  std::map<geo::PlaneID,TMultiGraph*> Energies_RMS_HitCompletenessEnergy_Multi;
-
-  TCanvas* Energies_Mean_ShowerDirection_X_canvasMulti;
-  TCanvas* Energies_Mean_ShowerDirection_Y_canvasMulti;
-  TCanvas* Energies_Mean_ShowerDirection_Z_canvasMulti;
-  TCanvas* Energies_Mean_ShowerStart_X_canvasMulti;
-  TCanvas* Energies_Mean_ShowerStart_Y_canvasMulti;
-  TCanvas* Energies_Mean_ShowerStart_Z_canvasMulti;
-  TCanvas* Energies_Mean_ShowerLength_canvasMulti;
-  TCanvas* Energies_Mean_ShowerEnergyDiff_canvasMulti;
-  TCanvas* Energies_Mean_ShowerTotalEnergyDiff_canvasMulti;
-  TCanvas* Energies_Mean_ShowerdEdx_canvasMulti;
-  TCanvas* Energies_Mean_EventSeggy_canvasMulti;
-  TCanvas* Energies_Mean_ShowerEnergyCompleteness_canvasMulti;
-  TCanvas* Energies_Mean_ShowerEnergyPurity_canvasMulti;
-  TCanvas* Energies_Mean_ShowerHitsCompleteness_canvasMulti;
-  TCanvas* Energies_Mean_ShowerHitsPurity_canvasMulti;
-  TCanvas* Energies_Mean_ShowerEnergy_canvasMulti;
-  TCanvas* Energies_Mean_ShowerHitNum_canvasMulti;
-  TCanvas* Energies_Mean_ShowerDirectionDiff_canvasMulti;
-  TCanvas* Energies_Mean_ShowerMag_canvasMulti;
-  TCanvas* Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti;
-  TCanvas* Energies_Mean_ShowerTrueEnergy_canvasMulti;
-  TCanvas* Energies_Mean_TrueEnergy_canvasMulti;
-  TCanvas* Energies_Mean_TrueHitNum_canvasMulti;
-  TCanvas* Energies_Mean_ShowerBestPlane_canvasMulti;
-  TCanvas* Energies_Mean_GeoProjectionMatched_canvasMulti;
-  TCanvas* Energies_Mean_PandoraTrackNum_canvasMulti;
-
-  TCanvas* Energies_Mean_PFP_Tracks_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Showers_canvasMulti;
-  TCanvas* Energies_Mean_PFP_ProjectionMatched_canvasMulti;
-  TCanvas* Energies_Mean_PFP_HitsCompleteness_canvasMulti;
-  TCanvas* Energies_Mean_PFP_EnergyCompleteness_canvasMulti;
-  TCanvas* Energies_Mean_PFP_HitsPurity_canvasMulti;
-  TCanvas* Energies_Mean_PFP_EnergyPurity_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Track_ProjectionMatched_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Track_HitsCompleteness_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Track_EnergyCompleteness_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Track_HitsPurity_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Track_EnergyPurity_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Shower_ProjectionMatched_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Shower_HitsCompleteness_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Shower_EnergyCompleteness_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Shower_HitsPurity_canvasMulti;
-  TCanvas* Energies_Mean_PFP_Shower_EnergyPurity_canvasMulti;
-
-  TCanvas* Energies_Mean_Event_NumTrueShowers_canvasMulti;
-  TCanvas* Energies_Mean_Event_NumTrueShowers_EnergyCut_canvasMulti;
-  TCanvas* Energies_Mean_Event_NumTrueShowers_DensityCut_canvasMulti;
-  TCanvas* Energies_Mean_Event_TrueShowerE_canvasMulti;
-  TCanvas* Energies_Mean_Event_TrueShowerE_EnergyCut_canvasMulti;
-  TCanvas* Energies_Mean_Event_TrueShowerE_DensityCut_canvasMulti;
-
-  std::map<geo::PlaneID,TCanvas*> Energies_Mean_ClusterProjectionMatchedEnergy_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_Mean_ClusterCompletenessEnergy_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_Mean_ClusterPurityEnergy_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_Mean_ClusterCompletenessHits_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_Mean_ClusterPurityHits_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_Mean_ClusterCompPurityEnergy_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_Mean_ClusterCompPurityHits_canvasMulti;
-
-  std::map<geo::PlaneID,TCanvas*> Energies_Mean_HitCompletenessEnergy_canvasMulti;
-
-  TCanvas* Energies_RMS_ShowerDirection_X_canvasMulti;
-  TCanvas* Energies_RMS_ShowerDirection_Y_canvasMulti;
-  TCanvas* Energies_RMS_ShowerDirection_Z_canvasMulti;
-  TCanvas* Energies_RMS_ShowerStart_X_canvasMulti;
-  TCanvas* Energies_RMS_ShowerStart_Y_canvasMulti;
-  TCanvas* Energies_RMS_ShowerStart_Z_canvasMulti;
-  TCanvas* Energies_RMS_ShowerLength_canvasMulti;
-  TCanvas* Energies_RMS_ShowerEnergyDiff_canvasMulti;
-  TCanvas* Energies_RMS_ShowerTotalEnergyDiff_canvasMulti;
-  TCanvas* Energies_RMS_ShowerdEdx_canvasMulti;
-  TCanvas* Energies_RMS_EventSeggy_canvasMulti;
-  TCanvas* Energies_RMS_ShowerEnergyCompleteness_canvasMulti;
-  TCanvas* Energies_RMS_ShowerEnergyPurity_canvasMulti;
-  TCanvas* Energies_RMS_ShowerHitsCompleteness_canvasMulti;
-  TCanvas* Energies_RMS_ShowerHitsPurity_canvasMulti;
-  TCanvas* Energies_RMS_ShowerEnergy_canvasMulti;
-  TCanvas* Energies_RMS_ShowerHitNum_canvasMulti;
-  TCanvas* Energies_RMS_ShowerDirectionDiff_canvasMulti;
-  TCanvas* Energies_RMS_ShowerMag_canvasMulti;
-  TCanvas* Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti;
-  TCanvas* Energies_RMS_ShowerTrueEnergy_canvasMulti;
-  TCanvas* Energies_RMS_TrueEnergy_canvasMulti;
-  TCanvas* Energies_RMS_TrueHitNum_canvasMulti;
-  TCanvas* Energies_RMS_ShowerBestPlane_canvasMulti;
-  TCanvas* Energies_RMS_GeoProjectionMatched_canvasMulti;
-  TCanvas* Energies_RMS_PandoraTrackNum_canvasMulti;
-
-  TCanvas* Energies_RMS_PFP_Tracks_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Showers_canvasMulti;
-  TCanvas* Energies_RMS_PFP_ProjectionMatched_canvasMulti;
-  TCanvas* Energies_RMS_PFP_HitsCompleteness_canvasMulti;
-  TCanvas* Energies_RMS_PFP_EnergyCompleteness_canvasMulti;
-  TCanvas* Energies_RMS_PFP_HitsPurity_canvasMulti;
-  TCanvas* Energies_RMS_PFP_EnergyPurity_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Track_ProjectionMatched_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Track_HitsCompleteness_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Track_EnergyCompleteness_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Track_HitsPurity_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Track_EnergyPurity_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Shower_ProjectionMatched_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Shower_HitsCompleteness_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Shower_EnergyCompleteness_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Shower_HitsPurity_canvasMulti;
-  TCanvas* Energies_RMS_PFP_Shower_EnergyPurity_canvasMulti;
-
-  TCanvas* Energies_RMS_Event_NumTrueShowers_canvasMulti;
-  TCanvas* Energies_RMS_Event_NumTrueShowers_EnergyCut_canvasMulti;
-  TCanvas* Energies_RMS_Event_NumTrueShowers_DensityCut_canvasMulti;
-  TCanvas* Energies_RMS_Event_TrueShowerE_canvasMulti;
-  TCanvas* Energies_RMS_Event_TrueShowerE_EnergyCut_canvasMulti;
-  TCanvas* Energies_RMS_Event_TrueShowerE_DensityCut_canvasMulti;
-
-  std::map<geo::PlaneID,TCanvas*> Energies_RMS_ClusterProjectionMatchedEnergy_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_RMS_ClusterCompletenessEnergy_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_RMS_ClusterPurityEnergy_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_RMS_ClusterCompletenessHits_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_RMS_ClusterPurityHits_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_RMS_ClusterCompPurityEnergy_canvasMulti;
-  std::map<geo::PlaneID,TCanvas*> Energies_RMS_ClusterCompPurityHits_canvasMulti;
-
-  std::map<geo::PlaneID,TCanvas*> Energies_RMS_HitCompletenessEnergy_canvasMulti;
-
-
-  TCanvas* ShowerDirection_X_canvas;
-  TCanvas* ShowerDirection_Y_canvas;
-  TCanvas* ShowerDirection_Z_canvas;
-  TCanvas* ShowerStart_X_canvas;
-  TCanvas* ShowerStart_Y_canvas;
-  TCanvas* ShowerStart_Z_canvas;
-  TCanvas* ShowerLength_canvas;
-  TCanvas* ShowerEnergyDiff_canvas;
-  TCanvas* ShowerTotalEnergyDiff_canvas;
-  TCanvas* ShowerdEdx_canvas;
-  TCanvas* EventSeggy_canvas;
-  TCanvas* ShowerEnergyCompleteness_canvas;
-  TCanvas* ShowerEnergyPurity_canvas;
-  TCanvas* ShowerHitsCompleteness_canvas;
-  TCanvas* ShowerHitsPurity_canvas;
-  TCanvas* ShowerEnergy_canvas;
-  TCanvas* ShowerHitNum_canvas;
-  TCanvas* ShowerDirectionDiff_canvas;
-  TCanvas* ShowerMag_canvas;
-  TCanvas* ShowerRecoEnergyVsTrueEnergyinRecoShower_canvas;
-  TCanvas* ShowerTrueEnergy_canvas;
-  TCanvas* TrueEnergy_canvas;
-  TCanvas* TrueHitNum_canvas;
-  TCanvas* ShowerBestPlane_canvas;
-  TCanvas* GeoProjectionMatched_canvas;
-  TCanvas* PandoraTrackNum_canvas;
-
-  TCanvas* PFP_Tracks_canvas;
-  TCanvas* PFP_Showers_canvas;
-  TCanvas* PFP_ProjectionMatched_canvas;
-  TCanvas* PFP_HitsCompleteness_canvas;
-  TCanvas* PFP_EnergyCompleteness_canvas;
-  TCanvas* PFP_HitsPurity_canvas;
-  TCanvas* PFP_EnergyPurity_canvas;
-  TCanvas* PFP_Track_ProjectionMatched_canvas;
-  TCanvas* PFP_Track_HitsCompleteness_canvas;
-  TCanvas* PFP_Track_EnergyCompleteness_canvas;
-  TCanvas* PFP_Track_HitsPurity_canvas;
-  TCanvas* PFP_Track_EnergyPurity_canvas;
-  TCanvas* PFP_Shower_ProjectionMatched_canvas;
-  TCanvas* PFP_Shower_HitsCompleteness_canvas;
-  TCanvas* PFP_Shower_EnergyCompleteness_canvas;
-  TCanvas* PFP_Shower_HitsPurity_canvas;
-  TCanvas* PFP_Shower_EnergyPurity_canvas;
-
-  TCanvas* Event_NumTrueShowers_canvas;
-  TCanvas* Event_NumTrueShowers_EnergyCut_canvas;
-  TCanvas* Event_NumTrueShowers_DensityCut_canvas;
-  TCanvas* Event_TrueShowerE_canvas;
-  TCanvas* Event_TrueShowerE_EnergyCut_canvas;
-  TCanvas* Event_TrueShowerE_DensityCut_canvas;
-
-  std::map<geo::PlaneID,TCanvas*> ClusterProjectionMatchedEnergy_canvas;
-  std::map<geo::PlaneID,TCanvas*> ClusterCompletenessEnergy_canvas;
-  std::map<geo::PlaneID,TCanvas*> ClusterPurityEnergy_canvas;
-  std::map<geo::PlaneID,TCanvas*> ClusterCompletenessHits_canvas;
-  std::map<geo::PlaneID,TCanvas*> ClusterPurityHits_canvas;
-  std::map<geo::PlaneID,TCanvas*> ClusterCompPurityEnergy_canvas;
-  std::map<geo::PlaneID,TCanvas*> ClusterCompPurityHits_canvas;
-
-  std::map<geo::PlaneID,TCanvas*> HitCompletenessEnergy_canvas;
-
-  std::map<float,TCanvas*> Energies_ShowerDirection_X_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerDirection_Y_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerDirection_Z_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerStart_X_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerStart_Y_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerStart_Z_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerLength_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerEnergyDiff_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerTotalEnergyDiff_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerdEdx_canvasMap;
-  std::map<float,TCanvas*> Energies_EventSeggy_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerEnergyCompleteness_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerHitsPurity_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerHitsCompleteness_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerEnergyPurity_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerEnergy_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerHitNum_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerDirectionDiff_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerMag_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerTrueEnergy_canvasMap;
-  std::map<float,TCanvas*> Energies_TrueEnergy_canvasMap;
-  std::map<float,TCanvas*> Energies_TrueHitNum_canvasMap;
-  std::map<float,TCanvas*> Energies_ShowerBestPlane_canvasMap;
-  std::map<float,TCanvas*> Energies_GeoProjectionMatched_canvasMap;
-  std::map<float,TCanvas*> Energies_PandoraTrackNum_canvasMap;
-
-  std::map<float,TCanvas*> Energies_PFP_Tracks_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Showers_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_ProjectionMatched_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_HitsCompleteness_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_EnergyCompleteness_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_HitsPurity_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_EnergyPurity_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Track_ProjectionMatched_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Track_HitsCompleteness_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Track_EnergyCompleteness_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Track_HitsPurity_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Track_EnergyPurity_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Shower_ProjectionMatched_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Shower_HitsCompleteness_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Shower_EnergyCompleteness_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Shower_HitsPurity_canvasMap;
-  std::map<float,TCanvas*> Energies_PFP_Shower_EnergyPurity_canvasMap;
-
-  std::map<float,TCanvas*> Energies_Event_NumTrueShowers_canvasMap;
-  std::map<float,TCanvas*> Energies_Event_NumTrueShowers_EnergyCut_canvasMap;
-  std::map<float,TCanvas*> Energies_Event_NumTrueShowers_DensityCut_canvasMap;
-  std::map<float,TCanvas*> Energies_Event_TrueShowerE_canvasMap;
-  std::map<float,TCanvas*> Energies_Event_TrueShowerE_EnergyCut_canvasMap;
-  std::map<float,TCanvas*> Energies_Event_TrueShowerE_DensityCut_canvasMap;
-
-  std::map<float,std::map<geo::PlaneID,TCanvas*> > Energies_ClusterProjectionMatchedEnergy_canvasMap;
-  std::map<float,std::map<geo::PlaneID,TCanvas*> > Energies_ClusterCompletenessEnergy_canvasMap;
-  std::map<float,std::map<geo::PlaneID,TCanvas*> > Energies_ClusterPurityEnergy_canvasMap;
-  std::map<float,std::map<geo::PlaneID,TCanvas*> > Energies_ClusterCompletenessHits_canvasMap;
-  std::map<float,std::map<geo::PlaneID,TCanvas*> > Energies_ClusterPurityHits_canvasMap;
-  std::map<float,std::map<geo::PlaneID,TCanvas*> > Energies_ClusterCompPurityEnergy_canvasMap;
-  std::map<float,std::map<geo::PlaneID,TCanvas*> > Energies_ClusterCompPurityHits_canvasMap;
-
-  std::map<float,std::map<geo::PlaneID,TCanvas*> > Energies_HitCompletenessEnergy_canvasMap;
-
-
-  std::map<std::string,TH2F*> ShowerDirection_X_2dHistMap;
-  std::map<std::string,TH2F*> ShowerDirection_Y_2dHistMap;
-  std::map<std::string,TH2F*> ShowerDirection_Z_2dHistMap;
-  std::map<std::string,TH2F*> ShowerStart_X_2dHistMap;
-  std::map<std::string,TH2F*> ShowerStart_Y_2dHistMap;
-  std::map<std::string,TH2F*> ShowerStart_Z_2dHistMap;
-  std::map<std::string,TH2F*> ShowerLength_2dHistMap;
-  std::map<std::string,TH2F*> ShowerEnergyDiff_2dHistMap;
-  std::map<std::string,TH2F*> ShowerdEdx_2dHistMap;
-  std::map<std::string,TH2F*> EventSeggy_2dHistMap;
-  std::map<std::string,TH2F*> ShowerEnergyCompleteness_2dHistMap;
-  std::map<std::string,TH2F*> ShowerEnergyPurity_2dHistMap;
-  std::map<std::string,TH2F*> ShowerHitsCompleteness_2dHistMap;
-  std::map<std::string,TH2F*> ShowerHitsPurity_2dHistMap;
-  std::map<std::string,TH2F*> ShowerEnergy_2dHistMap;
-  std::map<std::string,TH2F*> ShowerHitNum_2dHistMap;
-  std::map<std::string,TH2F*> ShowerTotalEnergyDiff_2dHistMap;
-  std::map<std::string,TH2F*> ShowerMag_2dHistMap;
-  std::map<std::string,TH2F*> ShowerDirectionDiff_2dHistMap;
-  std::map<std::string,TH2F*> ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap;
-  std::map<std::string,TH2F*> ShowerTrueEnergy_2dHistMap;
-  std::map<std::string,TH2F*> TrueEnergy_2dHistMap;
-  std::map<std::string,TH2F*> TrueHitNum_2dHistMap;
-  std::map<std::string,TH2F*> ShowerBestPlane_2dHistMap;
-  std::map<std::string,TH2F*> GeoProjectionMatched_2dHistMap;
-  std::map<std::string,TH2F*> PandoraTrackNum_2dHistMap;
-
-  std::map<std::string,TH2F*> PFP_Tracks_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Showers_2dHistMap;
-  std::map<std::string,TH2F*> PFP_ProjectionMatched_2dHistMap;
-  std::map<std::string,TH2F*> PFP_HitsCompleteness_2dHistMap;
-  std::map<std::string,TH2F*> PFP_EnergyCompleteness_2dHistMap;
-  std::map<std::string,TH2F*> PFP_HitsPurity_2dHistMap;
-  std::map<std::string,TH2F*> PFP_EnergyPurity_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Track_ProjectionMatched_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Track_HitsCompleteness_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Track_EnergyCompleteness_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Track_HitsPurity_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Track_EnergyPurity_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Shower_ProjectionMatched_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Shower_HitsCompleteness_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Shower_EnergyCompleteness_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Shower_HitsPurity_2dHistMap;
-  std::map<std::string,TH2F*> PFP_Shower_EnergyPurity_2dHistMap;
-
-  std::map<std::string,TH2F*> Event_NumTrueShowers_2dHistMap;
-  std::map<std::string,TH2F*> Event_NumTrueShowers_EnergyCut_2dHistMap;
-  std::map<std::string,TH2F*> Event_NumTrueShowers_DensityCut_2dHistMap;
-  std::map<std::string,TH2F*> Event_TrueShowerE_2dHistMap;
-  std::map<std::string,TH2F*> Event_TrueShowerE_EnergyCut_2dHistMap;
-  std::map<std::string,TH2F*> Event_TrueShowerE_DensityCut_2dHistMap;
-
-  std::map<std::string,std::map<geo::PlaneID,TH2F*> > ClusterProjectionMatchedEnergy_2dHistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH2F*> > ClusterCompletenessEnergy_2dHistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH2F*> > ClusterPurityEnergy_2dHistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH2F*> > ClusterCompletenessHits_2dHistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH2F*> > ClusterPurityHits_2dHistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH2F*> > ClusterCompPurityEnergy_2dHistMap;
-  std::map<std::string,std::map<geo::PlaneID,TH2F*> > ClusterCompPurityHits_2dHistMap;
-
-  std::map<std::string,std::map<geo::PlaneID,TH2F*> > HitCompletenessEnergy_2dHistMap;
-
-  std::map<std::string,TCanvas*> ShowerDirection_X_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerDirection_Y_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerDirection_Z_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerStart_X_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerStart_Y_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerStart_Z_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerLength_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerEnergyDiff_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerdEdx_2dCanvasMap;
-  std::map<std::string,TCanvas*> EventSeggy_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerEnergyCompleteness_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerHitsPurity_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerHitsCompleteness_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerEnergyPurity_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerEnergy_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerHitNum_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerTotalEnergyDiff_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerMag_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerDirectionDiff_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerRecoEnergyVsTrueEnergyinRecoShower_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerTrueEnergy_2dCanvasMap;
-  std::map<std::string,TCanvas*> TrueEnergy_2dCanvasMap;
-  std::map<std::string,TCanvas*> TrueHitNum_2dCanvasMap;
-  std::map<std::string,TCanvas*> ShowerBestPlane_2dCanvasMap;
-  std::map<std::string,TCanvas*> GeoProjectionMatched_2dCanvasMap;
-  std::map<std::string,TCanvas*> PandoraTrackNum_2dCanvasMap;
-
-  std::map<std::string,TCanvas*> PFP_Tracks_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Showers_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_ProjectionMatched_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_HitsCompleteness_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_EnergyCompleteness_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_HitsPurity_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_EnergyPurity_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Track_ProjectionMatched_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Track_HitsCompleteness_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Track_EnergyCompleteness_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Track_HitsPurity_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Track_EnergyPurity_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Shower_ProjectionMatched_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Shower_HitsCompleteness_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Shower_EnergyCompleteness_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Shower_HitsPurity_2dCanvasMap;
-  std::map<std::string,TCanvas*> PFP_Shower_EnergyPurity_2dCanvasMap;
-
-  std::map<std::string,TCanvas*> Event_NumTrueShowers_2dCanvasMap;
-  std::map<std::string,TCanvas*> Event_NumTrueShowers_EnergyCut_2dCanvasMap;
-  std::map<std::string,TCanvas*> Event_NumTrueShowers_DensityCut_2dCanvasMap;
-  std::map<std::string,TCanvas*> Event_TrueShowerE_2dCanvasMap;
-  std::map<std::string,TCanvas*> Event_TrueShowerE_EnergyCut_2dCanvasMap;
-  std::map<std::string,TCanvas*> Event_TrueShowerE_DensityCut_2dCanvasMap;
-
-  std::map<std::string,TCanvas*> PosDir_2dCanvasMap;
-  std::map<std::string,TH2F*>    PosDir_2dHistMap;
-
-  std::map<std::string,std::map<geo::PlaneID,TCanvas*> > ClusterProjectionMatchedEnergy_2dCanvasMap;
-  std::map<std::string,std::map<geo::PlaneID,TCanvas*> > ClusterCompletenessEnergy_2dCanvasMap;
-  std::map<std::string,std::map<geo::PlaneID,TCanvas*> > ClusterPurityEnergy_2dCanvasMap;
-  std::map<std::string,std::map<geo::PlaneID,TCanvas*> > ClusterCompletenessHits_2dCanvasMap;
-  std::map<std::string,std::map<geo::PlaneID,TCanvas*> > ClusterPurityHits_2dCanvasMap;
-  std::map<std::string,std::map<geo::PlaneID,TCanvas*> > ClusterCompPurityEnergy_2dCanvasMap;
-  std::map<std::string,std::map<geo::PlaneID,TCanvas*> > ClusterCompPurityHits_2dCanvasMap;
-
-  std::map<std::string,std::map<geo::PlaneID,TCanvas*> > HitCompletenessEnergy_2dCanvasMap;
 
   std::map<std::string,std::vector<float> > ShowerDirection_X_TreeVal;
   std::map<std::string,std::vector<float> > ShowerDirection_Y_TreeVal;
@@ -1028,10 +187,6 @@ private:
   std::map<std::string,std::vector<float> > Event_TrueShowerE_EnergyCut_TreeVal;
   std::map<std::string,std::vector<float> > Event_TrueShowerE_DensityCut_TreeVal;
   std::map<std::string,std::vector<float> > PosDir_TreeVal;
-  std::map<std::string,std::vector<std::string> > ShowerStartEndProcess_TreeVal;
-
-  //      fShowerModule RecoShower   NClusters         Plane  Value
-  //  std::map<std::string,std::vector<std::vector<std::pair<int,float> > > >
 
   std::map<std::string,std::vector<std::vector<std::vector<float> > > >  ClusterProjectionMatchedEnergy_TreeVal;
   std::map<std::string,std::vector<std::vector<std::vector<float> > > >  ClusterCompletenessEnergy_TreeVal;
@@ -1042,28 +197,12 @@ private:
   std::map<std::string,std::vector<std::vector<std::vector<float> > > >  ClusterCompPurityHits_TreeVal;
 
   std::map<std::string,std::vector<std::vector<float> > > HitCompletenessEnergy_TreeVal;
+  std::map<std::string,std::vector<std::string> > ShowerStartEndProcess_TreeVal;
 
 
-  TH1F* BiggestShowerMotherE_AfterCutHist;
-  TH1F* BiggestShowerMotherE_BeforeCutHist;
-  TH1F* AsscoiatedBiggestShowerMotherEHist;
-  TCanvas* BiggestShowerMotherE_AfterCutCanvas;
-  TCanvas* BiggestShowerMotherE_BeforeCutCanvas;
-  TCanvas* AsscoiatedBiggestShowerMotherECanvas;
-
-  TH1* SmallestShowerMotherE_AfterCutHist;
-  TH1* SmallestShowerMotherE_BeforeCutHist;
-  TH1* AsscoiatedSmallestShowerMotherEHist;
-  TCanvas* SmallestShowerMotherE_AfterCutCanvas;
-  TCanvas* SmallestShowerMotherE_BeforeCutCanvas;
-  TCanvas* AsscoiatedSmallestShowerMotherECanvas;
-
-  std::vector<float> SmallestShowerMotherE_BeforeCut_TreeVal;
-  std::vector<float> BiggestShowerMotherE_BeforeCut_TreeVal;
-  std::vector<float> SmallestShowerMotherE_AfterCut_TreeVal;
-  std::vector<float> BiggestShowerMotherE_AfterCut_TreeVal;
-
-  std::vector<float> EventNum_name_TreeVal;
+  float EventRun_TreeVal;
+  float EventSubrun_TreeVal;
+  float EventNumber_TreeVal;
 
   //TTree
   TTree* Tree;
@@ -1082,8 +221,6 @@ private:
   int numshoowerspassenergy;
   int numrecoshowers; 
   int numrecoshowersana;
-
-
 
 };
 
@@ -1110,385 +247,23 @@ ana::ShowerValidation::ShowerValidation(const fhicl::ParameterSet& pset) : EDAna
   fMaxSimEnergy                = pset.get<float>("MaxSimEnergy");
 }
 
-//This is bad. try and think of a better way.
-void ana::ShowerValidation::InitialiseGraphs(std::string Name, std::string TitleName,std::map<std::string,TH1F*>& Name_HistMap,
-					     std::map<std::string,std::map<float,TH1F*> >& Energies_Name_HistMap,
-					     std::map<std::string,TGraphErrors*>& Energies_Mean_Name_GraphMap,
-					     std::map<std::string,TGraphErrors*>& Energies_RMS_Name_GraphMap,
-					     TMultiGraph*& Energies_Mean_Name_Multi,
-					     TMultiGraph*& Energies_RMS_Name_Multi,
-					     TCanvas*& Energies_Mean_Name_canvasMulti,
-					     TCanvas*& Energies_RMS_Name_canvasMulti,
-					     std::map<float,TCanvas*>& Energies_Name_canvasMap,
-					     TCanvas* & Name_canvas,
-					     std::map<std::string,TH2F*>& Name_2dHistMap,
-					     std::map<std::string,TCanvas*>& Name_2dCanvasMap,
-					     int x_numbins, float x_start, float x_end,
-					     int y_numbins, float y_start, float y_end,
-					     std::map<std::string,std::vector<float> >& MetricVector){
-
-  gStyle->SetOptStat(0);
-
-  //Create The histogram canvas for Each Energy.
-
-  for(unsigned int i=0; i<fEnergies.size(); ++i){
-    std::string Energies_string = Name + std::to_string(fEnergies[i]);
-    std::string Energies_titlestring = ";" + TitleName + ";Enteries";
-    const char* Energies_name   = Energies_string.c_str();
-    const char* Energies_titlename   = Energies_titlestring.c_str();;
-    Energies_Name_canvasMap[fEnergies[i]] = tfs->makeAndRegister<TCanvas>(Energies_name,Energies_titlename);
-  }
-
+void ana::ShowerValidation::initTree(TTree* Tree, std::string branchName, std::map<std::string,std::vector<float> >& Metric,   std::vector<std::string> fShowerModuleLabels){
   for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-
-    //Create the Tree Branch
-    std::string Tree_string = Name + "_" + fShowerModuleLabels[j];
-    const char* Tree_name   = Tree_string.c_str();
-    Tree->Branch(Tree_name,"std::vector<float>", &MetricVector[fShowerModuleLabels[j]], 32000, 0);
-
-    //Create the Hitogram which has all the energies in
-    std::string Name_string      = Name + fShowerModuleLabels[j];
-    std::string Name_titlestring = fShowerModuleLabels[j] + ";" + TitleName + ";Enteries";
-    const char* Name_titlename   = Name_titlestring.c_str();
-    const char* Name_name     =  Name_string.c_str();
-    Name_HistMap[fShowerModuleLabels[j]]  = tfs->make<TH1F>(Name_name, Name_titlename,x_numbins,x_start,x_end);
-
-    //Create the 2D Histogram of Energy and value
-    std::string Name_2d_string      = Name + "_2d_" + fShowerModuleLabels[j];
-    std::string Name_2d_titlestring = ";" + TitleName + ";Energy (MeV);Enteries";
-    const char* Name_2d_titlename   = Name_2d_titlestring.c_str();
-    const char* Name_2d_name     =  Name_2d_string.c_str();
-    Name_2dHistMap[fShowerModuleLabels[j]]  = tfs->make<TH2F>(Name_2d_name, Name_2d_titlename,x_numbins,x_start,x_end,y_numbins,y_start,y_end);
-
-    //Create the 2D Histogram of Energy and value
-
-    std::string Name_2d_canvas_string      = Name + "_2d_canvas_" + fShowerModuleLabels[j];
-    std::string Name_2d_canvas_titlestring = ";" + TitleName + ";Energy (MeV);Enteries";
-    const char* Name_2d_canvas_titlename   = Name_2d_canvas_titlestring.c_str();
-    const char* Name_2d_canvas_name     =  Name_2d_canvas_string.c_str();
-    Name_2dCanvasMap[fShowerModuleLabels[j]]  = tfs->makeAndRegister<TCanvas>(Name_2d_canvas_name, Name_2d_canvas_titlename);
-
-
-    for(unsigned int i=0; i<fEnergies.size(); ++i){
-
-      //Create the Histogram maps name and string for the different energies.
-      std::string Energies_Name_string = Name + fShowerModuleLabels[j] + " at Energy" + std::to_string(fEnergies[i]) + " (MeV)";
-      std::string Energies_Name_titlestring  =  fShowerModuleLabels[j] +  ";" + TitleName + ";Enteries";
-      const char* Energies_Name_titlename    = Energies_Name_titlestring.c_str();
-      const char* Energies_Name_name         = Energies_Name_string.c_str();
-      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]   = tfs->make<TH1F>(Energies_Name_name, Energies_Name_titlename, x_numbins, x_start, x_end);
-    }
-
-
-    //Create the Independent TGraphs for the Metric vs Energy graphs
-    std::string meangrapherror_string      = Name + fShowerModuleLabels[j] + "_meangrapherror";
-    std::string meangrapherror_titlestring = fShowerModuleLabels[j];//+ ";Energy (Mev);" + TitleName;
-    const char* meangrapherror_name        = meangrapherror_string.c_str();
-    const char* meangrapherror_titlename   = meangrapherror_titlestring.c_str();
-    Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]] = tfs->makeAndRegister<TGraphErrors>(meangrapherror_name,meangrapherror_titlename);
-
-    //Create the Independent TGraphs for the Metric vs Energy graphs
-    std::string rmsgrapherror_string      = Name + fShowerModuleLabels[j] + "_rmsgrapherror";
-    std::string rmsgrapherror_titlestring =  fShowerModuleLabels[j];//+ ";Energy (Mev);" + TitleName;
-    const char* rmsgrapherror_name        = rmsgrapherror_string.c_str();
-    const char* rmsgrapherror_titlename   = rmsgrapherror_titlestring.c_str();
-
-    Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]] = tfs->makeAndRegister<TGraphErrors>(rmsgrapherror_name,rmsgrapherror_titlename);
-  }
-
-  //Canvas for all energy histogram
-  std::string canvas_string      = Name + "_canvas";
-  std::string canvas_titlestring = ";" + TitleName + ";Enteries";
-  const char* canvas_name        = canvas_string.c_str();
-  const char* canvas_titlename   = canvas_titlestring.c_str();
-  Name_canvas                    = tfs->makeAndRegister<TCanvas>(canvas_name,canvas_titlename);
-
-
-  //MultiGraph for Energy vs Mean metric
-  std::string meanmulti_string      = Name + "_meanmulti";
-  std::string meanmulti_titlestring = ";Energy (Mev);" + TitleName;
-  const char* meanmulti_name        = meanmulti_string.c_str();
-  const char* meanmulti_titlename   = meanmulti_titlestring.c_str();
-  Energies_Mean_Name_Multi          = tfs->makeAndRegister<TMultiGraph>(meanmulti_name,meanmulti_titlename);
-
-  //MultiGraph for Energy vs RMS metric
-  std::string rmsmulti_string      = Name + "_rmsmulti";
-  std::string rmsmulti_titlestring = ";Energy (Mev);" + TitleName;
-  const char* rmsmulti_name        = rmsmulti_string.c_str();
-  const char* rmsmulti_titlename   = rmsmulti_titlestring.c_str();
-  Energies_RMS_Name_Multi          = tfs->makeAndRegister<TMultiGraph>(rmsmulti_name,rmsmulti_titlename);
-
-  //Canvas for MultiGraph for Energy vs Mean metric
-  std::string meancanvasmulti_string      = Name + "_meancanvasmulti";
-  std::string meancanvasmulti_titlestring = ";Energy (Mev);" + TitleName;
-  const char* meancanvasmulti_name        = meancanvasmulti_string.c_str();
-  const char* meancanvasmulti_titlename   = meancanvasmulti_titlestring.c_str();
-  Energies_Mean_Name_canvasMulti          = tfs->makeAndRegister<TCanvas>(meancanvasmulti_name,meancanvasmulti_titlename);
-
-  //Canvasmulti for MultiGraph for Energy vs RMS metric
-  std::string rmscanvasmulti_string      = Name + "_rmscanvasmulti";
-  std::string rmscanvasmulti_titlestring = ";Energy (Mev);" + TitleName;
-  const char* rmscanvasmulti_name        = rmscanvasmulti_string.c_str();
-  const char* rmscanvasmulti_titlename   = rmscanvasmulti_titlestring.c_str();
-  Energies_RMS_Name_canvasMulti          = tfs->makeAndRegister<TCanvas>(rmscanvasmulti_name,rmscanvasmulti_titlename);
-}
-
-void ana::ShowerValidation::InitialiseGraphs(std::string Name, std::string TitleName,
-					     std::map<std::string,std::map<geo::PlaneID,TH1F*> >& Name_HistMap,
-					     std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > >& Energies_Name_HistMap,
-					     std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_Mean_Name_GraphMap,
-					     std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_RMS_Name_GraphMap,
-					     std::map<geo::PlaneID,TMultiGraph*>& Energies_Mean_Name_Multi,
-					     std::map<geo::PlaneID,TMultiGraph*>& Energies_RMS_Name_Multi,
-					     std::map<geo::PlaneID,TCanvas*>& Energies_Mean_Name_canvasMulti,
-					     std::map<geo::PlaneID,TCanvas*>& Energies_RMS_Name_canvasMulti,
-					     std::map<float,std::map<geo::PlaneID,TCanvas*> >& Energies_Name_canvasMap,
-					     std::map<geo::PlaneID,TCanvas*>& Name_canvas,
-					     std::map<std::string,std::map<geo::PlaneID,TH2F*> >& Name_2dHistMap,
-					     std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap,
-					     int x_numbins, float x_start, float x_end,
-					     int y_numbins, float y_start, float y_end,
-					     std::map<std::string,std::vector<std::vector<std::vector<float> > > >& MetricVector
-					     ){
-
-  gStyle->SetOptStat(0);
-
-  for(geo::PlaneID plane_id: geom->IteratePlaneIDs()){
-
-    std::string Plane_string = " Plane ID: P" + std::to_string(plane_id.Plane) + " T" + std::to_string(plane_id.TPC) + " C" + std::to_string(plane_id.Cryostat);
-
-    //Create The histogram canvas for Each Energy.
-    for(unsigned int i=0; i<fEnergies.size(); ++i){
-      std::string Energies_string = Name + std::to_string(fEnergies[i]) + Plane_string;
-      std::string Energies_titlestring = ";" + TitleName + ";Enteries";
-      const char* Energies_name   = Energies_string.c_str();
-      const char* Energies_titlename   = Energies_titlestring.c_str();;
-      Energies_Name_canvasMap[fEnergies[i]][plane_id] = tfs->makeAndRegister<TCanvas>(Energies_name,Energies_titlename);
-    }
-
-    for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-
-      //Create the Tree Branch
-      std::string Tree_string = Name + "_" +fShowerModuleLabels[j];
-      const char* Tree_name   = Tree_string.c_str();
-      Tree->Branch(Tree_name,"std::vector<std::vector<std::vector<float> > >", &MetricVector[fShowerModuleLabels[j]],256000,0);
-
-      //Create the Hitogram which has all the enrgies in
-      std::string Name_string      = Name + fShowerModuleLabels[j] +  Plane_string;
-      std::string Name_titlestring = fShowerModuleLabels[j] + ";" + TitleName + ";Enteries";
-      const char* Name_titlename   = Name_titlestring.c_str();
-      const char* Name_name     =  Name_string.c_str();
-      Name_HistMap[fShowerModuleLabels[j]][plane_id]  = tfs->make<TH1F>(Name_name, Name_titlename,x_numbins,x_start,x_end);
-
-      //Create the 2D Histogram of Energy and value
-      std::string Name_2d_string      = Name + "_2d" + fShowerModuleLabels[j] + Plane_string;
-      std::string Name_2d_titlestring = ";" + TitleName + ";Energy (MeV);Enteries";
-      const char* Name_2d_titlename   = Name_2d_titlestring.c_str();
-      const char* Name_2d_name     =  Name_2d_string.c_str();
-      Name_2dHistMap[fShowerModuleLabels[j]][plane_id]  = tfs->make<TH2F>(Name_2d_name, Name_2d_titlename,x_numbins,x_start,x_end,y_numbins,y_start,y_end);
-
-      //Create the 2D Histogram of Energy and value
-      std::string Name_2d_canvas_string      = Name + "_2d_canvas_" + fShowerModuleLabels[j] + Plane_string;
-      std::string Name_2d_canvas_titlestring = ";" + TitleName + ";Energy (MeV);Enteries";
-      const char* Name_2d_canvas_titlename   = Name_2d_canvas_titlestring.c_str();
-      const char* Name_2d_canvas_name     =  Name_2d_canvas_string.c_str();
-      Name_2dCanvasMap[fShowerModuleLabels[j]][plane_id]  = tfs->makeAndRegister<TCanvas>(Name_2d_canvas_name, Name_2d_canvas_titlename);
-
-      for(unsigned int i=0; i<fEnergies.size(); ++i){
-
-	//Create the Histogram maps name and string for the different energies.
-	std::string Energies_Name_string = Name + fShowerModuleLabels[j] + " at Energy" + std::to_string(fEnergies[i]) + " (MeV)"  + " at Energy" + std::to_string(fEnergies[i]) +  Plane_string;
-	std::string Energies_Name_titlestring  = fShowerModuleLabels[j] +  ";" + TitleName + ";Enteries";
-	const char* Energies_Name_titlename    = Energies_Name_titlestring.c_str();
-	const char* Energies_Name_name         = Energies_Name_string.c_str();
-	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]  = tfs->make<TH1F>(Energies_Name_name, Energies_Name_titlename, x_numbins,x_start,x_end);
-      }
-
-
-      //Create the Independent TGraphs for the Metric vs Energy graphs
-      std::string meangrapherror_string      = Name + fShowerModuleLabels[j] + Plane_string + "_meangrapherror";
-      std::string meangrapherror_titlestring = fShowerModuleLabels[j];// + ";Energy (Mev);" + TitleName;
-      const char* meangrapherror_name        = meangrapherror_string.c_str();
-      const char* meangrapherror_titlename   = meangrapherror_titlestring.c_str();
-      Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id] = tfs->makeAndRegister<TGraphErrors>(meangrapherror_name,meangrapherror_titlename);
-
-      //Create the Independent TGraphs for the Metric vs Energy graphs
-      std::string rmsgrapherror_string      = Name +  fShowerModuleLabels[j] + Plane_string +  "_rmsgrapherror";
-      std::string rmsgrapherror_titlestring = fShowerModuleLabels[j];// +  ";Energy (Mev);" + TitleName;
-      const char* rmsgrapherror_name        = rmsgrapherror_string.c_str();
-      const char* rmsgrapherror_titlename   = rmsgrapherror_titlestring.c_str();
-      Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]][plane_id] = tfs->makeAndRegister<TGraphErrors>(rmsgrapherror_name,rmsgrapherror_titlename);
-    }
-
-    //Canvas for all energy histogram
-    std::string canvas_string      = Name + Plane_string + "_canvas";
-    std::string canvas_titlestring = ";Energy (Mev);" + TitleName;
-    const char* canvas_name        = canvas_string.c_str();
-    const char* canvas_titlename   = canvas_titlestring.c_str();
-    Name_canvas[plane_id]          = tfs->makeAndRegister<TCanvas>(canvas_name,canvas_titlename);
-
-    //MultiGraph for Energy vs Mean metric
-    std::string meanmulti_string       = Name + Plane_string + "_meanmulti";
-    std::string meanmulti_titlestring  = ";Energy (Mev);" + TitleName;
-    const char* meanmulti_name         = meanmulti_string.c_str();
-    const char* meanmulti_titlename    = meanmulti_titlestring.c_str();
-    Energies_Mean_Name_Multi[plane_id] = tfs->makeAndRegister<TMultiGraph>(meanmulti_name,meanmulti_titlename);
-
-    //MultiGraph for Energy vs RMS metric
-    std::string rmsmulti_string       = Name + Plane_string + "_rmsmulti";
-    std::string rmsmulti_titlestring  = ";Energy (Mev);" + TitleName;
-    const char* rmsmulti_name         = rmsmulti_string.c_str();
-    const char* rmsmulti_titlename    = rmsmulti_titlestring.c_str();
-    Energies_RMS_Name_Multi[plane_id] = tfs->makeAndRegister<TMultiGraph>(rmsmulti_name,rmsmulti_titlename);
-
-    //Canvas for MultiGraph for Energy vs Mean metric
-    std::string meancanvasmulti_string       = Name + Plane_string + "_meancanvasmulti";
-    std::string meancanvasmulti_titlestring  = ";Energy (Mev);" + TitleName;
-    const char* meancanvasmulti_name         = meancanvasmulti_string.c_str();
-    const char* meancanvasmulti_titlename    = meancanvasmulti_titlestring.c_str();
-    Energies_Mean_Name_canvasMulti[plane_id] = tfs->makeAndRegister<TCanvas>(meancanvasmulti_name,meancanvasmulti_titlename);
-
-    //Canvasmulti for MultiGraph for Energy vs RMS metric
-    std::string rmscanvasmulti_string       = Name + Plane_string + "_rmscanvasmulti";
-    std::string rmscanvasmulti_titlestring  = ";Energy (Mev);" + TitleName;
-    const char* rmscanvasmulti_name         = rmscanvasmulti_string.c_str();
-    const char* rmscanvasmulti_titlename    = rmscanvasmulti_titlestring.c_str();
-    Energies_RMS_Name_canvasMulti[plane_id] = tfs->makeAndRegister<TCanvas>(rmscanvasmulti_name,rmscanvasmulti_titlename);
-
+    std::string branchString = branchName + "_" + fShowerModuleLabels[j];
+    const char* branchChar   = branchString.c_str();
+    Tree->Branch(branchChar,"std::vector<float>", &Metric[fShowerModuleLabels[j]], 32000, 0);
   }
 }
 
-//For Hit Valiation
-void ana::ShowerValidation::InitialiseHitGraphs(std::string Name, std::string TitleName,
-						std::map<std::string,std::map<geo::PlaneID,TH1F*> >& Name_HistMap,
-						std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > >& Energies_Name_HistMap,
-						std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_Mean_Name_GraphMap,
-						std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_RMS_Name_GraphMap,
-						std::map<geo::PlaneID,TMultiGraph*>& Energies_Mean_Name_Multi,
-						std::map<geo::PlaneID,TMultiGraph*>& Energies_RMS_Name_Multi,
-						std::map<geo::PlaneID,TCanvas*>& Energies_Mean_Name_canvasMulti,
-						std::map<geo::PlaneID,TCanvas*>& Energies_RMS_Name_canvasMulti,
-						std::map<float,std::map<geo::PlaneID,TCanvas*> >& Energies_Name_canvasMap,
-						std::map<geo::PlaneID,TCanvas*>& Name_canvas,
-						std::map<std::string,std::map<geo::PlaneID,TH2F*> >& Name_2dHistMap,
-						std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap,
-						int x_numbins, float x_start, float x_end,
-						int y_numbins, float y_start, float y_end,
-						std::map<std::string,std::vector<std::vector<float> > >& MetricVector
-						){
-
-  gStyle->SetOptStat(0);
-
-  //Initialise Trees
-  for(unsigned int j=0; j<fHitModuleLabels.size(); ++j){
-    std::cout << geom->Nplanes() << std::endl;
-    MetricVector[fHitModuleLabels[j]].resize(geom->Nplanes());
-  }
-
-  for(geo::PlaneID plane_id: geom->IteratePlaneIDs()){
-
-    std::string Plane_string = " Plane ID: P" + std::to_string(plane_id.Plane) + " T" + std::to_string(plane_id.TPC) + " C" + std::to_string(plane_id.Cryostat);
-
-    //Create The histogram canvas for Each Energy.
-    for(unsigned int i=0; i<fEnergies.size(); ++i){
-      std::string Energies_string = Name + std::to_string(fEnergies[i]) + Plane_string;
-      std::string Energies_titlestring = ";" + TitleName + ";Enteries";
-      const char* Energies_name   = Energies_string.c_str();
-      const char* Energies_titlename   = Energies_titlestring.c_str();;
-      Energies_Name_canvasMap[fEnergies[i]][plane_id] = tfs->makeAndRegister<TCanvas>(Energies_name,Energies_titlename);
-    }
-
-    for(unsigned int j=0; j<fHitModuleLabels.size(); ++j){
-
-      //Create the Tree Branch
-      std::string Tree_string = Name + "_" + fHitModuleLabels[j];
-      const char* Tree_name   = Tree_string.c_str();
-      Tree->Branch(Tree_name,"std::vector<std::vector<float> >", &MetricVector[fHitModuleLabels[j]], 32000, 0);
-
-      //Create the Hitogram which has all the enrgies in
-      std::string Name_string      = Name + fHitModuleLabels[j] +  Plane_string;
-      std::string Name_titlestring = fHitModuleLabels[j] + ";" + TitleName + ";Enteries";
-      const char* Name_titlename   = Name_titlestring.c_str();
-      const char* Name_name     =  Name_string.c_str();
-      Name_HistMap[fHitModuleLabels[j]][plane_id]  = tfs->make<TH1F>(Name_name, Name_titlename,x_numbins,x_start,x_end);
-
-      //Create the 2D Histogram of Energy and value
-      std::string Name_2d_string      = Name + "_2d_" + fHitModuleLabels[j] + Plane_string;
-      std::string Name_2d_titlestring = ";" + TitleName + ";Energy (MeV);Enteries";
-      const char* Name_2d_titlename   = Name_2d_titlestring.c_str();
-      const char* Name_2d_name     =  Name_2d_string.c_str();
-      Name_2dHistMap[fHitModuleLabels[j]][plane_id]  = tfs->make<TH2F>(Name_2d_name, Name_2d_titlename,x_numbins,x_start,x_end,y_numbins,y_start,y_end);
-
-      //Create the 2D Histogram of Energy and value
-      std::string Name_2d_canvas_string      = Name + "_2d_canvas_" + fHitModuleLabels[j] + Plane_string;
-      std::string Name_2d_canvas_titlestring = ";" + TitleName + ";Energy;Enteries";
-      const char* Name_2d_canvas_titlename   = Name_2d_canvas_titlestring.c_str();
-      const char* Name_2d_canvas_name     =  Name_2d_canvas_string.c_str();
-      Name_2dCanvasMap[fHitModuleLabels[j]][plane_id]  = tfs->makeAndRegister<TCanvas>(Name_2d_canvas_name, Name_2d_canvas_titlename);
-
-      for(unsigned int i=0; i<fEnergies.size(); ++i){
-
-	//Create the Histogram maps name and string for the different energies.
-	std::string Energies_Name_string = Name + fHitModuleLabels[j] + " at Energy" + std::to_string(fEnergies[i]) + " (MeV)"  + " at Energy" + std::to_string(fEnergies[i]) +  Plane_string;
-	std::string Energies_Name_titlestring  = fHitModuleLabels[j] + ";" + TitleName + ";Enteries";
-	const char* Energies_Name_titlename    = Energies_Name_titlestring.c_str();
-	const char* Energies_Name_name         = Energies_Name_string.c_str();
-	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]  = tfs->make<TH1F>(Energies_Name_name, Energies_Name_titlename, x_numbins,x_start,x_end);
-      }
-
-
-      //Create the Independent TGraphs for the Metric vs Energy graphs
-      std::string meangrapherror_string      = Name + fHitModuleLabels[j] + Plane_string + "_meangrapherror";
-      std::string meangrapherror_titlestring = fShowerModuleLabels[j];// + ";Energy (Mev);" + TitleName;
-      const char* meangrapherror_name        = meangrapherror_string.c_str();
-      const char* meangrapherror_titlename   = meangrapherror_titlestring.c_str();
-      Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id] = tfs->makeAndRegister<TGraphErrors>(meangrapherror_name,meangrapherror_titlename);
-
-      //Create the Independent TGraphs for the Metric vs Energy graphs
-      std::string rmsgrapherror_string      = Name +  fHitModuleLabels[j] + Plane_string +  "_rmsgrapherror";
-      std::string rmsgrapherror_titlestring = fShowerModuleLabels[j];// + ";Energy (Mev);" + TitleName;
-      const char* rmsgrapherror_name        = rmsgrapherror_string.c_str();
-      const char* rmsgrapherror_titlename   = rmsgrapherror_titlestring.c_str();
-      Energies_RMS_Name_GraphMap[fHitModuleLabels[j]][plane_id] = tfs->makeAndRegister<TGraphErrors>(rmsgrapherror_name,rmsgrapherror_titlename);
-    }
-
-    //Canvas for all energy histogram
-    std::string canvas_string      = Name + Plane_string + "_canvas";
-    std::string canvas_titlestring = ";Energy (Mev);" + TitleName;
-    const char* canvas_name        = canvas_string.c_str();
-    const char* canvas_titlename   = canvas_titlestring.c_str();
-    Name_canvas[plane_id]          = tfs->makeAndRegister<TCanvas>(canvas_name,canvas_titlename);
-
-    //MultiGraph for Energy vs Mean metric
-    std::string meanmulti_string       = Name + Plane_string + "_meanmulti";
-    std::string meanmulti_titlestring  = ";Energy (Mev);" + TitleName;
-    const char* meanmulti_name         = meanmulti_string.c_str();
-    const char* meanmulti_titlename    = meanmulti_titlestring.c_str();
-    Energies_Mean_Name_Multi[plane_id] = tfs->makeAndRegister<TMultiGraph>(meanmulti_name,meanmulti_titlename);
-
-    //MultiGraph for Energy vs RMS metric
-    std::string rmsmulti_string       = Name + Plane_string + "_rmsmulti";
-    std::string rmsmulti_titlestring  = ";Energy (Mev);" + TitleName;
-    const char* rmsmulti_name         = rmsmulti_string.c_str();
-    const char* rmsmulti_titlename    = rmsmulti_titlestring.c_str();
-    Energies_RMS_Name_Multi[plane_id] = tfs->makeAndRegister<TMultiGraph>(rmsmulti_name,rmsmulti_titlename);
-
-    //Canvas for MultiGraph for Energy vs Mean metric
-    std::string meancanvasmulti_string       = Name + Plane_string + "_meancanvasmulti";
-    std::string meancanvasmulti_titlestring  = ";Energy (Mev);" + TitleName;
-    const char* meancanvasmulti_name         = meancanvasmulti_string.c_str();
-    const char* meancanvasmulti_titlename    = meancanvasmulti_titlestring.c_str();
-    Energies_Mean_Name_canvasMulti[plane_id] = tfs->makeAndRegister<TCanvas>(meancanvasmulti_name,meancanvasmulti_titlename);
-
-    //Canvasmulti for MultiGraph for Energy vs RMS metric
-    std::string rmscanvasmulti_string       = Name + Plane_string + "_rmscanvasmulti";
-    std::string rmscanvasmulti_titlestring  = ";Energy (Mev);" + TitleName;
-    const char* rmscanvasmulti_name         = rmscanvasmulti_string.c_str();
-    const char* rmscanvasmulti_titlename    = rmscanvasmulti_titlestring.c_str();
-    Energies_RMS_Name_canvasMulti[plane_id] = tfs->makeAndRegister<TCanvas>(rmscanvasmulti_name,rmscanvasmulti_titlename);
-
+void ana::ShowerValidation::initClusterTree(TTree* Tree, std::string branchName,  std::map<std::string,std::vector<std::vector<std::vector<float> > > >& Metric, std::vector<std::string> fShowerModuleLabels){
+  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
+    std::string branchString = branchName + "_" + fShowerModuleLabels[j];
+    const char* branchChar   = branchString.c_str();
+    Tree->Branch(branchChar,"std::map<std::string,std::vector<std::vector<std::vector<float> > > >"
+		 , &Metric[fShowerModuleLabels[j]], 32000, 0);
   }
 }
+
 
 
 void ana::ShowerValidation::beginJob() {
@@ -1503,176 +278,98 @@ void ana::ShowerValidation::beginJob() {
    numrecoshowers = 0; 
    numrecoshowersana = 0;
 
-
   Tree = tfs->make<TTree>("MetricTree", "Tree Holding all metric information");
   gInterpreter->GenerateDictionary("vector<vector<vector<float> > >","vector");
+  Tree->Branch("EventRun", &EventRun_TreeVal, 32000, 0);
+  Tree->Branch("EventSubrun", &EventSubrun_TreeVal, 32000, 0);
+  Tree->Branch("EventNumber", &EventNumber_TreeVal, 32000, 0);
 
 
-  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
 
-    //Initialise the Pos*Dir
-    std::string PosDir_string       = "Position and direction 2D Hist" + fShowerModuleLabels[j];
-    std::string PosDir_titlestring  = ";Position;Direction;";
-    const char* PosDir_name         = PosDir_string.c_str();
-    const char* PosDir_titlename    = PosDir_titlestring.c_str();
-    PosDir_2dHistMap[fShowerModuleLabels[j]] = tfs->make<TH2F>(PosDir_name, PosDir_titlename,200,0,50,100,-1,1);
-    PosDir_2dCanvasMap[fShowerModuleLabels[j]] = tfs->makeAndRegister<TCanvas>(PosDir_name,PosDir_titlename);
+  initTree(Tree,"ShowerDirection_X",ShowerDirection_X_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerDirection_Y",ShowerDirection_Y_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerDirection_Z",ShowerDirection_Z_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerStart_X",ShowerStart_X_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerStart_Y",ShowerStart_Y_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerStart_Z",ShowerStart_Z_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerLength",ShowerLength_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerEnergyDiff",ShowerEnergyDiff_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerdEdx",ShowerdEdx_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"EventSeggy",EventSeggy_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerEnergyCompleteness",ShowerEnergyCompleteness_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerHitsPurity",ShowerHitsPurity_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerHitsCompleteness",ShowerHitsCompleteness_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerEnergyPurity",ShowerEnergyPurity_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerEnergy",ShowerEnergy_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerHitNum",ShowerHitNum_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerTotalEnergyDiff",ShowerTotalEnergyDiff_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerMag",ShowerMag_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerDirectionDiff",ShowerDirectionDiff_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerRecoEnergyVsTrueEnergyinRecoShower",ShowerRecoEnergyVsTrueEnergyinRecoShower_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerTrueEnergy",ShowerTrueEnergy_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"TrueEnergy",TrueEnergy_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"TrueHitNum",TrueHitNum_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerBestPlane",ShowerBestPlane_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"GeoProjectionMatched",GeoProjectionMatched_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PandoraTrackNum",PandoraTrackNum_TreeVal,fShowerModuleLabels);
+
+  initTree(Tree,"PFP_Tracks",PFP_Tracks_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Showers",PFP_Showers_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_ProjectionMatched",PFP_ProjectionMatched_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_HitsCompleteness",PFP_HitsCompleteness_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_EnergyCompleteness",PFP_EnergyCompleteness_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_HitsPurity",PFP_HitsPurity_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_EnergyPurity",PFP_EnergyPurity_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Track_ProjectionMatched",PFP_Track_ProjectionMatched_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Track_HitsCompleteness",PFP_Track_HitsCompleteness_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Track_EnergyCompleteness",PFP_Track_EnergyCompleteness_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Track_HitsPurity",PFP_Track_HitsPurity_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Track_EnergyPurity",PFP_Track_EnergyPurity_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Shower_ProjectionMatched",PFP_Shower_ProjectionMatched_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Shower_HitsCompleteness",PFP_Shower_HitsCompleteness_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Shower_EnergyCompleteness",PFP_Shower_EnergyCompleteness_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Shower_HitsPurity",PFP_Shower_HitsPurity_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Shower_EnergyPurity",PFP_Shower_EnergyPurity_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"Event_NumTrueShowers",Event_NumTrueShowers_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"Event_NumTrueShowers_EnergyCut",Event_NumTrueShowers_EnergyCut_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"Event_NumTrueShowers_DensityCut",Event_NumTrueShowers_DensityCut_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"Event_TrueShowerE",Event_TrueShowerE_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"Event_TrueShowerE_EnergyCut",Event_TrueShowerE_EnergyCut_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"Event_TrueShowerE_DensityCut",Event_TrueShowerE_DensityCut_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PosDir",PosDir_TreeVal,fShowerModuleLabels);
+
+
+
+  
+  initTree(Tree,"ShowerdEdx",ShowerdEdx_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerMag",ShowerMag_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"ShowerDirectionDiff",ShowerDirectionDiff_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Tracks",PFP_Tracks_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Showers",PFP_Showers_TreeVal,fShowerModuleLabels);
+
+  for(unsigned int j=0; j<fHitModuleLabels.size(); ++j){
+    std::cout << geom->Nplanes() << std::endl;
+    HitCompletenessEnergy_TreeVal[fHitModuleLabels[j]].resize(geom->Nplanes());
+
+    std::string hitString = "HitCompletenessEnergy_" + fShowerModuleLabels[j];
+    const char* hitChar   = hitString.c_str();
+
+    std::string processString = "ShowerStartEndProcess_" + fShowerModuleLabels[j];
+    const char* processChar   = processString.c_str();
+    
+    Tree->Branch(hitChar,"std::vector<std::vector<float> > >", &HitCompletenessEnergy_TreeVal[fHitModuleLabels[j]], 32000, 0);
+    
+    Tree->Branch(processChar,"<std::string,std::vector<std::string>", &ShowerStartEndProcess_TreeVal[fShowerModuleLabels[j]], 32000, 0);
 
   }
-
-  BiggestShowerMotherE_AfterCutHist  = tfs->make<TH1F>("BiggestShowerMotherE_AfterCutHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
-  BiggestShowerMotherE_BeforeCutHist = tfs->make<TH1F>("BiggestShowerMotherE_BeforeCutHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
-  AsscoiatedBiggestShowerMotherEHist = tfs->make<TH1F>("AsscoiatedBiggestShowerMotherEHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
-
-  BiggestShowerMotherE_AfterCutCanvas  = tfs->makeAndRegister<TCanvas>("BiggestShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
-  BiggestShowerMotherE_BeforeCutCanvas = tfs->makeAndRegister<TCanvas>("BiggestShowerMotherE_BeforeCutCanvas", ";Mother Energy (MeV);Enteries");
-  AsscoiatedBiggestShowerMotherECanvas = tfs->makeAndRegister<TCanvas>("AsscoiatedBiggestShowerMotherECanvas", ";Mother Energy (MeV);Enteries");
-
-  SmallestShowerMotherE_AfterCutHist  = tfs->make<TH1F>("SmallestShowerMotherE_AfterCutHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
-  SmallestShowerMotherE_BeforeCutHist = tfs->make<TH1F>("SmallestShowerMotherE_BeforeCutHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
-  AsscoiatedSmallestShowerMotherEHist = tfs->make<TH1F>("AsscoiatedSmallestShowerMotherEHist", ";Mother Energy (MeV);Enteries",100,0,fMaxSimEnergy);
-
-  SmallestShowerMotherE_AfterCutCanvas  = tfs->makeAndRegister<TCanvas>("SmallestShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
-  SmallestShowerMotherE_BeforeCutCanvas = tfs->makeAndRegister<TCanvas>("SmallestShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
-  AsscoiatedSmallestShowerMotherECanvas = tfs->makeAndRegister<TCanvas>("SmallestShowerMotherE_AfterCutCanvas", ";Mother Energy (MeV);Enteries");
-
-  Tree->Branch("SmallestShowerMotherE_BeforeCut","std::vector<float>", &SmallestShowerMotherE_BeforeCut_TreeVal, 32000, 0);
-  Tree->Branch("BiggestShowerMotherE_BeforeCut","std::vector<float>", &BiggestShowerMotherE_BeforeCut_TreeVal, 32000, 0);
-  Tree->Branch("SmallestShowerMotherE_AfterCut","std::vector<float>", &SmallestShowerMotherE_AfterCut_TreeVal, 32000, 0);
-  Tree->Branch("BiggestShowerMotherE_AfterCut","std::vector<float>", &BiggestShowerMotherE_AfterCut_TreeVal, 32000, 0);
-
-  Tree->Branch("EventNumber","std::vectorstd::float>",&EventNum_name_TreeVal,32000,0);
-
-
-  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-    std::string Process_string = "ShowerStartEndProcess_" + fShowerModuleLabels[j];
-    const char* Process_name   = Process_string.c_str();
-    Tree->Branch(Process_name,"std::vector<std::string>",&ShowerStartEndProcess_TreeVal[fShowerModuleLabels[j]],32000,0);
-  }
-
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerDirection_X","cos(x)",ShowerDirection_X_HistMap,Energies_ShowerDirection_X_HistMap,Energies_Mean_ShowerDirection_X_GraphMap,Energies_RMS_ShowerDirection_X_GraphMap,Energies_Mean_ShowerDirection_X_Multi,Energies_RMS_ShowerDirection_X_Multi,Energies_Mean_ShowerDirection_X_canvasMulti,Energies_RMS_ShowerDirection_X_canvasMulti,Energies_ShowerDirection_X_canvasMap, ShowerDirection_X_canvas,ShowerDirection_X_2dHistMap,ShowerDirection_X_2dCanvasMap,100,-1,1,200,0,fMaxSimEnergy,ShowerDirection_X_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerDirection_Y","cos(y)",ShowerDirection_Y_HistMap,Energies_ShowerDirection_Y_HistMap,Energies_Mean_ShowerDirection_Y_GraphMap,Energies_RMS_ShowerDirection_Y_GraphMap,Energies_Mean_ShowerDirection_Y_Multi,Energies_RMS_ShowerDirection_Y_Multi,Energies_Mean_ShowerDirection_Y_canvasMulti,Energies_RMS_ShowerDirection_Y_canvasMulti,Energies_ShowerDirection_Y_canvasMap, ShowerDirection_Y_canvas,ShowerDirection_Y_2dHistMap,ShowerDirection_Y_2dCanvasMap,100,-1,1,200,0,fMaxSimEnergy,ShowerDirection_Y_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerDirection_Z","cos(z)",ShowerDirection_Z_HistMap,Energies_ShowerDirection_Z_HistMap,Energies_Mean_ShowerDirection_Z_GraphMap,Energies_RMS_ShowerDirection_Z_GraphMap,Energies_Mean_ShowerDirection_Z_Multi,Energies_RMS_ShowerDirection_Z_Multi,Energies_Mean_ShowerDirection_Z_canvasMulti,Energies_RMS_ShowerDirection_Z_canvasMulti,Energies_ShowerDirection_Z_canvasMap, ShowerDirection_Z_canvas,ShowerDirection_Z_2dHistMap,ShowerDirection_Z_2dCanvasMap,100,-1,1,200,0,fMaxSimEnergy,ShowerDirection_Z_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerStart_X","|True Shower Start X - Reco Shower Start X|",ShowerStart_X_HistMap,Energies_ShowerStart_X_HistMap,Energies_Mean_ShowerStart_X_GraphMap,Energies_RMS_ShowerStart_X_GraphMap,Energies_Mean_ShowerStart_X_Multi,Energies_RMS_ShowerStart_X_Multi,Energies_Mean_ShowerStart_X_canvasMulti,Energies_RMS_ShowerStart_X_canvasMulti,Energies_ShowerStart_X_canvasMap, ShowerStart_X_canvas,ShowerStart_X_2dHistMap,ShowerStart_X_2dCanvasMap,200,0,50,100,0,fMaxSimEnergy,ShowerStart_X_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerStart_Y","|True Shower Start Y - Reco Shower Start Y|",ShowerStart_Y_HistMap,Energies_ShowerStart_Y_HistMap,Energies_Mean_ShowerStart_Y_GraphMap,Energies_RMS_ShowerStart_Y_GraphMap,Energies_Mean_ShowerStart_Y_Multi,Energies_RMS_ShowerStart_Y_Multi,Energies_Mean_ShowerStart_Y_canvasMulti,Energies_RMS_ShowerStart_Y_canvasMulti,Energies_ShowerStart_Y_canvasMap, ShowerStart_Y_canvas,ShowerStart_Y_2dHistMap,ShowerStart_Y_2dCanvasMap,200,0,50,100,0,fMaxSimEnergy,ShowerStart_Y_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerStart_Z","|True Shower Start Z - Reco Shower Start Z|",ShowerStart_Z_HistMap,Energies_ShowerStart_Z_HistMap,Energies_Mean_ShowerStart_Z_GraphMap,Energies_RMS_ShowerStart_Z_GraphMap,Energies_Mean_ShowerStart_Z_Multi,Energies_RMS_ShowerStart_Z_Multi,Energies_Mean_ShowerStart_Z_canvasMulti,Energies_RMS_ShowerStart_Z_canvasMulti,Energies_ShowerStart_Z_canvasMap, ShowerStart_Z_canvas,ShowerStart_Z_2dHistMap,ShowerStart_Z_2dCanvasMap,200,0,50,100,0,fMaxSimEnergy,ShowerStart_Z_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerLength","Shower Length (cm)",ShowerLength_HistMap,Energies_ShowerLength_HistMap,Energies_Mean_ShowerLength_GraphMap,Energies_RMS_ShowerLength_GraphMap,Energies_Mean_ShowerLength_Multi,Energies_RMS_ShowerLength_Multi,Energies_Mean_ShowerLength_canvasMulti,Energies_RMS_ShowerLength_canvasMulti,Energies_ShowerLength_canvasMap,ShowerLength_canvas,ShowerLength_2dHistMap,ShowerLength_2dCanvasMap,100,0,500,100,0,fMaxSimEnergy,ShowerLength_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerEnergyDiff","Reco Energy/True Energy",ShowerEnergyDiff_HistMap,Energies_ShowerEnergyDiff_HistMap,Energies_Mean_ShowerEnergyDiff_GraphMap,Energies_RMS_ShowerEnergyDiff_GraphMap,Energies_Mean_ShowerEnergyDiff_Multi,Energies_RMS_ShowerEnergyDiff_Multi,Energies_Mean_ShowerEnergyDiff_canvasMulti,Energies_RMS_ShowerEnergyDiff_canvasMulti,Energies_ShowerEnergyDiff_canvasMap, ShowerEnergyDiff_canvas,ShowerEnergyDiff_2dHistMap,ShowerEnergyDiff_2dCanvasMap,100,0,1.2,100,0,fMaxSimEnergy,ShowerEnergyDiff_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerdEdx","dEdx (meV)",ShowerdEdx_HistMap,Energies_ShowerdEdx_HistMap,Energies_Mean_ShowerdEdx_GraphMap,Energies_RMS_ShowerdEdx_GraphMap,Energies_Mean_ShowerdEdx_Multi,Energies_RMS_ShowerdEdx_Multi,Energies_Mean_ShowerdEdx_canvasMulti,Energies_RMS_ShowerdEdx_canvasMulti,Energies_ShowerdEdx_canvasMap, ShowerdEdx_canvas,ShowerdEdx_2dHistMap,ShowerdEdx_2dCanvasMap,100,0,10,100,0,fMaxSimEnergy,ShowerdEdx_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("EventSeggy","Shower Segmenation",EventSeggy_HistMap,Energies_EventSeggy_HistMap,Energies_Mean_EventSeggy_GraphMap,Energies_RMS_EventSeggy_GraphMap,Energies_Mean_EventSeggy_Multi,Energies_RMS_EventSeggy_Multi,Energies_Mean_EventSeggy_canvasMulti,Energies_RMS_EventSeggy_canvasMulti,Energies_EventSeggy_canvasMap, EventSeggy_canvas,EventSeggy_2dHistMap,EventSeggy_2dCanvasMap,20,-0.5,20.5,100,0,fMaxSimEnergy,EventSeggy_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerEnergyCompleteness"," Energy Completeness",ShowerEnergyCompleteness_HistMap,Energies_ShowerEnergyCompleteness_HistMap,Energies_Mean_ShowerEnergyCompleteness_GraphMap,Energies_RMS_ShowerEnergyCompleteness_GraphMap,Energies_Mean_ShowerEnergyCompleteness_Multi,Energies_RMS_ShowerEnergyCompleteness_Multi,Energies_Mean_ShowerEnergyCompleteness_canvasMulti,Energies_RMS_ShowerEnergyCompleteness_canvasMulti,Energies_ShowerEnergyCompleteness_canvasMap, ShowerEnergyCompleteness_canvas,ShowerEnergyCompleteness_2dHistMap,ShowerEnergyCompleteness_2dCanvasMap,100,-0.2,1.2,100,0,fMaxSimEnergy,ShowerEnergyCompleteness_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerEnergyPurity","Energy Purity",ShowerEnergyPurity_HistMap,Energies_ShowerEnergyPurity_HistMap,Energies_Mean_ShowerEnergyPurity_GraphMap,Energies_RMS_ShowerEnergyPurity_GraphMap,Energies_Mean_ShowerEnergyPurity_Multi,Energies_RMS_ShowerEnergyPurity_Multi,Energies_Mean_ShowerEnergyPurity_canvasMulti,Energies_RMS_ShowerEnergyPurity_canvasMulti,Energies_ShowerEnergyPurity_canvasMap, ShowerEnergyPurity_canvas,ShowerEnergyPurity_2dHistMap,ShowerEnergyPurity_2dCanvasMap,100,0,1.2,100,0,fMaxSimEnergy,ShowerEnergyPurity_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerHitsCompleteness","Hit Completeness",ShowerHitsCompleteness_HistMap,Energies_ShowerHitsCompleteness_HistMap,Energies_Mean_ShowerHitsCompleteness_GraphMap,Energies_RMS_ShowerHitsCompleteness_GraphMap,Energies_Mean_ShowerHitsCompleteness_Multi,Energies_RMS_ShowerHitsCompleteness_Multi,Energies_Mean_ShowerHitsCompleteness_canvasMulti,Energies_RMS_ShowerHitsCompleteness_canvasMulti,Energies_ShowerHitsCompleteness_canvasMap, ShowerHitsCompleteness_canvas,ShowerHitsCompleteness_2dHistMap,ShowerHitsCompleteness_2dCanvasMap,100,-0.2,1.2,100,0,fMaxSimEnergy,ShowerHitsCompleteness_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerHitsPurity","Hit Purity",ShowerHitsPurity_HistMap,Energies_ShowerHitsPurity_HistMap,Energies_Mean_ShowerHitsPurity_GraphMap,Energies_RMS_ShowerHitsPurity_GraphMap,Energies_Mean_ShowerHitsPurity_Multi,Energies_RMS_ShowerHitsPurity_Multi,Energies_Mean_ShowerHitsPurity_canvasMulti,Energies_RMS_ShowerHitsPurity_canvasMulti,Energies_ShowerHitsPurity_canvasMap, ShowerHitsPurity_canvas,ShowerHitsPurity_2dHistMap,ShowerHitsPurity_2dCanvasMap,100,0,1.2,100,0,fMaxSimEnergy,ShowerHitsPurity_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerEnergy","Shower Energy (MeV)",ShowerEnergy_HistMap,Energies_ShowerEnergy_HistMap,Energies_Mean_ShowerEnergy_GraphMap,Energies_RMS_ShowerEnergy_GraphMap,Energies_Mean_ShowerEnergy_Multi,Energies_RMS_ShowerEnergy_Multi,Energies_Mean_ShowerEnergy_canvasMulti,Energies_RMS_ShowerEnergy_canvasMulti,Energies_ShowerEnergy_canvasMap,ShowerEnergy_canvas,ShowerEnergy_2dHistMap,ShowerEnergy_2dCanvasMap,100,0,fMaxSimEnergy,100,0,fMaxSimEnergy,ShowerEnergy_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerHitNum","Hit Number in reco showers",ShowerHitNum_HistMap,Energies_ShowerHitNum_HistMap,Energies_Mean_ShowerHitNum_GraphMap,Energies_RMS_ShowerHitNum_GraphMap,Energies_Mean_ShowerHitNum_Multi,Energies_RMS_ShowerHitNum_Multi,Energies_Mean_ShowerHitNum_canvasMulti,Energies_RMS_ShowerHitNum_canvasMulti,Energies_ShowerHitNum_canvasMap, ShowerHitNum_canvas,ShowerHitNum_2dHistMap,ShowerHitNum_2dCanvasMap,200,0,3000,100,0,fMaxSimEnergy,ShowerHitNum_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerTotalEnergyDiff","(Reco Energy - True Energy)/True Energy",ShowerTotalEnergyDiff_HistMap,Energies_ShowerTotalEnergyDiff_HistMap,Energies_Mean_ShowerTotalEnergyDiff_GraphMap,Energies_RMS_ShowerTotalEnergyDiff_GraphMap,Energies_Mean_ShowerTotalEnergyDiff_Multi,Energies_RMS_ShowerTotalEnergyDiff_Multi,Energies_Mean_ShowerTotalEnergyDiff_canvasMulti,Energies_RMS_ShowerTotalEnergyDiff_canvasMulti,Energies_ShowerTotalEnergyDiff_canvasMap, ShowerTotalEnergyDiff_canvas,ShowerTotalEnergyDiff_2dHistMap,ShowerTotalEnergyDiff_2dCanvasMap,100,-1.2,0.2,100,0,fMaxSimEnergy,ShowerTotalEnergyDiff_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerMag","|True Start - Reco Start| (cm)",ShowerMag_HistMap,Energies_ShowerMag_HistMap,Energies_Mean_ShowerMag_GraphMap,Energies_RMS_ShowerMag_GraphMap,Energies_Mean_ShowerMag_Multi,Energies_RMS_ShowerMag_Multi,Energies_Mean_ShowerMag_canvasMulti,Energies_RMS_ShowerMag_canvasMulti,Energies_ShowerMag_canvasMap, ShowerMag_canvas,ShowerMag_2dHistMap,ShowerMag_2dCanvasMap,100,0,50,100,0,fMaxSimEnergy,ShowerMag_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerDirectionDiff","cos(theta)",ShowerDirectionDiff_HistMap,Energies_ShowerDirectionDiff_HistMap,Energies_Mean_ShowerDirectionDiff_GraphMap,Energies_RMS_ShowerDirectionDiff_GraphMap,Energies_Mean_ShowerDirectionDiff_Multi,Energies_RMS_ShowerDirectionDiff_Multi,Energies_Mean_ShowerDirectionDiff_canvasMulti,Energies_RMS_ShowerDirectionDiff_canvasMulti,Energies_ShowerDirectionDiff_canvasMap, ShowerDirectionDiff_canvas,ShowerDirectionDiff_2dHistMap,ShowerDirectionDiff_2dCanvasMap,100,-1,1,100,0,fMaxSimEnergy,ShowerDirectionDiff_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerRecoEnergyVsTrueEnergyinRecoShower","TrueEnergyinRecoShower/ShowerRecoEnergy",ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap,Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_GraphMap,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_Multi,Energies_Mean_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti,Energies_RMS_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMulti,Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_canvasMap, ShowerRecoEnergyVsTrueEnergyinRecoShower_canvas,ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap,ShowerRecoEnergyVsTrueEnergyinRecoShower_2dCanvasMap,100,0,3,100,0,fMaxSimEnergy,ShowerRecoEnergyVsTrueEnergyinRecoShower_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ShowerTrueEnergy","True Energy (MeV)",ShowerTrueEnergy_HistMap,Energies_ShowerTrueEnergy_HistMap,Energies_Mean_ShowerTrueEnergy_GraphMap,Energies_RMS_ShowerTrueEnergy_GraphMap,Energies_Mean_ShowerTrueEnergy_Multi,Energies_RMS_ShowerTrueEnergy_Multi,Energies_Mean_ShowerTrueEnergy_canvasMulti,Energies_RMS_ShowerTrueEnergy_canvasMulti,Energies_ShowerTrueEnergy_canvasMap, ShowerTrueEnergy_canvas,ShowerTrueEnergy_2dHistMap,ShowerTrueEnergy_2dCanvasMap,100,0,fMaxSimEnergy,100,0,fMaxSimEnergy,ShowerTrueEnergy_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("TrueEnergy","True Energy (MeV)",TrueEnergy_HistMap,Energies_TrueEnergy_HistMap,Energies_Mean_TrueEnergy_GraphMap,Energies_RMS_TrueEnergy_GraphMap,Energies_Mean_TrueEnergy_Multi,Energies_RMS_TrueEnergy_Multi,Energies_Mean_TrueEnergy_canvasMulti,Energies_RMS_TrueEnergy_canvasMulti,Energies_TrueEnergy_canvasMap, TrueEnergy_canvas,TrueEnergy_2dHistMap,TrueEnergy_2dCanvasMap,100,0,fMaxSimEnergy,100,0,fMaxSimEnergy,TrueEnergy_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("TrueHitNum","True number of hits in the true showers",TrueHitNum_HistMap,Energies_TrueHitNum_HistMap,Energies_Mean_TrueHitNum_GraphMap,Energies_RMS_TrueHitNum_GraphMap,Energies_Mean_TrueHitNum_Multi,Energies_RMS_TrueHitNum_Multi,Energies_Mean_TrueHitNum_canvasMulti,Energies_RMS_TrueHitNum_canvasMulti,Energies_TrueHitNum_canvasMap, TrueHitNum_canvas,TrueHitNum_2dHistMap,TrueHitNum_2dCanvasMap,200,0,5000,100,0,fMaxSimEnergy,TrueHitNum_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("GeoProjectionMatched","Projection matching score",GeoProjectionMatched_HistMap,Energies_GeoProjectionMatched_HistMap,Energies_Mean_GeoProjectionMatched_GraphMap,Energies_RMS_GeoProjectionMatched_GraphMap,Energies_Mean_GeoProjectionMatched_Multi,Energies_RMS_GeoProjectionMatched_Multi,Energies_Mean_GeoProjectionMatched_canvasMulti,Energies_RMS_GeoProjectionMatched_canvasMulti,Energies_GeoProjectionMatched_canvasMap, GeoProjectionMatched_canvas,GeoProjectionMatched_2dHistMap,GeoProjectionMatched_2dCanvasMap,200,0,1,100,0,fMaxSimEnergy,GeoProjectionMatched_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PandoraTrackNum","Number of Tracks in Event",PandoraTrackNum_HistMap,Energies_PandoraTrackNum_HistMap,Energies_Mean_PandoraTrackNum_GraphMap,Energies_RMS_PandoraTrackNum_GraphMap,Energies_Mean_PandoraTrackNum_Multi,Energies_RMS_PandoraTrackNum_Multi,Energies_Mean_PandoraTrackNum_canvasMulti,Energies_RMS_PandoraTrackNum_canvasMulti,Energies_PandoraTrackNum_canvasMap, PandoraTrackNum_canvas,PandoraTrackNum_2dHistMap,PandoraTrackNum_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PandoraTrackNum_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Tracks","Number of Primary PFP Tracks",PFP_Tracks_HistMap,Energies_PFP_Tracks_HistMap,Energies_Mean_PFP_Tracks_GraphMap,Energies_RMS_PFP_Tracks_GraphMap,Energies_Mean_PFP_Tracks_Multi,Energies_RMS_PFP_Tracks_Multi,Energies_Mean_PFP_Tracks_canvasMulti,Energies_RMS_PFP_Tracks_canvasMulti,Energies_PFP_Tracks_canvasMap, PFP_Tracks_canvas,PFP_Tracks_2dHistMap,PFP_Tracks_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Tracks_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Showers","Number of Primary PFP Showers",PFP_Showers_HistMap,Energies_PFP_Showers_HistMap,Energies_Mean_PFP_Showers_GraphMap,Energies_RMS_PFP_Showers_GraphMap,Energies_Mean_PFP_Showers_Multi,Energies_RMS_PFP_Showers_Multi,Energies_Mean_PFP_Showers_canvasMulti,Energies_RMS_PFP_Showers_canvasMulti,Energies_PFP_Showers_canvasMap, PFP_Showers_canvas,PFP_Showers_2dHistMap,PFP_Showers_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Showers_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_ProjectionMatched","PFP Projection matching score",PFP_ProjectionMatched_HistMap,Energies_PFP_ProjectionMatched_HistMap,Energies_Mean_PFP_ProjectionMatched_GraphMap,Energies_RMS_PFP_ProjectionMatched_GraphMap,Energies_Mean_PFP_ProjectionMatched_Multi,Energies_RMS_PFP_ProjectionMatched_Multi,Energies_Mean_PFP_ProjectionMatched_canvasMulti,Energies_RMS_PFP_ProjectionMatched_canvasMulti,Energies_PFP_ProjectionMatched_canvasMap, PFP_ProjectionMatched_canvas,PFP_ProjectionMatched_2dHistMap,PFP_ProjectionMatched_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_ProjectionMatched_TreeVal);
-
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_HitsCompleteness","PFP Hit Completeness",PFP_HitsCompleteness_HistMap,Energies_PFP_HitsCompleteness_HistMap,Energies_Mean_PFP_HitsCompleteness_GraphMap,Energies_RMS_PFP_HitsCompleteness_GraphMap,Energies_Mean_PFP_HitsCompleteness_Multi,Energies_RMS_PFP_HitsCompleteness_Multi,Energies_Mean_PFP_HitsCompleteness_canvasMulti,Energies_RMS_PFP_HitsCompleteness_canvasMulti,Energies_PFP_HitsCompleteness_canvasMap, PFP_HitsCompleteness_canvas,PFP_HitsCompleteness_2dHistMap,PFP_HitsCompleteness_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_HitsCompleteness_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_EnergyCompleteness","PFP Energy Completeness",PFP_EnergyCompleteness_HistMap,Energies_PFP_EnergyCompleteness_HistMap,Energies_Mean_PFP_EnergyCompleteness_GraphMap,Energies_RMS_PFP_EnergyCompleteness_GraphMap,Energies_Mean_PFP_EnergyCompleteness_Multi,Energies_RMS_PFP_EnergyCompleteness_Multi,Energies_Mean_PFP_EnergyCompleteness_canvasMulti,Energies_RMS_PFP_EnergyCompleteness_canvasMulti,Energies_PFP_EnergyCompleteness_canvasMap, PFP_EnergyCompleteness_canvas,PFP_EnergyCompleteness_2dHistMap,PFP_EnergyCompleteness_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_EnergyCompleteness_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_HitsPurity","PFP Hits Purity",PFP_HitsPurity_HistMap,Energies_PFP_HitsPurity_HistMap,Energies_Mean_PFP_HitsPurity_GraphMap,Energies_RMS_PFP_HitsPurity_GraphMap,Energies_Mean_PFP_HitsPurity_Multi,Energies_RMS_PFP_HitsPurity_Multi,Energies_Mean_PFP_HitsPurity_canvasMulti,Energies_RMS_PFP_HitsPurity_canvasMulti,Energies_PFP_HitsPurity_canvasMap, PFP_HitsPurity_canvas,PFP_HitsPurity_2dHistMap,PFP_HitsPurity_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_HitsPurity_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_EnergyPurity","PFP Energy Purity",PFP_EnergyPurity_HistMap,Energies_PFP_EnergyPurity_HistMap,Energies_Mean_PFP_EnergyPurity_GraphMap,Energies_RMS_PFP_EnergyPurity_GraphMap,Energies_Mean_PFP_EnergyPurity_Multi,Energies_RMS_PFP_EnergyPurity_Multi,Energies_Mean_PFP_EnergyPurity_canvasMulti,Energies_RMS_PFP_EnergyPurity_canvasMulti,Energies_PFP_EnergyPurity_canvasMap, PFP_EnergyPurity_canvas,PFP_EnergyPurity_2dHistMap,PFP_EnergyPurity_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_EnergyPurity_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Track_ProjectionMatched","PFP_Track Projection matching score",PFP_Track_ProjectionMatched_HistMap,Energies_PFP_Track_ProjectionMatched_HistMap,Energies_Mean_PFP_Track_ProjectionMatched_GraphMap,Energies_RMS_PFP_Track_ProjectionMatched_GraphMap,Energies_Mean_PFP_Track_ProjectionMatched_Multi,Energies_RMS_PFP_Track_ProjectionMatched_Multi,Energies_Mean_PFP_Track_ProjectionMatched_canvasMulti,Energies_RMS_PFP_Track_ProjectionMatched_canvasMulti,Energies_PFP_Track_ProjectionMatched_canvasMap, PFP_Track_ProjectionMatched_canvas,PFP_Track_ProjectionMatched_2dHistMap,PFP_Track_ProjectionMatched_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Track_ProjectionMatched_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Track_HitsCompleteness","PFP_Track Hit Completeness",PFP_Track_HitsCompleteness_HistMap,Energies_PFP_Track_HitsCompleteness_HistMap,Energies_Mean_PFP_Track_HitsCompleteness_GraphMap,Energies_RMS_PFP_Track_HitsCompleteness_GraphMap,Energies_Mean_PFP_Track_HitsCompleteness_Multi,Energies_RMS_PFP_Track_HitsCompleteness_Multi,Energies_Mean_PFP_Track_HitsCompleteness_canvasMulti,Energies_RMS_PFP_Track_HitsCompleteness_canvasMulti,Energies_PFP_Track_HitsCompleteness_canvasMap, PFP_Track_HitsCompleteness_canvas,PFP_Track_HitsCompleteness_2dHistMap,PFP_Track_HitsCompleteness_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Track_HitsCompleteness_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Track_EnergyCompleteness","PFP_Track Energy Completeness",PFP_Track_EnergyCompleteness_HistMap,Energies_PFP_Track_EnergyCompleteness_HistMap,Energies_Mean_PFP_Track_EnergyCompleteness_GraphMap,Energies_RMS_PFP_Track_EnergyCompleteness_GraphMap,Energies_Mean_PFP_Track_EnergyCompleteness_Multi,Energies_RMS_PFP_Track_EnergyCompleteness_Multi,Energies_Mean_PFP_Track_EnergyCompleteness_canvasMulti,Energies_RMS_PFP_Track_EnergyCompleteness_canvasMulti,Energies_PFP_Track_EnergyCompleteness_canvasMap, PFP_Track_EnergyCompleteness_canvas,PFP_Track_EnergyCompleteness_2dHistMap,PFP_Track_EnergyCompleteness_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Track_EnergyCompleteness_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Track_HitsPurity","PFP_Track Hits Purity",PFP_Track_HitsPurity_HistMap,Energies_PFP_Track_HitsPurity_HistMap,Energies_Mean_PFP_Track_HitsPurity_GraphMap,Energies_RMS_PFP_Track_HitsPurity_GraphMap,Energies_Mean_PFP_Track_HitsPurity_Multi,Energies_RMS_PFP_Track_HitsPurity_Multi,Energies_Mean_PFP_Track_HitsPurity_canvasMulti,Energies_RMS_PFP_Track_HitsPurity_canvasMulti,Energies_PFP_Track_HitsPurity_canvasMap, PFP_Track_HitsPurity_canvas,PFP_Track_HitsPurity_2dHistMap,PFP_Track_HitsPurity_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Track_HitsPurity_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Track_EnergyPurity","PFP_Track Energy Purity",PFP_Track_EnergyPurity_HistMap,Energies_PFP_Track_EnergyPurity_HistMap,Energies_Mean_PFP_Track_EnergyPurity_GraphMap,Energies_RMS_PFP_Track_EnergyPurity_GraphMap,Energies_Mean_PFP_Track_EnergyPurity_Multi,Energies_RMS_PFP_Track_EnergyPurity_Multi,Energies_Mean_PFP_Track_EnergyPurity_canvasMulti,Energies_RMS_PFP_Track_EnergyPurity_canvasMulti,Energies_PFP_Track_EnergyPurity_canvasMap, PFP_Track_EnergyPurity_canvas,PFP_Track_EnergyPurity_2dHistMap,PFP_Track_EnergyPurity_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Track_EnergyPurity_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Shower_ProjectionMatched","PFP_Shower Projection matching score",PFP_Shower_ProjectionMatched_HistMap,Energies_PFP_Shower_ProjectionMatched_HistMap,Energies_Mean_PFP_Shower_ProjectionMatched_GraphMap,Energies_RMS_PFP_Shower_ProjectionMatched_GraphMap,Energies_Mean_PFP_Shower_ProjectionMatched_Multi,Energies_RMS_PFP_Shower_ProjectionMatched_Multi,Energies_Mean_PFP_Shower_ProjectionMatched_canvasMulti,Energies_RMS_PFP_Shower_ProjectionMatched_canvasMulti,Energies_PFP_Shower_ProjectionMatched_canvasMap, PFP_Shower_ProjectionMatched_canvas,PFP_Shower_ProjectionMatched_2dHistMap,PFP_Shower_ProjectionMatched_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Shower_ProjectionMatched_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Shower_HitsCompleteness","PFP_Shower Hit Completeness",PFP_Shower_HitsCompleteness_HistMap,Energies_PFP_Shower_HitsCompleteness_HistMap,Energies_Mean_PFP_Shower_HitsCompleteness_GraphMap,Energies_RMS_PFP_Shower_HitsCompleteness_GraphMap,Energies_Mean_PFP_Shower_HitsCompleteness_Multi,Energies_RMS_PFP_Shower_HitsCompleteness_Multi,Energies_Mean_PFP_Shower_HitsCompleteness_canvasMulti,Energies_RMS_PFP_Shower_HitsCompleteness_canvasMulti,Energies_PFP_Shower_HitsCompleteness_canvasMap, PFP_Shower_HitsCompleteness_canvas,PFP_Shower_HitsCompleteness_2dHistMap,PFP_Shower_HitsCompleteness_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Shower_HitsCompleteness_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Shower_EnergyCompleteness","PFP_Shower Energy Completeness",PFP_Shower_EnergyCompleteness_HistMap,Energies_PFP_Shower_EnergyCompleteness_HistMap,Energies_Mean_PFP_Shower_EnergyCompleteness_GraphMap,Energies_RMS_PFP_Shower_EnergyCompleteness_GraphMap,Energies_Mean_PFP_Shower_EnergyCompleteness_Multi,Energies_RMS_PFP_Shower_EnergyCompleteness_Multi,Energies_Mean_PFP_Shower_EnergyCompleteness_canvasMulti,Energies_RMS_PFP_Shower_EnergyCompleteness_canvasMulti,Energies_PFP_Shower_EnergyCompleteness_canvasMap, PFP_Shower_EnergyCompleteness_canvas,PFP_Shower_EnergyCompleteness_2dHistMap,PFP_Shower_EnergyCompleteness_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Shower_EnergyCompleteness_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Shower_HitsPurity","PFP_Shower Hits Purity",PFP_Shower_HitsPurity_HistMap,Energies_PFP_Shower_HitsPurity_HistMap,Energies_Mean_PFP_Shower_HitsPurity_GraphMap,Energies_RMS_PFP_Shower_HitsPurity_GraphMap,Energies_Mean_PFP_Shower_HitsPurity_Multi,Energies_RMS_PFP_Shower_HitsPurity_Multi,Energies_Mean_PFP_Shower_HitsPurity_canvasMulti,Energies_RMS_PFP_Shower_HitsPurity_canvasMulti,Energies_PFP_Shower_HitsPurity_canvasMap, PFP_Shower_HitsPurity_canvas,PFP_Shower_HitsPurity_2dHistMap,PFP_Shower_HitsPurity_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Shower_HitsPurity_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("PFP_Shower_EnergyPurity","PFP_Shower Energy Purity",PFP_Shower_EnergyPurity_HistMap,Energies_PFP_Shower_EnergyPurity_HistMap,Energies_Mean_PFP_Shower_EnergyPurity_GraphMap,Energies_RMS_PFP_Shower_EnergyPurity_GraphMap,Energies_Mean_PFP_Shower_EnergyPurity_Multi,Energies_RMS_PFP_Shower_EnergyPurity_Multi,Energies_Mean_PFP_Shower_EnergyPurity_canvasMulti,Energies_RMS_PFP_Shower_EnergyPurity_canvasMulti,Energies_PFP_Shower_EnergyPurity_canvasMap, PFP_Shower_EnergyPurity_canvas,PFP_Shower_EnergyPurity_2dHistMap,PFP_Shower_EnergyPurity_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,PFP_Shower_EnergyPurity_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("Event_NumTrueShowers","Number of True Showers",Event_NumTrueShowers_HistMap,Energies_Event_NumTrueShowers_HistMap,Energies_Mean_Event_NumTrueShowers_GraphMap,Energies_RMS_Event_NumTrueShowers_GraphMap,Energies_Mean_Event_NumTrueShowers_Multi,Energies_RMS_Event_NumTrueShowers_Multi,Energies_Mean_Event_NumTrueShowers_canvasMulti,Energies_RMS_Event_NumTrueShowers_canvasMulti,Energies_Event_NumTrueShowers_canvasMap, Event_NumTrueShowers_canvas,Event_NumTrueShowers_2dHistMap,Event_NumTrueShowers_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,Event_NumTrueShowers_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("Event_NumTrueShowers_EnergyCut","Number of True Showers After Energy Cut",Event_NumTrueShowers_EnergyCut_HistMap,Energies_Event_NumTrueShowers_EnergyCut_HistMap,Energies_Mean_Event_NumTrueShowers_EnergyCut_GraphMap,Energies_RMS_Event_NumTrueShowers_EnergyCut_GraphMap,Energies_Mean_Event_NumTrueShowers_EnergyCut_Multi,Energies_RMS_Event_NumTrueShowers_EnergyCut_Multi,Energies_Mean_Event_NumTrueShowers_EnergyCut_canvasMulti,Energies_RMS_Event_NumTrueShowers_EnergyCut_canvasMulti,Energies_Event_NumTrueShowers_EnergyCut_canvasMap, Event_NumTrueShowers_EnergyCut_canvas,Event_NumTrueShowers_EnergyCut_2dHistMap,Event_NumTrueShowers_EnergyCut_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,Event_NumTrueShowers_EnergyCut_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("Event_NumTrueShowers_DensityCut","Number of True Showers After Density cut",Event_NumTrueShowers_DensityCut_HistMap,Energies_Event_NumTrueShowers_DensityCut_HistMap,Energies_Mean_Event_NumTrueShowers_DensityCut_GraphMap,Energies_RMS_Event_NumTrueShowers_DensityCut_GraphMap,Energies_Mean_Event_NumTrueShowers_DensityCut_Multi,Energies_RMS_Event_NumTrueShowers_DensityCut_Multi,Energies_Mean_Event_NumTrueShowers_DensityCut_canvasMulti,Energies_RMS_Event_NumTrueShowers_DensityCut_canvasMulti,Energies_Event_NumTrueShowers_DensityCut_canvasMap, Event_NumTrueShowers_DensityCut_canvas,Event_NumTrueShowers_DensityCut_2dHistMap,Event_NumTrueShowers_DensityCut_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,Event_NumTrueShowers_DensityCut_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("Event_TrueShowerE","Number of True Showers",Event_TrueShowerE_HistMap,Energies_Event_TrueShowerE_HistMap,Energies_Mean_Event_TrueShowerE_GraphMap,Energies_RMS_Event_TrueShowerE_GraphMap,Energies_Mean_Event_TrueShowerE_Multi,Energies_RMS_Event_TrueShowerE_Multi,Energies_Mean_Event_TrueShowerE_canvasMulti,Energies_RMS_Event_TrueShowerE_canvasMulti,Energies_Event_TrueShowerE_canvasMap, Event_TrueShowerE_canvas,Event_TrueShowerE_2dHistMap,Event_TrueShowerE_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,Event_TrueShowerE_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("Event_TrueShowerE_EnergyCut","Number of True Showers After Energy Cut",Event_TrueShowerE_EnergyCut_HistMap,Energies_Event_TrueShowerE_EnergyCut_HistMap,Energies_Mean_Event_TrueShowerE_EnergyCut_GraphMap,Energies_RMS_Event_TrueShowerE_EnergyCut_GraphMap,Energies_Mean_Event_TrueShowerE_EnergyCut_Multi,Energies_RMS_Event_TrueShowerE_EnergyCut_Multi,Energies_Mean_Event_TrueShowerE_EnergyCut_canvasMulti,Energies_RMS_Event_TrueShowerE_EnergyCut_canvasMulti,Energies_Event_TrueShowerE_EnergyCut_canvasMap, Event_TrueShowerE_EnergyCut_canvas,Event_TrueShowerE_EnergyCut_2dHistMap,Event_TrueShowerE_EnergyCut_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,Event_TrueShowerE_EnergyCut_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("Event_TrueShowerE_DensityCut","Number of True Showers After Density cut",Event_TrueShowerE_DensityCut_HistMap,Energies_Event_TrueShowerE_DensityCut_HistMap,Energies_Mean_Event_TrueShowerE_DensityCut_GraphMap,Energies_RMS_Event_TrueShowerE_DensityCut_GraphMap,Energies_Mean_Event_TrueShowerE_DensityCut_Multi,Energies_RMS_Event_TrueShowerE_DensityCut_Multi,Energies_Mean_Event_TrueShowerE_DensityCut_canvasMulti,Energies_RMS_Event_TrueShowerE_DensityCut_canvasMulti,Energies_Event_TrueShowerE_DensityCut_canvasMap, Event_TrueShowerE_DensityCut_canvas,Event_TrueShowerE_DensityCut_2dHistMap,Event_TrueShowerE_DensityCut_2dCanvasMap,20,0,20,100,0,fMaxSimEnergy,Event_TrueShowerE_DensityCut_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ClusterProjectionMatchedEnergy","Projection Matched",ClusterProjectionMatchedEnergy_HistMap,Energies_ClusterProjectionMatchedEnergy_HistMap,Energies_Mean_ClusterProjectionMatchedEnergy_GraphMap,Energies_RMS_ClusterProjectionMatchedEnergy_GraphMap,Energies_Mean_ClusterProjectionMatchedEnergy_Multi,Energies_RMS_ClusterProjectionMatchedEnergy_Multi,Energies_Mean_ClusterProjectionMatchedEnergy_canvasMulti,Energies_RMS_ClusterProjectionMatchedEnergy_canvasMulti,Energies_ClusterProjectionMatchedEnergy_canvasMap, ClusterProjectionMatchedEnergy_canvas,ClusterProjectionMatchedEnergy_2dHistMap,ClusterProjectionMatchedEnergy_2dCanvasMap,4,-1.5,2.5,100,0,fMaxSimEnergy,ClusterProjectionMatchedEnergy_TreeVal);
-
-
-  ana::ShowerValidation::InitialiseGraphs("ClusterCompletenessEnergy","Energy Completness ",ClusterCompletenessEnergy_HistMap,Energies_ClusterCompletenessEnergy_HistMap,Energies_Mean_ClusterCompletenessEnergy_GraphMap,Energies_RMS_ClusterCompletenessEnergy_GraphMap,Energies_Mean_ClusterCompletenessEnergy_Multi,Energies_RMS_ClusterCompletenessEnergy_Multi,Energies_Mean_ClusterCompletenessEnergy_canvasMulti,Energies_RMS_ClusterCompletenessEnergy_canvasMulti,Energies_ClusterCompletenessEnergy_canvasMap, ClusterCompletenessEnergy_canvas,ClusterCompletenessEnergy_2dHistMap,ClusterCompletenessEnergy_2dCanvasMap,200,-0.2,1.2,200,0,fMaxSimEnergy,ClusterCompletenessEnergy_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ClusterCompletenessHits","Hit Completeness",ClusterCompletenessHits_HistMap,Energies_ClusterCompletenessHits_HistMap,Energies_Mean_ClusterCompletenessHits_GraphMap,Energies_RMS_ClusterCompletenessHits_GraphMap,Energies_Mean_ClusterCompletenessHits_Multi,Energies_RMS_ClusterCompletenessHits_Multi,Energies_Mean_ClusterCompletenessHits_canvasMulti,Energies_RMS_ClusterCompletenessHits_canvasMulti,Energies_ClusterCompletenessHits_canvasMap, ClusterCompletenessHits_canvas,ClusterCompletenessHits_2dHistMap,ClusterCompletenessHits_2dCanvasMap,200,-0.2,1.2,200,0,fMaxSimEnergy,ClusterCompletenessHits_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ClusterPurityEnergy","Energy Purity",ClusterPurityEnergy_HistMap,Energies_ClusterPurityEnergy_HistMap,Energies_Mean_ClusterPurityEnergy_GraphMap,Energies_RMS_ClusterPurityEnergy_GraphMap,Energies_Mean_ClusterPurityEnergy_Multi,Energies_RMS_ClusterPurityEnergy_Multi,Energies_Mean_ClusterPurityEnergy_canvasMulti,Energies_RMS_ClusterPurityEnergy_canvasMulti,Energies_ClusterPurityEnergy_canvasMap, ClusterPurityEnergy_canvas,ClusterPurityEnergy_2dHistMap,ClusterPurityEnergy_2dCanvasMap,200,0,1.2,200,0,fMaxSimEnergy,ClusterPurityEnergy_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ClusterPurityHits","Hit Purity",ClusterPurityHits_HistMap,Energies_ClusterPurityHits_HistMap,Energies_Mean_ClusterPurityHits_GraphMap,Energies_RMS_ClusterPurityHits_GraphMap,Energies_Mean_ClusterPurityHits_Multi,Energies_RMS_ClusterPurityHits_Multi,Energies_Mean_ClusterPurityHits_canvasMulti,Energies_RMS_ClusterPurityHits_canvasMulti,Energies_ClusterPurityHits_canvasMap, ClusterPurityHits_canvas,ClusterPurityHits_2dHistMap,ClusterPurityHits_2dCanvasMap,200,0,1.2,200,0,fMaxSimEnergy,ClusterPurityHits_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ClusterCompPurityEnergy","Energy Completeness*Purity",ClusterCompPurityEnergy_HistMap,Energies_ClusterCompPurityEnergy_HistMap,Energies_Mean_ClusterCompPurityEnergy_GraphMap,Energies_RMS_ClusterCompPurityEnergy_GraphMap,Energies_Mean_ClusterCompPurityEnergy_Multi,Energies_RMS_ClusterCompPurityEnergy_Multi,Energies_Mean_ClusterCompPurityEnergy_canvasMulti,Energies_RMS_ClusterCompPurityEnergy_canvasMulti,Energies_ClusterCompPurityEnergy_canvasMap, ClusterCompPurityEnergy_canvas,ClusterCompPurityEnergy_2dHistMap,ClusterCompPurityEnergy_2dCanvasMap,100,-0.2,1.2,200,0,fMaxSimEnergy,ClusterCompPurityEnergy_TreeVal);
-
-  ana::ShowerValidation::InitialiseGraphs("ClusterCompPurityHits","Hit Completeness*Purity",ClusterCompPurityHits_HistMap,Energies_ClusterCompPurityHits_HistMap,Energies_Mean_ClusterCompPurityHits_GraphMap,Energies_RMS_ClusterCompPurityHits_GraphMap,Energies_Mean_ClusterCompPurityHits_Multi,Energies_RMS_ClusterCompPurityHits_Multi,Energies_Mean_ClusterCompPurityHits_canvasMulti,Energies_RMS_ClusterCompPurityHits_canvasMulti,Energies_ClusterCompPurityHits_canvasMap, ClusterCompPurityHits_canvas,ClusterCompPurityHits_2dHistMap,ClusterCompPurityHits_2dCanvasMap,200,-0.2,1.2,200,0,fMaxSimEnergy,ClusterCompPurityHits_TreeVal);
-
-  ana::ShowerValidation::InitialiseHitGraphs("HitCompletenessEnergy","Completeness",HitCompletenessEnergy_HistMap,Energies_HitCompletenessEnergy_HistMap,Energies_Mean_HitCompletenessEnergy_GraphMap,Energies_RMS_HitCompletenessEnergy_GraphMap,Energies_Mean_HitCompletenessEnergy_Multi,Energies_RMS_HitCompletenessEnergy_Multi,Energies_Mean_HitCompletenessEnergy_canvasMulti,Energies_RMS_HitCompletenessEnergy_canvasMulti,Energies_HitCompletenessEnergy_canvasMap, HitCompletenessEnergy_canvas,HitCompletenessEnergy_2dHistMap,HitCompletenessEnergy_2dCanvasMap,200,-0.2,1.2,200,0,fMaxSimEnergy,HitCompletenessEnergy_TreeVal);
-
-}
+ }
 
 
 void ana::ShowerValidation::analyze(const art::Event& evt) {
 
-  EventNum_name_TreeVal.push_back(evt.run());
-  EventNum_name_TreeVal.push_back(evt.subRun());
-  EventNum_name_TreeVal.push_back(evt.event());
+  EventRun_TreeVal = evt.run();
+  EventSubrun_TreeVal = evt.subRun();
+  EventNumber_TreeVal = evt.event();
 
   ++numevents;
 
@@ -1974,17 +671,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       BiggestShowerE_After  = particle->E();
     }
 
-    //Fill the plots
-    BiggestShowerMotherE_BeforeCutHist ->Fill(BiggestShowerE_Before*1000);
-    SmallestShowerMotherE_BeforeCutHist->Fill(SmallestShowerE_Before*1000);
-    BiggestShowerMotherE_BeforeCut_TreeVal.push_back(BiggestShowerE_Before*1000);
-    SmallestShowerMotherE_BeforeCut_TreeVal.push_back(SmallestShowerE_Before*1000);
-
-    BiggestShowerMotherE_AfterCutHist ->Fill(BiggestShowerE_After*1000);
-    SmallestShowerMotherE_AfterCutHist->Fill(SmallestShowerE_After*1000);
-    BiggestShowerMotherE_AfterCut_TreeVal.push_back(BiggestShowerE_After*1000);
-    SmallestShowerMotherE_AfterCut_TreeVal.push_back(SmallestShowerE_After*1000);
-    //}
   }
 
   //Get the MC Energy deposited for each MC track.
@@ -2038,18 +724,8 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
       float TotalEnergyDepinHits = RecoUtils::TotalEnergyDepinHits(hits,plane_id.Plane);
       if(TotalEnergyDepinHits != 0){
-	HitCompletenessEnergy_HistMap[fHitModuleLabel][plane_id]->Fill(( TotalEnergyDepinHits)/TotalEnergyDeposited);
-	HitCompletenessEnergy_2dHistMap[fHitModuleLabel][plane_id]->Fill((TotalEnergyDepinHits)/TotalEnergyDeposited,simenergy*1000);
 	HitCompletenessEnergy_TreeVal[fHitModuleLabel][plane_id.Plane].push_back((TotalEnergyDepinHits)/TotalEnergyDeposited);
 	if(fVerbose > 1){std::cout << "Hit Completeness:"  << (TotalEnergyDepinHits)/TotalEnergyDeposited << std::endl;}
-
-	if(fEnergies.size() != 0){
-	  for(unsigned int i=0; i<fEnergies.size(); ++i){
-	    if(TMath::Abs(simenergy*1000 - fEnergies[i])< fEnergyWidth){
-	      Energies_HitCompletenessEnergy_HistMap[fHitModuleLabel][fEnergies[i]][plane_id]->Fill((TotalEnergyDepinHits)/TotalEnergyDeposited);
-	    }
-	  }
-	}
       }
       else{
 	HitCompletenessEnergy_TreeVal[fHitModuleLabel][plane_id.Plane].push_back(-99999);
@@ -2274,16 +950,12 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       double hitcompleteness = 0;
       if(TrueEnergyDep_FromShower != 0){
 	hitcompleteness = ((double) TrueHitsDep_WithinRecoShower)/(double) TrueHitDep_FromTrueShower;
-	ShowerHitsCompleteness_HistMap[fShowerModuleLabel]->Fill(hitcompleteness);
-	ShowerHitsCompleteness_2dHistMap[fShowerModuleLabel]->Fill(hitcompleteness,simenergy*1000);
 	ShowerHitsCompleteness_TreeVal[fShowerModuleLabel].push_back(hitcompleteness);
       }
 
       double hitpurity = 0;
       if(TrueHitsDep_WithinRecoShower != 0){
 	hitpurity   =   (double) TrueHitsDep_WithinRecoShower/(double) NumberofHitsinRecoShower;
-	ShowerHitsPurity_HistMap[fShowerModuleLabel]->Fill(hitpurity);
-	ShowerHitsPurity_2dHistMap[fShowerModuleLabel]->Fill(hitpurity,simenergy*1000);
 	ShowerHitsPurity_TreeVal[fShowerModuleLabel].push_back(hitpurity);
       }
 
@@ -2312,16 +984,12 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       double energycompleteness = 0;
       if(TrueEnergyDep_FromShower != 0){
 	energycompleteness =  (TrueEnergyDepWithinShower_FromTrueShower)/TrueEnergyDep_FromShower;
-	ShowerEnergyCompleteness_HistMap[fShowerModuleLabel]->Fill(energycompleteness);
-	ShowerEnergyCompleteness_2dHistMap[fShowerModuleLabel]->Fill(energycompleteness,simenergy*1000);
 	ShowerEnergyCompleteness_TreeVal[fShowerModuleLabel].push_back(energycompleteness);
       }
 
       double energypurity = 0;
       if(TrueEnergyDep_WithinRecoShower != 0){
 	energypurity       =  TrueEnergyDepWithinShower_FromTrueShower/TrueEnergyDep_WithinRecoShower;
-	ShowerEnergyPurity_HistMap[fShowerModuleLabel]->Fill(energypurity);
-	ShowerEnergyPurity_2dHistMap[fShowerModuleLabel]->Fill(energypurity,simenergy*1000);
 	ShowerEnergyPurity_TreeVal[fShowerModuleLabel].push_back(energypurity);
       }
 
@@ -2330,24 +998,30 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
       //Find the Energy of the particle:
       float Energy = MCShowerParticle->E();
-      ShowerTrueEnergy_HistMap[fShowerModuleLabel]->Fill(Energy*1000);
       ShowerTrueEnergy_TreeVal[fShowerModuleLabel].push_back(Energy*1000);
-      ShowerTrueEnergy_2dHistMap[fShowerModuleLabel]->Fill(Energy,simenergy*1000);
 
       ShowerStartEndProcess_TreeVal[fShowerModuleLabel].push_back(MCShowerParticle->EndProcess());
-
-      if(std::find(SmallestShowerMotherE_AfterCut_TreeVal.begin(),SmallestShowerMotherE_AfterCut_TreeVal.end(),Energy*1000) != SmallestShowerMotherE_AfterCut_TreeVal.end()){AsscoiatedSmallestShowerMotherEHist->Fill(Energy*1000);}
-      else if(std::find(BiggestShowerMotherE_AfterCut_TreeVal.begin(),BiggestShowerMotherE_AfterCut_TreeVal.end(),Energy*1000) != BiggestShowerMotherE_AfterCut_TreeVal.end()){AsscoiatedBiggestShowerMotherEHist->Fill(Energy*1000);}
 
       //Get the number of Traj points to loop over
       unsigned int TrajPoints = MCShowerParticle->NumberTrajectoryPoints();
 
+      // Select first traj point where the photon loses energy, last be default
+      bool PhotonEnd = false;
+      unsigned int PhotonEndTrajPoint = TrajPoints-1;
+	for (unsigned int trajPoint=0; trajPoint<TrajPoints;trajPoint++){
+	  if (!PhotonEnd && MCShowerParticle->E(trajPoint) < (0.9*Energy)){
+	    PhotonEndTrajPoint = trajPoint;
+	    PhotonEnd = true;
+	  }
+	}
+
+
       //Find the start and end points of the initial particle.
       TLorentzVector PositionTrajStart =  MCShowerParticle->Position(0);
-      TLorentzVector PositionTrajEnd   =  MCShowerParticle->Position(TrajPoints-1);
+      TLorentzVector PositionTrajEnd   =  MCShowerParticle->Position(PhotonEndTrajPoint);
 
       //The Start of position for the electron shower is PositionTrajStart but the start position for photon showers is at the end of the shower (the start of the e+- track)
-      if(MCShowerParticle->PdgCode() == 22){
+      if(MCShowerParticle->PdgCode() == 22){ 
 	PositionTrajStart = PositionTrajEnd;
       }
 
@@ -2417,46 +1091,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       double Start_diff = TMath::Sqrt(TMath::Power(PositionTrajStart.X()-ShowerStart.X(),2) + TMath::Power(PositionTrajStart.Y()-ShowerStart.Y(),2) + TMath::Power(PositionTrajStart.Z()-ShowerStart.Z(),2));
 
       //Fill the histograms.
-      if(fFillOnlyClosestShower){
-	if(Start_diff < MinStartDiff[ShowerTrackID]){
-	  if(EvaluateShowerStart){
-	    MinStartDiff[ShowerTrackID] = Start_diff;
-	    MinStartX[ShowerTrackID]    = TMath::Abs(PositionTrajStart.X()-ShowerStart.X());
-	    MinStartY[ShowerTrackID]    = TMath::Abs(PositionTrajStart.Y()-ShowerStart.Y());
-	    MinStartZ[ShowerTrackID]    = TMath::Abs(PositionTrajStart.Z()-ShowerStart.Z());
-	  }
-	  if(EvaluateShowerDirection){
-	    MinShowerDirection_Xdiff[ShowerTrackID] = ShowerDirection_Xdiff;
-	    MinShowerDirection_Ydiff[ShowerTrackID] = ShowerDirection_Ydiff;
-	    MinShowerDirection_Zdiff[ShowerTrackID] = ShowerDirection_Zdiff;
-	    MinShowerDirection_diff[ShowerTrackID]  = ShowerDirection_diff;
-	  }
-	}
-      }
-      else{
-	if(EvaluateShowerDirection){
-	  ShowerDirection_X_HistMap[fShowerModuleLabel]->Fill(ShowerDirection_Xdiff);
-	  ShowerDirection_Y_HistMap[fShowerModuleLabel]->Fill(ShowerDirection_Ydiff);
-	  ShowerDirection_Z_HistMap[fShowerModuleLabel]->Fill(ShowerDirection_Zdiff);
-	  ShowerDirectionDiff_HistMap[fShowerModuleLabel]->Fill(ShowerDirection_diff);
-	  ShowerDirection_X_2dHistMap[fShowerModuleLabel]->Fill(ShowerDirection_Xdiff,simenergy*1000);
-	  ShowerDirection_Y_2dHistMap[fShowerModuleLabel]->Fill(ShowerDirection_Ydiff,simenergy*1000);
-	  ShowerDirection_Z_2dHistMap[fShowerModuleLabel]->Fill(ShowerDirection_Zdiff,simenergy*1000);
-	  ShowerDirectionDiff_2dHistMap[fShowerModuleLabel]->Fill(ShowerDirection_diff,simenergy*1000);
-	}
-
-	if(EvaluateShowerStart){
-	  ShowerStart_X_HistMap[fShowerModuleLabel]->Fill(TMath::Abs(PositionTrajStart.X()-ShowerStart.X()));
-	  ShowerStart_Y_HistMap[fShowerModuleLabel]->Fill(TMath::Abs(PositionTrajStart.Y()-ShowerStart.Y()));
-	  ShowerStart_Z_HistMap[fShowerModuleLabel]->Fill(TMath::Abs(PositionTrajStart.Z()-ShowerStart.Z()));
-	  ShowerMag_HistMap[fShowerModuleLabel]->Fill(Start_diff);
-	  ShowerStart_X_2dHistMap[fShowerModuleLabel]->Fill(TMath::Abs(PositionTrajStart.X()-ShowerStart.X()),simenergy*1000);
-	  ShowerStart_Y_2dHistMap[fShowerModuleLabel]->Fill(TMath::Abs(PositionTrajStart.Y()-ShowerStart.Y()),simenergy*1000);
-	  ShowerStart_Z_2dHistMap[fShowerModuleLabel]->Fill(TMath::Abs(PositionTrajStart.Z()-ShowerStart.Z()),simenergy*1000);
-	  ShowerMag_2dHistMap[fShowerModuleLabel]->Fill(Start_diff,simenergy*1000);
-  	}
-      }
-
       if(EvaluateShowerDirection){
 	ShowerDirection_X_TreeVal[fShowerModuleLabel].push_back(ShowerDirection_Xdiff);
 	ShowerDirection_Y_TreeVal[fShowerModuleLabel].push_back(ShowerDirection_Ydiff);
@@ -2483,12 +1117,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	ShowerMag_TreeVal[fShowerModuleLabel].push_back(-99999);
       }
 
-      if(EvaluateShowerStart && EvaluateShowerDirection){
-	PosDir_2dHistMap[fShowerModuleLabel]->Fill(Start_diff,TrueShowerDirection.Dot(ShowerDirection)/(TrueShowerDirection.Mag()*ShowerDirection.Mag()));
-      }
-
       if(EvaluateShowerLength){
-	ShowerLength_HistMap[fShowerModuleLabel]->Fill(TMath::Abs(TrueTrackLength-ShowerTrackLength));
 	ShowerLength_TreeVal[fShowerModuleLabel].push_back(TMath::Abs(TrueTrackLength-ShowerTrackLength));
       }
       else{
@@ -2496,8 +1125,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
 
       if(TrueEnergyDep_FromShower != 0 && EvaluateShowerEnergy){
-	ShowerEnergyDiff_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower);
- 	ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower);
  	ShowerEnergyDiff_TreeVal[fShowerModuleLabel].push_back(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower);
  	ShowerTotalEnergyDiff_TreeVal[fShowerModuleLabel].push_back((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower);
       }
@@ -2507,7 +1134,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
 
       if(TrueEnergyDepWithinShower_FromTrueShower != 0 && EvaluateShowerEnergy){
- 	ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower);
 	ShowerRecoEnergyVsTrueEnergyinRecoShower_TreeVal[fShowerModuleLabel].push_back(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower);
       }
       else{
@@ -2515,18 +1141,15 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
 
       if(EvaluateShowerEnergy){
-	ShowerEnergy_HistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]);
 	ShowerEnergy_TreeVal[fShowerModuleLabel].push_back(ShowerEnergyPlanes[ShowerBest_Plane]);
       }
       else{
 	ShowerEnergy_TreeVal[fShowerModuleLabel].push_back(-99999);
       }
 
-      ShowerHitNum_HistMap[fShowerModuleLabel]->Fill(showerhits.size());
       ShowerHitNum_TreeVal[fShowerModuleLabel].push_back(showerhits.size());
 
       if(EvaluateShowerdEdx){
- 	ShowerdEdx_HistMap[fShowerModuleLabel]->Fill((ShowerdEdX_vec[ShowerBest_Plane]));
 	ShowerdEdx_TreeVal[fShowerModuleLabel].push_back((ShowerdEdX_vec[ShowerBest_Plane]));
       }
       else{
@@ -2534,82 +1157,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
 
       //Fill the 2D histograms
-      if(EvaluateShowerLength){
-	ShowerLength_2dHistMap[fShowerModuleLabel]->Fill(TMath::Abs(TrueTrackLength-ShowerTrackLength),simenergy*1000);
-      }
-
-      if(TrueEnergyDep_FromShower != 0 && EvaluateShowerEnergy){
-	ShowerEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower,simenergy*1000);
-	ShowerTotalEnergyDiff_2dHistMap[fShowerModuleLabel]->Fill((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
-      }
-
-      if(TrueEnergyDepWithinShower_FromTrueShower != 0 && EvaluateShowerEnergy){
-	ShowerRecoEnergyVsTrueEnergyinRecoShower_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDepWithinShower_FromTrueShower,simenergy*1000);
-      }
-
-      if(EvaluateShowerEnergy){
-	ShowerEnergy_2dHistMap[fShowerModuleLabel]->Fill(ShowerEnergyPlanes[ShowerBest_Plane],simenergy*1000);
-      }
-
-      ShowerHitNum_2dHistMap[fShowerModuleLabel]->Fill(showerhits.size(),simenergy*1000);
-
-      if(EvaluateShowerdEdx){
-	ShowerdEdx_2dHistMap[fShowerModuleLabel]->Fill((ShowerdEdX_vec[ShowerBest_Plane]),simenergy*1000);
-      }
-
-      //Fill the Energy dependent Histograms.
-      if(fEnergies.size() != 0){
-	for(unsigned int i=0; i<fEnergies.size(); ++i){
-	  if(TMath::Abs(simenergy*1000 - fEnergies[i])< fEnergyWidth){
-
-	    if(!fFillOnlyClosestShower){
-
-	      if(EvaluateShowerDirection){
-		Energies_ShowerDirection_X_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerDirection_Xdiff);
-		Energies_ShowerDirection_Y_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerDirection_Ydiff);
-		Energies_ShowerDirection_Z_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerDirection_Zdiff);
-		Energies_ShowerDirectionDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerDirection_diff);
-	      }
-	      if(EvaluateShowerStart){
-		Energies_ShowerStart_X_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(TMath::Abs(PositionTrajStart.X()-ShowerStart.X()));
-		Energies_ShowerStart_Y_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(TMath::Abs(PositionTrajStart.Y()-ShowerStart.Y()));
-		Energies_ShowerStart_Z_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(TMath::Abs(PositionTrajStart.Z()-ShowerStart.Z()));
-		Energies_ShowerMag_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(Start_diff );
-		Energies_ShowerDirectionDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerDirection_diff);
-	      }
-	    }
-
-	    if(EvaluateShowerEnergy){
-	      Energies_ShowerEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]);
-	    }
-
-	    if(EvaluateShowerLength){
-	      Energies_ShowerLength_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(TMath::Abs(TrueTrackLength-ShowerTrackLength));
-	    }
-
-	    if(TrueEnergyDep_FromShower != 0 && EvaluateShowerEnergy){
-	      Energies_ShowerEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower);
-	      Energies_ShowerTotalEnergyDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill((ShowerEnergyPlanes[ShowerBest_Plane] - TrueEnergyDep_FromShower)/TrueEnergyDep_FromShower,simenergy*1000);
-	    }
-
-	    if(TrueEnergyDepWithinShower_FromTrueShower != 0 && EvaluateShowerEnergy){
-	      Energies_ShowerRecoEnergyVsTrueEnergyinRecoShower_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(ShowerEnergyPlanes[ShowerBest_Plane]/3/TrueEnergyDepWithinShower_FromTrueShower);
-	    }
-
-	    Energies_ShowerHitNum_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(showerhits.size());
-	    Energies_ShowerTrueEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(Energy);
-
-	    if(TrueEnergyDep_FromShower != 0)      {Energies_ShowerEnergyCompleteness_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(energycompleteness);}
-	    if(TrueEnergyDep_WithinRecoShower != 0){Energies_ShowerEnergyPurity_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(energypurity);}
-	    if(TrueEnergyDep_FromShower != 0)      {Energies_ShowerHitsCompleteness_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(hitcompleteness);}
-	    if(TrueHitsDep_WithinRecoShower != 0)  {Energies_ShowerHitsPurity_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(hitpurity);}
-
-	    if(EvaluateShowerdEdx){
-	      Energies_ShowerdEdx_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill((ShowerdEdX_vec[ShowerBest_Plane]));
-	    }
-	  }
-	}
-      }
 
       if(fVerbose > 0){
 	std::cout << "#################################################" << std::endl;
@@ -2657,7 +1204,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       float numclusters = -9999;
       float geoprojectionmatched_score = -99999;
       for(std::vector< art::Ptr<recob::Hit> >::iterator hitIt=showerhits.begin(); hitIt!=showerhits.end(); ++hitIt){
-	std::cout<<"clusters"<<std::endl;
 	try{
 	  const std::vector<sim::IDE> hitIDEs = backtracker->HitToAvgSimIDEs(*hitIt);
 	  for(unsigned int hitIDE=0; hitIDE<hitIDEs.size(); ++hitIDE){
@@ -2740,18 +1286,8 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
       if(EvalulateGeoProjectionMatched){
 
-	GeoProjectionMatched_HistMap[fShowerModuleLabel]->Fill(geoprojectionmatched_score);
-	GeoProjectionMatched_2dHistMap[fShowerModuleLabel]->Fill(geoprojectionmatched_score,simenergy*1000);
 	GeoProjectionMatched_TreeVal[fShowerModuleLabel].push_back(geoprojectionmatched_score);
-
-	//Fill the Energy dependent Histograms.
-	if(fEnergies.size() != 0){
-	  for(unsigned int i=0; i<fEnergies.size(); ++i){
-	    if(TMath::Abs(simenergy*1000 - fEnergies[i])< fEnergyWidth){
-	      Energies_GeoProjectionMatched_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(geoprojectionmatched_score);
-	    }
-	  }
-	}
+	
       }
       else{
 	GeoProjectionMatched_TreeVal[fShowerModuleLabel].push_back(-99999);
@@ -2775,20 +1311,9 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	  TrueHitDep_FromTrueShowers +=  MCTrack_hit_map[showerhit_productid][*track_id][plane_id];
 	}
       }
-      TrueHitNum_HistMap[fShowerModuleLabel]  ->Fill(TrueHitDep_FromTrueShowers);
-      TrueHitNum_2dHistMap[fShowerModuleLabel]->Fill(TrueHitDep_FromTrueShowers,simenergy*1000);
-
-      if(fEnergies.size() != 0){
-	for(unsigned int i=0; i<fEnergies.size(); ++i){
-	  if(TMath::Abs(simenergy*1000 - fEnergies[i])< fEnergyWidth){
-	    Energies_TrueHitNum_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(TrueHitDep_FromTrueShowers);
-	  }
-	}
-      }
     }
 
     //This is rather pandora track specific for tuning pandora so lets add it if the shower module used pandora and the track module Pandora track is used. Very horrid and sorry for that.
-    PandoraTrackNum_HistMap[fShowerModuleLabel]->Fill(tracks.size());
     PandoraTrackNum_TreeVal[fShowerModuleLabel].push_back(tracks.size());
 
     Event_NumTrueShowers_TreeVal[fShowerModuleLabel].push_back(num_of_showers);
@@ -2805,75 +1330,11 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     }
 
     //Whats the segementyness of the event.
-    EventSeggy_HistMap[fShowerModuleLabel]  ->Fill((float)showers.size()/(float)num_of_showers_viaDensitycut);
-    TrueEnergy_HistMap[fShowerModuleLabel]  ->Fill(simenergy*1000);
-    EventSeggy_2dHistMap[fShowerModuleLabel]->Fill((float)showers.size()/(float)num_of_showers_viaDensitycut,simenergy*1000);
-
     EventSeggy_TreeVal[fShowerModuleLabel].push_back((float)showers.size()/(float)num_of_showers_viaDensitycut);
     TrueEnergy_TreeVal[fShowerModuleLabel].push_back(simenergy*1000);
 
-    if(fEnergies.size() != 0){
-      for(unsigned int i=0; i<fEnergies.size(); ++i){
-	if(TMath::Abs(simenergy*1000 - fEnergies[i])< fEnergyWidth){
-	  Energies_EventSeggy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill((float)showers.size()/(float)num_of_showers_viaDensitycut);
-	  Energies_TrueEnergy_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(simenergy*1000);
-	  Energies_PandoraTrackNum_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(tracks.size());
-	}
-      }
-    }
 
-    //As starting position shouldn't be penalised for segmentation then here is the option to fill the closest shower to the true start
-    if(fFillOnlyClosestShower){
-      for(std::map<int,float>::iterator trueshwr_iter=MinStartDiff.begin() ; trueshwr_iter!=MinStartDiff.end(); ++trueshwr_iter){
-	if(MinEvaluateShowerDirection[trueshwr_iter->first] > 0){
-	  ShowerDirection_X_HistMap[fShowerModuleLabel]   ->Fill(MinShowerDirection_Xdiff[trueshwr_iter->first]);
-	  ShowerDirection_Y_HistMap[fShowerModuleLabel]   ->Fill(MinShowerDirection_Ydiff[trueshwr_iter->first]);
-	  ShowerDirection_Z_HistMap[fShowerModuleLabel]   ->Fill(MinShowerDirection_Zdiff[trueshwr_iter->first]);
-	  ShowerDirectionDiff_HistMap[fShowerModuleLabel] ->Fill(MinShowerDirection_diff[trueshwr_iter->first]);
-	  ShowerDirection_X_2dHistMap[fShowerModuleLabel] ->Fill(MinShowerDirection_Xdiff[trueshwr_iter->first],simenergy*1000);
-	  ShowerDirection_Y_2dHistMap[fShowerModuleLabel] ->Fill(MinShowerDirection_Ydiff[trueshwr_iter->first],simenergy*1000);
-	  ShowerDirection_Z_2dHistMap[fShowerModuleLabel] ->Fill(MinShowerDirection_Zdiff[trueshwr_iter->first],simenergy*1000);
-	  ShowerDirectionDiff_2dHistMap[fShowerModuleLabel]->Fill(MinShowerDirection_diff[trueshwr_iter->first],simenergy*1000);
-	}
-      }
-
-      for(std::map<int,float>::iterator trueshwr_iter=MinStartDiff.begin() ; trueshwr_iter!=MinStartDiff.end(); ++trueshwr_iter){
-	if(MinEvaluateShowerStart[trueshwr_iter->first] > 0){
-	  ShowerStart_X_HistMap[fShowerModuleLabel]      ->Fill(MinStartX[trueshwr_iter->first]);
-	  ShowerStart_Y_HistMap[fShowerModuleLabel]      ->Fill(MinStartY[trueshwr_iter->first]);
-	  ShowerStart_Z_HistMap[fShowerModuleLabel]      ->Fill(MinStartZ[trueshwr_iter->first]);
-	  ShowerMag_HistMap[fShowerModuleLabel]          ->Fill(MinStartDiff[trueshwr_iter->first]);
-	  ShowerStart_X_2dHistMap[fShowerModuleLabel]    ->Fill(MinStartX[trueshwr_iter->first],simenergy*1000);
-	  ShowerStart_Y_2dHistMap[fShowerModuleLabel]    ->Fill(MinStartY[trueshwr_iter->first],simenergy*1000);
-	  ShowerStart_Z_2dHistMap[fShowerModuleLabel]    ->Fill(MinStartZ[trueshwr_iter->first],simenergy*1000);
-	  ShowerMag_2dHistMap[fShowerModuleLabel]        ->Fill(MinStartDiff[trueshwr_iter->first],simenergy*1000);
-	}
-      }
-
-      if(fEnergies.size() != 0){
-	for(unsigned int i=0; i<fEnergies.size(); ++i){
-	  if(TMath::Abs(simenergy*1000 - fEnergies[i])< fEnergyWidth){
-	    for(std::map<int,float>::iterator trueshwr_iter=MinStartDiff.begin() ; trueshwr_iter!=MinStartDiff.end(); ++trueshwr_iter){
-	      if(MinEvaluateShowerDirection[trueshwr_iter->first] > 0){
-		Energies_ShowerDirection_X_HistMap[fShowerModuleLabel][fEnergies[i]]  ->Fill(MinShowerDirection_Xdiff[trueshwr_iter->first]);
-		Energies_ShowerDirection_Y_HistMap[fShowerModuleLabel][fEnergies[i]]  ->Fill(MinShowerDirection_Ydiff[trueshwr_iter->first]);
-		Energies_ShowerDirection_Z_HistMap[fShowerModuleLabel][fEnergies[i]]  ->Fill(MinShowerDirection_Zdiff[trueshwr_iter->first]);
-		Energies_ShowerDirectionDiff_HistMap[fShowerModuleLabel][fEnergies[i]]->Fill(MinShowerDirection_diff[trueshwr_iter->first]);
-	      }
-	    }
-
-	    for(std::map<int,float>::iterator trueshwr_iter=MinStartDiff.begin() ; trueshwr_iter!=MinStartDiff.end(); ++trueshwr_iter){
-	      if(MinEvaluateShowerStart[trueshwr_iter->first] > 0){
-		Energies_ShowerStart_X_HistMap[fShowerModuleLabel][fEnergies[i]]      ->Fill(MinStartX[trueshwr_iter->first]);
-		Energies_ShowerStart_Y_HistMap[fShowerModuleLabel][fEnergies[i]]      ->Fill(MinStartY[trueshwr_iter->first]);
-		Energies_ShowerStart_Z_HistMap[fShowerModuleLabel][fEnergies[i]]      ->Fill(MinStartZ[trueshwr_iter->first]);
-		Energies_ShowerMag_HistMap[fShowerModuleLabel][fEnergies[i]]          ->Fill(MinStartDiff[trueshwr_iter->first]);
-	      }
-	    }
-	  }
-	}
-      }
-    }
+    
   }//Shower Module labels
 
   //Fill the tree
@@ -2945,12 +1406,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     }
   }
 
-  SmallestShowerMotherE_BeforeCut_TreeVal.clear();
-  BiggestShowerMotherE_BeforeCut_TreeVal.clear();
-  SmallestShowerMotherE_AfterCut_TreeVal.clear();
-  BiggestShowerMotherE_AfterCut_TreeVal.clear();
-  EventNum_name_TreeVal.clear();
-
   return;
 }
 
@@ -2980,7 +1435,6 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
 
   //Holder for cluster its
   std::vector< art::Ptr<recob::Hit> > clusterhits;
-
   art::Handle<std::vector<recob::Hit > > hitHandle;
   
   if(!hitHandle.isValid()){
@@ -3016,9 +1470,9 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
       std::map<geo::PlaneID, int> hitPlaneMap = RecoUtils::NumberofPlaneHitsFromTrack(*daughterID, clusterhits);
 
       for(std::map<geo::PlaneID, int>::iterator hitPlaneMapit = hitPlaneMap.begin();  hitPlaneMapit != hitPlaneMap.end();  hitPlaneMapit++){
-	//std::cout<<"Plane ID: "<<(*hitPlaneMapit).first<<std::endl;
-	//std::cout<<"SignalHits: "<<(*hitPlaneMapit).second<<std::endl;
-	//std::cout<<"TotalHits: "<<MCTrack_hit_map[hitHandle.id()][*daughterID][(*hitPlaneMapit).first]<<std::endl;
+	std::cout<<"Plane ID: "<<(*hitPlaneMapit).first<<std::endl;
+	std::cout<<"SignalHits: "<<(*hitPlaneMapit).second<<std::endl;
+	std::cout<<"TotalHits: "<<MCTrack_hit_map[hitHandle.id()][*daughterID][(*hitPlaneMapit).first]<<std::endl;
 
 	//Count how many hits are from the true shower.
 	signalhits += (*hitPlaneMapit).second;
@@ -3041,49 +1495,34 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
 
     float TotalEnergyDepinHits = RecoUtils::TotalEnergyDepinHits(clusterhits,cluster->Plane().Plane);
 
-    ClusterProjectionMatchedEnergy_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(projection_match);
-    ClusterProjectionMatchedEnergy_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(projection_match,simenergy*1000);
     ClusterProjectionMatchedEnergy_TreeVec[cluster->Plane().Plane].push_back(projection_match);
 
     if(totalhits != 0){
       completeness_hits = (signalhits)/totalhits;
-      if (completeness_hits>1) {std::cout<<"WARNING2"<<std::endl;};
-      ClusterCompletenessHits_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(completeness_hits);
-      ClusterCompletenessHits_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(completeness_hits,simenergy*1000);
       ClusterCompletenessHits_TreeVec[cluster->Plane().Plane].push_back(completeness_hits);
     }
 
     if(clusterhits.size() != 0){
       purity_hits = signalhits/clusterhits.size();
-      ClusterPurityHits_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(purity_hits);
-      ClusterPurityHits_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(purity_hits,simenergy*1000);
       ClusterPurityHits_TreeVec[cluster->Plane().Plane].push_back(purity_hits);
 
     }
 
     if(TotalTrueEnergy != 0){
       completeness_energy = (ShowerTrackInfo.second)/TotalTrueEnergy;
-      ClusterCompletenessEnergy_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(completeness_energy);
-      ClusterCompletenessEnergy_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(completeness_energy,simenergy*1000);
       ClusterCompletenessEnergy_TreeVec[cluster->Plane().Plane].push_back(completeness_energy);
     }
 
     if(TotalEnergyDepinHits != 0){
       purity_energy = ShowerTrackInfo.second/TotalEnergyDepinHits;
-      ClusterPurityEnergy_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(purity_energy);
-      ClusterPurityEnergy_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(purity_energy,simenergy*1000);
       ClusterPurityEnergy_TreeVec[cluster->Plane().Plane].push_back(purity_energy);
     }
 
     if(totalhits != 0 && clusterhits.size() != 0){
-      ClusterCompPurityHits_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(completeness_hits*purity_hits);
-      ClusterCompPurityHits_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(completeness_hits*purity_hits,simenergy*1000);
       ClusterCompPurityHits_TreeVec[cluster->Plane().Plane].push_back(completeness_hits*purity_hits);
     }
 
     if(TotalTrueEnergy != 0 && TotalEnergyDepinHits != 0){
-      ClusterCompPurityEnergy_HistMap[fShowerModuleLabel][cluster->Plane()]  ->Fill(completeness_energy*purity_energy);
-      ClusterCompPurityEnergy_2dHistMap[fShowerModuleLabel][cluster->Plane()]->Fill(completeness_energy*purity_energy,simenergy*1000);
       ClusterCompPurityEnergy_TreeVec[cluster->Plane().Plane].push_back(completeness_energy*purity_energy);
     }
 
@@ -3098,22 +1537,6 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
       std::cout << "Cluster energy purity:       " << purity_energy       << std::endl;
       std::cout << "#################################################"    << std::endl;
     }
-
-    //Add to the Energy dependent histograms
-    if(fEnergies.size() != 0){
-      for(unsigned int i=0; i<fEnergies.size(); ++i){
-	if(TMath::Abs(simenergy*1000 - fEnergies[i])< fEnergyWidth){
-	  Energies_ClusterProjectionMatchedEnergy_HistMap[fShowerModuleLabel][fEnergies[i]][cluster->Plane()]->Fill(projection_match);
-	  if(TotalTrueEnergy != 0){Energies_ClusterCompletenessEnergy_HistMap[fShowerModuleLabel][fEnergies[i]][cluster->Plane()]->Fill(completeness_energy);}
-	  if(TotalEnergyDepinHits != 0){Energies_ClusterPurityEnergy_HistMap[fShowerModuleLabel][fEnergies[i]][cluster->Plane()] ->Fill(purity_energy);}
-	  if(totalhits != 0){Energies_ClusterCompletenessHits_HistMap[fShowerModuleLabel][fEnergies[i]][cluster->Plane()]        ->Fill(completeness_hits);}
-	  if(clusterhits.size() != 0){Energies_ClusterPurityHits_HistMap[fShowerModuleLabel][fEnergies[i]][cluster->Plane()]     ->Fill(purity_hits);}
-	  if(TotalTrueEnergy != 0 && TotalEnergyDepinHits != 0){Energies_ClusterCompPurityEnergy_HistMap[fShowerModuleLabel][fEnergies[i]][cluster->Plane()]->Fill(completeness_energy*purity_energy);}
-	  if(totalhits != 0 && clusterhits.size() != 0){Energies_ClusterCompPurityHits_HistMap[fShowerModuleLabel][fEnergies[i]][cluster->Plane()]         ->Fill(completeness_hits*purity_hits);}
-	}
-      }
-    }
-
   }//Cluster Loop
 
   ClusterProjectionMatchedEnergy_TreeVal[fShowerModuleLabel].push_back(ClusterProjectionMatchedEnergy_TreeVec);
@@ -3224,9 +1647,9 @@ void ana::ShowerValidation::PFPValidation(std::vector<art::Ptr<recob::Cluster> >
       std::map<geo::PlaneID, int> hitPlaneMap = RecoUtils::NumberofPlaneHitsFromTrack(PFPTrackInfo, clusterhits);
 
       for(std::map<geo::PlaneID, int>::iterator hitPlaneMapit = hitPlaneMap.begin();  hitPlaneMapit != hitPlaneMap.end();  hitPlaneMapit++){
-	//std::cout<<"Plane ID: "<<(*hitPlaneMapit).first<<std::endl;
-	//std::cout<<"SignalHits: "<<(*hitPlaneMapit).second<<std::endl;
-	//std::cout<<"TotalHits: "<<MCTrack_hit_map[hitHandle.id()][PFPTrackInfo][(*hitPlaneMapit).first]<<std::endl;
+	std::cout<<"Plane ID: "<<(*hitPlaneMapit).first<<std::endl;
+	std::cout<<"SignalHits: "<<(*hitPlaneMapit).second<<std::endl;
+	std::cout<<"TotalHits: "<<MCTrack_hit_map[hitHandle.id()][PFPTrackInfo][(*hitPlaneMapit).first]<<std::endl;
 
 	//Count how many hits are from the true shower.
 	signalhits += (*hitPlaneMapit).second;
@@ -3316,410 +1739,6 @@ void ana::ShowerValidation::PFPValidation(std::vector<art::Ptr<recob::Cluster> >
   return;
 }
 
-void ana::ShowerValidation::DrawGraphs(std::map<std::string,TH1F*>& Name_HistMap,
-				       std::map<std::string,std::map<float,TH1F*> >& Energies_Name_HistMap,
-				       std::map<std::string,TGraphErrors*>& Energies_Mean_Name_GraphMap,
-				       std::map<std::string,TGraphErrors*>& Energies_RMS_Name_GraphMap,
-				       TMultiGraph*& Energies_Mean_Name_Multi,TMultiGraph*& Energies_RMS_Name_Multi,
-				       TCanvas*& Energies_Mean_Name_canvasMulti,TCanvas*& Energies_RMS_Name_canvasMulti,
-				       std::map<float,TCanvas*>& Energies_Name_canvasMap, TCanvas*& Name_canvas,
-				       std::map<std::string,TH2F*>& Name_2dHistMap,
-				       std::map<std::string,TCanvas*>& Name_2dCanvasMap
-				       ){
-
-  std::vector<int> colours = {600,632,800,880,840};
-  if((int)fShowerModuleLabels.size() > 5){
-    for(unsigned int j=0; j<fShowerModuleLabels.size() -5 ; ++j){
-      colours.push_back(j);
-    }
-  }
-
-
-  int Name_HistMap_Max = 0;
-  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-    if(Name_HistMap[fShowerModuleLabels[j]]->GetMaximum() > Name_HistMap_Max){
-      Name_HistMap_Max = Name_HistMap[fShowerModuleLabels[j]]->GetMaximum();
-    }
-  }
-
-
-
-  for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-
-    Name_canvas->cd();
-    Name_HistMap[fShowerModuleLabels[j]]->SetLineColor(colours[j]);
-    Name_HistMap[fShowerModuleLabels[j]]->SetLineWidth(2);
-    Name_HistMap[fShowerModuleLabels[j]]->Draw("SAME");
-    Name_HistMap[fShowerModuleLabels[j]]->SetMinimum(0);
-    Name_HistMap[fShowerModuleLabels[j]]->SetMaximum(Name_HistMap_Max+1);
-    Name_canvas->Update();
-
-    Name_2dCanvasMap[fShowerModuleLabels[j]]->cd();
-    Name_2dHistMap[fShowerModuleLabels[j]]->Draw("COLZ");
-
-    if(fDrawCanvases){
-      std::string canvasname(Name_2dCanvasMap[fShowerModuleLabels[j]]->GetName());
-      std::string pngstring = canvasname + ".png";
-      const char* pngname = pngstring.c_str();
-      Name_2dCanvasMap[fShowerModuleLabels[j]]->Print(pngname);
-    }
-
-
-    Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]] ->SetMarkerStyle(8);
-    Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]]->SetMarkerStyle(8);
-    Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]]->SetMarkerColor(colours[j]);
-    Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]] ->SetMarkerColor(colours[j]);
-
-
-    for(unsigned int i=0; i<fEnergies.size(); ++i){
-
-      float Enteries = Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetEntries();
-
-      if(Enteries == 0){continue;}
-
-      Energies_Name_canvasMap[fEnergies[i]]->cd();
-      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetLineWidth(2);
-      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetLineColor(colours[j]);
-      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->Draw("SAME");
-      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetMinimum(0);
-      Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->SetMaximum(Name_HistMap_Max+1);
-
-      float Energies_TrueEnergy_Mean = Energies_TrueEnergy_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetMean();
-      float Energies_TrueEnergy_RMS = Energies_TrueEnergy_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetRMS();
-      float Error_on_True_Energy = Energies_TrueEnergy_RMS;
-
-      float Energies_Name_Mean = Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetMean();
-      float Energies_Name_RMS = Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetRMS();
-      Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]]->SetPoint(Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]]->GetN(),Energies_TrueEnergy_Mean,Energies_Name_Mean);
-      Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]]->SetPoint(Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]]->GetN(),Energies_TrueEnergy_Mean,Energies_Name_RMS);
-      Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]]->SetPointError(Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]]->GetN()-1,Error_on_True_Energy,Energies_Name_RMS);
-
-    }//Energy Loop
-
-    Energies_Mean_Name_Multi->Add(Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]]);
-    Energies_RMS_Name_Multi->Add(Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]]);
-
-  }//Shower Labels Loop
-
-
-  Name_canvas->cd();
-  Name_canvas->BuildLegend();
-  if(fDrawCanvases){
-    std::string canvasname(Name_canvas->GetName());
-    std::string pngstring = canvasname + ".png";
-    std::cout << "pngstring: " << pngstring << std::endl;
-    const char* pngname = pngstring.c_str();
-    Name_canvas->Print(pngname);
-  }
-
-  for(unsigned int i=0; i<fEnergies.size(); ++i){
-    Energies_Name_canvasMap[fEnergies[i]]->cd();
-    Energies_Name_canvasMap[fEnergies[i]]->BuildLegend();
-  }
-
-  Energies_Mean_Name_canvasMulti->cd();
-  Energies_Mean_Name_Multi->Draw("AP");
-  Energies_Mean_Name_canvasMulti->Update();
-  Energies_Mean_Name_canvasMulti->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
-
-  if(fDrawCanvases){
-    std::string canvasname(Energies_Mean_Name_canvasMulti->GetName());
-    std::string pngstring = canvasname + ".png";
-    const char* pngname = pngstring.c_str();
-    Energies_Mean_Name_canvasMulti->Print(pngname);
-  }
-
-  Energies_RMS_Name_canvasMulti->cd();
-  Energies_RMS_Name_Multi->Draw("AP");
-  Energies_RMS_Name_canvasMulti->Update();
-  Energies_RMS_Name_canvasMulti->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
-
-  if(fDrawCanvases){
-    std::string canvasname(Energies_RMS_Name_canvasMulti->GetName());
-    std::string pngstring = canvasname + ".png";
-    const char* pngname = pngstring.c_str();
-    Energies_RMS_Name_canvasMulti->Print(pngname);
-  }
-}
-
-
-void ana::ShowerValidation::DrawGraphs(std::map<std::string,std::map<geo::PlaneID,TH1F*> >& Name_HistMap,
-				       std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > >& Energies_Name_HistMap,
-				       std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_Mean_Name_GraphMap,
-				       std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_RMS_Name_GraphMap,
-				       std::map<geo::PlaneID,TMultiGraph*>& Energies_Mean_Name_Multi,
-				       std::map<geo::PlaneID,TMultiGraph*>& Energies_RMS_Name_Multi,
-				       std::map<geo::PlaneID,TCanvas*>& Energies_Mean_Name_canvasMulti,
-				       std::map<geo::PlaneID,TCanvas*>& Energies_RMS_Name_canvasMulti,
-				       std::map<float,std::map<geo::PlaneID,TCanvas*> >& Energies_Name_canvasMap,
-				       std::map<geo::PlaneID,TCanvas*>& Name_canvas,
-				       std::map<std::string,std::map<geo::PlaneID,TH2F*> >& Name_2dHistMap,
-				       std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap
-				       ){
-
-
-  std::vector<int> colours = {600,632,800,880,840};
-  if((int)fShowerModuleLabels.size() > 5){
-    for(unsigned int j=0; j<fShowerModuleLabels.size() -5 ; ++j){
-      colours.push_back(j);
-    }
-  }
-
-  for(geo::PlaneID plane_id: geom->IteratePlaneIDs()){
-
-    int Name_HistMap_Max = 0;
-    for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-      if(Name_HistMap[fShowerModuleLabels[j]][plane_id]->GetMaximum() > Name_HistMap_Max){
-	Name_HistMap_Max = Name_HistMap[fShowerModuleLabels[j]][plane_id]->GetMaximum();
-      }
-    }
-
-
-    for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-
-      Name_canvas[plane_id]->cd();
-      gStyle->SetPalette(kBird);
-      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetLineWidth(2);
-      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetLineColor(colours[j]);
-      Name_HistMap[fShowerModuleLabels[j]][plane_id]->Draw("SAME");
-      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetMinimum(0);
-      Name_HistMap[fShowerModuleLabels[j]][plane_id]->SetMaximum(Name_HistMap_Max +1);
-
-      Name_2dCanvasMap[fShowerModuleLabels[j]][plane_id]->cd();
-      gStyle->SetPalette(kBird);
-      Name_2dHistMap[fShowerModuleLabels[j]][plane_id]->Draw("COLZ");
-
-      if(fDrawCanvases){
-	std::string canvasname(Name_2dCanvasMap[fShowerModuleLabels[j]][plane_id]->GetName());
-	std::string pngstring = canvasname + ".png";
-	const char* pngname = pngstring.c_str();
-	Name_2dCanvasMap[fShowerModuleLabels[j]][plane_id]->Print(pngname);
-      }
-
-      Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id]->SetMarkerStyle(8);
-      Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]][plane_id] ->SetMarkerStyle(8);
-      Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id]->SetMarkerColor(colours[j]);
-      Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]][plane_id] ->SetMarkerColor(colours[j]);
-
-      for(unsigned int i=0; i<fEnergies.size(); ++i){
-
-	float Enteries = Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->GetEntries();
-
-	if(Enteries == 0){continue;}
-
-
-	Energies_Name_canvasMap[fEnergies[i]][plane_id]->cd();
-	gStyle->SetPalette(kBird);
-	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetLineWidth(2);
-	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetLineColor(colours[j]);
-	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->Draw("SAME");
-	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetMinimum(0);
-	Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->SetMaximum(Name_HistMap_Max+1);
-
-	float Energies_TrueEnergy_Mean = Energies_TrueEnergy_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetMean();
-	float Energies_TrueEnergy_RMS = Energies_TrueEnergy_HistMap[fShowerModuleLabels[j]][fEnergies[i]]->GetRMS();
-	float Error_on_True_Energy = Energies_TrueEnergy_RMS;
-
-	float Energies_Name_Mean = Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->GetMean();
-	float Energies_Name_RMS = Energies_Name_HistMap[fShowerModuleLabels[j]][fEnergies[i]][plane_id]->GetRMS();
-	Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id]->SetPoint(Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id]->GetN(),Energies_TrueEnergy_Mean,Energies_Name_Mean);
-	Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]][plane_id]->SetPoint(Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]][plane_id]->GetN(),Energies_TrueEnergy_Mean,Energies_Name_RMS);
-	Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id]->SetPointError(Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id]->GetN()-1,Error_on_True_Energy,Energies_Name_RMS);
-
-      }//Energy Loop
-
-      Energies_Mean_Name_Multi[plane_id]->Add(Energies_Mean_Name_GraphMap[fShowerModuleLabels[j]][plane_id]);
-      Energies_RMS_Name_Multi[plane_id]->Add(Energies_RMS_Name_GraphMap[fShowerModuleLabels[j]][plane_id]);
-    }//Shower Labels Loop
-
-    Name_canvas[plane_id]->cd();
-    Name_canvas[plane_id]->BuildLegend();
-    if(fDrawCanvases){
-      std::string canvasname(Name_canvas[plane_id]->GetName());
-      std::string pngstring = canvasname + ".png";
-      const char* pngname = pngstring.c_str();
-      Name_canvas[plane_id]->Print(pngname);
-    }
-
-    for(unsigned int i=0; i<fEnergies.size(); ++i){
-      Energies_Name_canvasMap[fEnergies[i]][plane_id]->cd();
-      Energies_Name_canvasMap[fEnergies[i]][plane_id]->BuildLegend();
-      if(fDrawCanvases){
-	std::string canvasname(Energies_Name_canvasMap[fEnergies[i]][plane_id]->GetName());
-	std::string pngstring = canvasname + ".png";
-	const char* pngname = pngstring.c_str();
-	Energies_Name_canvasMap[fEnergies[i]][plane_id]->Print(pngname);
-      }
-    }
-
-    Energies_Mean_Name_canvasMulti[plane_id]->cd();
-    Energies_Mean_Name_Multi[plane_id]->Draw("AP");
-    Energies_Mean_Name_canvasMulti[plane_id]->Update();
-    Energies_Mean_Name_canvasMulti[plane_id]->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
-
-    if(fDrawCanvases){
-      std::string canvasname(Energies_Mean_Name_canvasMulti[plane_id]->GetName());
-      std::string pngstring = canvasname + ".png";
-      const char* pngname = pngstring.c_str();
-      Energies_Mean_Name_canvasMulti[plane_id]->Print(pngname);
-    }
-
-    Energies_RMS_Name_canvasMulti[plane_id]->cd();
-    Energies_RMS_Name_Multi[plane_id]->Draw("AP");
-    Energies_RMS_Name_canvasMulti[plane_id]->Update();
-    Energies_RMS_Name_canvasMulti[plane_id]->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
-
-    if(fDrawCanvases){
-      std::string canvasname(Energies_RMS_Name_canvasMulti[plane_id]->GetName());
-      std::string pngstring = canvasname + ".png";
-      const char* pngname = pngstring.c_str();
-      Energies_RMS_Name_canvasMulti[plane_id]->Print(pngname);
-    }
-  }
-}
-
-void ana::ShowerValidation::DrawHitGraphs(std::map<std::string,std::map<geo::PlaneID,TH1F*> >& Name_HistMap,
-					  std::map<std::string,std::map<float,std::map<geo::PlaneID,TH1F*> > >& Energies_Name_HistMap,
-					  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_Mean_Name_GraphMap,
-					  std::map<std::string,std::map<geo::PlaneID,TGraphErrors*> >& Energies_RMS_Name_GraphMap,
-					  std::map<geo::PlaneID,TMultiGraph*>& Energies_Mean_Name_Multi,
-					  std::map<geo::PlaneID,TMultiGraph*>& Energies_RMS_Name_Multi,
-					  std::map<geo::PlaneID,TCanvas*>& Energies_Mean_Name_canvasMulti,
-					  std::map<geo::PlaneID,TCanvas*>& Energies_RMS_Name_canvasMulti,
-					  std::map<float,std::map<geo::PlaneID,TCanvas*> >& Energies_Name_canvasMap,
-					  std::map<geo::PlaneID,TCanvas*>& Name_canvas,
-					  std::map<std::string,std::map<geo::PlaneID,TH2F*> >& Name_2dHistMap,
-					  std::map<std::string,std::map<geo::PlaneID,TCanvas*> >& Name_2dCanvasMap
-					  ){
-
-  //Create the legend
-  TLegend *leg = new TLegend();
-  for(unsigned int j=0; j<fHitModuleLabels.size(); ++j){
-    const char* name_legend = fHitModuleLabels[j].c_str();
-    leg->AddEntry(Name_HistMap[fHitModuleLabels[j]][geo::PlaneID(0,0,2)], name_legend);
-  }
-
-
-  std::vector<int> colours = {600,632,800,880,840};
-  if((int)fHitModuleLabels.size() > 5){
-    for(unsigned int j=0; j<fShowerModuleLabels.size() -5 ; ++j){
-      colours.push_back(j);
-    }
-  }
-
-  for(geo::PlaneID plane_id: geom->IteratePlaneIDs()){
-
-    int Name_HistMap_Max = 0;
-    for(unsigned int j=0; j<fHitModuleLabels.size(); ++j){
-      if(Name_HistMap[fHitModuleLabels[j]][plane_id]->GetMaximum() > Name_HistMap_Max){
-	Name_HistMap_Max = Name_HistMap[fHitModuleLabels[j]][plane_id]->GetMaximum();
-      }
-    }
-
-    for(unsigned int j=0; j<fHitModuleLabels.size(); ++j){
-
-      Name_canvas[plane_id]->cd();
-      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetLineWidth(2);
-      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetLineColor(colours[j]);
-      Name_HistMap[fHitModuleLabels[j]][plane_id]->Draw("SAME");
-      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetMinimum(0);
-      Name_HistMap[fHitModuleLabels[j]][plane_id]->SetMaximum(Name_HistMap_Max+1);
-
-      Name_2dCanvasMap[fHitModuleLabels[j]][plane_id]->cd();
-      gStyle->SetPalette(kBird);
-      Name_2dHistMap[fHitModuleLabels[j]][plane_id]->Draw("COLZ");
-
-      if(fDrawCanvases){
-	std::string canvasname(Name_2dCanvasMap[fHitModuleLabels[j]][plane_id]->GetName());
-	std::string pngstring = canvasname + ".png";
-	const char* pngname = pngstring.c_str();
-	Name_2dCanvasMap[fHitModuleLabels[j]][plane_id]->Print(pngname);
-      }
-
-      Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id]->SetMarkerStyle(8);
-      Energies_RMS_Name_GraphMap[fHitModuleLabels[j]][plane_id] ->SetMarkerStyle(8);
-      Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id]->SetMarkerColor(colours[j]);
-      Energies_RMS_Name_GraphMap[fHitModuleLabels[j]][plane_id] ->SetMarkerColor(colours[j]);
-
-      for(unsigned int i=0; i<fEnergies.size(); ++i){
-
-	float Enteries = Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->GetEntries();
-
-	if(Enteries == 0){continue;}
-
-	Energies_Name_canvasMap[fEnergies[i]][plane_id]->cd();
-	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetLineWidth(2);
-	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetLineColor(colours[j]);
-	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->Draw("SAME");
-	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetMinimum(0);
-	Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->SetMaximum(Name_HistMap_Max +1);
-
-	float Energies_TrueEnergy_Mean = Energies_TrueEnergy_HistMap[fShowerModuleLabels[0]][fEnergies[i]]->GetMean();
-	float Energies_TrueEnergy_RMS = Energies_TrueEnergy_HistMap[fShowerModuleLabels[0]][fEnergies[i]]->GetRMS();
-	float Error_on_True_Energy = Energies_TrueEnergy_RMS;
-
-	float Energies_Name_Mean = Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->GetMean();
-	float Energies_Name_RMS = Energies_Name_HistMap[fHitModuleLabels[j]][fEnergies[i]][plane_id]->GetRMS();
-	Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id]->SetPoint(Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id]->GetN(),Energies_TrueEnergy_Mean,Energies_Name_Mean);
-	Energies_RMS_Name_GraphMap[fHitModuleLabels[j]][plane_id]->SetPoint(Energies_RMS_Name_GraphMap[fHitModuleLabels[j]][plane_id]->GetN(),Energies_TrueEnergy_Mean,Energies_Name_RMS);
-	Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id]->SetPointError(Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id]->GetN()-1,Error_on_True_Energy,Energies_Name_RMS);
-
-      }//Energy Loop
-
-      Energies_Mean_Name_Multi[plane_id]->Add(Energies_Mean_Name_GraphMap[fHitModuleLabels[j]][plane_id]);
-      Energies_RMS_Name_Multi[plane_id]->Add(Energies_RMS_Name_GraphMap[fHitModuleLabels[j]][plane_id]);
-    }//Shower Labels Loop
-
-    Name_canvas[plane_id]->cd();
-    Name_canvas[plane_id]->BuildLegend();
-
-    if(fDrawCanvases){
-      std::string canvasname(Name_canvas[plane_id]->GetName());
-      std::string pngstring = canvasname + ".png";
-      const char* pngname = pngstring.c_str();
-      Name_canvas[plane_id]->Print(pngname);
-    }
-
-    for(unsigned int i=0; i<fEnergies.size(); ++i){
-      Energies_Name_canvasMap[fEnergies[i]][plane_id]->cd();
-      Energies_Name_canvasMap[fEnergies[i]][plane_id]->BuildLegend();
-      if(fDrawCanvases){
-	std::string canvasname(Energies_Name_canvasMap[fEnergies[i]][plane_id]->GetName());
-	std::string pngstring = canvasname + ".png";
-	const char* pngname = pngstring.c_str();
-	Energies_Name_canvasMap[fEnergies[i]][plane_id]->Print(pngname);
-      }
-    }
-
-    Energies_Mean_Name_canvasMulti[plane_id]->cd();
-    Energies_Mean_Name_Multi[plane_id]->Draw("AP");
-    Energies_Mean_Name_canvasMulti[plane_id]->Update();
-    Energies_Mean_Name_canvasMulti[plane_id]->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
-
-    if(fDrawCanvases){
-      std::string canvasname(Energies_Mean_Name_canvasMulti[plane_id]->GetName());
-      std::string pngstring = canvasname + ".png";
-      const char* pngname = pngstring.c_str();
-      Energies_Mean_Name_canvasMulti[plane_id]->Print(pngname);
-    }
-
-    Energies_RMS_Name_canvasMulti[plane_id]->cd();
-    Energies_RMS_Name_Multi[plane_id]->Draw("AP");
-    Energies_RMS_Name_canvasMulti[plane_id]->Update();
-    Energies_RMS_Name_canvasMulti[plane_id]->BuildLegend();
-    Energies_RMS_Name_canvasMulti[plane_id]->BuildLegend(0.74, 0.7, 0.9, 0.9, "", "PL");
-
-    if(fDrawCanvases){
-      std::string canvasname(Energies_RMS_Name_canvasMulti[plane_id]->GetName());
-      std::string pngstring = canvasname + ".png";
-      const char* pngname = pngstring.c_str();
-      Energies_RMS_Name_canvasMulti[plane_id]->Print(pngname);
-    }
-  }
-}
-
-
-
 void ana::ShowerValidation::endJob() {
 
   std::cout << "Number of events ran over: " <<  numevents  << std::endl;
@@ -3731,85 +1750,8 @@ void ana::ShowerValidation::endJob() {
   std::cout << "Number of reco showers: " << numrecoshowers  << std::endl;
   std::cout << "Number of reco showers analysed: " << numrecoshowersana  << std::endl;
  
- 
-  // gStyle->SetOptTitle(0);
+} 
 
-  // for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
-  //   PosDir_2dCanvasMap[fShowerModuleLabels[j]]->cd();
-  //   gStyle->SetPalette(kBird);
-  //   PosDir_2dHistMap[fShowerModuleLabels[j]]->Draw("COLZ");
-    
-  //   if(fDrawCanvases){
-  //     std::string canvasname(PosDir_2dCanvasMap[fShowerModuleLabels[j]]->GetName());
-  //     std::string pngstring = canvasname + ".png";
-  //     const char* pngname = pngstring.c_str();
-  //     PosDir_2dCanvasMap[fShowerModuleLabels[j]]->Print(pngname);
-  //   }
-  // }
-    
-
-  // BiggestShowerMotherE_AfterCutCanvas->cd();
-  // BiggestShowerMotherE_AfterCutHist->Draw();
-  // if(fDrawCanvases){BiggestShowerMotherE_AfterCutCanvas->Print("BiggestShowerMotherE_AfterCutCanvas.png");}
-
-  // BiggestShowerMotherE_BeforeCutCanvas->cd();
-  // BiggestShowerMotherE_BeforeCutHist->Draw();
-  // if(fDrawCanvases){BiggestShowerMotherE_BeforeCutCanvas->Print("BiggestShowerMotherE_BeforeCutHist.png");}
-
-  // AsscoiatedBiggestShowerMotherECanvas->cd();
-  // AsscoiatedBiggestShowerMotherEHist->Draw();
-  // if(fDrawCanvases){AsscoiatedBiggestShowerMotherECanvas->Print("AsscoiatedBiggestShowerMotherEHist.png");}
-
-  // SmallestShowerMotherE_AfterCutCanvas->cd();
-  // SmallestShowerMotherE_AfterCutHist->Draw();
-  // if(fDrawCanvases){SmallestShowerMotherE_AfterCutCanvas->Print("SmallestShowerMotherE_AfterCutHist.png");}
-  
-  // SmallestShowerMotherE_BeforeCutCanvas->cd();
-  // SmallestShowerMotherE_BeforeCutHist->Draw();
-  // if(fDrawCanvases){SmallestShowerMotherE_BeforeCutCanvas->Print("SmallestShowerMotherE_BeforeCutHist.png");}
-
-  // AsscoiatedSmallestShowerMotherECanvas->cd();
-  // AsscoiatedSmallestShowerMotherEHist->Draw();
-  // if(fDrawCanvases){AsscoiatedSmallestShowerMotherECanvas->Print("AsscoiatedSmallestShowerMotherEHist.png");}
-
-  // gStyle->SetPalette(kBird);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerDirection_X_HistMap,Energies_ShowerDirection_X_HistMap,Energies_Mean_ShowerDirection_X_GraphMap,Energies_RMS_ShowerDirection_X_GraphMap,Energies_Mean_ShowerDirection_X_Multi,Energies_RMS_ShowerDirection_X_Multi,Energies_Mean_ShowerDirection_X_canvasMulti,Energies_RMS_ShowerDirection_X_canvasMulti,Energies_ShowerDirection_X_canvasMap, ShowerDirection_X_canvas,ShowerDirection_X_2dHistMap,ShowerDirection_X_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerDirection_Y_HistMap,Energies_ShowerDirection_Y_HistMap,Energies_Mean_ShowerDirection_Y_GraphMap,Energies_RMS_ShowerDirection_Y_GraphMap,Energies_Mean_ShowerDirection_Y_Multi,Energies_RMS_ShowerDirection_Y_Multi,Energies_Mean_ShowerDirection_Y_canvasMulti,Energies_RMS_ShowerDirection_Y_canvasMulti,Energies_ShowerDirection_Y_canvasMap, ShowerDirection_Y_canvas,ShowerDirection_Y_2dHistMap,ShowerDirection_Y_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerDirection_Z_HistMap,Energies_ShowerDirection_Z_HistMap,Energies_Mean_ShowerDirection_Z_GraphMap,Energies_RMS_ShowerDirection_Z_GraphMap,Energies_Mean_ShowerDirection_Z_Multi,Energies_RMS_ShowerDirection_Z_Multi,Energies_Mean_ShowerDirection_Z_canvasMulti,Energies_RMS_ShowerDirection_Z_canvasMulti,Energies_ShowerDirection_Z_canvasMap, ShowerDirection_Z_canvas,ShowerDirection_Z_2dHistMap,ShowerDirection_Z_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerStart_X_HistMap,Energies_ShowerStart_X_HistMap,Energies_Mean_ShowerStart_X_GraphMap,Energies_RMS_ShowerStart_X_GraphMap,Energies_Mean_ShowerStart_X_Multi,Energies_RMS_ShowerStart_X_Multi,Energies_Mean_ShowerStart_X_canvasMulti,Energies_RMS_ShowerStart_X_canvasMulti,Energies_ShowerStart_X_canvasMap, ShowerStart_X_canvas,ShowerStart_X_2dHistMap,ShowerStart_X_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerStart_Y_HistMap,Energies_ShowerStart_Y_HistMap,Energies_Mean_ShowerStart_Y_GraphMap,Energies_RMS_ShowerStart_Y_GraphMap,Energies_Mean_ShowerStart_Y_Multi,Energies_RMS_ShowerStart_Y_Multi,Energies_Mean_ShowerStart_Y_canvasMulti,Energies_RMS_ShowerStart_Y_canvasMulti,Energies_ShowerStart_Y_canvasMap, ShowerStart_Y_canvas,ShowerStart_Y_2dHistMap,ShowerStart_Y_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerStart_Z_HistMap,Energies_ShowerStart_Z_HistMap,Energies_Mean_ShowerStart_Z_GraphMap,Energies_RMS_ShowerStart_Z_GraphMap,Energies_Mean_ShowerStart_Z_Multi,Energies_RMS_ShowerStart_Z_Multi,Energies_Mean_ShowerStart_Z_canvasMulti,Energies_RMS_ShowerStart_Z_canvasMulti,Energies_ShowerStart_Z_canvasMap, ShowerStart_Z_canvas,ShowerStart_Z_2dHistMap,ShowerStart_Z_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerLength_HistMap,Energies_ShowerLength_HistMap,Energies_Mean_ShowerLength_GraphMap,Energies_RMS_ShowerLength_GraphMap,Energies_Mean_ShowerLength_Multi,Energies_RMS_ShowerLength_Multi,Energies_Mean_ShowerLength_canvasMulti,Energies_RMS_ShowerLength_canvasMulti,Energies_ShowerLength_canvasMap, ShowerLength_canvas,ShowerLength_2dHistMap,ShowerLength_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerEnergyDiff_HistMap,Energies_ShowerEnergyDiff_HistMap,Energies_Mean_ShowerEnergyDiff_GraphMap,Energies_RMS_ShowerEnergyDiff_GraphMap,Energies_Mean_ShowerEnergyDiff_Multi,Energies_RMS_ShowerEnergyDiff_Multi,Energies_Mean_ShowerEnergyDiff_canvasMulti,Energies_RMS_ShowerEnergyDiff_canvasMulti,Energies_ShowerEnergyDiff_canvasMap, ShowerEnergyDiff_canvas,ShowerEnergyDiff_2dHistMap,ShowerEnergyDiff_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerdEdx_HistMap,Energies_ShowerdEdx_HistMap,Energies_Mean_ShowerdEdx_GraphMap,Energies_RMS_ShowerdEdx_GraphMap,Energies_Mean_ShowerdEdx_Multi,Energies_RMS_ShowerdEdx_Multi,Energies_Mean_ShowerdEdx_canvasMulti,Energies_RMS_ShowerdEdx_canvasMulti,Energies_ShowerdEdx_canvasMap, ShowerdEdx_canvas,ShowerdEdx_2dHistMap,ShowerdEdx_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(EventSeggy_HistMap,Energies_EventSeggy_HistMap,Energies_Mean_EventSeggy_GraphMap,Energies_RMS_EventSeggy_GraphMap,Energies_Mean_EventSeggy_Multi,Energies_RMS_EventSeggy_Multi,Energies_Mean_EventSeggy_canvasMulti,Energies_RMS_EventSeggy_canvasMulti,Energies_EventSeggy_canvasMap, EventSeggy_canvas,EventSeggy_2dHistMap,EventSeggy_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerEnergyCompleteness_HistMap,Energies_ShowerEnergyCompleteness_HistMap,Energies_Mean_ShowerEnergyCompleteness_GraphMap,Energies_RMS_ShowerEnergyCompleteness_GraphMap,Energies_Mean_ShowerEnergyCompleteness_Multi,Energies_RMS_ShowerEnergyCompleteness_Multi,Energies_Mean_ShowerEnergyCompleteness_canvasMulti,Energies_RMS_ShowerEnergyCompleteness_canvasMulti,Energies_ShowerEnergyCompleteness_canvasMap, ShowerEnergyCompleteness_canvas,ShowerEnergyCompleteness_2dHistMap,ShowerEnergyCompleteness_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ShowerEnergyPurity_HistMap,Energies_ShowerEnergyPurity_HistMap,Energies_Mean_ShowerEnergyPurity_GraphMap,Energies_RMS_ShowerEnergyPurity_GraphMap,Energies_Mean_ShowerEnergyPurity_Multi,Energies_RMS_ShowerEnergyPurity_Multi,Energies_Mean_ShowerEnergyPurity_canvasMulti,Energies_RMS_ShowerEnergyPurity_canvasMulti,Energies_ShowerEnergyPurity_canvasMap, ShowerEnergyPurity_canvas,ShowerEnergyPurity_2dHistMap,ShowerEnergyPurity_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ClusterCompletenessHits_HistMap,Energies_ClusterCompletenessHits_HistMap,Energies_Mean_ClusterCompletenessHits_GraphMap,Energies_RMS_ClusterCompletenessHits_GraphMap,Energies_Mean_ClusterCompletenessHits_Multi,Energies_RMS_ClusterCompletenessHits_Multi,Energies_Mean_ClusterCompletenessHits_canvasMulti,Energies_RMS_ClusterCompletenessHits_canvasMulti,Energies_ClusterCompletenessHits_canvasMap, ClusterCompletenessHits_canvas,ClusterCompletenessHits_2dHistMap,ClusterCompletenessHits_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ClusterPurityEnergy_HistMap,Energies_ClusterPurityEnergy_HistMap,Energies_Mean_ClusterPurityEnergy_GraphMap,Energies_RMS_ClusterPurityEnergy_GraphMap,Energies_Mean_ClusterPurityEnergy_Multi,Energies_RMS_ClusterPurityEnergy_Multi,Energies_Mean_ClusterPurityEnergy_canvasMulti,Energies_RMS_ClusterPurityEnergy_canvasMulti,Energies_ClusterPurityEnergy_canvasMap, ClusterPurityEnergy_canvas,ClusterPurityEnergy_2dHistMap,ClusterPurityEnergy_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ClusterPurityHits_HistMap,Energies_ClusterPurityHits_HistMap,Energies_Mean_ClusterPurityHits_GraphMap,Energies_RMS_ClusterPurityHits_GraphMap,Energies_Mean_ClusterPurityHits_Multi,Energies_RMS_ClusterPurityHits_Multi,Energies_Mean_ClusterPurityHits_canvasMulti,Energies_RMS_ClusterPurityHits_canvasMulti,Energies_ClusterPurityHits_canvasMap, ClusterPurityHits_canvas,ClusterPurityHits_2dHistMap,ClusterPurityHits_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ClusterCompPurityEnergy_HistMap,Energies_ClusterCompPurityEnergy_HistMap,Energies_Mean_ClusterCompPurityEnergy_GraphMap,Energies_RMS_ClusterCompPurityEnergy_GraphMap,Energies_Mean_ClusterCompPurityEnergy_Multi,Energies_RMS_ClusterCompPurityEnergy_Multi,Energies_Mean_ClusterCompPurityEnergy_canvasMulti,Energies_RMS_ClusterCompPurityEnergy_canvasMulti,Energies_ClusterCompPurityEnergy_canvasMap, ClusterCompPurityEnergy_canvas,ClusterCompPurityEnergy_2dHistMap,ClusterCompPurityEnergy_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawGraphs(ClusterCompPurityHits_HistMap,Energies_ClusterCompPurityHits_HistMap,Energies_Mean_ClusterCompPurityHits_GraphMap,Energies_RMS_ClusterCompPurityHits_GraphMap,Energies_Mean_ClusterCompPurityHits_Multi,Energies_RMS_ClusterCompPurityHits_Multi,Energies_Mean_ClusterCompPurityHits_canvasMulti,Energies_RMS_ClusterCompPurityHits_canvasMulti,Energies_ClusterCompPurityHits_canvasMap, ClusterCompPurityHits_canvas,ClusterCompPurityHits_2dHistMap,ClusterCompPurityHits_2dCanvasMap);
-
-  // ana::ShowerValidation::DrawHitGraphs(HitCompletenessEnergy_HistMap,Energies_HitCompletenessEnergy_HistMap,Energies_Mean_HitCompletenessEnergy_GraphMap,Energies_RMS_HitCompletenessEnergy_GraphMap,Energies_Mean_HitCompletenessEnergy_Multi,Energies_RMS_HitCompletenessEnergy_Multi,Energies_Mean_HitCompletenessEnergy_canvasMulti,Energies_RMS_HitCompletenessEnergy_canvasMulti,Energies_HitCompletenessEnergy_canvasMap, HitCompletenessEnergy_canvas,HitCompletenessEnergy_2dHistMap,HitCompletenessEnergy_2dCanvasMap);
-}
 
 
 DEFINE_ART_MODULE(ana::ShowerValidation)
