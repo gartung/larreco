@@ -14,7 +14,6 @@ art_make(
                            ${ART_FRAMEWORK_PRINCIPAL}
                            ${ART_FRAMEWORK_SERVICES_REGISTRY}
                            ${ART_FRAMEWORK_SERVICES_OPTIONAL}
-                           ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
                            art_Persistency_Common canvas
                            art_Persistency_Provenance canvas
                            art_Utilities canvas
@@ -25,6 +24,10 @@ art_make(
                            ${ROOT_GDML}
                            ${ROOT_BASIC_LIB_LIST}
                            ${Boost_SYSTEM_LIBRARY}
+	                   ${ART_ROOT_IO_TFILE_SUPPORT}	
+			   ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+
+
         )
 
 install_headers()
