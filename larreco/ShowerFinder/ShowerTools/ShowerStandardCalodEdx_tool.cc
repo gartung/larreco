@@ -7,7 +7,7 @@
 //###              from the EMShower_module.cc                             ###
 //############################################################################
 
-#include "larreco/ShowerFinder/ShowerTools/IShowerdEdxFinder.h"
+#include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
@@ -31,7 +31,7 @@
 
 namespace ShowerRecoTools{
 
-  class ShowerStandardCalodEdx:IShowerdEdxFinder {
+  class ShowerStandardCalodEdx:IShowerTool {
     
   public:
 
@@ -40,7 +40,10 @@ namespace ShowerRecoTools{
     ~ShowerStandardCalodEdx(); 
     
     //Generic Direction Finder
-    std::vector<double> finddEdx(const art::Ptr<recob::PFParticle>& pfparticle) override;
+    int findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+		   art::Event& Event,
+		   reco::shower::ShowerPropertyHolder& ShowerPropHolder
+		   ) override;
 
   private:
     
@@ -65,10 +68,15 @@ namespace ShowerRecoTools{
     
   }
   
-  std::vector<double> ShowerStandardCalodEdx::finddEdx(const art::Ptr<recob::PFParticle>& pfparticle){
+  int ShowerStandardCalodEdx::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+					 art::Event& Event,
+					 reco::shower::ShowerPropertyHolder& ShowerPropHolder
+					 ){
+  
     std::cout << "hello world dEdx" << std::endl;
     std::vector<double>  ShowerStandardCalodEdx = {0,0,0};
-    return ShowerStandardCalodEdx;
+    ShowerPropHolder.SetShowerdEdx(ShowerStandardCalodEdx);
+    return 0;
   }
 }
 

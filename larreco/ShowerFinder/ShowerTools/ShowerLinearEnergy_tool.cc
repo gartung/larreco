@@ -7,7 +7,7 @@
 //###              the EMShower_module.cc                                  ###
 //############################################################################
 
-#include "larreco/ShowerFinder/ShowerTools/IShowerEnergyFinder.h"
+#include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
@@ -31,7 +31,7 @@
 
 namespace ShowerRecoTools {
 
-  class ShowerLinearEnergy:IShowerEnergyFinder {
+  class ShowerLinearEnergy:IShowerTool {
     
   public:
 
@@ -40,8 +40,10 @@ namespace ShowerRecoTools {
     ~ShowerLinearEnergy(); 
     
     //Generic Direction Finder
-    std::vector<double> findEnergy(const art::Ptr<recob::PFParticle>& pfparticle) override;
-    
+    int findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+		    art::Event& Event,
+		    reco::shower::ShowerPropertyHolder& ShowerPropHolder
+		    ) override;
   private:
     
     // Define standard art tool interface
@@ -52,6 +54,7 @@ namespace ShowerRecoTools {
   
   ShowerLinearEnergy::ShowerLinearEnergy(const fhicl::ParameterSet& pset)
   {
+    
     configure(pset);
   }
   
@@ -64,12 +67,15 @@ namespace ShowerRecoTools {
     
   }
   
-  std::vector<double> ShowerLinearEnergy::findEnergy(const art::Ptr<recob::PFParticle>& pfparticle){
+  int ShowerLinearEnergy::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+				     art::Event& Event,
+				     reco::shower::ShowerPropertyHolder& ShowerPropHolder
+				     ){
     std::cout << "hello world linear energy" << std::endl;
     std::vector<double>  ShowerLinearEnergy = {0,0,0};
-    return ShowerLinearEnergy;
+    ShowerPropHolder.SetShowerEnergy(ShowerLinearEnergy);
+    return 0;
   }
-  
 }
 
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerLinearEnergy)

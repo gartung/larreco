@@ -7,7 +7,7 @@
 //###              shower. This methd is derived from the EMShower_module  ###
 //############################################################################
 
-#include "larreco/ShowerFinder/ShowerTools/IShowerInitialTrackFinder.h"
+#include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
@@ -29,16 +29,19 @@
 
 namespace ShowerRecoTools{
 
-  class ShowerTrackFinder:IShowerInitialTrackFinder {
+  class ShowerTrackFinder:IShowerTool {
   public:
 
     ShowerTrackFinder(const fhicl::ParameterSet& pset);
     
     ~ShowerTrackFinder(); 
     
-    //Generic Direction Finder
-    recob::Track findInitialTrack(const art::Ptr<recob::PFParticle>& pfparticle) override;
-  
+    //Generic Track Finder
+    int findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+		   art::Event& Event,
+		   reco::shower::ShowerPropertyHolder& ShowerPropHolder
+		   ) override;
+
   private:  
 
     // Define standard art tool interface
@@ -61,13 +64,19 @@ namespace ShowerRecoTools{
     
   }
   
-  recob::Track ShowerTrackFinder::findInitialTrack(const art::Ptr<recob::PFParticle>& pfparticle){
-    std::cout << "hello world find track" << std::endl;
-   
-    recob::Track track;
-    return track;
-  }
   
+  int ShowerTrackFinder::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+					    art::Event& Event,
+					    reco::shower::ShowerPropertyHolder& ShowerPropHolder
+					    ){
+    std::cout << "hello world find track" << std::endl;
+    
+    recob::Track track;
+    std::cout << "hello world find track end1" << std::endl;
+    ShowerPropHolder.SetInitialTrack(track); 
+    std::cout << "hello world find track end" << std::endl;
+    return 0;
+  }
 }
 
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerTrackFinder)

@@ -6,7 +6,7 @@
 //###              methods. Derviced from PandoraShowers Method            ###
 //############################################################################
 
-#include "larreco/ShowerFinder/ShowerTools/IShowerDirectionFinder.h"
+#include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
@@ -30,7 +30,7 @@
 namespace ShowerRecoTools {
 
   
-  class ShowerPCADirection:IShowerDirectionFinder {
+  class ShowerPCADirection:IShowerTool {
     
   public:
     
@@ -39,8 +39,11 @@ namespace ShowerRecoTools {
     ~ShowerPCADirection(); 
     
     //Generic Direction Finder
-    TVector3 findDirection(const art::Ptr<recob::PFParticle>& pfparticle) override;
-    
+    int findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+		   art::Event& Event,
+		    reco::shower::ShowerPropertyHolder& ShowerPropHolder
+		    ) override;
+
   private:
     
     // Define standard art tool interface
@@ -63,13 +66,16 @@ namespace ShowerRecoTools {
   {
     
   }
-  
-  TVector3 ShowerPCADirection::findDirection(const art::Ptr<recob::PFParticle>& pfparticle){
+
+  int ShowerPCADirection::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+				      art::Event& Event,
+				      reco::shower::ShowerPropertyHolder& ShowerPropHolder){
+    
     std::cout << "hello world shower direction" << std::endl;
     TVector3 ShowerDirection;
-    return ShowerDirection;
+    ShowerPropHolder.SetShowerDirection(ShowerDirection);
+    return 0;
   }
-  
 }
   
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerPCADirection)

@@ -6,7 +6,7 @@
 //###              methods.                                                ###
 //############################################################################
 
-#include "larreco/ShowerFinder/ShowerTools/IShowerStartPositionFinder.h"
+#include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
@@ -30,7 +30,7 @@
 namespace ShowerRecoTools{
 
 
-  class ShowerStartPosition:IShowerStartPositionFinder {
+  class ShowerStartPosition:IShowerTool {
 
   public:
     
@@ -42,7 +42,11 @@ namespace ShowerRecoTools{
     void configure(const fhicl::ParameterSet& pset) override;
     
     //Generic Direction Finder
-    TVector3 findShowerStartPosition(const art::Ptr<recob::PFParticle>& pfparticle) override;
+    int findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+		   art::Event& Event,
+		   reco::shower::ShowerPropertyHolder& ShowerPropHolder
+		   ) override;
+
     
     
   };
@@ -62,10 +66,15 @@ namespace ShowerRecoTools{
     
   }
   
-  TVector3 ShowerStartPosition::findShowerStartPosition(const art::Ptr<recob::PFParticle>& pfparticle){
+  int ShowerStartPosition::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+				      art::Event& Event,
+				      reco::shower::ShowerPropertyHolder& ShowerPropHolder
+				      ){
     std::cout << "hello world start position" << std::endl;
+
     TVector3 ShowerStartPosition;
-    return ShowerStartPosition;
+    ShowerPropHolder.SetShowerStartPosition(ShowerStartPosition);
+    return 0;
   }
 }
 

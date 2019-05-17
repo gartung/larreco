@@ -1,4 +1,4 @@
-
+add_subdirectory(ShowerTools)
 add_subdirectory(ShowerReco3D)
 add_subdirectory(job)
 
