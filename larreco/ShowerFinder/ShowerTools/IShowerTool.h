@@ -1,13 +1,13 @@
 //############################################################################
-//### Name:        IShowerDirectionFinder                                  ###
+//### Name:        IShowerTool                                             ###
 //### Author:      Dominic Barker                                          ###
 //### Date:        13.05.19                                                ###
-//### Description: Generic Tool for finding the shower direction. Used in  ###
+//### Description: Generic Tool for finding the shower energy. Used in     ###
 //###              SBNShower_Module.cc                                     ###
 //############################################################################
 
-#ifndef IShowerDirectionFinder_H
-#define IShowerDirectionFinder_H
+#ifndef IShowerTool_H
+#define IShowerTool_H
 
 //Framwork Includes
 #include "fhiclcpp/ParameterSet.h"
@@ -18,31 +18,25 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/ShowerFinder/ShowerPropertyHolder.h"
 
-//Root Includes 
-#include "TVector3.h"
+#include <string>
 
 namespace ShowerRecoTools{
-  class IShowerDirectionFinder{
+  class IShowerTool{
 
   public:
-
-    virtual ~IShowerDirectionFinder() noexcept = default; 
+    
+    virtual ~IShowerTool() noexcept = default;
       
-    //Generic Direction Finder
-    virtual TVector3 findDirection(const art::Ptr<recob::PFParticle>& pfparticle) = 0;
-
-    void InitialiseEvent(art::Event& evt, reco::shower::ShowerPropertyHolder sprop_holder){
-      Event                = &evt;
-      ShowerPropHolder = &sprop_holder;
-    }; 
+    //Generic Energy Finder
+    virtual int findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
+			    art::Event& Event,
+			    reco::shower::ShowerPropertyHolder& ShowerPropHolder
+			    ) = 0;
 
   private:
-
+    
     // Define standard art tool interface
     virtual void configure(const fhicl::ParameterSet& pset) = 0;
-
-    art::Event* Event;
-    reco::shower::ShowerPropertyHolder* ShowerPropHolder;  
 
   };
 }

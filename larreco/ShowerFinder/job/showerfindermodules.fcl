@@ -153,12 +153,14 @@ standard_sbnshower: {
  
     module_type: "SBNShower"
 
-    ShowerDirectionFinder:     @local::showerpcadirection
-    ShowerEnergyFinder:        @local::showerlinearenergy
-    ShowerInitialTrackFinder:  @local::showertrackfinder
-    ShowerStartPositionFinder: @local::showerstartposition
-    ShowerdEdxFinder:          @local::showerstandardcalodedx
-    
+    ShowerFinderTools: {
+        ShowerDirectionFinder:     @local::showerpcadirection
+        ShowerEnergyFinder:        @local::showerlinearenergy
+        ShowerInitialTrackFinder:  @local::showertrackfinder
+        ShowerStartPositionFinder: @local::showerstartposition
+        ShowerdEdxFinder:          @local::showerstandardcalodedx
+        }
+
     PFParticleModuleLabel:      "pandora"
     SecondInteration: false
 }

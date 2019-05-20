@@ -29,11 +29,7 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
-#include "larreco/ShowerFinder/ShowerTools/IShowerDirectionFinder.h"
-#include "larreco/ShowerFinder/ShowerTools/IShowerEnergyFinder.h"
-#include "larreco/ShowerFinder/ShowerTools/IShowerInitialTrackFinder.h"
-#include "larreco/ShowerFinder/ShowerTools/IShowerStartPositionFinder.h"
-#include "larreco/ShowerFinder/ShowerTools/IShowerdEdxFinder.h"
+#include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 #include "larreco/ShowerFinder/ShowerPropertyHolder.h"
 
 //Root Includes
@@ -58,18 +54,13 @@ public:
 
 private:
 
-
-  //fcl tool names
-  std::unique_ptr<ShowerRecoTools::IShowerDirectionFinder>     fShowerDirectionFinder;
-  std::unique_ptr<ShowerRecoTools::IShowerEnergyFinder>        fShowerEnergyFinder;
-  std::unique_ptr<ShowerRecoTools::IShowerInitialTrackFinder>  fShowerInitialTrackFinder;
-  std::unique_ptr<ShowerRecoTools::IShowerStartPositionFinder> fShowerStartPositionFinder;
-  std::unique_ptr<ShowerRecoTools::IShowerdEdxFinder>          fShowerdEdxFinder;
-
   //fcl object names 
   art::InputTag fPFParticleModuleLabel;
   bool          fSecondInteration;
 
+  //fcl tools
+  std::vector<std::unique_ptr<ShowerRecoTools::IShowerTool> > fShowerTools;
+  std::vector<std::string>                                    fShowerToolNames;
 };
 
 
@@ -88,12 +79,16 @@ reco::shower::SBNShower::SBNShower(fhicl::ParameterSet const& pset) :
 }
 
 void reco::shower::SBNShower::reconfigure(fhicl::ParameterSet const& pset) {
-  fShowerDirectionFinder     = art::make_tool<ShowerRecoTools::IShowerDirectionFinder>    (pset.get<fhicl::ParameterSet>("ShowerDirectionFinder"));
-  fShowerEnergyFinder        = art::make_tool<ShowerRecoTools::IShowerEnergyFinder>       (pset.get<fhicl::ParameterSet>("ShowerEnergyFinder"));
-  fShowerInitialTrackFinder  = art::make_tool<ShowerRecoTools::IShowerInitialTrackFinder> (pset.get<fhicl::ParameterSet>("ShowerInitialTrackFinder"));
-  fShowerStartPositionFinder = art::make_tool<ShowerRecoTools::IShowerStartPositionFinder>(pset.get<fhicl::ParameterSet>("ShowerStartPositionFinder"));
-  fShowerdEdxFinder          = art::make_tool<ShowerRecoTools::IShowerdEdxFinder>         (pset.get<fhicl::ParameterSet>("ShowerdEdxFinder"));
 
+  //Intialise the tools 
+  const fhicl::ParameterSet& ShowerTools = pset.get<fhicl::ParameterSet>("ShowerFinderTools");
+  for(const std::string& ShowerTool : ShowerTools.get_pset_names()){
+    const fhicl::ParameterSet& ShowerToolParamSet = ShowerTools.get<fhicl::ParameterSet>(ShowerTool);
+    fShowerTools.push_back(art::make_tool<ShowerRecoTools::IShowerTool>(ShowerToolParamSet));
+    fShowerToolNames.push_back(ShowerToolParamSet.id().to_string());
+  }
+
+  //Initialise the other paramters.
   fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","pandora");
   fSecondInteration      = pset.get<bool         >("SecondInteration",false);
 }
@@ -151,67 +146,54 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
   // - dEdx 
   reco::shower::ShowerPropertyHolder sprop_holder;
 
-  //Give the event and shower property information to the tools.
-  fShowerStartPositionFinder->InitialiseEvent(evt,sprop_holder);
-  fShowerInitialTrackFinder ->InitialiseEvent(evt,sprop_holder);
-  fShowerDirectionFinder    ->InitialiseEvent(evt,sprop_holder);
-  fShowerEnergyFinder       ->InitialiseEvent(evt,sprop_holder);
-  fShowerdEdxFinder         ->InitialiseEvent(evt,sprop_holder);
-
-  //Loop of the pf particles 
+  int i=0;
+  //Loop of the pf particles
   for(auto const& pfp: pfps){
     
     //Calculate the shower properties 
-    TVector3 ShowerStartPosition     = fShowerStartPositionFinder->findShowerStartPosition(pfp);
-    sprop_holder.SetShowerStartPosition(ShowerStartPosition);
+    //Loop over the shower tools
+    for(auto const& fShowerTool: fShowerTools){
 
-    recob::Track InitialTrack        = fShowerInitialTrackFinder ->findInitialTrack(pfp);
-    sprop_holder.SetInitialTrack       (InitialTrack);
-
-    TVector3 ShowerDirection         = fShowerDirectionFinder    ->findDirection(pfp);
-    sprop_holder.SetShowerDirection    (ShowerDirection);
-	
-    std::vector<double> ShowerEnergy = fShowerEnergyFinder       ->findEnergy(pfp);
-    sprop_holder.SetShowerEnergy       (ShowerEnergy);
-
-    std::vector<double> ShowerdEdx   = fShowerdEdxFinder         ->finddEdx(pfp);
-    sprop_holder.SetShowerdEdx         (ShowerdEdx);
-
+      std::cout << "on next tool" << std::endl;
+      //Calculate the metric
+      int err = fShowerTool->findMetric(pfp,evt,sprop_holder);
+      if(err){
+	throw cet::exception("SBNShower") << "Error in shower tool: " << fShowerToolNames[i] << " with code: " << err << std::endl;
+	break;
+      }
+      ++i;
+    }
 
     //Should we do a second interaction now we have done a first pass of the calculation
+    i=0;
     if(fSecondInteration){
-
-      ShowerStartPosition = fShowerStartPositionFinder->findShowerStartPosition(pfp);
-      sprop_holder.SetShowerStartPosition(ShowerStartPosition);
-
-      InitialTrack = fShowerInitialTrackFinder->findInitialTrack(pfp);
-      sprop_holder.SetInitialTrack(InitialTrack);
+      for(auto const& fShowerTool: fShowerTools){
+	//Calculate the metric
+	int err = fShowerTool->findMetric(pfp,evt,sprop_holder);
       
-      ShowerDirection = fShowerDirectionFinder->findDirection(pfp);
-      sprop_holder.SetShowerDirection(ShowerDirection);
-      
-      ShowerEnergy = fShowerEnergyFinder->findEnergy(pfp);
-      sprop_holder.SetShowerEnergy(ShowerEnergy);
-      
-      ShowerdEdx  = fShowerdEdxFinder->finddEdx(pfp);
-      sprop_holder.SetShowerdEdx(ShowerdEdx);
+	if(err){
+	  throw cet::exception("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
+	  break;
+	}
+	++i;
+      }
     }
 
     //Get the properties 
-    TVector3 ShowerStartPosition_f           = sprop_holder.GetShowerStartPosition();
-    const recob::Track InitialTrack_f        = sprop_holder.GetInitialTrack();
-    const TVector3 ShowerDirection_f         = sprop_holder.GetShowerDirection();
-    const std::vector<double> ShowerEnergy_f = sprop_holder.GetShowerEnergy();
-    const std::vector<double> ShowerdEdx_f   = sprop_holder.GetShowerdEdx();
+    const TVector3            ShowerStartPosition  = sprop_holder.GetShowerStartPosition();
+    const TVector3            ShowerDirection      = sprop_holder.GetShowerDirection();
+    const std::vector<double> ShowerEnergy         = sprop_holder.GetShowerEnergy();
+    const std::vector<double> ShowerdEdx           = sprop_holder.GetShowerdEdx();
+    const recob::Track        InitialTrack         = sprop_holder.GetInitialTrack();
     
     //To Do
-    const TVector3 directionErr_f;
-    const TVector3 vertexErr_f;
-    const std::vector<double> totalEnergyErr_f;
-    const std::vector<double> dEdxErr_f;
+    const TVector3            ShowerDirectionErr              = sprop_holder.GetShowerDirectionErr();
+    const TVector3            ShowerStartPositionErrvertexErr = sprop_holder.GetShowerStartPositionErr();
+    const std::vector<double> ShowerEnergyErr                 = sprop_holder.GetShowerEnergyErr();
+    const std::vector<double> ShowerdEdxErr                   = sprop_holder.GetShowerdEdxErr(); ;
 
     //Make the shower 
-    recob::Shower shower = recob::Shower(ShowerDirection_f, directionErr_f,ShowerStartPosition_f, vertexErr_f,ShowerEnergy_f,totalEnergyErr_f,ShowerdEdx_f, dEdxErr_f, -999, -999);
+    recob::Shower shower = recob::Shower(ShowerDirection, ShowerDirectionErr,ShowerStartPosition, ShowerDirectionErr,ShowerEnergy,ShowerEnergyErr,ShowerdEdx, ShowerdEdxErr, -999, -999);
     showers->push_back(shower);
     showers->back().set_id(showers->size()-1);
     
