@@ -161,18 +161,21 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 	throw cet::exception("SBNShower") << "Error in shower tool: " << fShowerToolNames[i] << " with code: " << err << std::endl;
 	break;
       }
-      ++i
+      ++i;
     }
 
     //Should we do a second interaction now we have done a first pass of the calculation
+    i=0;
     if(fSecondInteration){
       for(auto const& fShowerTool: fShowerTools){
 	//Calculate the metric
 	int err = fShowerTool->findMetric(pfp,evt,sprop_holder);
-      }
-      if(err){
-	throw cet::exception("SBNShower") << "Error in shower tool: " << fShowerTool->GetToolName() << " with code: " << err << std::endl;
-	break;
+      
+	if(err){
+	  throw cet::exception("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
+	  break;
+	}
+	++i;
       }
     }
 
