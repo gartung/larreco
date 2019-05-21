@@ -154,10 +154,10 @@ standard_sbnshower: {
     module_type: "SBNShower"
 
     ShowerFinderTools: {
+        ShowerStartPositionFinder: @local::showerstartposition
         ShowerDirectionFinder:     @local::showerpcadirection
         ShowerEnergyFinder:        @local::showerlinearenergy
         ShowerInitialTrackFinder:  @local::showertrackfinder
-        ShowerStartPositionFinder: @local::showerstartposition
         ShowerdEdxFinder:          @local::showerstandardcalodedx
         }
 

@@ -149,7 +149,10 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
   int i=0;
   //Loop of the pf particles
   for(auto const& pfp: pfps){
-    
+
+    //loop only over showers.
+    if(pfp->PdgCode() != 11){continue;}
+
     //Calculate the shower properties 
     //Loop over the shower tools
     for(auto const& fShowerTool: fShowerTools){
@@ -185,7 +188,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     const std::vector<double> ShowerEnergy         = sprop_holder.GetShowerEnergy();
     const std::vector<double> ShowerdEdx           = sprop_holder.GetShowerdEdx();
     const recob::Track        InitialTrack         = sprop_holder.GetInitialTrack();
-    
+
     //To Do
     const TVector3            ShowerDirectionErr              = sprop_holder.GetShowerDirectionErr();
     const TVector3            ShowerStartPositionErrvertexErr = sprop_holder.GetShowerStartPositionErr();

@@ -2,6 +2,7 @@ BEGIN_PROLOG
 
 showerpcadirection:{
      tool_type: ShowerPCADirection   
+     PFParticleModuleLabel: "pandora"
 }
 
 showerlinearenergy:{
@@ -14,6 +15,8 @@ showertrackfinder:{
 
 showerstartposition:{
     tool_type: ShowerStartPosition
+    PFParticleModuleLabel: "pandora"
+    UseCollectionOnly: false
 }
 
 showerstandardcalodedx:{
