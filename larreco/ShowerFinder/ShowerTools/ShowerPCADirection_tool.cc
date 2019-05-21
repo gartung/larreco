@@ -24,6 +24,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
+#include "larreco/RecoAlg/SBNShowerAlg.h"
 
 //C++ Includes 
 #include <iostream>
@@ -60,11 +61,7 @@ namespace ShowerRecoTools {
     double  RMSShowerGradient(std::vector<art::Ptr<recob::SpacePoint> >& sps, TVector3& ShowerCentre, TVector3& Direction);
 
     //Algorithm functions
-    TVector3 ShowerCentre(std::vector<art::Ptr<recob::SpacePoint> >& showerspcs, art::FindManyP<recob::Hit>& fmh, float& TotalCharge);
-    TVector3 SpacePointPosition(const art::Ptr<recob::SpacePoint>& sp);
-    double SpacePointCharge(art::Ptr<recob::SpacePoint> sp,
-			    art::FindManyP<recob::Hit>& fmh
-			    );
+    shower::SBNShowerAlg fSBNShowerAlg;
 
     art::InputTag fPFParticleModuleLabel;
     int fNSegments; 
@@ -74,6 +71,7 @@ namespace ShowerRecoTools {
   
   
   ShowerPCADirection::ShowerPCADirection(const fhicl::ParameterSet& pset)
+    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
   {
     configure(pset);
   }
@@ -166,8 +164,8 @@ namespace ShowerRecoTools {
   double ShowerPCADirection::RMSShowerGradient(std::vector<art::Ptr<recob::SpacePoint> >& sps, TVector3& ShowerCentre, TVector3& Direction){
     
     //Get the length of the shower.
-    TVector3 firstpoint = SpacePointPosition(sps[0]);
-    TVector3 lastpoint  = SpacePointPosition(sps[sps.size()-1]);
+    TVector3 firstpoint = fSBNShowerAlg.SpacePointPosition(sps[0]);
+    TVector3 lastpoint  = fSBNShowerAlg.SpacePointPosition(sps[sps.size()-1]);
     double length = (firstpoint-lastpoint).Mag();
     double segmentsize = length/fNSegments;
     
@@ -177,7 +175,7 @@ namespace ShowerRecoTools {
     for(auto const& sp: sps){
       
       //Get the position of the spacepoint
-      TVector3 pos = SpacePointPosition(sp) - ShowerCentre;
+      TVector3 pos = fSBNShowerAlg.SpacePointPosition(sp) - ShowerCentre;
 
       //Get the the projected length
       double len = pos.Dot(Direction);
@@ -222,17 +220,17 @@ namespace ShowerRecoTools {
     float TotalCharge = 0;
 
     //Get the Shower Centre
-    ShowerCentre = ShowerPCADirection::ShowerCentre(sps, fmh, TotalCharge);
+    ShowerCentre = fSBNShowerAlg.ShowerCentre(sps, fmh, TotalCharge);
 
     //Normalise the spacepoints, charge weight and add to the PCA.
     for(auto& sp: sps){
       
       //Normalise the spacepoint position.
-      TVector3 sp_position = SpacePointPosition(sp);
+      TVector3 sp_position = fSBNShowerAlg.SpacePointPosition(sp);
       sp_position = sp_position - ShowerCentre;
 
       //Get the charge.
-      float Charge = SpacePointCharge(sp,fmh);
+      float Charge = fSBNShowerAlg.SpacePointCharge(sp,fmh);
 
       //Charge Weight
       float wht = TMath::Sqrt(Charge/TotalCharge);
@@ -258,83 +256,6 @@ namespace ShowerRecoTools {
 
     return Eigenvector;
    }
-
-  //####################################################################################
-  //Algorithm Functions
-  TVector3 ShowerPCADirection::ShowerCentre(const std::vector<art::Ptr<recob::SpacePoint> >& showersps, art::FindManyP<recob::Hit>& fmh, float& totalCharge) {
-    
-    TVector3 pos, chargePoint = TVector3(0,0,0);
-    
-    //Loop over the spacepoints and get the charge weighted center.
-    for(auto const& sp: showersps){
-      
-      //Get the position of the spacepoint 
-      pos = SpacePointPosition(sp);
-      
-      //Get the associated hits 
-      std::vector<art::Ptr<recob::Hit> > hits = fmh.at(sp.key());
-      
-      //Average the charge unless sepcified.
-      float charge  = 0;
-      float charge2 = 0;
-      for(auto const& hit: hits){
-	
-	if(fUseCollectionOnly){
-	  if(hit->SignalType() == geo::kCollection){ 
-	    charge = hit->Integral();
-	    break;
-	  }
-	}
-	
-	//Check if any of the points are not withing 2 sigma.
-	if(!fUseCollectionOnly){
-	  charge += hit->Integral();
-	  charge2 += hit->Integral();
-	}
-      }
-      
-      if(!fUseCollectionOnly){
-	//Calculate the unbiased standard deviation and mean. 
-	float mean = charge/((float) hits.size()); 
-	float rms  = TMath::Sqrt((charge2 - charge*charge)/((float)(hits.size()-1)));
-	
-	charge = 0;
-	for(auto const& hit: hits){
-	  if(hit->Integral() > (mean - 2*rms) && hit->Integral() < (mean + 2*rms))  
-	    charge += hit->Integral();
-	}
-      }
-      
-      chargePoint += charge * pos;
-      totalCharge += charge;
-      
-      if(charge == 0){
-	mf::LogWarning("ShowerStartPosition") << "Averaged charge, within 2 sigma, for a spacepoint is zero, Maybe this not a good method";
-      }
-    }
-    
-    double intotalcharge = 1/totalCharge;
-    TVector3 centre = chargePoint *  intotalcharge;
-    return centre;
-    
-  }
-  
-  TVector3 ShowerPCADirection::SpacePointPosition(const art::Ptr<recob::SpacePoint>& sp){
-    
-    const Double32_t* sp_xyz = sp->XYZ();
-    TVector3 sp_postiion = {sp_xyz[0], sp_xyz[1], sp_xyz[2]};
-    return sp_postiion;
-  }
-
-  
-  double ShowerPCADirection::SpacePointCharge(art::Ptr<recob::SpacePoint> sp,
-					      art::FindManyP<recob::Hit>& fmh
-					      ){
-    return 1;
-  }
-  
-
-
 }
   
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerPCADirection)

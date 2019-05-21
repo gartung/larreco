@@ -27,6 +27,7 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/PFParticle.h"
+#include "larreco/RecoAlg/SBNShowerAlg.h"
 
 //C++ Includes 
 #include <iostream>
@@ -55,18 +56,19 @@ namespace ShowerRecoTools{
 		   art::Event& Event,
 		   reco::shower::ShowerPropertyHolder& ShowerPropHolder
 		   ) override;
-
-    TVector3 ShowerCentre(const std::vector<art::Ptr<recob::SpacePoint> >& showerspcs, art::FindManyP<recob::Hit>& fmh);
-    TVector3 SpacePointPosition(const art::Ptr<recob::SpacePoint>& sp);
-    void OrderShowerSpacePoints(std::vector<art::Ptr<recob::SpacePoint> >& showerspcs, TVector3& vertex, TVector3& direction);
+    
     
     art::InputTag fPFParticleModuleLabel;
     bool fUseCollectionOnly;
+    
+  private:
+    shower::SBNShowerAlg fSBNShowerAlg;
 
   };
   
   
   ShowerStartPosition::ShowerStartPosition(const fhicl::ParameterSet& pset)
+    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
   {
     configure(pset);
   }
@@ -159,13 +161,13 @@ namespace ShowerRecoTools{
       if(spacePoints_pfp.size() == 0){return 0;}
 
       //Get the Shower Center 
-      TVector3 ShowerCentre = ShowerStartPosition::ShowerCentre(spacePoints_pfp,fmh);
+      TVector3 ShowerCentre = fSBNShowerAlg.ShowerCentre(spacePoints_pfp,fmh);
 
       //Order the Hits from the shower centre. The most negative will be the start position.
-      OrderShowerSpacePoints(spacePoints_pfp,ShowerCentre,ShowerDirection);
+      fSBNShowerAlg.OrderShowerSpacePoints(spacePoints_pfp,ShowerCentre,ShowerDirection);
 
       //Set the start position.
-      TVector3 ShowerStartPosition = SpacePointPosition(spacePoints_pfp[0]);
+      TVector3 ShowerStartPosition = fSBNShowerAlg.SpacePointPosition(spacePoints_pfp[0]);
       ShowerPropHolder.SetShowerStartPosition(ShowerStartPosition);
       return 0; 
     }
@@ -173,103 +175,6 @@ namespace ShowerRecoTools{
     mf::LogWarning("ShowerStartPosition") << "Start Position has not been set yet. If you are not calculating the start position again then maybe you shoudl stop";
     return 0; 
   }
-
-  //####################################################################################
-  //Altgorithm functions
-
-  TVector3 ShowerStartPosition::ShowerCentre(const std::vector<art::Ptr<recob::SpacePoint> >& showersps, art::FindManyP<recob::Hit>& fmh) {
-    
-    float totalCharge = 0;
-    
-    TVector3 pos, chargePoint = TVector3(0,0,0);
-    
-    //Loop over the spacepoints and get the charge weighted center.
-    for(auto const& sp: showersps){
-      
-      //Get the position of the spacepoint 
-      pos = SpacePointPosition(sp);
-      
-      //Get the associated hits 
-      std::vector<art::Ptr<recob::Hit> > hits = fmh.at(sp.key());
-      
-      //Average the charge unless sepcified.
-      float charge  = 0;
-      float charge2 = 0;
-      for(auto const& hit: hits){
-	
-	if(fUseCollectionOnly){
-	  if(hit->SignalType() == geo::kCollection){ 
-	    charge = hit->Integral();
-	    break;
-	  }
-	}
-	
-	//Check if any of the points are not withing 2 sigma.
-	if(!fUseCollectionOnly){
-	  charge += hit->Integral();
-	  charge2 += hit->Integral();
-	}
-      }
-      
-      if(!fUseCollectionOnly){
-	//Calculate the unbiased standard deviation and mean. 
-	float mean = charge/((float) hits.size()); 
-	float rms  = TMath::Sqrt((charge2 - charge*charge)/((float)(hits.size()-1)));
-	
-	charge = 0;
-	for(auto const& hit: hits){
-	  if(hit->Integral() > (mean - 2*rms) && hit->Integral() < (mean + 2*rms))  
-	    charge += hit->Integral();
-	}
-      }
-      
-      chargePoint += charge * pos;
-      totalCharge += charge;
-      
-      if(charge == 0){
-	mf::LogWarning("ShowerStartPosition") << "Averaged charge, within 2 sigma, for a spacepoint is zero, Maybe this not a good method";
-      }
-    }
-    
-    double intotalcharge = 1/totalCharge;
-    TVector3 centre = chargePoint *  intotalcharge;
-    return centre;
-    
-  }
-
-  TVector3 ShowerStartPosition::SpacePointPosition(const art::Ptr<recob::SpacePoint>& sp){
-
-    const Double32_t* sp_xyz = sp->XYZ();
-    TVector3 sp_postiion = {sp_xyz[0], sp_xyz[1], sp_xyz[2]};
-    return sp_postiion;
-  }
-      
-  void  ShowerStartPosition::OrderShowerSpacePoints(std::vector<art::Ptr<recob::SpacePoint> >& showersps, TVector3& vertex, TVector3& direction){
-
-    std::map<double,art::Ptr<recob::SpacePoint> > OrderedSpacePoints;
-
-    //Loop over the spacepoints and get the pojected distance from the vertex.
-    for(auto const& sp: showersps){
-      
-      //Get the position of the spacepoint
-      TVector3 pos = SpacePointPosition(sp) - vertex;
-      
-      //Get the the projected length
-      double len = pos.Dot(direction);
-      
-      //Add to the list 
-      OrderedSpacePoints[len] = sp;
-    }
-
-    //Return an ordered list. 
-    showersps.clear();
-    for(auto const& sp: OrderedSpacePoints){
-      showersps.push_back(sp.second);
-    }
-    return;
-  }
 }
-
-
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerStartPosition)
 

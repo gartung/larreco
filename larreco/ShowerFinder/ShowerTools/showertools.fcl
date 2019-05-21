@@ -1,8 +1,11 @@
+#include "showeralgorithms.fcl"
+
 BEGIN_PROLOG
 
 showerpcadirection:{
      tool_type: ShowerPCADirection   
      PFParticleModuleLabel: "pandora"
+     SBNShowerAlg: @local::standard_sbnshoweralg
 }
 
 showerlinearenergy:{
@@ -11,12 +14,14 @@ showerlinearenergy:{
 
 showertrackfinder:{
     tool_type: ShowerTrackFinder
+    SBNShowerAlg: @local::standard_sbnshoweralg
 }
 
 showerstartposition:{
     tool_type: ShowerStartPosition
     PFParticleModuleLabel: "pandora"
     UseCollectionOnly: false
+    SBNShowerAlg: @local::standard_sbnshoweralg
 }
 
 showerstandardcalodedx:{

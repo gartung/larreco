@@ -12,20 +12,22 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art/Utilities/make_tool.h"
 #include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/FindManyP.h"
 
 //LArSoft Includes 
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Track.h"
-
+#include "larreco/RecoAlg/SBNShowerAlg.h"
 //C++ Includes 
 #include <iostream>
+
+
 
 namespace ShowerRecoTools{
 
@@ -45,12 +47,13 @@ namespace ShowerRecoTools{
   private:  
 
     // Define standard art tool interface
+    shower::SBNShowerAlg fSBNShowerAlg;
     void configure(const fhicl::ParameterSet& pset) override;
-    
   };
   
   
   ShowerTrackFinder::ShowerTrackFinder(const fhicl::ParameterSet& pset)
+    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
   {
     configure(pset);
   }
@@ -61,7 +64,6 @@ namespace ShowerRecoTools{
   
   void ShowerTrackFinder::configure(const fhicl::ParameterSet& pset)
   {
-    
   }
   
   
@@ -70,11 +72,12 @@ namespace ShowerRecoTools{
 					    reco::shower::ShowerPropertyHolder& ShowerPropHolder
 					    ){
     std::cout << "hello world find track" << std::endl;
-    
+    fSBNShowerAlg.OrderShowerHits(5);
+
     recob::Track track;
-    std::cout << "hello world find track end1" << std::endl;
+    //std::cout << "hello world find track end1" << std::endl;
     ShowerPropHolder.SetInitialTrack(track); 
-    std::cout << "hello world find track end" << std::endl;
+    //std::cout << "hello world find track end" << std::endl;
     return 0;
   }
 }

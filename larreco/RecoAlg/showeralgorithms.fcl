@@ -65,4 +65,8 @@ dune10kt_showerenergy:
   ZIntercept: -0.0191387
 }
 
+standard_sbnshoweralg:
+{
+}
+
 END_PROLOG
