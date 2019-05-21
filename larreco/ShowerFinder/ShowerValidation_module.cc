@@ -49,6 +49,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/PFParticle.h"
+#include "lardataobj/RecoBase/Vertex.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larreco/RecoAlg/MCRecoUtils/RecoUtils.h"
 #include "larreco/RecoAlg/MCRecoUtils/ShowerUtils.h"
@@ -130,7 +131,7 @@ private:
   float fSimEnergyCut;
   float fDensityCut;
   float fMaxSimEnergy;
-  
+
   std::vector<float>       fEnergies;
   std::vector<std::string> fShowerModuleLabels;
   std::vector<std::string> fHitModuleLabels;
@@ -162,8 +163,14 @@ private:
   std::map<std::string,std::vector<float> > GeoProjectionMatched_TreeVal;
   std::map<std::string,std::vector<float> > PandoraTrackNum_TreeVal;
 
+  std::map<std::string,std::vector<float> > PFP_Num_Neutrinos_TreeVal;
+  std::map<std::string,std::vector<float> > PFP_Vertex_Distance_X_TreeVal;
+  std::map<std::string,std::vector<float> > PFP_Vertex_Distance_Y_TreeVal;
+  std::map<std::string,std::vector<float> > PFP_Vertex_Distance_Z_TreeVal;
+  std::map<std::string,std::vector<float> > PFP_Vertex_Distance_Mag_TreeVal;
   std::map<std::string,std::vector<float> > PFP_Tracks_TreeVal;
   std::map<std::string,std::vector<float> > PFP_Showers_TreeVal;
+  std::map<std::string,std::vector<float> > PFP_Showers_Vertices_TreeVal;
   std::map<std::string,std::vector<float> > PFP_ProjectionMatched_TreeVal;
   std::map<std::string,std::vector<float> > PFP_HitsCompleteness_TreeVal;
   std::map<std::string,std::vector<float> > PFP_EnergyCompleteness_TreeVal;
@@ -219,7 +226,7 @@ private:
   int numshowerspassTPC;
   int numshowerspassdensity;
   int numshoowerspassenergy;
-  int numrecoshowers; 
+  int numrecoshowers;
   int numrecoshowersana;
 
 };
@@ -227,7 +234,7 @@ private:
 ana::ShowerValidation::ShowerValidation(const fhicl::ParameterSet& pset) : EDAnalyzer(pset){
 
   fGenieGenModuleLabel         = pset.get<std::string>("GenieGenModuleLabel");
-  fLArGeantModuleLabel         = pset.get<std::string>("LArGeantModuleLabel"); 
+  fLArGeantModuleLabel         = pset.get<std::string>("LArGeantModuleLabel");
   fHitsModuleLabel             = pset.get<std::string>("HitsModuleLabel");
   fTrackModuleLabel            = pset.get<std::string>("TrackModuleLabel");
   fPFParticleLabel             = pset.get<std::string>("PFParticleLabel");
@@ -235,7 +242,7 @@ ana::ShowerValidation::ShowerValidation(const fhicl::ParameterSet& pset) : EDAna
   fHitModuleLabels             = pset.get<std::vector<std::string> >("HitModuleLabels");
   fEnergies                    = pset.get<std::vector<float> >("Energies");
   fUseBiggestShower            = pset.get<bool>("UseBiggestShower");
-  fDrawCanvases                = pset.get<bool>("DrawCanvases"); 
+  fDrawCanvases                = pset.get<bool>("DrawCanvases");
   fFillOnlyClosestShower       = pset.get<bool>("FillOnlyClosestShower");
   fRemoveNonContainedParticles = pset.get<bool>("RemoveNonContainedParticles");
   fPFPValidation               = pset.get<bool>("PFPValidation");
@@ -268,15 +275,15 @@ void ana::ShowerValidation::initClusterTree(TTree* Tree, std::string branchName,
 
 void ana::ShowerValidation::beginJob() {
 
-  
-   numevents = 0;
-   containmentCutNum = 0;
-   numshowers = 0;
-   numshowerspassTPC = 0;
-   numshowerspassdensity = 0;
-   numshoowerspassenergy = 0;
-   numrecoshowers = 0; 
-   numrecoshowersana = 0;
+
+  numevents = 0;
+  containmentCutNum = 0;
+  numshowers = 0;
+  numshowerspassTPC = 0;
+  numshowerspassdensity = 0;
+  numshoowerspassenergy = 0;
+  numrecoshowers = 0;
+  numrecoshowersana = 0;
 
   Tree = tfs->make<TTree>("MetricTree", "Tree Holding all metric information");
   gInterpreter->GenerateDictionary("vector<vector<vector<float> > >","vector");
@@ -313,8 +320,14 @@ void ana::ShowerValidation::beginJob() {
   initTree(Tree,"GeoProjectionMatched",GeoProjectionMatched_TreeVal,fShowerModuleLabels);
   initTree(Tree,"PandoraTrackNum",PandoraTrackNum_TreeVal,fShowerModuleLabels);
 
+  initTree(Tree,"PFP_Num_Neutrinos",PFP_Num_Neutrinos_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Vertex_Distance_X",PFP_Vertex_Distance_X_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Vertex_Distance_Y",PFP_Vertex_Distance_Y_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Vertex_Distance_Z",PFP_Vertex_Distance_Z_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Vertex_Distance_Mag",PFP_Vertex_Distance_Mag_TreeVal,fShowerModuleLabels);
   initTree(Tree,"PFP_Tracks",PFP_Tracks_TreeVal,fShowerModuleLabels);
   initTree(Tree,"PFP_Showers",PFP_Showers_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"PFP_Showers_Vertces",PFP_Showers_Vertices_TreeVal,fShowerModuleLabels);
   initTree(Tree,"PFP_ProjectionMatched",PFP_ProjectionMatched_TreeVal,fShowerModuleLabels);
   initTree(Tree,"PFP_HitsCompleteness",PFP_HitsCompleteness_TreeVal,fShowerModuleLabels);
   initTree(Tree,"PFP_EnergyCompleteness",PFP_EnergyCompleteness_TreeVal,fShowerModuleLabels);
@@ -340,7 +353,7 @@ void ana::ShowerValidation::beginJob() {
 
 
 
-  
+
   initTree(Tree,"ShowerdEdx",ShowerdEdx_TreeVal,fShowerModuleLabels);
   initTree(Tree,"ShowerMag",ShowerMag_TreeVal,fShowerModuleLabels);
   initTree(Tree,"ShowerDirectionDiff",ShowerDirectionDiff_TreeVal,fShowerModuleLabels);
@@ -356,13 +369,13 @@ void ana::ShowerValidation::beginJob() {
 
     std::string processString = "ShowerStartEndProcess_" + fShowerModuleLabels[j];
     const char* processChar   = processString.c_str();
-    
+
     Tree->Branch(hitChar,"std::vector<std::vector<float> > >", &HitCompletenessEnergy_TreeVal[fHitModuleLabels[j]], 32000, 0);
-    
+
     Tree->Branch(processChar,"<std::string,std::vector<std::string>", &ShowerStartEndProcess_TreeVal[fShowerModuleLabels[j]], 32000, 0);
 
   }
- }
+}
 
 
 void ana::ShowerValidation::analyze(const art::Event& evt) {
@@ -446,39 +459,39 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
   for (sim::ParticleList::const_iterator particleIt = particles.begin(); particleIt != particles.end(); ++particleIt){
     const simb::MCParticle *particle = particleIt->second;
-    
-    bool contained = true; 
 
-    //Particles with mother 0 are the initial particles (neutrino events this is the particles generated after the interaction. Keep note of these. 
-    simenergy = particle->E(); 
+    bool contained = true;
+
+    //Particles with mother 0 are the initial particles (neutrino events this is the particles generated after the interaction. Keep note of these.
+    simenergy = particle->E();
     trueInitialParticles[particle->TrackId()] = particle;
-    
-    //Check to see if the particle is contained and find the trajectory of the particle                                                                                                                                            
-    //Get the number of Traj points to loop over       
+
+    //Check to see if the particle is contained and find the trajectory of the particle
+    //Get the number of Traj points to loop over
     unsigned int TrajPoints = particle->NumberTrajectoryPoints();
-    
+
     //Get the startpoistion so we can get the initial tpc.
     const TLorentzVector StartPositionTrajP = particle->Position(0);
     double start_vtx[3] = {StartPositionTrajP.X() ,StartPositionTrajP.Y(), StartPositionTrajP.Z()};
     geo::TPCID init_idtpc = geom->FindTPCAtPosition(start_vtx);
-    
-    //Loop over the trajectory points (they are in order). Loop to find the start point. 
+
+    //Loop over the trajectory points (they are in order). Loop to find the start point.
     for(unsigned int TrajPoints_it=0; TrajPoints_it<TrajPoints; ++TrajPoints_it){
-      
-      //Find the vertex of the vector                                                            
+
+      //Find the vertex of the vector
       const TLorentzVector PositionTrajP = particle->Position(TrajPoints_it);
       double vtx[3] = {PositionTrajP.X() ,PositionTrajP.Y(), PositionTrajP.Z()};
-      
-      //Find if the vertex is in the TPC. If so make it the start point.                 
+
+      //Find if the vertex is in the TPC. If so make it the start point.
       geo::TPCID idtpc = geom->FindTPCAtPosition(vtx);
-      
-      //Remove because this is crap and we need to think of something better. 
+
+      //Remove because this is crap and we need to think of something better.
       if(idtpc != init_idtpc){std::cout <<"Particle outside the TPC" << std::endl; contained=false; break;}
     }
-    
+
     if(contained){mcparticlescontained[particle->TrackId()] = true;}
     else{mcparticlescontained[particle->TrackId()] = false;}
- 
+
     if(fVerbose > 1){std::cout << "True Particle with track ID: " << particle->TrackId() << " Has code of: " << particle->PdgCode() << " and Energy of: " << particle->E() << " With Mother: " << particle->Mother() << " Proccess: " << particle->Process() << " End Process: "  << particle->EndProcess() << std::endl;}
 
 
@@ -538,7 +551,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
   if(fVerbose > 1){
     for(std::map<int,std::vector<int> >::iterator showermother=ShowersMothers.begin(); showermother!=ShowersMothers.end(); ++showermother){
-      const simb::MCParticle *motherparticle = trueParticles[showermother->first]; //test 
+      const simb::MCParticle *motherparticle = trueParticles[showermother->first]; //test
       std::cout << " A Mother has track id: " << showermother->first << " with Energy: "<< motherparticle->E() << std::endl;
       for(std::vector<int>::iterator daughterID=(showermother->second).begin(); daughterID!=(showermother->second).end();++daughterID){
 	std::cout << " Has a daughter of id: " << *daughterID << std::endl;
@@ -588,14 +601,14 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	  }
 	}
 
-      	//If we don't have a density bigger than one in at least one plane then it aint a shower. This could be due to hit reco. 
+      	//If we don't have a density bigger than one in at least one plane then it aint a shower. This could be due to hit reco.
 	if(low_density == 0){
 	  if(fVerbose > 0){std::cout << "Mother removed with id: " << showermother->first << " becuase the density is too low in the hit reconstruction" << std::endl;}
       	  showermother = ShowersMothers.erase(showermother);
 	  continue;
 	}
- 
-	//Should we remove shower mothers if the  they are not contained in one TPC and one TPC only 
+
+	//Should we remove shower mothers if the  they are not contained in one TPC and one TPC only
 	if(fRemoveNonContainedParticles){
 	  bool showercontained = true;
 	  for(std::vector<int>::iterator showerdaughter=(showermother->second).begin(); showerdaughter!=(showermother->second).end(); ++showerdaughter){
@@ -611,7 +624,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    continue;
 	  }
 	}
-    
+
 	++numshowerspassTPC;
 	++showermother;
       }
@@ -625,10 +638,10 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       if(fVerbose > 0){std::cout << "Mother removed with id: " << showermother->first << " becuase it is not a electron or photon" << std::endl;}
       showermother = ShowersMothers.erase(showermother);
     }
- }
+  }
 
 
-  //If there are no true showers we can't validate 
+  //If there are no true showers we can't validate
   if(ShowersMothers.size() == 0){
     if(fVerbose > 0){std::cout << " No Mothers finishing" << std::endl;}
     return;
@@ -767,7 +780,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
     //Getting the Shower Information
     //Association between Showers and 2d Hits
-    art::FindManyP<recob::Hit>  fmh(showerListHandle, evt, fShowerModuleLabel);
+    art::FindManyP<recob::Hit> fmh(showerListHandle, evt, fShowerModuleLabel);
 
     //Association between Showers and clusters
     art::FindManyP<recob::Cluster> fmch(showerListHandle, evt, fShowerModuleLabel);
@@ -775,15 +788,18 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     //Association between pfParticle and clusters
     art::FindManyP<recob::Cluster> fmpfc(pfpListHandle, evt, fPFParticleLabel);
 
+    //Association between pfParticle and vertex
+    art::FindManyP<recob::Vertex> fmpfv(pfpListHandle, evt, fPFParticleLabel);
+
     //Association between Showers and pfParticle
     art::FindManyP<recob::PFParticle> fmpf(showerListHandle, evt, fShowerModuleLabel);
 
     std::vector< art::Ptr<recob::Hit> > showerhits; //hits in the shower
-
+    std::vector< art::Ptr<recob::Vertex> > neutrinoVertices;
     //######################
     //### PFP Validation ###
     //######################
-    
+
     if (fPFPValidation){
 
       //Create a map between PFParticles and their IDs
@@ -794,15 +810,17 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       }
 
       std::vector<int> pfpPrimaries;
-      int pfpTrackCounter  = 0;
-      int pfpShowerCounter = 0;
-
-      if(fVerbose > 0) std::cout<<"Number of PFP: "<<pfps.size()<<std::endl;
+      int pfpTrackCounter        = 0;
+      int pfpShowerCounter       = 0;
+      int pfpNeutrinoCounter     = 0;
+      int pfpShowerVertexCounter = 0;
+      if(fVerbose > 0) { std::cout<<"Number of PFP: "<<pfps.size()<<std::endl; };
       for (unsigned int pfp_iter=0; pfp_iter<pfps.size();++pfp_iter){
 	art::Ptr<recob::PFParticle>& pfp = pfps.at(pfp_iter);
 
 	if(fVerbose > 1){
-	  std::cout<<"PFParticle: "<<pfp->Self()<<" with: PDG: "<<pfp->PdgCode()<<" Parent: "<<pfp->Parent()<<std::endl;
+	  std::cout<<"PFParticle: "<<pfp->Self()<<" with: PDG: "<<pfp->PdgCode()
+		   <<" Parent: "<<pfp->Parent()<<std::endl;
 	}
 	if ((pfp->PdgCode()==12) ||(pfp->PdgCode()==14)){ //Find Neutrino and primary daughters
 	  // Gives a vector of Duaghter particle ID's, get Daughters using PFParticlesMap
@@ -822,19 +840,73 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    if (Daughter->PdgCode() == 11) {
 	      pfpPrimaries.push_back(Daughter->Self());
 	      ++pfpShowerCounter;
+
+	      art::Handle<std::vector<recob::Vertex > > vertexHandle;
+	      evt.get(fmpfv.at(0).front().id(),vertexHandle);
+
+	      if(vertexHandle.isValid()) {
+		std::vector< art::Ptr<recob::Vertex> > pfpVertexVector = fmpfv.at(Daughter.key());
+		pfpShowerVertexCounter = pfpVertexVector.size();
+		PFP_Showers_Vertices_TreeVal[fShowerModuleLabel].push_back(pfpShowerVertexCounter);
+      
+	      }
 	    }else if (Daughter->PdgCode() == 13) {
 	      pfpPrimaries.push_back(Daughter->Self());
 	      ++pfpTrackCounter;
 	    }else {
 	      std::cout<<"Something has gone horribly wrong, PFP PDG != 11||13"<<std::endl;
 	    }
+	  } // end loop over neutrino daughters
+
+	  if(fmpfv.isValid()) {
+	    art::Handle<std::vector<recob::Vertex > > vertexHandle;
+	    evt.get(fmpfv.at(0).front().id(),vertexHandle);
+
+	    if(vertexHandle.isValid()) {
+	      std::vector< art::Ptr<recob::Vertex> > pfpVertexVector = fmpfv.at(pfp.key());
+	      art::Ptr<recob::Vertex> pfpVertex = pfpVertexVector.at(0);
+	      neutrinoVertices.push_back(pfpVertex);
+	    }
 	  }
+
+	  ++pfpNeutrinoCounter;
 	}
       }
-      if(fVerbose > 0) std::cout<<"Primary Tracks: "<<pfpTrackCounter<<" and Primary Showers: "<<pfpShowerCounter<<std::endl;
 
+      if(fVerbose > 0) { std::cout<<"Primary Tracks: "<<pfpTrackCounter<<" and Primary Showers: "<<pfpShowerCounter<<std::endl; };
+
+      PFP_Num_Neutrinos_TreeVal[fShowerModuleLabel].push_back(pfpNeutrinoCounter);
       PFP_Tracks_TreeVal[fShowerModuleLabel].push_back(pfpTrackCounter);
       PFP_Showers_TreeVal[fShowerModuleLabel].push_back(pfpShowerCounter);
+      if(fVerbose > 0) { std::cout<<"Number of PFP Neurtinos:"<<pfpNeutrinoCounter
+				  <<" and vertex: "<<neutrinoVertices.size()<<std::endl; };
+      //TODO: Make this more general than the vertex case
+      for (unsigned int vertex_iter=0; vertex_iter<neutrinoVertices.size();++vertex_iter){
+	art::Ptr<recob::Vertex> pfpVertex = neutrinoVertices.at(vertex_iter);
+
+	// get the pfp neutrino vertex
+	double pfpvtx[3];
+	pfpVertex->XYZ(pfpvtx);
+
+	// TODO: here i just take the first particle becuase i'm lazy, needs fixing
+	std::map<int,const simb::MCParticle*>::iterator trueInitialParticleIt = trueInitialParticles.begin();
+	const simb::MCParticle* initialParticle = (*trueInitialParticleIt).second;
+
+
+	const TLorentzVector PositionTrajP = initialParticle->Position();
+	double truevtx[3] = {PositionTrajP.X() ,PositionTrajP.Y(), PositionTrajP.Z()};
+
+	double PFP_Start_Diff_X = pfpvtx[0] - truevtx[0];
+	double PFP_Start_Diff_Y = pfpvtx[1] - truevtx[1];
+	double PFP_Start_Diff_Z = pfpvtx[2] - truevtx[2];
+	double PFP_Start_Diff = TMath::Sqrt(TMath::Power((pfpvtx[0] - truevtx[0]),2) + TMath::Power((pfpvtx[1] - truevtx[1]),2) + TMath::Power((pfpvtx[2] - truevtx[2]),2));
+
+	PFP_Vertex_Distance_X_TreeVal[fShowerModuleLabel].push_back(PFP_Start_Diff_X);
+	PFP_Vertex_Distance_Y_TreeVal[fShowerModuleLabel].push_back(PFP_Start_Diff_Y);
+	PFP_Vertex_Distance_Z_TreeVal[fShowerModuleLabel].push_back(PFP_Start_Diff_Z);
+	PFP_Vertex_Distance_Mag_TreeVal[fShowerModuleLabel].push_back(PFP_Start_Diff);
+
+      }
     }
 
     //Get the ID of the shower hit module
@@ -844,10 +916,10 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     unsigned int biggest_shower_iter = 9999;
 
     for(unsigned int shower_iter = 0; shower_iter < showers.size(); ++shower_iter){
-      
+
       ++numrecoshowers;
 
-      //Get the shower  
+      //Get the shower
       art::Ptr<recob::Shower>& shower = showers.at(shower_iter);
 
       //Get the hits vector from the shower
@@ -1008,12 +1080,12 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       // Select first traj point where the photon loses energy, last be default
       bool PhotonEnd = false;
       unsigned int PhotonEndTrajPoint = TrajPoints-1;
-	for (unsigned int trajPoint=0; trajPoint<TrajPoints;trajPoint++){
-	  if (!PhotonEnd && MCShowerParticle->E(trajPoint) < (0.9*Energy)){
-	    PhotonEndTrajPoint = trajPoint;
-	    PhotonEnd = true;
-	  }
+      for (unsigned int trajPoint=0; trajPoint<TrajPoints;trajPoint++){
+	if (!PhotonEnd && MCShowerParticle->E(trajPoint) < (0.9*Energy)){
+	  PhotonEndTrajPoint = trajPoint;
+	  PhotonEnd = true;
 	}
+      }
 
 
       //Find the start and end points of the initial particle.
@@ -1021,7 +1093,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       TLorentzVector PositionTrajEnd   =  MCShowerParticle->Position(PhotonEndTrajPoint);
 
       //The Start of position for the electron shower is PositionTrajStart but the start position for photon showers is at the end of the shower (the start of the e+- track)
-      if(MCShowerParticle->PdgCode() == 22){ 
+      if(MCShowerParticle->PdgCode() == 22){
 	PositionTrajStart = PositionTrajEnd;
       }
 
@@ -1037,9 +1109,9 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       TVector3  ShowerStart                      = shower->ShowerStart();//cm
       double ShowerTrackLength                   = shower->Length();//cm
       std::vector< double >  ShowerEnergyPlanes  = shower->Energy();//MeV
-      std::vector< double >  ShowerdEdX_vec      = shower->dEdx();//MeV/cm 
+      std::vector< double >  ShowerdEdX_vec      = shower->dEdx();//MeV/cm
 
-      //Remove this 
+      //Remove this
       //ShowerEnergyPlanes[2] = (ShowerEnergyPlanes[2] - 0.00155171)*0.00155171/4.39964 + 4.39964;
 
       //Bools to fill metric histrograms wheen needed.
@@ -1287,7 +1359,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       if(EvalulateGeoProjectionMatched){
 
 	GeoProjectionMatched_TreeVal[fShowerModuleLabel].push_back(geoprojectionmatched_score);
-	
+
       }
       else{
 	GeoProjectionMatched_TreeVal[fShowerModuleLabel].push_back(-99999);
@@ -1298,7 +1370,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       if(fVerbose > 1){std::cout << "Cluster Validation Complete" << std::endl;}
 
     }//Shower Loop
-    
+
     //#########################
     //###   Event Metric    ###
     //#########################
@@ -1334,7 +1406,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     TrueEnergy_TreeVal[fShowerModuleLabel].push_back(simenergy*1000);
 
 
-    
+
   }//Shower Module labels
 
   //Fill the tree
@@ -1366,8 +1438,15 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     TrueHitNum_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     PosDir_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     PandoraTrackNum_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
+
+    PFP_Num_Neutrinos_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
+    PFP_Vertex_Distance_X_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
+    PFP_Vertex_Distance_Y_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
+    PFP_Vertex_Distance_Z_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
+    PFP_Vertex_Distance_Mag_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     PFP_Tracks_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     PFP_Showers_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
+    PFP_Showers_Vertices_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     PFP_ProjectionMatched_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     PFP_HitsCompleteness_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     PFP_EnergyCompleteness_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
@@ -1436,13 +1515,13 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
   //Holder for cluster its
   std::vector< art::Ptr<recob::Hit> > clusterhits;
   art::Handle<std::vector<recob::Hit > > hitHandle;
-  
+
   if(!hitHandle.isValid()){
     mf::LogError("ShowerValidation") << "Hits handle is stale. No clustering validation done" << std::endl;
     return;
   }
 
-  //Get the Hits Handle used for this cluster type WARNING 
+  //Get the Hits Handle used for this cluster type WARNING
   evt.get(fmhc.at(clusters.at(0).key()).front().id(),hitHandle);
 
   //Get the hits vector from the shower
@@ -1749,8 +1828,8 @@ void ana::ShowerValidation::endJob() {
   std::cout << "Number of MC showers that pass the containment cut: " <<  numshowerspassTPC  << std::endl;
   std::cout << "Number of reco showers: " << numrecoshowers  << std::endl;
   std::cout << "Number of reco showers analysed: " << numrecoshowersana  << std::endl;
- 
-} 
+
+}
 
 
 
