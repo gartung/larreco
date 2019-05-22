@@ -5,27 +5,43 @@ BEGIN_PROLOG
 showerpcadirection:{
      tool_type: ShowerPCADirection   
      PFParticleModuleLabel: "pandora"
+     NSegments: 10
+     UseStartPosition: true
      SBNShowerAlg: @local::standard_sbnshoweralg
-}
+     }
 
 showerlinearenergy:{
     tool_type:  ShowerLinearEnergy
-}
+    PFParticleModuleLabel: "pandora" 
+    UGradient:   0.00155644
+    UIntercept:  5.92931
+    VGradient:   0.00173915
+    VIntercept:  -2.13307
+    ZGradient:   0.00153631
+    ZIntercept:  5.19711
+    XGradient:   0
+    XIntercept:  0
+    YGradient:   0
+    YIntercept:  0
+    ThreeDGradient:  0 
+    ThreeDIntercept: 0
+    
+    }
 
 showertrackfinder:{
     tool_type: ShowerTrackFinder
     SBNShowerAlg: @local::standard_sbnshoweralg
-}
+    }
 
 showerstartposition:{
     tool_type: ShowerStartPosition
     PFParticleModuleLabel: "pandora"
     UseCollectionOnly: false
     SBNShowerAlg: @local::standard_sbnshoweralg
-}
+    }
 
 showerstandardcalodedx:{
     tool_type: ShowerStandardCalodEdx
-}
+    }
 
 END_PROLOG

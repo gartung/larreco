@@ -53,7 +53,7 @@ class shower::SBNShowerAlg {
 
   
   TVector3 ShowerCentre(std::vector<art::Ptr<recob::SpacePoint> >& showerspcs,
-  art::FindManyP<recob::Hit>& fmh);   
+			art::FindManyP<recob::Hit>& fmh);   
 
   TVector3 SpacePointPosition(const art::Ptr<recob::SpacePoint>& sp);
 

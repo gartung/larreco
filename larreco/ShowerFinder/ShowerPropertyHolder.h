@@ -75,34 +75,29 @@ class reco::shower::ShowerPropertyHolder {
   //Get Functions
   TVector3 GetShowerDirection(){
     if(ShowerDirectionPtr) return ShowerDirection;
-    else throw cet::exception("ShowerPropertyHolder") << "Shower Direction not set" << std::endl;      
     TVector3 EmptyVec = {-999,-999,-999};
     return EmptyVec;
   }
     
   TVector3 GetShowerStartPosition(){
     if(ShowerStartPositionPtr) return ShowerStartPosition;
-    else throw cet::exception("ShowerPropertyHolder") << "Shower start position not set" << std::endl;
     TVector3 EmptyVec = {-999,-999,-999};
     return EmptyVec;
   }
   
   recob::Track GetInitialTrack(){
     if(InitialTrackPtr) return InitialTrack;
-    else throw cet::exception("ShowerPropertyHolder") << "Shower Initial track not set" << std::endl;
     return InitialTrack;
   } 
 
   std::vector<double> GetShowerEnergy(){
     if(ShowerEnergyPtr) return ShowerEnergy;
-    else throw cet::exception("ShowerPropertyHolder") << "Shower Energy not set" << std::endl;
     std::vector<double> EmptyVec = {-999,-999,-999};
     return EmptyVec;
   }
 
   std::vector<double> GetShowerdEdx(){
     if(ShowerdEdxPtr)return ShowerdEdx;
-    else throw cet::exception("ShowerPropertyHolder") << "Shower dEdx not set" << std::endl;
     std::vector<double> EmptyVec = {-999,-999,-999};
     return EmptyVec;
 

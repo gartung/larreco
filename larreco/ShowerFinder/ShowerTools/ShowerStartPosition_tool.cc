@@ -59,7 +59,6 @@ namespace ShowerRecoTools{
     
     
     art::InputTag fPFParticleModuleLabel;
-    bool fUseCollectionOnly;
     
   private:
     shower::SBNShowerAlg fSBNShowerAlg;
@@ -80,7 +79,6 @@ namespace ShowerRecoTools{
   void ShowerStartPosition::configure(const fhicl::ParameterSet& pset)
   {
     fPFParticleModuleLabel      = pset.get<art::InputTag>("PFParticleModuleLabel","");
-    fUseCollectionOnly          = pset.get<bool>         ("UseCollectionOnly","");
   }
  
   int ShowerStartPosition::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
@@ -154,10 +152,7 @@ namespace ShowerRecoTools{
       //Get the spacepoints
       std::vector<art::Ptr<recob::SpacePoint> > spacePoints_pfp = fmspp.at(pfparticle.key());
 
-      for(unsigned int i=0; i<fmspp.size();++i){
-	std::cout << "size: " << fmspp.at(i).size() << std::endl;
-      }
-
+      //Cannot continue if we have no spacepoints
       if(spacePoints_pfp.size() == 0){return 0;}
 
       //Get the Shower Center 

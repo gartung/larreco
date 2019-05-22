@@ -6,11 +6,14 @@
 //###              methods. Derviced from PandoraShowers Method            ###
 //############################################################################
 
+//Warning! Currently as pandora gives each hit a spacepoint, rather than 
+//         matching up some energy depositions are double counted. 
+//         This could lead to a bais in the PCA analysis.
+
 #include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
-#include "art/Utilities/make_tool.h"
 #include "art/Utilities/make_tool.h"
 #include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -65,8 +68,7 @@ namespace ShowerRecoTools {
 
     art::InputTag fPFParticleModuleLabel;
     int fNSegments; 
-    bool fUseCollectionOnly;
-
+    bool fUseStartPosition;
   };
   
   
@@ -84,7 +86,7 @@ namespace ShowerRecoTools {
   {
     fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
     fNSegments              = pset.get<float>        ("NSegments"); 
-    fUseCollectionOnly      = pset.get<bool>         ("UseCollectionOnly");
+    fUseStartPosition       = pset.get<bool>         ("UseStartPosition");
   }
 
   int ShowerPCADirection::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
@@ -115,19 +117,20 @@ namespace ShowerRecoTools {
       throw cet::exception("ShowerStartPosition") << "Spacepoint and hit association not valid. Stopping.";
       return 1;
     }
-    
-
+   
     //Spacepoints
     std::vector<art::Ptr<recob::SpacePoint> > spacePoints_pfp = fmspp.at(pfparticle.key());
+
+    //We cannot progress with no spacepoints.
+    if(spacePoints_pfp.size() == 0){return 0;} 
 
     //Find the PCA vector
     TVector3 ShowerCentre;
     TVector3 Eigenvector = ShowerPCAVector(spacePoints_pfp,fmh,ShowerCentre);
-    
-    TVector3 Direction        = { Eigenvector[0], Eigenvector[1], Eigenvector[2] }; 
+    TVector3 Direction   = { Eigenvector[0], Eigenvector[1], Eigenvector[2] }; 
 
     //Check if we are pointing the correct direction or not, First try the start position
-    if(ShowerPropHolder.CheckShowerStartPosition()){
+    if(ShowerPropHolder.CheckShowerStartPosition() && fUseStartPosition){
 	
       //Get the General direction as the vector between the start position and the centre
       TVector3 StartPositionVec = ShowerPropHolder.GetShowerStartPosition();
@@ -149,6 +152,7 @@ namespace ShowerRecoTools {
     
     //Otherwise Check against the RMS of the shower. Method adapated from EMShower Thanks Mike.
     double RMSGradient = RMSShowerGradient(spacePoints_pfp,ShowerCentre,Direction);
+
     if(RMSGradient < 0){
       	Eigenvector[0] = - Eigenvector[0];
 	Eigenvector[1] = - Eigenvector[1];

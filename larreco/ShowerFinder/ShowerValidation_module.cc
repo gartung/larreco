@@ -1249,12 +1249,15 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	if(EvaluateShowerDirection){
 	  std::cout << "True Start: " << PositionTrajStart.X() << " Shower Start: " << ShowerStart.X() << std::endl;
 	  std::cout << "X Poisition: " <<  ShowerStart.X() << "Y Position " << ShowerStart.Y() << " Z Poistion: " << ShowerStart.Z() << std::endl;
+	  std::cout << "ShowerDirection X: " << ShowerDirection.X() << " Y: " << ShowerDirection.Y() << " Z: " << ShowerDirection.Z() << std::endl;
+	  std::cout << "TrueShowerDirection X: " << TrueShowerDirection.X() << " Y: " << TrueShowerDirection.Y() << " Z: " << TrueShowerDirection.Z() << std::endl;
 	}
 	if(EvaluateShowerLength){
 	  std::cout << "TrueTrackLength: " << TrueTrackLength << " ShowerTrackLength: " << ShowerTrackLength << std::endl;
 	}
 	if(EvaluateShowerEnergy){
 	  std::cout << "Best Plane Reco Shower Energy " << ShowerEnergyPlanes[ShowerBest_Plane] << std::endl;
+	  std::cout << "Shower Energy Diff: " << (ShowerEnergyPlanes[ShowerBest_Plane]/TrueEnergyDep_FromShower) << std::endl;
 	}
 	std::cout << "True Energy Deposited from true shower within Shower: " << TrueEnergyDepWithinShower_FromTrueShower << std::endl;
 	std::cout << "True Energy Deposited From true associated Shower: " << TrueEnergyDep_FromShower << std::endl;

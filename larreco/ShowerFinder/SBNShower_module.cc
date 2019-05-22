@@ -150,6 +150,8 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
   //Loop of the pf particles
   for(auto const& pfp: pfps){
 
+    std::cout << "new particle" << std::endl;
+
     //loop only over showers.
     if(pfp->PdgCode() != 11){continue;}
 
@@ -196,7 +198,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     const std::vector<double> ShowerdEdxErr                   = sprop_holder.GetShowerdEdxErr(); ;
 
     //Make the shower 
-    recob::Shower shower = recob::Shower(ShowerDirection, ShowerDirectionErr,ShowerStartPosition, ShowerDirectionErr,ShowerEnergy,ShowerEnergyErr,ShowerdEdx, ShowerdEdxErr, -999, -999);
+    recob::Shower shower = recob::Shower(ShowerDirection, ShowerDirectionErr,ShowerStartPosition, ShowerDirectionErr,ShowerEnergy,ShowerEnergyErr,ShowerdEdx, ShowerdEdxErr, 2, -999);
     showers->push_back(shower);
     showers->back().set_id(showers->size()-1);
     

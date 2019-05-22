@@ -82,7 +82,12 @@ TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoi
     if(!fUseCollectionOnly){
       //Calculate the unbiased standard deviation and mean.
       float mean = charge/((float) hits.size());
-      float rms  = TMath::Sqrt((charge2 - charge*charge)/((float)(hits.size()-1)));
+
+      float rms = 1;
+      
+      if(hits.size() > 1){
+	rms  = TMath::Sqrt((charge2 - charge*charge)/((float)(hits.size()-1)));
+      }
 
       charge = 0;
       for(auto const& hit: hits){
