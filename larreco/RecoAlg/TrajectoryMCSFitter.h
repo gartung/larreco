@@ -149,9 +149,12 @@ namespace trkf {
     //
     double GetE(const double initial_E, const double length_travelled, const double mass) const;
     //
+    //spacecharge::SpaceCharge const* _SCE;
+    //_SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
   private:
-    spacecharge::SpaceCharge const* _SCE;
-    _SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
+    //spacecharge::SpaceCharge const* _SCE;
+    //_SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
+    //auto const*  _SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
 
     ::art::ServiceHandle<geo::Geometry> geo;
 
