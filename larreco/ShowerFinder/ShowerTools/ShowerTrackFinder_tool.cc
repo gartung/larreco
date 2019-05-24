@@ -59,6 +59,7 @@ namespace ShowerRecoTools{
     Int_t WeightedFit(const Int_t n, const Double_t *x, const Double_t *y, const Double_t *w,  Double_t *parm);
 
     // Define standard art tool interface
+
     shower::SBNShowerAlg fSBNShowerAlg;
     pma::ProjectionMatchingAlg fProjectionMatchingAlg;
     unsigned int         fNfitpass;
@@ -66,13 +67,19 @@ namespace ShowerRecoTools{
     std::vector<double>  fToler;
     bool fApplyChargeWeight;
     art::InputTag fPFParticleModuleLabel;
+
+    // dEdx params
+    art::ServiceHandle<geo::Geometry> fGeom;
+    calo::CalorimetryAlg fCalorimetryAlg;
+    double fdEdxTrackLength;
+
   };
   
   
   ShowerTrackFinder::ShowerTrackFinder(const fhicl::ParameterSet& pset)
     : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
-      fProjectionMatchingAlg(pset.get<fhicl::ParameterSet>("ProjectionMatchingAlg"))
-
+      fProjectionMatchingAlg(pset.get<fhicl::ParameterSet>("ProjectionMatchingAlg")),
+      fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg"))
   {
 
     //    produces<art::Assns<recob::Track, recob::Hit> >();
@@ -90,6 +97,9 @@ namespace ShowerRecoTools{
     fNfithits              = pset.get<std::vector<unsigned int> >("Nfithits");
     fToler                 = pset.get<std::vector<double> >      ("Toler");
     fPFParticleModuleLabel = pset.get<art::InputTag>             ("PFParticleModuleLabel");
+    fdEdxTrackLength       = pset.get<double>                    ("dEdxTrackLength");
+
+
     if (fNfitpass!=fNfithits.size() ||
 	fNfitpass!=fToler.size()) {
       throw art::Exception(art::errors::Configuration)
@@ -257,6 +267,78 @@ namespace ShowerRecoTools{
     // Event.put(std::move(assnhit));
 
     ShowerPropHolder.SetInitialTrack(track); 
+
+    // Shower dEdx calculation
+    // To be moved when we have figured out how to transfer the hits associated with the track
+    // TODO: when moved out in some protection to make sure there is an initial track    
+
+    std::vector<double> dEdx;
+    std::vector<std::vector<art::Ptr<recob::Hit> > > trackHits;
+    TVector3 showerDir = ShowerPropHolder.GetShowerDirection();
+    
+    unsigned int numPlanes = fGeom->Nplanes();
+
+    dEdx.reserve(numPlanes);
+    trackHits.reserve(numPlanes);
+
+    // TODO replace trackhits look with loop over associated hits with track
+    for(unsigned int plane=0; plane<trackhits.size(); ++plane) {
+      for (unsigned int hit=0; hit<(trackhits.at(plane)).size(); ++hit) {
+	art::Ptr<recob::Hit> thisHit = (trackhits.at(plane)).at(hit);
+	unsigned int hitPlane = thisHit->View();
+	trackHits.at(hitPlane).push_back(thisHit);
+      }
+    }
+      
+
+
+    for (unsigned int plane=0; plane<numPlanes; ++plane) {
+      
+      std::vector<art::Ptr<recob::Hit> > trackPlaneHits;
+      
+      if (trackPlaneHits.size()){
+	double fdEdx = -999;
+	double totQ  = 0;
+	double avgT  = 0;
+	double pitch = 0;
+	double wirepitch = fGeom->WirePitch(trackPlaneHits.at(0)->WireID().planeID());
+	double angleToVert = fGeom->WireAngleToVertical(fGeom->Plane(plane).View(),trackPlaneHits[0]->WireID().planeID());
+	double cosgamma = std::abs(sin(angleToVert)*showerDir.Y()+cos(angleToVert)*showerDir.Z());
+	if (cosgamma>0) pitch = wirepitch/cosgamma; //TODO try and remove???
+	if (pitch){
+	  // Unused best plane information
+	  //   if (pitch<minpitch){
+	  //     minpitch = pitch;
+	  //     bestPlane = plane;
+	  //   }
+	  
+	  int nhits = 0;
+	  std::vector<float> vQ;
+	  int w0 = trackPlaneHits.at(0)->WireID().Wire;
+	  
+	  for (auto const& hit: trackPlaneHits){
+	    int w1 = hit->WireID().Wire;	    
+	    if (std::abs((w1-w0)*pitch)<fdEdxTrackLength){
+	      vQ.push_back(hit->Integral());
+	      totQ += hit->Integral();
+	      avgT+= hit->PeakTime();
+	      ++nhits;
+	    }
+	  }
+	  if (totQ) {
+	    double dQdx = TMath::Median(vQ.size(), &vQ[0])/pitch;
+	    fdEdx = fCalorimetryAlg.dEdx_AREA(dQdx, avgT/nhits, trackPlaneHits[0]->WireID().Plane);
+	  }
+	}
+	dEdx.push_back(fdEdx);
+      }
+      else{
+	dEdx.push_back(-999);
+      }
+    }
+    
+    ShowerPropHolder.SetShowerdEdx(dEdx);
+    
     return 0;
   }
   

@@ -1,5 +1,5 @@
 #include "showeralgorithms.fcl"
-
+#include "calorimetry.fcl"                                                                           
 BEGIN_PROLOG
 
 showerpcadirection:{
@@ -33,11 +33,15 @@ showertrackfinder:{
     tool_type: ShowerTrackFinder
     SBNShowerAlg:          @local::standard_sbnshoweralg
     ProjectionMatchingAlg: @local::standard_projectionmatchingalg
+
     Nfitpass:        4
     Nfithits:        [50, 30, 20, 20]
     Toler:           [30., 5., 2., 2.]
     ApplyChargeWeight: false
     PFParticleModuleLabel: "pandora"
+    // dedx
+    CalorimetryAlg:        @local::standard_calorimetryalgmc
+    dEdxTrackLength: 3    
     }
 
 showerstartposition:{
