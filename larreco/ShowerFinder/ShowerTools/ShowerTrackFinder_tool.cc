@@ -117,8 +117,6 @@ namespace ShowerRecoTools{
     if(!ShowerPropHolder.CheckShowerStartPosition()){return 0;}
     if(!ShowerPropHolder.CheckShowerDirection()){return 0;}
 
-    //    auto assnhit = std::make_unique<art::Assns<recob::Track, recob::Hit>>();
-
     TVector3 ShowerStartPosition = ShowerPropHolder.GetShowerStartPosition();
     TVector3 ShowerDirection     = ShowerPropHolder.GetShowerDirection();
 

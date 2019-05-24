@@ -61,7 +61,8 @@ class reco::shower::ShowerPropertyHolder {
 
   //Set Functions 
   void SetShowerDirection    (TVector3 &showerdirection)    {ShowerDirection     = showerdirection;     ShowerDirectionPtr     = &ShowerDirection;} 
-  void SetShowerStartPosition(TVector3 &showerstartposition){ShowerStartPosition = showerstartposition; ShowerStartPositionPtr = &ShowerStartPosition;} 
+  void SetShowerStartPosition(TVector3 &showerstartposition){ShowerStartPosition = showerstartposition; ShowerStartPositionPtr = &ShowerStartPosition;     std::cout << " Set ShowerStartPosition.X(): " << ShowerStartPosition.X() << " ShowerStartPositionPtr: " << ShowerStartPositionPtr  << std::endl;
+} 
   void SetInitialTrack       (recob::Track &track)          {InitialTrack        = track;               InitialTrackPtr        = &InitialTrack;}
   void SetShowerEnergy       (std::vector<double> energyvec){ShowerEnergy        = energyvec;           ShowerEnergyPtr        = &energyvec;}
   void SetShowerdEdx         (std::vector<double> dedxvec)  {ShowerdEdx          = dedxvec;             ShowerdEdxPtr          = &ShowerdEdx;}
@@ -80,6 +81,7 @@ class reco::shower::ShowerPropertyHolder {
   }
     
   TVector3 GetShowerStartPosition(){
+    std::cout << " Get ShowerStartPosition.X(): " << ShowerStartPosition.X() << " ShowerStartPositionPtr: " << ShowerStartPositionPtr  << std::endl;
     if(ShowerStartPositionPtr) return ShowerStartPosition;
     TVector3 EmptyVec = {-999,-999,-999};
     return EmptyVec;
@@ -133,6 +135,7 @@ class reco::shower::ShowerPropertyHolder {
     else return false;
   } 
   bool CheckShowerStartPosition(){
+    std::cout << " Check ShowerStartPosition.X(): " << ShowerStartPosition.X() << " ShowerStartPositionPtr: " << ShowerStartPositionPtr  << std::endl;
     if(ShowerStartPositionPtr) return true; 
     else return false;
   } 
