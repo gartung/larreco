@@ -7,6 +7,7 @@ showerpcadirection:{
      PFParticleModuleLabel: "pandora"
      NSegments: 10
      UseStartPosition: true
+     ChargeWeighted: true 
      SBNShowerAlg: @local::standard_sbnshoweralg
      }
 
@@ -30,7 +31,13 @@ showerlinearenergy:{
 
 showertrackfinder:{
     tool_type: ShowerTrackFinder
-    SBNShowerAlg: @local::standard_sbnshoweralg
+    SBNShowerAlg:          @local::standard_sbnshoweralg
+    ProjectionMatchingAlg: @local::standard_projectionmatchingalg
+    Nfitpass:        4
+    Nfithits:        [50, 30, 20, 20]
+    Toler:           [30., 5., 2., 2.]
+    ApplyChargeWeight: false
+    PFParticleModuleLabel: "pandora"
     }
 
 showerstartposition:{

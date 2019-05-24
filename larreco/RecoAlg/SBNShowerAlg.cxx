@@ -1,12 +1,63 @@
 #include "larreco/RecoAlg/SBNShowerAlg.h"
 
-shower::SBNShowerAlg::SBNShowerAlg(const fhicl::ParameterSet& pset) {
+shower::SBNShowerAlg::SBNShowerAlg(const fhicl::ParameterSet& pset):  
+  fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()) {
+  
   fUseCollectionOnly = pset.get<bool>("UseCollectionOnly");
 }
 
 
-void shower::SBNShowerAlg::OrderShowerHits(int test){
-  std::cout<<"Testing SBNShowerAlg: "<<test<<std::endl;
+void shower::SBNShowerAlg::OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& hits, 
+					   TVector3& ShowerDirection,
+					   TVector3& ShowerStartPosition
+					   ){
+  
+  std::map<double, art::Ptr<recob::Hit> > OrderedHits;
+  
+  for(auto const& hit: hits){ 
+    
+    //Get the wireID 
+    const geo::WireID WireID = hit->WireID();
+  
+
+    //Get the TPCID
+    const geo::TPCID tpcid = WireID.asTPCID();
+
+    //Get the hit Vector.
+    TVector2 hitcoord = { (double) hit->WireID().Wire, hit->PeakTime()};
+
+    //Get the projection vectors for the start position in 2D  
+    TVector2 Shower2DStartPosition = { 
+      fGeom->WireCoordinate(ShowerStartPosition, hit->WireID().planeID()), 
+      fDetProp->ConvertXToTicks(ShowerStartPosition.X(),  hit->WireID().planeID())
+    };
+
+    //Get the Vector of the plane.
+    double vertangle = fGeom->WireAngleToVertical(hit->View(),tpcid);
+    std::cout << "sin vertangle: " <<  TMath::Sin(vertangle) << "  TMath::Cos(vertangle) " <<  TMath::Cos(vertangle) << std::endl;
+
+    //Vector of the plane
+    TVector3 PlaneDirection = {0,TMath::Sin(vertangle), TMath::Cos(vertangle)}; 
+
+    //get the shower 2D direction 
+    TVector2 Shower2DDirection = { 
+      ShowerDirection.Dot(PlaneDirection), 
+      fDetProp->ConvertXToTicks(ShowerDirection.X(),  hit->WireID().planeID())
+    };
+
+    //Order the hits based on the projection
+    TVector2 pos = hitcoord - Shower2DStartPosition;
+    double proj = pos.X()*Shower2DDirection.X() + pos.Y()*Shower2DDirection.Y();
+    OrderedHits[proj] = hit; 
+  
+  }
+
+  //Transform the shower. 
+  std::vector<art::Ptr<recob::Hit> > showerHits;
+  std::transform(OrderedHits.begin(), OrderedHits.end(), std::back_inserter(showerHits), [](std::pair<double,art::Ptr<recob::Hit> > const& hit) { return hit.second; });
+
+  hits = showerHits;
+  
   return;
 }
 
@@ -122,7 +173,22 @@ TVector3 shower::SBNShowerAlg::SpacePointPosition(const art::Ptr<recob::SpacePoi
 double shower::SBNShowerAlg::SpacePointCharge(art::Ptr<recob::SpacePoint> sp,
 					      art::FindManyP<recob::Hit>& fmh){
 
-  return 1;
+  double Charge = 0;
+
+  //Average over the charge even though there is only one 
+  std::vector<art::Ptr<recob::Hit> > hits = fmh.at(sp.key());
+  for(auto const& hit: hits){
+    Charge += hit->Integral();
+  }
+
+  Charge /= hits.size();
+
+  return Charge;
+}
+
+
+TVector2 shower::SBNShowerAlg::HitCoordinates(art::Ptr<recob::Hit> const& hit) {
+  return TVector2(hit->WireID().Wire, hit->PeakTime());
 }
 
 

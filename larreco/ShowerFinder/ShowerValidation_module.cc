@@ -411,6 +411,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
   if(evt.getByLabel(fTrackModuleLabel,trackListHandle))
     {art::fill_ptr_vector(tracks, trackListHandle);}
 
+
   //I think that doing getManyByType kind of initalises the handles giving every particle product id. Doing this allows us to find handles for the individal hits later.
 
   //Get all the hits
@@ -1519,13 +1520,16 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
   std::vector< art::Ptr<recob::Hit> > clusterhits;
   art::Handle<std::vector<recob::Hit > > hitHandle;
 
+  //Get the Hits Handle used for this cluster type WARNING
+  std::cout << "test1" << std::endl;
+  evt.get(fmhc.at(clusters.at(0).key()).front().id(),hitHandle);
+  std::cout << "test2" << std::endl;
+
   if(!hitHandle.isValid()){
     mf::LogError("ShowerValidation") << "Hits handle is stale. No clustering validation done" << std::endl;
     return;
   }
 
-  //Get the Hits Handle used for this cluster type WARNING
-  evt.get(fmhc.at(clusters.at(0).key()).front().id(),hitHandle);
 
   //Get the hits vector from the shower
   for(auto const& cluster : clusters){

@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <vector>
+#include <map> 
 
 //Root Includes
 
@@ -42,7 +43,10 @@ namespace shower {
 class shower::SBNShowerAlg {
  public:
   SBNShowerAlg(const fhicl::ParameterSet& pset);
-  void OrderShowerHits(int test=0);
+  void OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& hits, 
+		       TVector3& ShowerDirection,
+		       TVector3& ShowerPosition
+		       );
 
   void OrderShowerSpacePoints(std::vector<art::Ptr<recob::SpacePoint> >& showerspcs,
 			      TVector3& vertex, TVector3& direction);
@@ -59,11 +63,13 @@ class shower::SBNShowerAlg {
 
   double SpacePointCharge(art::Ptr<recob::SpacePoint> sp, art::FindManyP<recob::Hit>& fmh);
 
-
+  TVector2 HitCoordinates(art::Ptr<recob::Hit> const& hit);
 
  private:
 
   bool fUseCollectionOnly;
+  art::ServiceHandle<geo::Geometry const> fGeom;
+  detinfo::DetectorProperties const* fDetProp = nullptr;
 
 };
 

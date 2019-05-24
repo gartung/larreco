@@ -70,12 +70,13 @@ reco::shower::SBNShower::SBNShower(fhicl::ParameterSet const& pset) :
   this->reconfigure(pset);
   produces<std::vector<recob::Shower> >();
   produces<std::vector<recob::Track> >();
-  //  produces<std::vector<recob::SpacePoint> >();
+  //produces<std::vector<recob::SpacePoint> >();
   produces<art::Assns<recob::Shower, recob::Hit> >();
   produces<art::Assns<recob::Shower, recob::Cluster> >();
   produces<art::Assns<recob::Track, recob::Shower> >();
   produces<art::Assns<recob::Shower, recob::SpacePoint> >();
   produces<art::Assns<recob::SpacePoint, recob::Hit> >();
+  //  produces<art::Assns<recob::Track, recob::Hit> >();
 }
 
 void reco::shower::SBNShower::reconfigure(fhicl::ParameterSet const& pset) {
