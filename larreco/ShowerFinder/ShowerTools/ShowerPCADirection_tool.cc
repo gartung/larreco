@@ -6,11 +6,14 @@
 //###              methods. Derviced from PandoraShowers Method            ###
 //############################################################################
 
+//Warning! Currently as pandora gives each hit a spacepoint, rather than 
+//         matching up some energy depositions are double counted. 
+//         This could lead to a bais in the PCA analysis.
+
 #include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
-#include "art/Utilities/make_tool.h"
 #include "art/Utilities/make_tool.h"
 #include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -65,8 +68,8 @@ namespace ShowerRecoTools {
 
     art::InputTag fPFParticleModuleLabel;
     int fNSegments; 
-    bool fUseCollectionOnly;
-
+    bool fUseStartPosition;
+    bool fChargeWeighted; 
   };
   
   
@@ -84,7 +87,8 @@ namespace ShowerRecoTools {
   {
     fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
     fNSegments              = pset.get<float>        ("NSegments"); 
-    fUseCollectionOnly      = pset.get<bool>         ("UseCollectionOnly");
+    fUseStartPosition       = pset.get<bool>         ("UseStartPosition");
+    fChargeWeighted         = pset.get<bool>         ("ChargeWeighted");
   }
 
   int ShowerPCADirection::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
@@ -107,7 +111,7 @@ namespace ShowerRecoTools {
     //Get the spacepoints handle and the hit assoication
     art::Handle<std::vector<recob::SpacePoint> > spHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, spHandle)){
-      throw cet::exception("ShowerStartPosition") << "Coquld not configure the spacepoint handle. Something is configured incorrectly. Stopping"; 
+      throw cet::exception("ShowerStartPosition") << "Could not configure the spacepoint handle. Something is configured incorrectly. Stopping"; 
       return 1;
     } 
     art::FindManyP<recob::Hit> fmh(spHandle, Event, fPFParticleModuleLabel);
@@ -115,26 +119,26 @@ namespace ShowerRecoTools {
       throw cet::exception("ShowerStartPosition") << "Spacepoint and hit association not valid. Stopping.";
       return 1;
     }
-    
-
+   
     //Spacepoints
     std::vector<art::Ptr<recob::SpacePoint> > spacePoints_pfp = fmspp.at(pfparticle.key());
+
+    //We cannot progress with no spacepoints.
+    if(spacePoints_pfp.size() == 0){return 0;} 
 
     //Find the PCA vector
     TVector3 ShowerCentre;
     TVector3 Eigenvector = ShowerPCAVector(spacePoints_pfp,fmh,ShowerCentre);
-    
-    TVector3 Direction        = { Eigenvector[0], Eigenvector[1], Eigenvector[2] }; 
 
     //Check if we are pointing the correct direction or not, First try the start position
-    if(ShowerPropHolder.CheckShowerStartPosition()){
+    if(ShowerPropHolder.CheckShowerStartPosition() && fUseStartPosition){
 	
       //Get the General direction as the vector between the start position and the centre
       TVector3 StartPositionVec = ShowerPropHolder.GetShowerStartPosition();
-      TVector3 GenralDir        = ShowerCentre - StartPositionVec;
+      TVector3 GeneralDir       = ShowerCentre - StartPositionVec;
           
       //Dot product
-      double DotProduct = Direction.Dot(GenralDir);
+      double DotProduct = Eigenvector.Dot(GeneralDir);
       
       //If the dotproduct is negative the Direction needs Flipping
       if(DotProduct < 0){
@@ -148,17 +152,18 @@ namespace ShowerRecoTools {
     }
     
     //Otherwise Check against the RMS of the shower. Method adapated from EMShower Thanks Mike.
-    double RMSGradient = RMSShowerGradient(spacePoints_pfp,ShowerCentre,Direction);
+    double RMSGradient = RMSShowerGradient(spacePoints_pfp,ShowerCentre,Eigenvector);
+
     if(RMSGradient < 0){
       	Eigenvector[0] = - Eigenvector[0];
 	Eigenvector[1] = - Eigenvector[1];
 	Eigenvector[2] = - Eigenvector[2];
       }
     
-    ShowerPropHolder.SetShowerDirection(Direction);
+    ShowerPropHolder.SetShowerDirection(Eigenvector);
     return 0;
 
-	}
+  }
 
   //Function to calculate the RMS at segements of the shower and calculate the gradient of this. If negative then the direction is pointing the opposite way to the correct one
   double ShowerPCADirection::RMSShowerGradient(std::vector<art::Ptr<recob::SpacePoint> >& sps, TVector3& ShowerCentre, TVector3& Direction){
@@ -225,15 +230,21 @@ namespace ShowerRecoTools {
     //Normalise the spacepoints, charge weight and add to the PCA.
     for(auto& sp: sps){
       
-      //Normalise the spacepoint position.
       TVector3 sp_position = fSBNShowerAlg.SpacePointPosition(sp);
-      sp_position = sp_position - ShowerCentre;
 
-      //Get the charge.
-      float Charge = fSBNShowerAlg.SpacePointCharge(sp,fmh);
+      float wht = 1; 
 
-      //Charge Weight
-      float wht = TMath::Sqrt(Charge/TotalCharge);
+      if(fChargeWeighted){
+
+	//Normalise the spacepoint position. 
+	sp_position = sp_position - ShowerCentre;
+
+	//Get the charge.
+	float Charge = fSBNShowerAlg.SpacePointCharge(sp,fmh);
+
+	//Charge Weight
+	wht *= TMath::Sqrt(Charge/TotalCharge);
+      }
 
       double sp_coord[3];
       sp_coord[0] = sp_position.X()*wht;

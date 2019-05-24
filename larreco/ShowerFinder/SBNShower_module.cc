@@ -70,12 +70,13 @@ reco::shower::SBNShower::SBNShower(fhicl::ParameterSet const& pset) :
   this->reconfigure(pset);
   produces<std::vector<recob::Shower> >();
   produces<std::vector<recob::Track> >();
-  //  produces<std::vector<recob::SpacePoint> >();
+  //produces<std::vector<recob::SpacePoint> >();
   produces<art::Assns<recob::Shower, recob::Hit> >();
   produces<art::Assns<recob::Shower, recob::Cluster> >();
   produces<art::Assns<recob::Track, recob::Shower> >();
   produces<art::Assns<recob::Shower, recob::SpacePoint> >();
   produces<art::Assns<recob::SpacePoint, recob::Hit> >();
+  //  produces<art::Assns<recob::Track, recob::Hit> >();
 }
 
 void reco::shower::SBNShower::reconfigure(fhicl::ParameterSet const& pset) {
@@ -150,6 +151,8 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
   //Loop of the pf particles
   for(auto const& pfp: pfps){
 
+    std::cout << "new particle" << std::endl;
+
     //loop only over showers.
     if(pfp->PdgCode() != 11){continue;}
 
@@ -196,7 +199,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     const std::vector<double> ShowerdEdxErr                   = sprop_holder.GetShowerdEdxErr(); ;
 
     //Make the shower 
-    recob::Shower shower = recob::Shower(ShowerDirection, ShowerDirectionErr,ShowerStartPosition, ShowerDirectionErr,ShowerEnergy,ShowerEnergyErr,ShowerdEdx, ShowerdEdxErr, -999, -999);
+    recob::Shower shower = recob::Shower(ShowerDirection, ShowerDirectionErr,ShowerStartPosition, ShowerDirectionErr,ShowerEnergy,ShowerEnergyErr,ShowerdEdx, ShowerdEdxErr, 2, -999);
     showers->push_back(shower);
     showers->back().set_id(showers->size()-1);
     

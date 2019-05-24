@@ -166,6 +166,7 @@ private:
   std::map<std::string,std::vector<float> > pfpVertexDistMag_TreeVal;
   std::map<std::string,std::vector<float> > pfpShowersVertices_TreeVal;
   std::map<std::string,std::vector<float> > pfpProjectionMatched_TreeVal;
+  // include number of hits in pfp
   std::map<std::string,std::vector<float> > pfpHitsComp_TreeVal;
   std::map<std::string,std::vector<float> > pfpEnergyComp_TreeVal;
   std::map<std::string,std::vector<float> > pfpHitsPurity_TreeVal;
@@ -259,8 +260,7 @@ void ana::ShowerValidation::initClusterTree(TTree* Tree, std::string branchName,
   for(unsigned int j=0; j<fShowerModuleLabels.size(); ++j){
     std::string branchString = branchName + "_" + fShowerModuleLabels[j];
     const char* branchChar   = branchString.c_str();
-    Tree->Branch(branchChar,"<std::vector<std::vector<float> > "
-		 , &Metric[fShowerModuleLabels[j]], 32000, 0);
+    Tree->Branch(branchChar,"std::vector<std::vector<std::vector<float> > >", &Metric[fShowerModuleLabels[j]], 32000, 0);
   }
 }
 
@@ -279,7 +279,7 @@ void ana::ShowerValidation::beginJob() {
   numrecoshowersana = 0;
 
   Tree = tfs->make<TTree>("MetricTree", "Tree Holding all metric information");
-  //gInterpreter->GenerateDictionary("vector<vector<vector<float> > >","vector");
+  gInterpreter->GenerateDictionary("vector<vector<vector<float> > >","vector");
   Tree->Branch("EventRun", &EventRun_TreeVal, 32000, 0);
   Tree->Branch("EventSubrun", &EventSubrun_TreeVal, 32000, 0);
   Tree->Branch("EventNumber", &EventNumber_TreeVal, 32000, 0);
@@ -342,11 +342,11 @@ void ana::ShowerValidation::beginJob() {
   initTree(Tree,"eTrueShowerEviaECut",eTrueShowerEviaECut_TreeVal,fShowerModuleLabels);
   initTree(Tree,"eTrueShowerEviaDCut",eTrueShowerEviaDCut_TreeVal,fShowerModuleLabels);
 
-  initClusterTree( Tree, "cProjectionMatchedEnergy", cProjectionMatchedEnergy_TreeVal, fShowerModuleLabels);
-  initClusterTree( Tree, "cEnergyComp", cEnergyComp_TreeVal, fShowerModuleLabels);
-  initClusterTree( Tree, "cEnergyPurity", cEnergyPurity_TreeVal, fShowerModuleLabels);
-  initClusterTree( Tree, "cHitsComp", cHitsComp_TreeVal, fShowerModuleLabels);
-  initClusterTree( Tree, "cHitsPurity", cHitsComp_TreeVal, fShowerModuleLabels);
+  initClusterTree(Tree, "cProjectionMatchedEnergy", cProjectionMatchedEnergy_TreeVal, fShowerModuleLabels);
+  initClusterTree(Tree, "cEnergyComp", cEnergyComp_TreeVal, fShowerModuleLabels);
+  initClusterTree(Tree, "cEnergyPurity", cEnergyPurity_TreeVal, fShowerModuleLabels);
+  initClusterTree(Tree, "cHitsComp", cHitsComp_TreeVal, fShowerModuleLabels);
+  initClusterTree(Tree, "cHitsPurity", cHitsComp_TreeVal, fShowerModuleLabels);
 
 
   for(unsigned int j=0; j<fHitModuleLabels.size(); ++j){
@@ -367,6 +367,8 @@ void ana::ShowerValidation::beginJob() {
     
     Tree->Branch(processChar,"<std::string,std::vector<std::string>", &sStartEndProcess_TreeVal[fShowerModuleLabels[j]], 32000, 0);
   }
+
+  Tree->Print();
 }
 
 

@@ -67,7 +67,8 @@ dune10kt_showerenergy:
 
 standard_sbnshoweralg:
 {
-    UseCollectionOnly: false
+
+
 }
 
 END_PROLOG
