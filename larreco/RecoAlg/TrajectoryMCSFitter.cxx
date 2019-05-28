@@ -72,28 +72,18 @@ void TrajectoryMCSFitter::breakTrajInSegments(const recob::TrackTrajectory& traj
   auto nextValid=traj.FirstValidPoint();
   breakpoints.push_back(nextValid);
   auto pos0 = traj.LocationAtPoint(nextValid);
-  std::cout<<"--pos0 X: "<<pos0.X()<<", pos0 Y: "<<pos0.Y()<<", pos0 Z: "<<pos0.Z()<<std::endl;
   auto pos0_offset = _SCE->GetCalPosOffsets(geo::Point_t(pos0.X(), pos0.Y(), pos0.Z())); //GetCalPosOffsets (reco->true) | GetPosOffsets (true->reco)
-  std::cout<<"offset pos0 X: "<<pos0_offset.X()<<", pos0 Y: "<<pos0_offset.Y()<<", pos0 Z: "<<pos0_offset.Z()<<std::endl;
-  //std::cout<<"++pos0 X: "<<ppos0.X() - pos0_offset.X()<<", pos0 Y: "<<ppos0.Y() + pos0_offset.Y()<<", pos0 Z: "<<ppos0.Z() + pos0_offset.Z()<<std::endl;
   pos0.SetX(pos0.X() - pos0_offset.X());
   pos0.SetY(pos0.Y() + pos0_offset.Y());
   pos0.SetZ(pos0.Z() + pos0_offset.Z());
-  //std::cout<<"offset pos0 X: "<<pos0_offset.X()<<", pos0 Y: "<<pos0_offset.Y()<<", pos0 Z: "<<pos0_offset.Z()<<std::endl;
-  //std::cout<<"++pos0 X: "<<pos0.X() - pos0_offset.X()<<", pos0 Y: "<<pos0.Y() + pos0_offset.Y()<<", pos0 Z: "<<pos0.Z() + pos0_offset.Z()<<std::endl;
-  std::cout<<"++pos0 X: "<<pos0.X()<<", pos0 Y: "<<pos0.Y()<<", pos0 Z: "<<pos0.Z()<<std::endl;
   nextValid = traj.NextValidPoint(nextValid+1);
   int npoints = 0;
   while (nextValid!=recob::TrackTrajectory::InvalidIndex) {
     auto pos1 = traj.LocationAtPoint(nextValid);
-    //TVector3 pos1 = traj.LocationAtPoint<TVector3>(nextValid);
-    std::cout<<"--pos1 X: "<<pos1.X()<<", pos1 Y: "<<pos1.Y()<<", pos1 Z: "<<pos1.Z()<<std::endl;
-    auto pos1_offset = _SCE->GetPosOffsets(geo::Point_t(pos1.X(), pos1.Y(), pos1.Z()));
+    auto pos1_offset = _SCE->GetCalPosOffsets(geo::Point_t(pos1.X(), pos1.Y(), pos1.Z()));
     pos1.SetX(pos1.X() - pos1_offset.X());
     pos1.SetY(pos1.Y() + pos1_offset.Y());
     pos1.SetZ(pos1.Z() + pos1_offset.Z());
-    std::cout<<"offset pos1 X: "<<pos1_offset.X()<<", pos1 Y: "<<pos1_offset.Y()<<", pos1 Z: "<<pos1_offset.Z()<<std::endl;
-    std::cout<<"++pos1 X: "<<pos1.X()<<", pos1 Y: "<<pos1.Y()<<", pos1 Z: "<<pos1.Z()<<std::endl;
 
     thislen += ( (pos1-pos0).R() );
     pos0=pos1;
@@ -164,7 +154,7 @@ void TrajectoryMCSFitter::linearRegression(const recob::TrackTrajectory& traj, c
   size_t nextValid = firstPoint;
   while (nextValid<lastPoint) {
     auto tempP = traj.LocationAtPoint(nextValid);
-    auto tempP_offset = _SCE->GetPosOffsets(geo::Point_t(tempP.X(), tempP.Y(), tempP.Z()));
+    auto tempP_offset = _SCE->GetCalPosOffsets(geo::Point_t(tempP.X(), tempP.Y(), tempP.Z()));
     tempP.SetX(tempP.X() - tempP_offset.X());
     tempP.SetY(tempP.Y() + tempP_offset.Y());
     tempP.SetZ(tempP.Z() + tempP_offset.Z());
@@ -182,17 +172,8 @@ void TrajectoryMCSFitter::linearRegression(const recob::TrackTrajectory& traj, c
   TMatrixDSym m(3);
   nextValid = firstPoint;
   while (nextValid<lastPoint) {
-    //auto pp = traj.LocationAtPoint(nextValid);
-    //auto pp_offset = _SCE->GetPosOffsets(geo::Point_t(pp.X(), pp.Y(), pp.Z()));
-    //pp.SetX(pp.X() - pp_offset.X());
-    //pp.SetY(pp.Y() + pp_offset.Y());
-    //pp.SetZ(pp.Z() + pp_offset.Z());
-    //const auto p = pp;
-
-    //const auto p = traj.LocationAtPoint(nextValid);
-
     auto p = traj.LocationAtPoint(nextValid);
-    auto p_offset = _SCE->GetPosOffsets(geo::Point_t(p.X(), p.Y(), p.Z()));
+    auto p_offset = _SCE->GetCalPosOffsets(geo::Point_t(p.X(), p.Y(), p.Z()));
     p.SetX(p.X() - p_offset.X());
     p.SetY(p.Y() + p_offset.Y());
     p.SetZ(p.Z() + p_offset.Z());
