@@ -86,6 +86,8 @@ namespace ShowerRecoTools{
 				      reco::shower::ShowerPropertyHolder& ShowerPropHolder
 				      ){
 
+    std::cout << "hello world start position" << std::endl;
+
     //Get the vertices.
     art::Handle<std::vector<recob::Vertex> > vtxHandle;
     std::vector<art::Ptr<recob::Vertex> > vertices;
@@ -167,7 +169,7 @@ namespace ShowerRecoTools{
       return 0; 
     }
     
-    mf::LogWarning("ShowerStartPosition") << "Start Position has not been set yet. If you are not calculating the start position again then maybe you shoudl stop";
+    mf::LogWarning("ShowerStartPosition") << "Start Position has not been set yet. If you are not calculating the start position again then maybe you should stop";
     return 0; 
   }
 }

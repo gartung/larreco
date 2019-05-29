@@ -95,6 +95,8 @@ namespace ShowerRecoTools {
 				      art::Event& Event,
 				      reco::shower::ShowerPropertyHolder& ShowerPropHolder){
 
+    std::cout << "hello world PCA direction" << std::endl;
+
     // Get the assocated pfParicle vertex PFParticles
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, pfpHandle)){

@@ -20,6 +20,7 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/PtrVector.h"
 #include "canvas/Persistency/Common/FindManyP.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 //LArSoft includes
 #include "lardata/Utilities/AssociationUtil.h"
@@ -164,8 +165,10 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
       //Calculate the metric
       int err = fShowerTool->findMetric(pfp,evt,sprop_holder);
       if(err){
-	throw cet::exception("SBNShower") << "Error in shower tool: " << fShowerToolNames[i] << " with code: " << err << std::endl;
-	break;
+	std::cout<<"Error in shower tool: " << fShowerToolNames[i] << " with code: " << err << std::endl; 
+	// TODO put break back in once we have fixed exceptions
+	//throw cet::exception("SBNShower") << "Error in shower tool: " << fShowerToolNames[i] << " with code: " << err << std::endl;
+	break; 
       }
       ++i;
     }
@@ -197,6 +200,13 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     const TVector3            ShowerStartPositionErrvertexErr = sprop_holder.GetShowerStartPositionErr();
     const std::vector<double> ShowerEnergyErr                 = sprop_holder.GetShowerEnergyErr();
     const std::vector<double> ShowerdEdxErr                   = sprop_holder.GetShowerdEdxErr(); ;
+    
+    //Check the shower
+    std::cout<<"Shower Vertex: X:"<<ShowerStartPosition.X()<<" Y: "<<ShowerStartPosition.Y()<<" Z: "<<ShowerStartPosition.Z()<<std::endl;
+    std::cout<<"Shower Direction: X:"<<ShowerDirection.X()<<" Y: "<<ShowerDirection.Y()<<" Z: "<<ShowerDirection.Z()<<std::endl;
+    std::cout<<"Shower Track: NumHits: "<<InitialTrack.NumberTrajectoryPoints()<<std::endl;
+    std::cout<<"Shower dEdx: size: "<<ShowerdEdx.size()<<" Plane 0: "<<ShowerdEdx.at(0)<<" Plane 1: "<<ShowerdEdx.at(1)<<" Plane 2: "<<ShowerdEdx.at(2)<<std::endl;
+    std::cout<<"Shower Energy: size: "<<ShowerEnergy.size()<<" Plane 0: "<<ShowerEnergy.at(0)<<" Plane 1: "<<ShowerEnergy.at(1)<<" Plane 2: "<<ShowerEnergy.at(2)<<std::endl;
 
     //Make the shower 
     recob::Shower shower = recob::Shower(ShowerDirection, ShowerDirectionErr,ShowerStartPosition, ShowerDirectionErr,ShowerEnergy,ShowerEnergyErr,ShowerdEdx, ShowerdEdxErr, 2, -999);

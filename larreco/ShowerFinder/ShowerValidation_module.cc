@@ -1219,6 +1219,8 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       sNumHits_TreeVal[fShowerModuleLabel].push_back(showerhits.size());
 
       if(EvaluatesdEdx){
+	std::cout<<"Shower dEdx: size: "<<ShowerdEdX_vec.size()<<" Plane 0: "<<ShowerdEdX_vec.at(0)<<" Plane 1: "<<ShowerdEdX_vec.at(1)<<" Plane 2: "<<ShowerdEdX_vec.at(2)<<std::endl;
+
 	sdEdx_TreeVal[fShowerModuleLabel].push_back((ShowerdEdX_vec[ShowerBest_Plane]));
       }
       else{
