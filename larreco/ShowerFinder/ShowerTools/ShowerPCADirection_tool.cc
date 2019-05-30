@@ -95,7 +95,8 @@ namespace ShowerRecoTools {
 				      art::Event& Event,
 				      reco::shower::ShowerPropertyHolder& ShowerPropHolder){
 
-    std::cout << "hello world PCA direction" << std::endl;
+    std::cout <<"#########################################\n"<<
+      "hello world PCA direction\n" <<"#########################################\n"<< std::endl;
 
     // Get the assocated pfParicle vertex PFParticles
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
@@ -128,6 +129,8 @@ namespace ShowerRecoTools {
     //We cannot progress with no spacepoints.
     if(spacePoints_pfp.size() == 0){return 0;} 
 
+    std::cout<<"Spacepoints: "<<spacePoints_pfp.size()<<std::endl;
+
     //Find the PCA vector
     TVector3 ShowerCentre;
     TVector3 Eigenvector = ShowerPCAVector(spacePoints_pfp,fmh,ShowerCentre);
@@ -135,21 +138,50 @@ namespace ShowerRecoTools {
     //Check if we are pointing the correct direction or not, First try the start position
     if(ShowerPropHolder.CheckShowerStartPosition() && fUseStartPosition){
 	
+      std::cout<<"Checking the start position"<<std::endl;
+
       //Get the General direction as the vector between the start position and the centre
       TVector3 StartPositionVec = ShowerPropHolder.GetShowerStartPosition();
-      TVector3 GeneralDir       = ShowerCentre - StartPositionVec;
+      TVector3 GeneralDir       = (ShowerCentre - StartPositionVec).Unit();
           
+
+      std::cout<<"Shower Vertex: X:"<<StartPositionVec.X()<<" Y: "<<StartPositionVec.Y()<<" Z: "
+               <<StartPositionVec.Z()<<std::endl;
+      std::cout<<"Shower Centre: X:"<<ShowerCentre.X()<<" Y: "<<ShowerCentre.Y()<<" Z: "
+               <<ShowerCentre.Z()<<std::endl;
+
+      std::cout<<"Shower Direction: X:"<<Eigenvector.X()<<" Y: "<<Eigenvector.Y()<<" Z: "
+               <<Eigenvector.Z()<<std::endl;
+      std::cout<<"Shower General Direction: X:"<<GeneralDir.X()<<" Y: "<<GeneralDir.Y()<<" Z: "
+               <<GeneralDir.Z()<<std::endl;
+
+
       //Dot product
       double DotProduct = Eigenvector.Dot(GeneralDir);
+
+      std::cout<<"Dot Product: "<<DotProduct<<std::endl;
+
+      // For debugging only:  TODO remove                                              
+      double RMSGradient = RMSShowerGradient(spacePoints_pfp,ShowerCentre,Eigenvector);
+      std::cout<<"RMS Gradient: "<<RMSGradient<<std::endl;
       
       //If the dotproduct is negative the Direction needs Flipping
       if(DotProduct < 0){
+	std::cout<<"Flipping the eigenvector: Start Position"<<std::endl;
+
 	Eigenvector[0] = - Eigenvector[0];
 	Eigenvector[1] = - Eigenvector[1];
 	Eigenvector[2] = - Eigenvector[2];
+
+	std::cout<<"Shower Direction: X:"<<Eigenvector.X()<<" Y: "<<Eigenvector.Y()<<" Z: "
+                 <<Eigenvector.Z()<<std::endl;
       }
       
       ShowerPropHolder.SetShowerDirection(Eigenvector);
+
+      std::cout <<"#########################################\n"<<
+	"PCA direction Done\n" <<"#########################################\n"<< std::endl;
+      
       return 0; 
     }
     
@@ -157,12 +189,18 @@ namespace ShowerRecoTools {
     double RMSGradient = RMSShowerGradient(spacePoints_pfp,ShowerCentre,Eigenvector);
 
     if(RMSGradient < 0){
-      	Eigenvector[0] = - Eigenvector[0];
-	Eigenvector[1] = - Eigenvector[1];
-	Eigenvector[2] = - Eigenvector[2];
-      }
+      std::cout<<"Flipping the eigenvector: RMS"<<std::endl;
+      
+      Eigenvector[0] = - Eigenvector[0];
+      Eigenvector[1] = - Eigenvector[1];
+      Eigenvector[2] = - Eigenvector[2];
+    }
     
     ShowerPropHolder.SetShowerDirection(Eigenvector);
+    
+    std::cout <<"#########################################\n"<<
+      "PCA direction Done\n" <<"#########################################\n"<< std::endl;
+
     return 0;
 
   }
@@ -261,11 +299,17 @@ namespace ShowerRecoTools {
     pca->MakePrincipals();
    
     //Get the Eigenvectors.
-    const TMatrixD * Eigenvectors = pca->GetEigenVectors();
-
+    const TMatrixD* Eigenvectors = pca->GetEigenVectors();
+      
+    Eigenvectors->Print();
+    
+    // TODO: should be a neater way to get the column
+    //TVectorD Principal = TMatrixDColumn(Eigenvectors,0);
+    //std::cout<<Principal[0];
     //Get the primary vector 
-    const TVectorD EigenvectorD = (*Eigenvectors)[0];
-    TVector3 Eigenvector = { EigenvectorD[0], EigenvectorD[1], EigenvectorD[2] };
+    //const TVectorD EigenvectorD = (*Eigenvectors)[0]; // Gets row not column
+    
+    TVector3 Eigenvector = { (*Eigenvectors)[0][0], (*Eigenvectors)[1][0], (*Eigenvectors)[2][0] };
 
     return Eigenvector;
    }

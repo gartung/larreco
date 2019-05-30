@@ -7,7 +7,7 @@ showerpcadirection:{
      PFParticleModuleLabel: "pandora"
      NSegments: 10
      UseStartPosition: true
-     ChargeWeighted: true 
+     ChargeWeighted: true
      SBNShowerAlg: @local::standard_sbnshoweralg
      }
 

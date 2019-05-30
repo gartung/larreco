@@ -126,7 +126,7 @@ TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoi
       //Check if any of the points are not withing 2 sigma.
       if(!fUseCollectionOnly){
 	charge += hit->Integral();
-	charge2 += hit->Integral();
+	charge2 += hit->Integral() * hit->Integral();
       }
     }
 

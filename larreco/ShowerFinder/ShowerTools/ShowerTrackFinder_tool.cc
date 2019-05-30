@@ -361,7 +361,7 @@ namespace ShowerRecoTools{
 	double avgT  = 0;
 	double pitch = 0;
 	double wirepitch = fGeom->WirePitch(trackPlaneHits.at(0)->WireID().planeID());
-	double angleToVert = fGeom->WireAngleToVertical(fGeom->Plane(plane).View(),trackPlaneHits[0]->WireID().planeID());
+	double angleToVert = fGeom->WireAngleToVertical(fGeom->Plane(plane).View(),trackPlaneHits[0]->WireID().planeID()) - 0.5*TMath::Pi();
 	double cosgamma = std::abs(sin(angleToVert)*showerDir.Y()+cos(angleToVert)*showerDir.Z());
 	if (cosgamma>0) pitch = wirepitch/cosgamma; //TODO try and remove???
 	if (pitch){
@@ -388,7 +388,7 @@ namespace ShowerRecoTools{
 	  }
 	  if (totQ) {
 	    double dQdx = TMath::Median(vQ.size(), &vQ[0])/pitch;
-	    std::cout<<"dQdx: "<<dQdx<<" avgT/nhits"<< avgT/nhits <<" numHits "<<nhits<<" plane "<<trackPlaneHits[0]->WireID().Plane<<std::endl;
+	    std::cout<<"dQdx: "<<dQdx<<" avgT/nhits "<< avgT/nhits <<" numHits "<<nhits<<" plane "<<trackPlaneHits[0]->WireID().Plane<<std::endl;
 	    
 	    fdEdx = fCalorimetryAlg.dEdx_AREA(dQdx, avgT/nhits, trackPlaneHits[0]->WireID().Plane);
 	    //std::cout<<"Is it inf? "<<isinf(fdEdx)<<std::endl;

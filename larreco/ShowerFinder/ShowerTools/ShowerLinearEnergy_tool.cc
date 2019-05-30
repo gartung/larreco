@@ -162,6 +162,8 @@ namespace ShowerRecoTools {
       //Calculate the Energy for 
       double Energy = CalculateEnergy(hits,view);
     
+      std::cout<<"view: "<<view<<" and energy: "<<Energy<<std::endl;
+
       unsigned int viewNum = view;
       view_energies[viewNum] = Energy;
     }
@@ -172,6 +174,11 @@ namespace ShowerRecoTools {
       double Energy;
       try{
 	Energy = view_energies.at(plane);
+	if (Energy<0){
+	  mf::LogWarning("ShowerLinearEnergy") << "Negative shower energy: "<<Energy;
+	  Energy=-999;
+	}
+	
       } catch(...){
 	mf::LogError("ShowerLinearEnergy") <<"No energy calculation for plane "<<plane<<std::endl;
 	Energy = -999;
