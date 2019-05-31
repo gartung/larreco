@@ -34,7 +34,6 @@ void shower::SBNShowerAlg::OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& h
 
     //Get the Vector of the plane.
     double vertangle = fGeom->WireAngleToVertical(hit->View(),tpcid);
-    std::cout << "sin vertangle: " <<  TMath::Sin(vertangle) << "  TMath::Cos(vertangle) " <<  TMath::Cos(vertangle) << std::endl;
 
     //Vector of the plane
     TVector3 PlaneDirection = {0,TMath::Sin(vertangle), TMath::Cos(vertangle)}; 
