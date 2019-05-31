@@ -43,6 +43,7 @@ namespace shower {
 class shower::SBNShowerAlg {
  public:
   SBNShowerAlg(const fhicl::ParameterSet& pset);
+
   void OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& hits, 
 		       TVector3& ShowerDirection,
 		       TVector3& ShowerPosition

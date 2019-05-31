@@ -194,6 +194,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     const std::vector<double> ShowerEnergy         = sprop_holder.GetShowerEnergy();
     const std::vector<double> ShowerdEdx           = sprop_holder.GetShowerdEdx();
     const recob::Track        InitialTrack         = sprop_holder.GetInitialTrack();
+    const int                 BestPlane            = sprop_holder.GetBestPlane();
 
     //To Do
     const TVector3            ShowerDirectionErr              = sprop_holder.GetShowerDirectionErr();
@@ -207,9 +208,10 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     std::cout<<"Shower Track: NumHits: "<<InitialTrack.NumberTrajectoryPoints()<<std::endl;
     std::cout<<"Shower dEdx: size: "<<ShowerdEdx.size()<<" Plane 0: "<<ShowerdEdx.at(0)<<" Plane 1: "<<ShowerdEdx.at(1)<<" Plane 2: "<<ShowerdEdx.at(2)<<std::endl;
     std::cout<<"Shower Energy: size: "<<ShowerEnergy.size()<<" Plane 0: "<<ShowerEnergy.at(0)<<" Plane 1: "<<ShowerEnergy.at(1)<<" Plane 2: "<<ShowerEnergy.at(2)<<std::endl;
+    std::cout<<"Shower Best Plane: "<<BestPlane<<std::endl;
 
     //Make the shower 
-    recob::Shower shower = recob::Shower(ShowerDirection, ShowerDirectionErr,ShowerStartPosition, ShowerDirectionErr,ShowerEnergy,ShowerEnergyErr,ShowerdEdx, ShowerdEdxErr, 2, -999);
+    recob::Shower shower = recob::Shower(ShowerDirection, ShowerDirectionErr,ShowerStartPosition, ShowerDirectionErr,ShowerEnergy,ShowerEnergyErr,ShowerdEdx, ShowerdEdxErr, BestPlane, -999);
     showers->push_back(shower);
     showers->back().set_id(showers->size()-1);
     
