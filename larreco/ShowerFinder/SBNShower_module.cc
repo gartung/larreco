@@ -87,7 +87,8 @@ void reco::shower::SBNShower::reconfigure(fhicl::ParameterSet const& pset) {
   for(const std::string& ShowerTool : ShowerTools.get_pset_names()){
     const fhicl::ParameterSet& ShowerToolParamSet = ShowerTools.get<fhicl::ParameterSet>(ShowerTool);
     fShowerTools.push_back(art::make_tool<ShowerRecoTools::IShowerTool>(ShowerToolParamSet));
-    fShowerToolNames.push_back(ShowerToolParamSet.id().to_string());
+    fShowerToolNames.push_back(ShowerTool);
+    std::cout << "Tools List: " << ShowerTool << std::endl;
   }
 
   //Initialise the other paramters.
@@ -161,7 +162,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     //Loop over the shower tools
     for(auto const& fShowerTool: fShowerTools){
 
-      std::cout << "on next tool" << std::endl;
+      std::cout << "on next tool:" <<  fShowerToolNames[i]  << std::endl;
       //Calculate the metric
       int err = fShowerTool->findMetric(pfp,evt,sprop_holder);
       if(err){
@@ -176,6 +177,8 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     //Should we do a second interaction now we have done a first pass of the calculation
     i=0;
     if(fSecondInteration){
+      std::cout << "on second iter next tool:" <<  fShowerToolNames[i]  << std::endl;
+
       for(auto const& fShowerTool: fShowerTools){
 	//Calculate the metric
 	int err = fShowerTool->findMetric(pfp,evt,sprop_holder);
@@ -238,8 +241,6 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
     //Reset the showerproperty holder.
     sprop_holder.clear();
-
-    
   }
   
   // Put in event

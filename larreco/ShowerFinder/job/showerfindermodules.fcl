@@ -152,6 +152,7 @@ standard_sbnshower: {
     module_type: "SBNShower"
 
     ShowerFinderTools: {
+
         A_ShowerStartPositionFinder: @local::showerstartposition
         B_ShowerDirectionFinder:     @local::showerpcadirection
         C_ShowerEnergyFinder:        @local::showerlinearenergy
