@@ -71,6 +71,8 @@ namespace ShowerRecoTools {
     
     art::InputTag fPFParticleModuleLabel;
     detinfo::DetectorProperties const* detprop = nullptr;
+    art::ServiceHandle<geo::Geometry> fGeom;
+
   };
   
   
@@ -109,8 +111,12 @@ namespace ShowerRecoTools {
 				     reco::shower::ShowerPropertyHolder& ShowerPropHolder
 				     ){
 
+    std::cout << "hello world linear energy" << std::endl;
+
     //Holder for the final product
     std::vector<double> ShowerLinearEnergy;
+    unsigned int numPlanes = fGeom->Nplanes();
+    //trackHits.resize(numPlanes);
 
     // Get the assocated pfParicle vertex PFParticles
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
@@ -146,6 +152,7 @@ namespace ShowerRecoTools {
       view_clusters[view].insert(view_clusters[view].end(),hits.begin(),hits.end());
     }
 
+    std::map<unsigned int, double > view_energies;
     //Accounting for events crossing the cathode.
     for(auto const& cluster: view_clusters){
 
@@ -154,7 +161,28 @@ namespace ShowerRecoTools {
 
       //Calculate the Energy for 
       double Energy = CalculateEnergy(hits,view);
-      
+    
+      std::cout<<"view: "<<view<<" and energy: "<<Energy<<std::endl;
+
+      unsigned int viewNum = view;
+      view_energies[viewNum] = Energy;
+    }
+
+    //TODO think of a better way of doing this
+    for (unsigned int plane=0; plane<numPlanes; ++plane) {
+      //std::cout<<"Plane: "<<plane<<std::endl;
+      double Energy;
+      try{
+	Energy = view_energies.at(plane);
+	if (Energy<0){
+	  mf::LogWarning("ShowerLinearEnergy") << "Negative shower energy: "<<Energy;
+	  Energy=-999;
+	}
+	
+      } catch(...){
+	mf::LogError("ShowerLinearEnergy") <<"No energy calculation for plane "<<plane<<std::endl;
+	Energy = -999;
+      }
       ShowerLinearEnergy.push_back(Energy);
     }
     

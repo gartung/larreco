@@ -19,6 +19,7 @@
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Persistency/Common/PtrMaker.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 //LArSoft Includes 
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -34,6 +35,7 @@
 
 //C++ Includes 
 #include <iostream>
+#include <math.h>
 
 namespace ShowerRecoTools{
 
@@ -72,7 +74,8 @@ namespace ShowerRecoTools{
     art::ServiceHandle<geo::Geometry> fGeom;
     calo::CalorimetryAlg fCalorimetryAlg;
     double fdEdxTrackLength;
-
+    bool fMaxHitPlane;
+    bool fMissFirstPoint;
   };
   
   
@@ -98,6 +101,8 @@ namespace ShowerRecoTools{
     fToler                 = pset.get<std::vector<double> >      ("Toler");
     fPFParticleModuleLabel = pset.get<art::InputTag>             ("PFParticleModuleLabel");
     fdEdxTrackLength       = pset.get<double>                    ("dEdxTrackLength");
+    fMaxHitPlane           = pset.get<bool>                      ("MaxHitPlane");
+    fMissFirstPoint        = pset.get<bool>                      ("MissFirstPoint");
 
 
     if (fNfitpass!=fNfithits.size() ||
@@ -112,10 +117,20 @@ namespace ShowerRecoTools{
 					    art::Event& Event,
 					    reco::shower::ShowerPropertyHolder& ShowerPropHolder
 					    ){
+    std::cout <<"#########################################\n"<<
+      "hello world track finder\n" <<"#########################################\n"<< std::endl;
 
     //This is all based on the shower vertex being known. If it is not lets not do the track 
-    if(!ShowerPropHolder.CheckShowerStartPosition()){return 0;}
-    if(!ShowerPropHolder.CheckShowerDirection()){return 0;}
+    if(!ShowerPropHolder.CheckShowerStartPosition()){
+      mf::LogError("ShowerTrackFinder") << "Start position not set, returning "<< std::endl;
+      return 0;
+    }
+    if(!ShowerPropHolder.CheckShowerDirection()){
+      mf::LogError("ShowerTrackFinder") << "Direction not set, returning "<< std::endl;
+      return 0;
+    }
+    
+    //    auto assnhit = std::make_unique<art::Assns<recob::Track, recob::Hit>>();
 
     TVector3 ShowerStartPosition = ShowerPropHolder.GetShowerStartPosition();
     TVector3 ShowerDirection     = ShowerPropHolder.GetShowerDirection();
@@ -136,11 +151,19 @@ namespace ShowerRecoTools{
     art::FindManyP<recob::Cluster> fmc(pfpHandle, Event, fPFParticleModuleLabel);
     std::vector<art::Ptr<recob::Cluster> > clusters = fmc.at(pfparticle.key());
     
+
+    if(clusters.size()<2){
+      mf::LogError("ShowerTrackFinder") << "Not enough clusters: "<<clusters.size() << std::endl;
+      // throw cet::exception("ShowerTrackFinderEMShower") << "Not enough clusters: "
+      // 						<<clusters.size(<<" ");
+      return 1;
+    }
+
     //Get the hit association 
     art::FindManyP<recob::Hit> fmhc(clusHandle, Event, fPFParticleModuleLabel);
 
-    std::map<geo::View_t, std::vector<art::Ptr<recob::Hit> > > clusters_view;
-
+    std::map<geo::PlaneID, std::vector<art::Ptr<recob::Hit> > > plane_clusters;
+    std::cout<<"Num Clusters "<<clusters.size()<<std::endl;;    
     //Loop over the clusters in the plane and get the hits 
     for(auto const& cluster: clusters){
       
@@ -148,60 +171,151 @@ namespace ShowerRecoTools{
       std::vector<art::Ptr<recob::Hit> > hits = fmhc.at(cluster.key());
       
       //Get the view.
-      geo::View_t view = cluster->View();
- 
-      clusters_view[view].insert(clusters_view[view].end(),hits.begin(),hits.end());
+      //geo::PlaneID plane = cluster->Plane();
+      
+      for (auto hit : hits) {
+	geo::WireID wire = hit->WireID();
+	geo::PlaneID plane = wire.asPlaneID();
+	plane_clusters[plane].push_back(hit);
+      }
+      
+      // Was having issues with clusters having hits in multiple planes breaking PMA
+      // So switched to the method above. May want to switch back when using PandoraTrack
+      //plane_clusters[plane].insert(plane_clusters[plane].end(),hits.begin(),hits.end());
     }
 
-
-    std::vector<std::vector<art::Ptr<recob::Hit> > > trackhits;
+    std::map<geo::PlaneID, std::vector<art::Ptr<recob::Hit> > > plane_trackhits;
+    //std::vector<std::vector<art::Ptr<recob::Hit> > > trackhits;
     //Loop over the clusters and order the hits and get the initial track hits in that plane
-    for(auto const& cluster: clusters_view){
-
+    for(auto const& cluster: plane_clusters){
+      //Get the Plane
+      geo::PlaneID plane = cluster.first;
       //Get the hits 
-      std::vector<art::Ptr<recob::Hit> > hits = cluster.second;
-      
+      std::vector<art::Ptr<recob::Hit> > hits = cluster.second;    
+
       //Order the hits 
       fSBNShowerAlg.OrderShowerHits(hits,ShowerStartPosition,ShowerDirection);
 
+
       //Find the initial track hits 
-      std::vector<art::Ptr<recob::Hit> > trackhits_plane = FindInitialTrackHits(hits,ShowerStartPosition,ShowerDirection);
-      trackhits.push_back(trackhits_plane);
+      std::vector<art::Ptr<recob::Hit> > trackhits = FindInitialTrackHits(hits,ShowerStartPosition,ShowerDirection);
+      //view_trackhits.push_back(trackhits_plane);
+
+      std::cout<<"Plane: "<<plane.toString()<<" with hits: "<<hits.size()
+	       <<"  and track hits:"<<trackhits.size()<<std::endl;
+
+      /*
+      for (auto hit : trackhits){
+	geo::View_t view = hit->View();
+	geo::WireID wire = hit->WireID();
+	double angle = fGeom->WireAngleToVertical(view,wire.asPlaneID());
+	
+	std::cout<<wire.toString()<<" with angle: "<<angle<<" View: "<<view;
+       
+        if (view==geo::kU) { std::cout<<" kU"<<std::endl; };
+        if (view==geo::kV) { std::cout<<" kV"<<std::endl; };
+        if (view==geo::kW) { std::cout<<" kW"<<std::endl; };
+      }
+      */
+      plane_trackhits[plane].insert(plane_trackhits[plane].end(),trackhits.begin(),trackhits.end());
     }
 
     //Decide which plane to use 
-    int maxplane = -1;
-    int maxhits  = -1;
-    for(unsigned int plane=0; plane<trackhits.size(); ++plane){
-      if((int) trackhits[plane].size() > maxhits){
-	maxplane = plane;
+    //int maxplane = -1;
+    int maxhits       = 1; // set to 1 as we require at least 2 track hits per plane
+    geo::TPCID vtxTPC = fGeom->FindTPCAtPosition(ShowerStartPosition); 
+    geo::PlaneID maxplane; // Note this contains both tpc and cryostat information
+
+    std::cout<<"Shower Vertex: X:"<<ShowerStartPosition.X()<<" Y: "<<ShowerStartPosition.Y()
+	     <<" Z: "<<ShowerStartPosition.Z()<<" in TPC: "<<vtxTPC.toString()<<std::endl;
+
+
+    for(auto const& plane : plane_trackhits){
+      std::vector<art::Ptr<recob::Hit> >  trackhits = plane.second;    
+      geo::TPCID maxTPC = (plane.first).asTPCID();
+      if( maxTPC == vtxTPC){
+	if((int) trackhits.size() > maxhits ){
+	  maxplane = plane.first;
+	  maxhits  = trackhits.size();
+	  //maxTPC   = (plane.first).asTPCID(); // convert geo::PlaneID to geo::TPCID
+	}
+      }
+    } 
+    
+    if( maxhits == 1 || !maxplane){
+      std::cout<<"Next Max Plane not set "<<std::endl;
+      mf::LogError("ShowerTrackFinder") << "Max Plane not set " << std::endl;
+      //throw cet::exception("ShowerTrackFinderEMShower") << "Max Plane not set ";
+      return 1;
+    }
+
+    int nextmaxhits  = 1;
+    geo::PlaneID nextmaxplane;
+   
+    for(auto const& plane : plane_trackhits){
+      //Check clusters are not in same plane
+      if( (plane.first) == maxplane){continue;}
+      //Need to make sure clusters are in same tpc
+      geo::TPCID nextmaxTPC = (plane.first).asTPCID();
+      if( nextmaxTPC == vtxTPC){
+	std::vector<art::Ptr<recob::Hit> > trackhits = plane.second;      
+	if((int) trackhits.size() > nextmaxhits){
+	  nextmaxplane = plane.first;
+	  nextmaxhits  = trackhits.size();
+	}
       }
     }
-     
-    if(maxplane == -1 || maxhits == -1){
-            throw cet::exception("ShowerTrackFinderEMShower") << "Max Plane not set";
-	    return 1;
+
+
+    if( nextmaxhits == 1 || !nextmaxplane){
+      mf::LogError("ShowerTrackFinder") << "Next Max Plane not set " << std::endl;
+      //throw cet::exception("ShowerTrackFinderEMShower") << "Next Max Plane not set ";
+      return 1;
     }
+    
+    // Trying to debug PMA error where it claims there are not hits in 2 planes
+    std::cout<<"Max Plane: "<<maxplane.toString()<<" with "<<maxhits<<std::endl;
+    std::cout<<"Next MaxPlane: "<<nextmaxplane.toString()<<" with "<<nextmaxhits<<std::endl;
 
+    std::vector<art::Ptr<recob::Hit> > maxPlaneHits = (plane_trackhits.at(maxplane));
+    std::vector<art::Ptr<recob::Hit> > nextmaxPlaneHits = (plane_trackhits.at(nextmaxplane));
 
-    int nextmaxplane = -1;
-    maxhits      = -1;
-    for(unsigned int plane=0; plane<trackhits.size(); ++plane){
-      
-      if((int) plane == maxplane){continue;}
-      
-      if((int) trackhits[plane].size() > maxhits){
-	maxplane = plane;
-      }
-    }
+    // art::Ptr<recob::Hit> maxPlaneHit = maxPlaneHits.at(0);
+    // art::Ptr<recob::Hit> nextmaxPlaneHit = nextmaxPlaneHits.at(0);
+    
+    // std::cout<<"planes: "<<maxPlaneHit->View()<<" and "<<nextmaxPlaneHit->View() <<std::endl;
+    // std::cout<<"Max Plane"<<std::endl;
+    // for (auto hit : maxPlaneHits){
+    //   geo::View_t view = hit->View(); 
+    //   std::cout<<(hit->WireID()).toString()<<" View: "<<view;
+    //   if (view==geo::kU) { std::cout<<" kU"<<std::endl; };
+    //   if (view==geo::kV) { std::cout<<" kV"<<std::endl; };
+    //   if (view==geo::kW) { std::cout<<" kW"<<std::endl; };
+    // }
 
-    if(maxplane == -1 || maxhits == -1){
-            throw cet::exception("ShowerTrackFinderEMShower") << "Next Max Plane not set";
-	    return 1;
-    }
-
+    // std::cout<<"Next Max Plane"<<std::endl;
+    // for (auto hit : nextmaxPlaneHits){
+    //   geo::View_t view = hit->View(); 
+    //   std::cout<<(hit->WireID()).toString()<<" View: "<<view;
+    //   if (view==geo::kU) { std::cout<<" kU"<<std::endl; };
+    //   if (view==geo::kV) { std::cout<<" kV"<<std::endl; };
+    //   if (view==geo::kW) { std::cout<<" kW"<<std::endl; };
+    // }
+    
+    
+    //std::cout<<"planes: "<<(maxPlaneHit->WireID()).toString()<<" and "
+    //         <<(nextmaxPlaneHit->WireID()).toString() <<std::endl;
+    
     //Build the 3D track
-    pma::Track3D* pmatrack = fProjectionMatchingAlg.buildSegment(trackhits[maxplane], trackhits[nextmaxplane]);
+    pma::Track3D* pmatrack = fProjectionMatchingAlg.buildSegment(maxPlaneHits, nextmaxPlaneHits, ShowerStartPosition);
+
+    //  pma::Track3D* pmatrack = fProjectionMatchingAlg.buildSegment(track1, track2, trackStart);
+    if(!pmatrack){
+      // TODO fix this and put exception back in
+      mf::LogError("ShowerTrackFinder") << "No PMA track made " << std::endl;
+      //throw cet::exception("ShowerTrackFinderEMShower") << "No PMA track made ";
+      return 1;
+    }
 
     //Get the spacepoints
     std::vector<TVector3> spts;
@@ -263,79 +377,143 @@ namespace ShowerRecoTools{
     // 	assnhit->addSingle(initialtrack, hitPtr);
 
     // Event.put(std::move(assnhit));
-
     ShowerPropHolder.SetInitialTrack(track); 
+
+    std::cout<<"Track made"<<std::endl;
 
     // Shower dEdx calculation
     // To be moved when we have figured out how to transfer the hits associated with the track
     // TODO: when moved out in some protection to make sure there is an initial track    
 
-    std::vector<double> dEdx;
+    std::cout << "hello world dEdx (in track finder)" << std::endl;
+
+    std::vector<double> dEdxVec;
+    //std::map<geo::PlaneID, std::vector<art::Ptr<recob::Hit> > > trackhits;
     std::vector<std::vector<art::Ptr<recob::Hit> > > trackHits;
     TVector3 showerDir = ShowerPropHolder.GetShowerDirection();
     
     unsigned int numPlanes = fGeom->Nplanes();
 
-    dEdx.reserve(numPlanes);
-    trackHits.reserve(numPlanes);
+    //dEdx.resize(numPlanes);
+    trackHits.resize(numPlanes);
+
+    //std::cout<<"Test: numPlanes: "<<numPlanes<<std::endl;
 
     // TODO replace trackhits look with loop over associated hits with track
-    for(unsigned int plane=0; plane<trackhits.size(); ++plane) {
-      for (unsigned int hit=0; hit<(trackhits.at(plane)).size(); ++hit) {
-	art::Ptr<recob::Hit> thisHit = (trackhits.at(plane)).at(hit);
-	unsigned int hitPlane = thisHit->View();
-	trackHits.at(hitPlane).push_back(thisHit);
+    for(auto const& plane : plane_trackhits){
+      std::cout<<(plane.first).toString()<<std::endl;
+      std::vector<art::Ptr<recob::Hit> > trackhits = plane.second;
+      for (unsigned int hitIt=0; hitIt<trackhits.size(); ++hitIt) {
+	art::Ptr<recob::Hit> hit = trackhits.at(hitIt);
+	geo::PlaneID hitWire = hit->WireID();
+	geo::TPCID TPC = hitWire.asTPCID();
+	if (TPC==vtxTPC){
+	  (trackHits.at(hit->View())).push_back(hit);
+	}
       }
     }
-      
 
-
+    int bestPlane = -999;
+    int bestHitsPlane = 0;
+    int bestPlaneHits = 0;
+    double minPitch = 999;
+    
+    std::vector<art::Ptr<recob::Hit> > trackPlaneHits;
     for (unsigned int plane=0; plane<numPlanes; ++plane) {
-      
-      std::vector<art::Ptr<recob::Hit> > trackPlaneHits;
-      
+      trackPlaneHits = trackHits.at(plane);
+      std::cout<<"Plane "<<plane<<" with trackhits "<<trackPlaneHits.size()<<std::endl; 
       if (trackPlaneHits.size()){
 	double fdEdx = -999;
 	double totQ  = 0;
 	double avgT  = 0;
 	double pitch = 0;
 	double wirepitch = fGeom->WirePitch(trackPlaneHits.at(0)->WireID().planeID());
-	double angleToVert = fGeom->WireAngleToVertical(fGeom->Plane(plane).View(),trackPlaneHits[0]->WireID().planeID());
+	//TODO: check the numbers below
+	double angleToVert = fGeom->WireAngleToVertical(fGeom->Plane(plane).View(),trackPlaneHits[0]->WireID().planeID()) - 0.5*TMath::Pi();
 	double cosgamma = std::abs(sin(angleToVert)*showerDir.Y()+cos(angleToVert)*showerDir.Z());
-	if (cosgamma>0) pitch = wirepitch/cosgamma; //TODO try and remove???
+	if (cosgamma>0) pitch = wirepitch/cosgamma;
 	if (pitch){
-	  // Unused best plane information
-	  //   if (pitch<minpitch){
-	  //     minpitch = pitch;
-	  //     bestPlane = plane;
-	  //   }
+	  //std::cout<<"pitch is good: "<<pitch<<std::endl;
+	  
 	  
 	  int nhits = 0;
 	  std::vector<float> vQ;
 	  int w0 = trackPlaneHits.at(0)->WireID().Wire;
-	  
+	  std::cout<<"Wire 0: "<<w0<<std::endl;
 	  for (auto const& hit: trackPlaneHits){
 	    int w1 = hit->WireID().Wire;	    
-	    if (std::abs((w1-w0)*pitch)<fdEdxTrackLength){
+	    if (fMissFirstPoint){
+	      if (w0==w1){
+		continue;
+	      }
+	    }
+	    //std::cout<<w1<<std::endl;
+	    if (std::abs((w1-w0)*pitch)<fdEdxTrackLength){ //TODO: put back in
+	      //if (std::abs((w1-w0)*pitch)<fdEdxTrackLength){ 
+	      //should we be sorting from the vertex or first hit?
+	      //std::cout<<"Wire: "<<w1<<" with dQdx: "<<hit->Integral()/pitch<<" and peak time: "<<hit->PeakTime()<<std::endl;
 	      vQ.push_back(hit->Integral());
 	      totQ += hit->Integral();
 	      avgT+= hit->PeakTime();
 	      ++nhits;
 	    }
 	  }
+	  
 	  if (totQ) {
+	    if (pitch<minPitch){
+	      //std::cout<<"New best plane: "<<plane<<" with pitch: "<<pitch<<std::endl;
+	      minPitch  = pitch;
+	      bestPlane = plane;
+	    }
+
 	    double dQdx = TMath::Median(vQ.size(), &vQ[0])/pitch;
+	    //int expHits = (int)fdEdxTrackLength/pitch;	    
 	    fdEdx = fCalorimetryAlg.dEdx_AREA(dQdx, avgT/nhits, trackPlaneHits[0]->WireID().Plane);
+	    
+	    //std::cout<<"dQdx: "<<dQdx<<" dEdx: "<<fdEdx<<" avgT/nhits: "<< avgT/nhits <<" numHits: "<<nhits<<" expected: "<<expHits<<" pitch: "<<pitch<<" plane: "<<trackPlaneHits[0]->WireID().Plane<<std::endl;
+
+	    if (isinf(fdEdx)) { //TODO add error message logger
+	      std::cout<<"Its inf"<<std::endl;
+	      fdEdx=-999;
+	    };
+	   
+	    if (nhits > bestPlaneHits || ((nhits==bestPlaneHits) && (pitch<minPitch))){
+	       bestHitsPlane = plane;
+	       bestPlaneHits = nhits;
+	    }
 	  }
-	}
-	dEdx.push_back(fdEdx);
+	  //std::cout<<"dEdx: "<<fdEdx<<std::endl;
+	  dEdxVec.push_back(fdEdx);  
+	} else { // if not (pitch)
+	  dEdxVec.push_back(-999);
+	};
+      } else { // if not (trackPlaneHits.size())
+	dEdxVec.push_back(-999);
       }
-      else{
-	dEdx.push_back(-999);
-      }
+      trackPlaneHits.clear();
+    } //end loop over planes 
+
+    
+    ShowerPropHolder.SetShowerdEdx(dEdxVec);
+
+    if (fMaxHitPlane){
+      bestPlane=bestHitsPlane;
+    }
+
+    if (bestPlane==999){
+      //mf::LogError("ShowerTrackFinder") << "No best plane set "<< std::endl;
+      throw cet::exception("ShowerTrackFinderEMShower") << "No best plane set";
+      return 1;
+    } else {
+      ShowerPropHolder.SetBestPlane(bestPlane);
+      //ShowerPropHolder.SetBestPlane(bestHitsPlane);
     }
     
-    ShowerPropHolder.SetShowerdEdx(dEdx);
+    std::cout<<"Best Plane: "<<bestPlane<<" and plane with most hits: "<<bestHitsPlane<<std::endl;
+
+
+    std::cout <<"#########################################\n"<<
+      "track finder done\n" <<"#########################################\n"<< std::endl;
     
     return 0;
   }
@@ -344,14 +522,24 @@ namespace ShowerRecoTools{
   std::vector<art::Ptr<recob::Hit> > ShowerTrackFinder::FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> >& hits, TVector3& ShowerStartPosition, TVector3& ShowerDirection){
     
     std::vector<art::Ptr<recob::Hit> > trackHits;
-
+    /*
+    std::cout<<"ShowerHits: "<<hits.size()<<std::endl;
+    for (auto hit : hits){
+      TVector2 hitcoord = { (double) hit->WireID().Wire, hit->PeakTime()};
+      std::cout<<"hit  : "<<hitcoord.X()<<" "<<hitcoord.Y()<<std::endl;
+    }
+    */
     double parm[2];
     int fitok = 0;
     std::vector<double> wfit;
     std::vector<double> tfit;
     std::vector<double> cfit;
     
+    //std::cout<<"fNfitpass "<<fNfitpass<<std::endl;
+
     for (size_t i = 0; i<fNfitpass; ++i){
+      
+      //if (i>0) std::cout<<"loop: i "<<i<<" and fToler[i-1]: "<< fToler[i-1]<<" and fNfithits[i]+1 "<<fNfithits[i]+1<<std::endl;
       
       // Fit a straight line through hits
       unsigned int nhits = 0;
@@ -367,8 +555,8 @@ namespace ShowerRecoTools{
 	  wfit.push_back(coord.X());
 	  tfit.push_back(coord.Y());
 
-	  if(fApplyChargeWeight) cfit.push_back(hit->Integral());
-	  else cfit.push_back(1.);
+	  if(fApplyChargeWeight) { cfit.push_back(hit->Integral());
+	  } else { cfit.push_back(1.); };
 	  if (i==fNfitpass-1) {
 	    trackHits.push_back(hit);
 	  }
@@ -378,10 +566,18 @@ namespace ShowerRecoTools{
       if (i<fNfitpass-1&&wfit.size()){
 	fitok = WeightedFit(wfit.size(), &wfit[0], &tfit[0], &cfit[0], &parm[0]);
       }
+
       wfit.clear();
       tfit.clear();
       cfit.clear();
     }
+    /*
+    std::cout<<"TrackHits: "<<trackHits.size()<<std::endl;
+    for (auto hit : trackHits){
+      TVector2 hitcoord = { (double) hit->WireID().Wire, hit->PeakTime()};
+      std::cout<<"hit  : "<<hitcoord.X()<<" "<<hitcoord.Y()<<std::endl;
+    }
+    */
     return trackHits;
   }
 

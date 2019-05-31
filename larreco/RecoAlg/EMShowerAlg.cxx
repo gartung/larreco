@@ -1568,14 +1568,26 @@ void shower::EMShowerAlg::FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> 
     //if (!tpc.isValid&&showerHits.size()) tpc = geo::TPCID(showerHits[0]->WireID());
   if (!tpc.isValid) return;
   //std::cout<<"here 1"<<std::endl;
-
+  /*
+  std::cout<<"EMShower ShowerHits: "<<showerHits.size()<<std::endl;
+  
+  for (auto hit : showerHits){
+    TVector2 hitcoord = { (double) hit->WireID().Wire, hit->PeakTime()};
+    std::cout<<"hit  : "<<hitcoord.X()<<" "<<hitcoord.Y()<<std::endl;
+  }
+  */
+  
   double parm[2];
   int fitok = 0;
   std::vector<double> wfit;
   std::vector<double> tfit;
   std::vector<double> cfit;
 
+  std::cout<<"fNfitpass "<<fNfitpass<<std::endl;
+
   for (size_t i = 0; i<fNfitpass; ++i){
+
+    //if (i>0) std::cout<<"loop: i "<<i<<" and fToler[i-1]: "<< fToler[i-1]<<" and fNfithits[i]+1 "<<fNfithits[i]+1<<std::endl;
 
     // Fit a straight line through hits
     unsigned int nhits = 0;
@@ -1600,15 +1612,26 @@ void shower::EMShowerAlg::FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> 
 	}
       }
     }
-
+    std::cout<<wfit.size()<<std::endl;
     if (i<fNfitpass-1&&wfit.size()){
       fitok = WeightedFit(wfit.size(), &wfit[0], &tfit[0], &cfit[0], &parm[0]);
     }
+
+    //std::cout<<parm[0]<<" "<<parm[1]<<std::endl;
+    /*
+    std::cout<<"EMShowerTrackHits: "<<trackHits.size()<<std::endl;
+    for (auto hit : trackHits){
+      TVector2 hitcoord = { (double) hit->WireID().Wire, hit->PeakTime()};
+      std::cout<<"hit  : "<<hitcoord.X()<<" "<<hitcoord.Y()<<std::endl;
+    }
+    */
+
     wfit.clear();
     tfit.clear();
     cfit.clear();
   }
 
+  std::cout<<"TrackHits: "<<trackHits.size()<<std::endl;
 }
 
 

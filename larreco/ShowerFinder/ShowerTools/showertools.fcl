@@ -5,9 +5,9 @@ BEGIN_PROLOG
 showerpcadirection:{
      tool_type: ShowerPCADirection   
      PFParticleModuleLabel: "pandora"
-     NSegments: 10
+     NSegments: 6
      UseStartPosition: true
-     ChargeWeighted: true 
+     ChargeWeighted: true
      SBNShowerAlg: @local::standard_sbnshoweralg
      }
 
@@ -40,7 +40,9 @@ showertrackfinder:{
     ApplyChargeWeight: false
     PFParticleModuleLabel: "pandora"
     // dedx
-    CalorimetryAlg:        @local::standard_calorimetryalgmc
+    CalorimetryAlg:  @local::standard_calorimetryalgmc
+    MaxHitPlane:     false
+    MissFirstPoint:  false
     dEdxTrackLength: 3    
     }
 

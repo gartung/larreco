@@ -31,6 +31,7 @@
 
 //C++ Includes 
 #include <iostream>
+#include <cmath>
 
 //Root Includes 
 #include "TVector3.h"
@@ -95,6 +96,9 @@ namespace ShowerRecoTools {
 				      art::Event& Event,
 				      reco::shower::ShowerPropertyHolder& ShowerPropHolder){
 
+    std::cout <<"#########################################\n"<<
+      "hello world PCA direction\n" <<"#########################################\n"<< std::endl;
+
     // Get the assocated pfParicle vertex PFParticles
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, pfpHandle)){
@@ -126,6 +130,8 @@ namespace ShowerRecoTools {
     //We cannot progress with no spacepoints.
     if(spacePoints_pfp.size() == 0){return 0;} 
 
+    std::cout<<"Spacepoints: "<<spacePoints_pfp.size()<<std::endl;
+
     //Find the PCA vector
     TVector3 ShowerCentre;
     TVector3 Eigenvector = ShowerPCAVector(spacePoints_pfp,fmh,ShowerCentre);
@@ -133,21 +139,45 @@ namespace ShowerRecoTools {
     //Check if we are pointing the correct direction or not, First try the start position
     if(ShowerPropHolder.CheckShowerStartPosition() && fUseStartPosition){
 	
+      std::cout<<"Checking the start position"<<std::endl;
+
       //Get the General direction as the vector between the start position and the centre
       TVector3 StartPositionVec = ShowerPropHolder.GetShowerStartPosition();
-      TVector3 GeneralDir       = ShowerCentre - StartPositionVec;
+      TVector3 GeneralDir       = (ShowerCentre - StartPositionVec).Unit();
           
+
+      std::cout<<"Shower Vertex: X:"<<StartPositionVec.X()<<" Y: "<<StartPositionVec.Y()<<" Z: "
+               <<StartPositionVec.Z()<<std::endl;
+      std::cout<<"Shower Centre: X:"<<ShowerCentre.X()<<" Y: "<<ShowerCentre.Y()<<" Z: "
+               <<ShowerCentre.Z()<<std::endl;
+
+      std::cout<<"Shower Direction: X:"<<Eigenvector.X()<<" Y: "<<Eigenvector.Y()<<" Z: "
+               <<Eigenvector.Z()<<std::endl;
+      std::cout<<"Shower General Direction: X:"<<GeneralDir.X()<<" Y: "<<GeneralDir.Y()<<" Z: "
+               <<GeneralDir.Z()<<std::endl;
+
+
       //Dot product
       double DotProduct = Eigenvector.Dot(GeneralDir);
-      
+
+      std::cout<<"Dot Product: "<<DotProduct<<std::endl;
+
       //If the dotproduct is negative the Direction needs Flipping
       if(DotProduct < 0){
+	std::cout<<"Flipping the eigenvector: Start Position"<<std::endl;
+
 	Eigenvector[0] = - Eigenvector[0];
 	Eigenvector[1] = - Eigenvector[1];
 	Eigenvector[2] = - Eigenvector[2];
+
+	std::cout<<"Shower Direction: X:"<<Eigenvector.X()<<" Y: "<<Eigenvector.Y()<<" Z: "
+                 <<Eigenvector.Z()<<std::endl;
       }
       
       ShowerPropHolder.SetShowerDirection(Eigenvector);
+
+      std::cout <<"#########################################\n"<<
+	"PCA direction Done\n" <<"#########################################\n"<< std::endl;
       return 0; 
     }
     
@@ -155,12 +185,18 @@ namespace ShowerRecoTools {
     double RMSGradient = RMSShowerGradient(spacePoints_pfp,ShowerCentre,Eigenvector);
 
     if(RMSGradient < 0){
-      	Eigenvector[0] = - Eigenvector[0];
-	Eigenvector[1] = - Eigenvector[1];
-	Eigenvector[2] = - Eigenvector[2];
-      }
+      std::cout<<"Flipping the eigenvector: RMS"<<std::endl;
+      
+      Eigenvector[0] = - Eigenvector[0];
+      Eigenvector[1] = - Eigenvector[1];
+      Eigenvector[2] = - Eigenvector[2];
+    }
     
     ShowerPropHolder.SetShowerDirection(Eigenvector);
+    
+    std::cout <<"#########################################\n"<<
+      "PCA direction Done\n" <<"#########################################\n"<< std::endl;
+
     return 0;
 
   }
@@ -168,13 +204,17 @@ namespace ShowerRecoTools {
   //Function to calculate the RMS at segements of the shower and calculate the gradient of this. If negative then the direction is pointing the opposite way to the correct one
   double ShowerPCADirection::RMSShowerGradient(std::vector<art::Ptr<recob::SpacePoint> >& sps, TVector3& ShowerCentre, TVector3& Direction){
     
+    //Order the spacepoints 
+    fSBNShowerAlg.OrderShowerSpacePoints(sps,ShowerCentre,Direction);
+
     //Get the length of the shower.
     TVector3 firstpoint = fSBNShowerAlg.SpacePointPosition(sps[0]);
     TVector3 lastpoint  = fSBNShowerAlg.SpacePointPosition(sps[sps.size()-1]);
+
     double length = (firstpoint-lastpoint).Mag();
     double segmentsize = length/fNSegments;
     
-    std::map<float, std::vector<float> > len_segment_map;
+    std::map<int, std::vector<float> > len_segment_map;
     
     //Split the the spacepoints into segments.
     for(auto const& sp: sps){
@@ -187,9 +227,10 @@ namespace ShowerRecoTools {
 
       //Get the length to the projection
       TVector3 perp = pos - len*Direction;
-      double len_perp = perp.Mag();
+      double  len_perp = perp.Mag();
       
-      len_segment_map[segmentsize/len].push_back(len_perp);
+      int sg_len = round(len/segmentsize);
+      len_segment_map[sg_len].push_back(len_perp);
     }
     
     float sumx  = 0;
@@ -259,11 +300,17 @@ namespace ShowerRecoTools {
     pca->MakePrincipals();
    
     //Get the Eigenvectors.
-    const TMatrixD * Eigenvectors = pca->GetEigenVectors();
-
+    const TMatrixD* Eigenvectors = pca->GetEigenVectors();
+      
+    Eigenvectors->Print();
+    
+    // TODO: should be a neater way to get the column
+    //TVectorD Principal = TMatrixDColumn(Eigenvectors,0);
+    //std::cout<<Principal[0];
     //Get the primary vector 
-    const TVectorD EigenvectorD = (*Eigenvectors)[0];
-    TVector3 Eigenvector = { EigenvectorD[0], EigenvectorD[1], EigenvectorD[2] };
+    //const TVectorD EigenvectorD = (*Eigenvectors)[0]; // Gets row not column
+    
+    TVector3 Eigenvector = { (*Eigenvectors)[0][0], (*Eigenvectors)[1][0], (*Eigenvectors)[2][0] };
 
     return Eigenvector;
    }

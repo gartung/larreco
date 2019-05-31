@@ -73,9 +73,9 @@ namespace ShowerRecoTools{
 					 reco::shower::ShowerPropertyHolder& ShowerPropHolder
 					 ){
   
-    std::cout << "hello world dEdx" << std::endl;
-    std::vector<double>  ShowerStandardCalodEdx = {0,0,0};
-    ShowerPropHolder.SetShowerdEdx(ShowerStandardCalodEdx);
+    std::cout << "hello world dEdx (does nothing)" << std::endl;
+    //std::vector<double>  ShowerStandardCalodEdx = {0,0,0};
+    //ShowerPropHolder.SetShowerdEdx(ShowerStandardCalodEdx);
     return 0;
   }
 }
