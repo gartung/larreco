@@ -51,10 +51,10 @@ namespace ShowerRecoTools {
     ~ShowerPCADirection(); 
     
     //Generic Direction Finder
-    int findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
-		   art::Event& Event,
-		    reco::shower::ShowerPropertyHolder& ShowerPropHolder
-		    ) override;
+    int CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+			  art::Event& Event,
+			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
+			  ) override;
 
   private:
     
@@ -92,9 +92,9 @@ namespace ShowerRecoTools {
     fChargeWeighted         = pset.get<bool>         ("ChargeWeighted");
   }
 
-  int ShowerPCADirection::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
-				      art::Event& Event,
-				      reco::shower::ShowerPropertyHolder& ShowerPropHolder){
+  int ShowerPCADirection::CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+					    art::Event& Event,
+					    reco::shower::ShowerPropertyHolder& ShowerPropHolder){
 
     std::cout <<"#########################################\n"<<
       "hello world PCA direction\n" <<"#########################################\n"<< std::endl;

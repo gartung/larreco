@@ -52,10 +52,10 @@ namespace ShowerRecoTools{
     void configure(const fhicl::ParameterSet& pset) override;
     
     //Generic Direction Finder
-    int findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
-		   art::Event& Event,
-		   reco::shower::ShowerPropertyHolder& ShowerPropHolder
-		   ) override;
+    int CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+			  art::Event& Event,
+			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
+			  ) override;
     
     
     art::InputTag fPFParticleModuleLabel;
@@ -81,10 +81,10 @@ namespace ShowerRecoTools{
     fPFParticleModuleLabel      = pset.get<art::InputTag>("PFParticleModuleLabel","");
   }
  
-  int ShowerStartPosition::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
-				      art::Event& Event,
-				      reco::shower::ShowerPropertyHolder& ShowerPropHolder
-				      ){
+  int ShowerStartPosition::CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+					     art::Event& Event,
+					     reco::shower::ShowerPropertyHolder& ShowerPropHolder
+					     ){
 
     std::cout << "hello world start position" << std::endl;
 

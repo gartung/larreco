@@ -13,7 +13,9 @@
 //LArSoft includes
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
+#include "canvas/Persistency/Common/Ptr.h"
 
 //Root Includes
 #include "TVector3.h"
@@ -36,6 +38,7 @@ class reco::shower::ShowerPropertyHolder {
       ShowerDirectionPtr     = 0;
       ShowerStartPositionPtr = 0;
       InitialTrackPtr        = 0;
+      InitialTrackHitsPtr    = 0;
       ShowerEnergyPtr        = 0;
       ShowerdEdxPtr          = 0;
       BestPlanePtr           = 0;
@@ -51,6 +54,7 @@ class reco::shower::ShowerPropertyHolder {
     ShowerDirectionPtr     = 0;
     ShowerStartPositionPtr = 0;
     InitialTrackPtr        = 0;
+    InitialTrackHitsPtr    = 0;
     ShowerEnergyPtr        = 0;
     ShowerdEdxPtr          = 0;
     BestPlanePtr           = 0;
@@ -62,13 +66,13 @@ class reco::shower::ShowerPropertyHolder {
   };
 
   //Set Functions 
-  void SetShowerDirection    (TVector3 &showerdirection)    {ShowerDirection     = showerdirection;     ShowerDirectionPtr     = &ShowerDirection;} 
-  void SetShowerStartPosition(TVector3 &showerstartposition){ShowerStartPosition = showerstartposition; ShowerStartPositionPtr = &ShowerStartPosition;     std::cout << " Set ShowerStartPosition.X(): " << ShowerStartPosition.X() << " ShowerStartPositionPtr: " << ShowerStartPositionPtr  << std::endl;
-} 
-  void SetInitialTrack       (recob::Track &track)          {InitialTrack        = track;               InitialTrackPtr        = &InitialTrack;}
-  void SetShowerEnergy       (std::vector<double> energyvec){ShowerEnergy        = energyvec;           ShowerEnergyPtr        = &energyvec;}
-  void SetShowerdEdx         (std::vector<double> dedxvec)  {ShowerdEdx          = dedxvec;             ShowerdEdxPtr          = &ShowerdEdx;}
-  void SetBestPlane          (int plane)                    {BestPlane           = plane;               BestPlanePtr           = &plane;}
+  void SetShowerDirection    (TVector3 &showerdirection)              {ShowerDirection     = showerdirection;     ShowerDirectionPtr     = &ShowerDirection;} 
+  void SetShowerStartPosition(TVector3 &showerstartposition)          {ShowerStartPosition = showerstartposition; ShowerStartPositionPtr = &ShowerStartPosition;} 
+  void SetInitialTrack       (recob::Track &track)                    {InitialTrack        = track;               InitialTrackPtr        = &InitialTrack;}
+  void SetInitialTrackHits   (std::vector<art::Ptr<recob::Hit> > hits){InitialTrackHits    = hits;                InitialTrackHitsPtr    = &InitialTrackHits;}      
+  void SetShowerEnergy       (std::vector<double> energyvec)          {ShowerEnergy        = energyvec;           ShowerEnergyPtr        = &energyvec;}
+  void SetShowerdEdx         (std::vector<double> dedxvec)            {ShowerdEdx          = dedxvec;             ShowerdEdxPtr          = &ShowerdEdx;}
+  void SetBestPlane          (int plane)                              {BestPlane           = plane;               BestPlanePtr           = &plane;}
   
 
   void SetShowerDirectionErr    (TVector3 &showerdirectionerr)    {ShowerDirectionErr     = showerdirectionerr;     ShowerDirectionErrPtr     = &ShowerDirectionErr;} 
@@ -85,7 +89,6 @@ class reco::shower::ShowerPropertyHolder {
   }
     
   TVector3 GetShowerStartPosition(){
-    std::cout << " Get ShowerStartPosition.X(): " << ShowerStartPosition.X() << " ShowerStartPositionPtr: " << ShowerStartPositionPtr  << std::endl;
     if(ShowerStartPositionPtr) return ShowerStartPosition;
     TVector3 EmptyVec = {-999,-999,-999};
     return EmptyVec;
@@ -95,6 +98,12 @@ class reco::shower::ShowerPropertyHolder {
     if(InitialTrackPtr) return InitialTrack;
     return InitialTrack;
   } 
+
+  std::vector<art::Ptr<recob::Hit> > GetInitialTrackHits(){
+    if(InitialTrackHitsPtr) return InitialTrackHits;
+    std::vector<art::Ptr<recob::Hit> > EmptyVec;
+    return  EmptyVec;
+  }
 
   std::vector<double> GetShowerEnergy(){
     if(ShowerEnergyPtr) return ShowerEnergy;
@@ -146,7 +155,6 @@ class reco::shower::ShowerPropertyHolder {
     else return false;
   } 
   bool CheckShowerStartPosition(){
-    std::cout << " Check ShowerStartPosition.X(): " << ShowerStartPosition.X() << " ShowerStartPositionPtr: " << ShowerStartPositionPtr  << std::endl;
     if(ShowerStartPositionPtr) return true; 
     else return false;
   } 
@@ -155,6 +163,11 @@ class reco::shower::ShowerPropertyHolder {
     if(InitialTrackPtr) return true; 
     else return false;
   } 
+
+  bool CheckInitialTrackHits(){
+    if(InitialTrackHitsPtr) return true;
+    else return false;
+  }
   
   bool CheckShowerEnergy(){
       if(ShowerEnergyPtr) return true; 
@@ -193,20 +206,22 @@ class reco::shower::ShowerPropertyHolder {
  private:
 
   //Shower Parameter Ptrs   
-  TVector3*            ShowerDirectionPtr;
-  TVector3*            ShowerStartPositionPtr;
-  recob::Track*        InitialTrackPtr; 
-  std::vector<double>* ShowerEnergyPtr;
-  std::vector<double>* ShowerdEdxPtr;
-  int*                 BestPlanePtr;
+  TVector3*                           ShowerDirectionPtr;
+  TVector3*                           ShowerStartPositionPtr;
+  recob::Track*                       InitialTrackPtr; 
+  std::vector<art::Ptr<recob::Hit> >* InitialTrackHitsPtr;
+  std::vector<double>*                ShowerEnergyPtr;
+  std::vector<double>*                ShowerdEdxPtr;
+  int*                                BestPlanePtr;
 
   //Shower Parameters 
-  TVector3            ShowerDirection;
-  TVector3            ShowerStartPosition;
-  recob::Track        InitialTrack; 
-  std::vector<double> ShowerEnergy;
-  std::vector<double> ShowerdEdx;
-  int                 BestPlane;
+  TVector3                           ShowerDirection;
+  TVector3                           ShowerStartPosition;
+  recob::Track                       InitialTrack; 
+  std::vector<art::Ptr<recob::Hit> > InitialTrackHits;
+  std::vector<double>                ShowerEnergy;
+  std::vector<double>                ShowerdEdx;
+  int                                BestPlane;
 
   //Shower Parameter Error Ptrs   
   TVector3*            ShowerDirectionErrPtr;

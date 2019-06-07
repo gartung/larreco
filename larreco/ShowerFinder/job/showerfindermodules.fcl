@@ -151,17 +151,17 @@ standard_sbnshower: {
  
     module_type: "SBNShower"
 
-    ShowerFinderTools: {
-
-        A_ShowerStartPositionFinder: @local::showerstartposition
-        B_ShowerDirectionFinder:     @local::showerpcadirection
-        C_ShowerEnergyFinder:        @local::showerlinearenergy
-        D_ShowerInitialTrackFinder:  @local::showertrackfinder
-        E_ShowerdEdxFinder:          @local::showerstandardcalodedx
-        }
+    ShowerFinderTools: [
+         @local::showerstartposition,
+         @local::showerpcadirection,
+         @local::showerlinearenergy,
+         @local::showertrackfinder,
+         @local::showerstandardcalodedx
+          ]
 
     PFParticleModuleLabel:      "pandora"
-    SecondInteration: false
+    SecondInteration:           false
+    AllowPartialShowers:        false
 }
 
 

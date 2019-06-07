@@ -58,6 +58,7 @@ private:
   //fcl object names 
   art::InputTag fPFParticleModuleLabel;
   bool          fSecondInteration;
+  bool          fAllowPartialShowers;
 
   //fcl tools
   std::vector<std::unique_ptr<ShowerRecoTools::IShowerTool> > fShowerTools;
@@ -71,44 +72,46 @@ reco::shower::SBNShower::SBNShower(fhicl::ParameterSet const& pset) :
   this->reconfigure(pset);
   produces<std::vector<recob::Shower> >();
   produces<std::vector<recob::Track> >();
-  //produces<std::vector<recob::SpacePoint> >();
   produces<art::Assns<recob::Shower, recob::Hit> >();
   produces<art::Assns<recob::Shower, recob::Cluster> >();
-  produces<art::Assns<recob::Track, recob::Shower> >();
+  produces<art::Assns<recob::Shower, recob::Track> >();
   produces<art::Assns<recob::Shower, recob::SpacePoint> >();
-  produces<art::Assns<recob::SpacePoint, recob::Hit> >();
-  //  produces<art::Assns<recob::Track, recob::Hit> >();
+  produces<art::Assns<recob::Track, recob::Hit> >();
 }
 
 void reco::shower::SBNShower::reconfigure(fhicl::ParameterSet const& pset) {
 
   //Intialise the tools 
-  const fhicl::ParameterSet& ShowerTools = pset.get<fhicl::ParameterSet>("ShowerFinderTools");
-  for(const std::string& ShowerTool : ShowerTools.get_pset_names()){
-    const fhicl::ParameterSet& ShowerToolParamSet = ShowerTools.get<fhicl::ParameterSet>(ShowerTool);
-    fShowerTools.push_back(art::make_tool<ShowerRecoTools::IShowerTool>(ShowerToolParamSet));
-    fShowerToolNames.push_back(ShowerTool);
-    std::cout << "Tools List: " << ShowerTool << std::endl;
+  auto const tool_psets = pset.get<std::vector<fhicl::ParameterSet>>("ShowerFinderTools");
+  for (auto const& tool_pset : tool_psets) {
+    fShowerTools.push_back(art::make_tool<ShowerRecoTools::IShowerTool>(tool_pset));
+    std::string paramset = tool_pset.to_compact_string();
+    std::size_t pos = paramset.find("tool_type:");
+    fShowerToolNames.push_back(paramset.substr(pos+10));
+    std::cout << "Tools List: " << paramset.substr(pos) << std::endl;
   }
+
 
   //Initialise the other paramters.
   fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","pandora");
   fSecondInteration      = pset.get<bool         >("SecondInteration",false);
+  fAllowPartialShowers   = pset.get<bool         >("AllowPartialShowers",false);
 }
     
 void reco::shower::SBNShower::produce(art::Event& evt) {
 
   // Output -- showers and associations with hits and clusters
-  std::unique_ptr<std::vector<recob::Shower> > showers(new std::vector<recob::Shower>);
-  std::unique_ptr<std::vector<recob::Track> > initialtracks(new std::vector<recob::Track>);
-  std::unique_ptr<art::Assns<recob::Shower, recob::Cluster> > clusterAssociations(new art::Assns<recob::Shower, recob::Cluster>);
-  std::unique_ptr<art::Assns<recob::Shower, recob::Hit> > hitShowerAssociations(new art::Assns<recob::Shower, recob::Hit>);
-  std::unique_ptr<art::Assns<recob::Track, recob::Shower> > trackAssociations(new art::Assns<recob::Track, recob::Shower>);
-  std::unique_ptr<art::Assns<recob::Shower, recob::SpacePoint> > spShowerAssociations(new art::Assns<recob::Shower, recob::SpacePoint>);
-  std::unique_ptr<art::Assns<recob::SpacePoint, recob::Hit> > hitSpAssociations(new art::Assns<recob::SpacePoint, recob::Hit>);
+  auto showers                = std::make_unique<std::vector<recob::Shower> >();
+  auto initialtracks          = std::make_unique<std::vector<recob::Track> >();
+  auto clusterAssociations    = std::make_unique<art::Assns<recob::Shower, recob::Cluster> >();
+  auto hitShowerAssociations  = std::make_unique<art::Assns<recob::Shower, recob::Hit> >();
+  auto trackAssociations      = std::make_unique<art::Assns<recob::Shower, recob::Track> >();
+  auto spShowerAssociations   = std::make_unique<art::Assns<recob::Shower, recob::SpacePoint> >();
+  auto hittrackAssociations   = std::make_unique<art::Assns<recob::Track,  recob::Hit> >();
 
-  //Ptr for initial track assans
+  //Ptr makers for the products 
   const art::PtrMaker<recob::Track> makeTrackPtr(evt);
+  const art::PtrMaker<recob::Shower> makeShowerPtr(evt);
 
   //Get the PFParticles
   art::Handle<std::vector<recob::PFParticle> > pfpHandle;
@@ -141,10 +144,11 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     throw cet::exception("SBNShower") << "Find many spacepoints is not valid." << std::endl;
   }
 
-  //Holder to pass to the functions, contains the 5 properties of the shower 
+  //Holder to pass to the functions, contains the 6 properties of the shower 
   // - Start Poistion
   // - Direction
   // - Initial Track
+  // - Initial Track Hits
   // - Energy 
   // - dEdx 
   reco::shower::ShowerPropertyHolder sprop_holder;
@@ -164,12 +168,10 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
       std::cout << "on next tool:" <<  fShowerToolNames[i]  << std::endl;
       //Calculate the metric
-      int err = fShowerTool->findMetric(pfp,evt,sprop_holder);
+      int err = fShowerTool->CaclulateProperty(pfp,evt,sprop_holder);
       if(err){
-	std::cout<<"Error in shower tool: " << fShowerToolNames[i] << " with code: " << err << std::endl; 
-	// TODO put break back in once we have fixed exceptions
-	//throw cet::exception("SBNShower") << "Error in shower tool: " << fShowerToolNames[i] << " with code: " << err << std::endl;
-	break; 
+	mf::LogError("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
+	if(!fAllowPartialShowers && !fSecondInteration) break;
       }
       ++i;
     }
@@ -181,24 +183,36 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
       for(auto const& fShowerTool: fShowerTools){
 	//Calculate the metric
-	int err = fShowerTool->findMetric(pfp,evt,sprop_holder);
+	int err = fShowerTool->CaclulateProperty(pfp,evt,sprop_holder);
       
 	if(err){
-	  throw cet::exception("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
-	  break;
+	  mf::LogError("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
+	  if(!fAllowPartialShowers) break;
 	}
 	++i;
       }
     }
 
-    //Get the properties 
-    const TVector3            ShowerStartPosition  = sprop_holder.GetShowerStartPosition();
-    const TVector3            ShowerDirection      = sprop_holder.GetShowerDirection();
-    const std::vector<double> ShowerEnergy         = sprop_holder.GetShowerEnergy();
-    const std::vector<double> ShowerdEdx           = sprop_holder.GetShowerdEdx();
-    const recob::Track        InitialTrack         = sprop_holder.GetInitialTrack();
-    const int                 BestPlane            = sprop_holder.GetBestPlane();
+    if(!fAllowPartialShowers){
+      bool accept = true; 
+      accept = accept & sprop_holder.CheckShowerStartPosition();
+      accept = accept & sprop_holder.CheckShowerDirection();
+      accept = accept & sprop_holder.CheckShowerEnergy();
+      accept = accept & sprop_holder.CheckShowerdEdx();
+      accept = accept & sprop_holder.CheckInitialTrack();
+      if(!accept){continue;}
+    }
 
+
+    //Get the properties 
+    const TVector3                           ShowerStartPosition  = sprop_holder.GetShowerStartPosition();
+    const TVector3                           ShowerDirection      = sprop_holder.GetShowerDirection();
+    const std::vector<double>                ShowerEnergy         = sprop_holder.GetShowerEnergy();
+    const std::vector<double>                ShowerdEdx           = sprop_holder.GetShowerdEdx();
+    const recob::Track                       InitialTrack         = sprop_holder.GetInitialTrack();
+    const std::vector<art::Ptr<recob::Hit> > InitialTrackHits     = sprop_holder.GetInitialTrackHits(); 
+    const int                                BestPlane            = sprop_holder.GetBestPlane();
+    
     //To Do
     const TVector3            ShowerDirectionErr              = sprop_holder.GetShowerDirectionErr();
     const TVector3            ShowerStartPositionErrvertexErr = sprop_holder.GetShowerStartPositionErr();
@@ -216,28 +230,41 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     //Make the shower 
     recob::Shower shower = recob::Shower(ShowerDirection, ShowerDirectionErr,ShowerStartPosition, ShowerDirectionErr,ShowerEnergy,ShowerEnergyErr,ShowerdEdx, ShowerdEdxErr, BestPlane, -999);
     showers->push_back(shower);
-    showers->back().set_id(showers->size()-1);
-    
+    art::Ptr<recob::Shower> ShowerPtr(makeShowerPtr(showers->size() - 1));
+
     //Make the track and the pointer 
-    initialtracks->push_back(sprop_holder.GetInitialTrack());
-    art::Ptr<recob::Track> initialtrack(makeTrackPtr(initialtracks->size() - 1));
-    
+    initialtracks->push_back(InitialTrack);
+    art::Ptr<recob::Track> InitialTrackPtr(makeTrackPtr(initialtracks->size() - 1));
+  
+    //Associate the trakc and the shower 
+    trackAssociations->addSingle(ShowerPtr,InitialTrackPtr);
+
+    //Associate the track and the initial hits.
+    for(auto const& hit: InitialTrackHits){
+      hittrackAssociations->addSingle(InitialTrackPtr,hit);
+    }
+
     //Get the associated hits,clusters and spacepoints
-    std::vector<art::Ptr<recob::Hit> >        showerHits;
     std::vector<art::Ptr<recob::Cluster> >    showerClusters    = fmcp.at(pfp.key());
     std::vector<art::Ptr<recob::SpacePoint> > showerSpacePoints = fmspp.at(pfp.key());
 
     //Add the hits for each "cluster"
-    for (size_t iclu = 0; iclu<showerClusters.size(); ++iclu){
-      std::vector<art::Ptr<recob::Hit> > ClusterHits = fmh.at(showerClusters[iclu].key());
-      showerHits.insert(showerHits.end(), ClusterHits.begin(), ClusterHits.end());
+    for(auto const& cluster: showerClusters){
+
+      //Associate the clusters 
+      std::vector<art::Ptr<recob::Hit> > ClusterHits = fmh.at(cluster.key());
+      clusterAssociations->addSingle(ShowerPtr,cluster);
+
+      //Associate the hits
+      for(auto const& hit: ClusterHits){
+	 hitShowerAssociations->addSingle(ShowerPtr, hit);
+      }
     }
-    
-    //Create the associates
-    util::CreateAssn(*this, evt, *(showers.get()), showerHits,        *(hitShowerAssociations.get()));
-    util::CreateAssn(*this, evt, *(showers.get()), showerClusters,    *(clusterAssociations.get()));
-    util::CreateAssn(*this, evt, *(showers.get()), initialtrack,      *(trackAssociations.get()));
-    util::CreateAssn(*this, evt, *(showers.get()), showerSpacePoints, *(spShowerAssociations.get()));
+
+    //Associate the spacepoints
+    for(auto const& sp: showerSpacePoints){
+      spShowerAssociations->addSingle(ShowerPtr,sp);
+    }
 
     //Reset the showerproperty holder.
     sprop_holder.clear();
@@ -250,7 +277,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
   evt.put(std::move(clusterAssociations));
   evt.put(std::move(trackAssociations));
   evt.put(std::move(spShowerAssociations));
-  evt.put(std::move(hitSpAssociations));
+  evt.put(std::move(hittrackAssociations));
 
 }
 

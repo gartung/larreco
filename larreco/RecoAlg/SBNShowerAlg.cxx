@@ -1,8 +1,7 @@
 #include "larreco/RecoAlg/SBNShowerAlg.h"
-
 shower::SBNShowerAlg::SBNShowerAlg(const fhicl::ParameterSet& pset):  
-  fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()) {
-  
+  fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
+{
   fUseCollectionOnly = pset.get<bool>("UseCollectionOnly");
 }
 
@@ -17,106 +16,70 @@ void shower::SBNShowerAlg::OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& h
   //Get the wireID 
   const geo::WireID startWireID = startHit->WireID();
   
-  //Get the TPCID
-  const geo::TPCID tpcid = startWireID.asTPCID();  
+  //Get the plane 
+  const geo::PlaneID planeid = startWireID.asPlaneID();
 
-  //Get the projection vectors for the start position in 2D  
+  //Get the pitch 
+  double pitch = fGeom->WirePitch(planeid);
+
   TVector2 Shower2DStartPosition = { 
-    fGeom->WireCoordinate(ShowerStartPosition, startHit->WireID().planeID()), 
-    fDetProp->ConvertXToTicks(ShowerStartPosition.X(),  startHit->WireID().planeID())
-  };
-
-  //Get the Vector of the plane.
-  double vertangle = fGeom->WireAngleToVertical(startHit->View(),tpcid);
-  //std::cout << "sin vertangle: " <<  TMath::Sin(vertangle) << "  TMath::Cos(vertangle) " <<  TMath::Cos(vertangle) << std::endl;
-
-  //Vector of the plane
-  TVector3 PlaneDirection = {0,TMath::Sin(vertangle), TMath::Cos(vertangle)}; 
-    
-  //std::cout<<"Shower Direction: X:"<<ShowerDirection.X()<<" Y: "<<ShowerDirection.Y()<<" Z: "<<ShowerDirection.Z()<<std::endl;
-
-  //std::cout<<"Dot product: "<<      ShowerDirection.Dot(PlaneDirection)<<std::endl;
-  //get the shower 2D direction 
-  TVector2 Shower2DDirection = { 
-    ShowerDirection.Dot(PlaneDirection), 
-    fDetProp->ConvertXToTicks(ShowerDirection.X(),  startHit->WireID().planeID())/500000.
+    fGeom->WireCoordinate(ShowerStartPosition, startHit->WireID().planeID())*pitch, 
+    ShowerStartPosition.X()
   };
   
-    for(auto const& hit: hits){ 
+  //Vector of the plane
+  TVector3 PlaneDirection = fGeom->Plane(planeid).GetIncreasingWireDirection();
 
-    //Get the wireID                                                                              
-    const geo::WireID WireID = startHit->WireID();
+  //get the shower 2D direction 
+  TVector2 Shower2DDirection = { 
+    ShowerDirection.Dot(PlaneDirection),
+    ShowerDirection.X()
+  };
+    
+  
+  Shower2DDirection = Shower2DDirection.Unit();
+
+  for(auto const& hit: hits){ 
+    
+    //Get the wireID
+    const geo::WireID WireID = hit->WireID();
 
     if (WireID.asPlaneID() != startWireID.asPlaneID()) {
-      std::cout<<"Test123"<<std::endl;
       break;
     }
     
     //Get the hit Vector.
-    TVector2 hitcoord = { (double) hit->WireID().Wire, hit->PeakTime()};
-
-    //Get the projection vectors for the start position in 2D  
-    TVector2 Shower2DStartPosition = { 
-      fGeom->WireCoordinate(ShowerStartPosition, hit->WireID().planeID()), 
-      fDetProp->ConvertXToTicks(ShowerStartPosition.X(),  hit->WireID().planeID())
-    };
-
-    //Get the Vector of the plane.
-    double vertangle = fGeom->WireAngleToVertical(hit->View(),tpcid);
-
-    //Vector of the plane
-    TVector3 PlaneDirection = {0,TMath::Sin(vertangle), TMath::Cos(vertangle)}; 
-
-    //get the shower 2D direction 
-    TVector2 Shower2DDirection = { 
-      ShowerDirection.Dot(PlaneDirection), 
-      fDetProp->ConvertXToTicks(ShowerDirection.X(),  hit->WireID().planeID())
-    };
-
+    TVector2 hitcoord = HitCoordinates(hit);
+    
     //Order the hits based on the projection
     TVector2 pos = hitcoord - Shower2DStartPosition;
-    double proj = pos.X()*Shower2DDirection.X() + pos.Y()*Shower2DDirection.Y();
-    OrderedHits[proj] = hit; 
-    /*
-    std::cout<<"hit  : "<<hitcoord.X()<<" "<<hitcoord.Y()<<std::endl;
-    std::cout<<"start: "<<Shower2DStartPosition.X()<<" "<<Shower2DStartPosition.Y()<<std::endl;
-    std::cout<<"pos  : "<<pos.X()<<" "<<pos.Y()<<std::endl;
-    std::cout<<"dir  : "<<Shower2DDirection.X()<<" "<<Shower2DDirection.Y()<<std::endl;
-    std::cout<<"proj : "<<proj<<" wire: "<<pos.X()*Shower2DDirection.X()<<" and tick: "<<pos.Y()*Shower2DDirection.Y()<<std::endl;
-    */
+    OrderedHits[pos*Shower2DDirection] = hit; 
   }
 
   //Transform the shower. 
   std::vector<art::Ptr<recob::Hit> > showerHits;
   std::transform(OrderedHits.begin(), OrderedHits.end(), std::back_inserter(showerHits), [](std::pair<double,art::Ptr<recob::Hit> > const& hit) { return hit.second; });
 
-  //Sometimes get the order wrong??? Correct for it here:
+  //Sometimes get the order wrong. Depends on direction compared to the plane Correct for it here:
   art::Ptr<recob::Hit> frontHit = showerHits.front();
   art::Ptr<recob::Hit> backHit  = showerHits.back();
-
-  //Get the hit Vector.                                                                            
-  TVector2 fronthitcoord = { (double) frontHit->WireID().Wire, frontHit->PeakTime()};
+  
+  //Get the hit Vector.  
+  TVector2 fronthitcoord = HitCoordinates(frontHit);
   TVector2 frontpos = fronthitcoord - Shower2DStartPosition;
-  double frontproj = frontpos.X()*Shower2DDirection.X() + frontpos.Y()*Shower2DDirection.Y();
 
+  
   //Get the hit Vector.                                                                            
-  TVector2 backhitcoord = { (double) backHit->WireID().Wire, backHit->PeakTime()};
+  TVector2 backhitcoord  = HitCoordinates(backHit);
   TVector2 backpos = backhitcoord - Shower2DStartPosition;
-  double backproj = backpos.X()*Shower2DDirection.X() + backpos.Y()*Shower2DDirection.Y();
 
-  std::cout<<"Front proj: "<<frontproj<<" and backproj "<<backproj<<std::endl;
+  double frontproj = frontpos*Shower2DDirection;
+  double backproj  = backpos*Shower2DDirection;
   if (TMath::Abs(backproj) < TMath::Abs(frontproj)){
-    std::cout<<"reversing hits"<<std::endl;
-    std::reverse(showerHits.begin(),showerHits.end());   
+   std::reverse(showerHits.begin(),showerHits.end());   
   }
-  
-  // for (auto hit : showerHits){
-  //   TVector2 hitcoord = { (double) hit->WireID().Wire, hit->PeakTime()};
-  //   std::cout<<"hit  : "<<hitcoord.X()<<" "<<hitcoord.Y()<<std::endl;
-  //}
-  
+
   hits = showerHits;
- 
   return;
 }
 
@@ -247,7 +210,13 @@ double shower::SBNShowerAlg::SpacePointCharge(art::Ptr<recob::SpacePoint> sp,
 
 
 TVector2 shower::SBNShowerAlg::HitCoordinates(art::Ptr<recob::Hit> const& hit) {
-  return TVector2(hit->WireID().Wire, hit->PeakTime());
+
+  //Get the pitch
+  const geo::WireID  WireID = hit->WireID();
+  const geo::PlaneID planeid = WireID.asPlaneID();
+  double pitch = fGeom->WirePitch(planeid);
+  
+  return TVector2(WireID.Wire*pitch ,fDetProp->ConvertTicksToX(hit->PeakTime(),planeid));
 }
 
 

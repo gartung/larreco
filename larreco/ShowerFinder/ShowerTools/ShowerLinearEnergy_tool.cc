@@ -43,10 +43,10 @@ namespace ShowerRecoTools {
     ~ShowerLinearEnergy(); 
     
     //Generic Direction Finder
-    int findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
-		    art::Event& Event,
-		    reco::shower::ShowerPropertyHolder& ShowerPropHolder
-		    ) override;
+    int CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+			  art::Event& Event,
+			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
+			  ) override;
   private:
     
     // Define standard art tool interface
@@ -106,10 +106,10 @@ namespace ShowerRecoTools {
 
   }
   
-  int ShowerLinearEnergy::findMetric(const art::Ptr<recob::PFParticle>& pfparticle,
-				     art::Event& Event,
-				     reco::shower::ShowerPropertyHolder& ShowerPropHolder
-				     ){
+  int ShowerLinearEnergy::CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+					    art::Event& Event,
+					    reco::shower::ShowerPropertyHolder& ShowerPropHolder
+					    ){
 
     std::cout << "hello world linear energy" << std::endl;
 
