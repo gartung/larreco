@@ -1,7 +1,7 @@
 #include "showeralgorithms.fcl"
 #include "clusteralgorithms.fcl"
-#include "calorimetry.fcl" 
 #include "showertools.fcl"
+#include "calorimetry.fcl" 
 
 BEGIN_PROLOG
 
