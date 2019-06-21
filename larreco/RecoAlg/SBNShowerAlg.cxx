@@ -92,11 +92,8 @@ void shower::SBNShowerAlg::OrderShowerSpacePoints( std::vector<art::Ptr<recob::S
   //Loop over the spacepoints and get the pojected distance from the vertex.                       
   for(auto const& sp: showersps){
 
-    //Get the position of the spacepoint                                                           
-    TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(sp) - vertex;
-
-    //Get the the projected length                                                                 
-    double len = pos.Dot(direction);
+    // Get the projection of the space point along the direction 
+    double len = SpacePointProjection(sp, vertex, direction);
 
     //Add to the list                                                                              
     OrderedSpacePoints[len] = sp;
@@ -217,6 +214,35 @@ TVector2 shower::SBNShowerAlg::HitCoordinates(art::Ptr<recob::Hit> const& hit) {
   double pitch = fGeom->WirePitch(planeid);
   
   return TVector2(WireID.Wire*pitch ,fDetProp->ConvertTicksToX(hit->PeakTime(),planeid));
+}
+
+double shower::SBNShowerAlg::SpacePointProjection(const art::Ptr<recob::SpacePoint>&sp,
+						 TVector3& vertex, TVector3& direction){
+  
+  // Get the position of the spacepoint                                                           
+  TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(sp) - vertex;
+  
+  // Get the the projected length                                                                 
+  double projLen = pos.Dot(direction);
+
+  return projLen;
+}
+
+double shower::SBNShowerAlg::SpacePointPerpendiular(const art::Ptr<recob::SpacePoint>&sp,
+						    TVector3& vertex, TVector3& direction, 
+						    double proj){
+
+  // Get the position of the spacepoint                                                            
+  TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(sp) - vertex;
+
+  // Take away the projection * distance to find the perpendicular vector
+
+  pos = pos - proj * direction;
+  
+  // Get the the projected length                                                
+  double perpLen = pos.Mag();
+  
+  return perpLen;
 }
 
 

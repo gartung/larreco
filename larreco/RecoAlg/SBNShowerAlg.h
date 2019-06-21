@@ -66,6 +66,14 @@ class shower::SBNShowerAlg {
 
   TVector2 HitCoordinates(art::Ptr<recob::Hit> const& hit);
 
+
+  double SpacePointProjection(const art::Ptr<recob::SpacePoint>&sp, TVector3& vertex, 
+			       TVector3& direction);
+
+  double SpacePointPerpendiular(const art::Ptr<recob::SpacePoint>&sp, TVector3& vertex, 
+				TVector3& direction, double proj);
+
+
  private:
 
   bool fUseCollectionOnly;
