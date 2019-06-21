@@ -4,20 +4,6 @@
 
 BEGIN_PROLOG
 
-standard_emshoweralgtest:
-{
- CalorimetryAlg:        @local::standard_calorimetryalgmc
- ShowerEnergyAlg:       @local::standard_showerenergyalg
- ProjectionMatchingAlg: @local::standard_projectionmatchingalg
- MinTrackLength:  3
- dEdxTrackLength: 3
- SpacePointSize:  0.1
- Nfitpass:        4
- Nfithits:        [50, 30, 20, 20]
- Toler:           [30., 5., 2., 2.]
-}
-
-
 showerpcadirection:{
      tool_type: ShowerPCADirection   
      PFParticleModuleLabel: "pandora"
@@ -81,7 +67,6 @@ showerstartposition:{
 
 showerstandardcalodedx:{
     tool_type: ShowerStandardCalodEdx
-    
     CalorimetryAlg:  @local::standard_calorimetryalgmc
     MaxHitPlane:     true
     MissFirstPoint:  true

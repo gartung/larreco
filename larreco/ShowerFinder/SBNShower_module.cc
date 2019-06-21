@@ -76,6 +76,7 @@ reco::shower::SBNShower::SBNShower(fhicl::ParameterSet const& pset) :
   produces<art::Assns<recob::Shower, recob::Cluster> >();
   produces<art::Assns<recob::Shower, recob::Track> >();
   produces<art::Assns<recob::Shower, recob::SpacePoint> >();
+  produces<art::Assns<recob::Shower, recob::PFParticle> >();
   produces<art::Assns<recob::Track, recob::Hit> >();
 }
 
@@ -107,6 +108,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
   auto hitShowerAssociations  = std::make_unique<art::Assns<recob::Shower, recob::Hit> >();
   auto trackAssociations      = std::make_unique<art::Assns<recob::Shower, recob::Track> >();
   auto spShowerAssociations   = std::make_unique<art::Assns<recob::Shower, recob::SpacePoint> >();
+  auto pfShowerAssociations   = std::make_unique<art::Assns<recob::Shower, recob::PFParticle> >();
   auto hittrackAssociations   = std::make_unique<art::Assns<recob::Track,  recob::Hit> >();
 
   //Ptr makers for the products 
@@ -239,6 +241,9 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     //Associate the trakc and the shower 
     trackAssociations->addSingle(ShowerPtr,InitialTrackPtr);
 
+    //Associate the pfparticle 
+    pfShowerAssociations->addSingle(ShowerPtr,pfp);
+
     //Associate the track and the initial hits.
     for(auto const& hit: InitialTrackHits){
       hittrackAssociations->addSingle(InitialTrackPtr,hit);
@@ -278,7 +283,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
   evt.put(std::move(trackAssociations));
   evt.put(std::move(spShowerAssociations));
   evt.put(std::move(hittrackAssociations));
-
+  evt.put(std::move( pfShowerAssociations));
 }
 
 DEFINE_ART_MODULE(reco::shower::SBNShower)
