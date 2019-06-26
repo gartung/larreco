@@ -136,11 +136,10 @@ namespace reco_tool
     int fitResult=-1;
 
     //recast signal -> y to keep the  catch about negative adc values
-    for(size_t idx=0; idx<signal.size(); idx++){
+    for(size_t idx=0; idx<size_t(roiSize); idx++){
 
-      if(signal[idx]<=0.) y[idx]=0;
-      else y[idx]=signal[idx];
-
+      if(signal[startTime+idx]<=0.) y[idx]=0;
+      else y[idx]=signal[startTime+idx];
     }
 
     int trial=0;
