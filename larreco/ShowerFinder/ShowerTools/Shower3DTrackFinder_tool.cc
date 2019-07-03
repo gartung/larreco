@@ -358,8 +358,11 @@ namespace ShowerRecoTools{
     ShowerPropHolder.SetInitialTrack(track);
     ShowerPropHolder.SetInitialTrackHits(TrackHits);
 
+    fSBNShowerAlg.TrackValidationPlotter(pfparticle,Event,ShowerPropHolder);
+
+
     std::cout <<"#########################################\n"<<
-      "track finder done\n" <<"#########################################\n"<< std::endl;
+      "track finder 3d done\n" <<"#########################################\n"<< std::endl;
 
     return 0;
   }
@@ -372,7 +375,7 @@ namespace ShowerRecoTools{
       double proj = fSBNShowerAlg.SpacePointProjection(spacePoint, showerStartPosition, showerDirection);
       double perp = fSBNShowerAlg.SpacePointPerpendiular(spacePoint, showerStartPosition, showerDirection, proj);
       
-      
+      std::cout<<"Proj: "<<proj<<", Perp: "<<perp<<std::endl;
       if (fForwardHitsOnly){
 	if (proj>0 && proj<fMaxProjectionDist && TMath::Abs(perp)<fMaxPerpendicularDist){
           trackSpacePoints.push_back(spacePoint);

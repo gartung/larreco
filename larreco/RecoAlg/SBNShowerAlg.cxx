@@ -1,8 +1,12 @@
 #include "larreco/RecoAlg/SBNShowerAlg.h"
+
 shower::SBNShowerAlg::SBNShowerAlg(const fhicl::ParameterSet& pset):  
   fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
+  //,tfs(art::ServiceHandle<art::TFileService>());
 {
-  fUseCollectionOnly = pset.get<bool>("UseCollectionOnly");
+  fUseCollectionOnly     = pset.get<bool>("UseCollectionOnly");
+  fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel");
+  fHitModuleLabel        = pset.get<art::InputTag> ("HitModuleLabel");
 }
 
 void shower::SBNShowerAlg::OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& hits, 
@@ -243,6 +247,226 @@ double shower::SBNShowerAlg::SpacePointPerpendiular(const art::Ptr<recob::SpaceP
   double perpLen = pos.Mag();
   
   return perpLen;
+}
+
+
+void shower::SBNShowerAlg::TrackValidationPlotter(const art::Ptr<recob::PFParticle>& pfparticle,
+						  art::Event& Event,
+						  reco::shower::ShowerPropertyHolder& ShowerPropHolder){
+
+  //Function for drawing reco showers to check direction and initial track selection
+
+  // Get run info to make unique canvas names
+  int run    = Event.run();
+  int subRun = Event.subRun();
+  int event  = Event.event();
+  int PFPID  = pfparticle->Self();
+
+  // Create the canvas
+  TString canvasName = Form("canvas_%i_%i_%i_%i",run,subRun,event,PFPID);
+  TCanvas* canvas = tfs->make<TCanvas>(canvasName, canvasName);
+    
+  // Initialise variables
+  float x;
+  float y;
+  float z;
+
+  // Get a bunch of associations (again)
+  // N.B. this is a horribly inefficient way of doing things but as this is only
+  // going to be used to debug I don't care, I would rather have generality in this case
+
+  art::Handle<std::vector<recob::PFParticle> > pfpHandle;
+  if (!Event.getByLabel(fPFParticleModuleLabel, pfpHandle)){
+    throw cet::exception("Shower3DTrackFinderEMShower") << "Could not get the pandora pf particles\
+. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
+    return;
+  }
+
+  // Get the spacepoint - PFParticle assn                                                          
+  art::FindManyP<recob::SpacePoint> fmspp(pfpHandle, Event, fPFParticleModuleLabel);
+  if (!fmspp.isValid()){
+    throw cet::exception("Shower3DTrackFinder") << "Trying to get the spacepoint and failed. Somet\
+hing is not configured correctly. Stopping ";
+    return;
+  }
+
+  // Get the SpacePoints                                                                           
+  std::vector<art::Ptr<recob::SpacePoint> > spacePoints = fmspp.at(pfparticle.key());
+
+  // Get the hit handle                                                                           
+  art::Handle<std::vector<recob::Hit> > hitHandle;
+  if (!Event.getByLabel(fHitModuleLabel, hitHandle)){
+    throw cet::exception("Shower3DTrackFinder") << "Could not configure the hit handle. Something is configured incorrectly. Stopping";
+    return;
+  }
+
+  // Get the hits associated with the space points                                                 
+  art::FindManyP<recob::SpacePoint> fmsph(hitHandle, Event, fPFParticleModuleLabel);
+  if(!fmsph.isValid()){
+    throw cet::exception("Shower3DTrackFinderPosition") << "Spacepoint and hit association not val\
+id. Stopping.";
+    return;
+  }
+
+  //We cannot progress with no spacepoints.                                                        
+  if(spacePoints.size() == 0){
+    //throw cet::exception("Shower3DTrackFinder") << "No Space Points. Stopping.";
+    return;
+  }
+
+  if(!ShowerPropHolder.CheckShowerStartPosition()){
+    mf::LogError("Shower3DTrackFinder") << "Start position not set, returning "<< std::endl;
+    return;
+  }
+  if(!ShowerPropHolder.CheckShowerDirection()){
+    mf::LogError("Shower3DTrackFinder") << "Direction not set, returning "<< std::endl;
+    return;
+  }
+  if(!ShowerPropHolder.CheckInitialTrackHits()){
+    mf::LogError("Shower3DTrackFinder") << "TrackHits not set, returning "<< std::endl;
+    return;
+  }
+
+  // Get info from shower property holder
+  TVector3 showerStartPosition = ShowerPropHolder.GetShowerStartPosition();
+  TVector3 showerDirection     = ShowerPropHolder.GetShowerDirection();
+  std::vector<art::Ptr<recob::Hit> > trackHits=ShowerPropHolder.GetInitialTrackHits();
+  
+  // Create 3D point at vertex, chosed to be origin for ease of use of display
+  double startXYZ[3] = {0,0,0};
+  TPolyMarker3D* startPoly = new TPolyMarker3D(1,startXYZ);
+  
+  // get the space points associated to the initial track hits
+  std::vector<art::Ptr<recob::SpacePoint> > trackSpacePoints;
+  for (auto hit : trackHits){
+    const std::vector<art::Ptr<recob::SpacePoint> > sps = fmsph.at(hit.key());
+    const art::Ptr<recob::SpacePoint> sp = sps.front();
+    trackSpacePoints.push_back(sp);
+  }
+
+  // Get the min and max projections along the direction to know how long to draw 
+  // the direction line
+  double minProj=0;
+  double maxProj=0;
+
+  //initialise counter point
+  int point = 0;
+  // Make 3D points for each spacepoint in the shower
+  TPolyMarker3D* allPoly = new TPolyMarker3D(spacePoints.size());
+  for (auto spacePoint : spacePoints){
+    TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(spacePoint) - showerStartPosition;
+
+    x = pos.X();
+    y = pos.Y();
+    z = pos.Z();
+    allPoly->SetPoint(point,x,y,z);
+    ++point;
+    
+    // Calculate the projection of (point-startpoint) along the direction
+    double proj = shower::SBNShowerAlg::SpacePointProjection(spacePoint, showerStartPosition, 
+							     showerDirection);
+    if (proj>maxProj) {
+      maxProj = proj;
+    } else if (proj<minProj) {
+      minProj = proj ;
+    }
+
+  } // loop over spacepoints
+  
+  // Create TPolyLine3D arrays
+  double xDirPoints[3] = {minProj*showerDirection.X(), 0, maxProj*showerDirection.X()};
+  double yDirPoints[3] = {minProj*showerDirection.Y(), 0, maxProj*showerDirection.Y()};
+  double zDirPoints[3] = {minProj*showerDirection.Z(), 0, maxProj*showerDirection.Z()};
+
+  TPolyLine3D* dirPoly = new TPolyLine3D(3,xDirPoints,yDirPoints,zDirPoints);			 
+
+  point = 0; // re-initialise counter
+  TPolyMarker3D* trackPoly = new TPolyMarker3D(trackSpacePoints.size());
+  for (auto spacePoint : trackSpacePoints){
+    TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(spacePoint) - showerStartPosition;
+    x = pos.X();
+    y = pos.Y();
+    z = pos.Z();
+    trackPoly->SetPoint(point,x,y,z);    
+    ++point;
+  } // loop over track spacepoints
+
+  // TODO: make this a fcl parameter
+  bool fDrawAllPFPs = true;
+
+  // If we want to draw all of the PFParticles in the event
+  if (fDrawAllPFPs){
+    //Get the PFParticles                                                                           
+    art::Handle<std::vector<recob::PFParticle> > pfpHandle;
+    std::vector<art::Ptr<recob::PFParticle> > pfps;
+    if (Event.getByLabel(fPFParticleModuleLabel, pfpHandle)){
+      art::fill_ptr_vector(pfps, pfpHandle);
+    }
+    else {
+      throw cet::exception("SBNShower") << "pfps not loaded." << std::endl;
+    }
+    // initialse counters
+    // Split into tracks and showers to make it clearer what pandora is doing
+    int pfpTrackCounter = 0;
+    int pfpShowerCounter = 0;
+    
+    // initial loop over pfps to find nuber of spacepoints for tracks and showers
+    for(auto const& pfp: pfps){
+      std::vector<art::Ptr<recob::SpacePoint> > sps = fmspp.at(pfp.key());
+      if (pfp->PdgCode()==11) { pfpShowerCounter += sps.size();
+      } else if (pfp->PdgCode()==13) { pfpTrackCounter += sps.size(); }
+    }
+
+    TPolyMarker3D* pfpPolyTrack = new TPolyMarker3D(pfpTrackCounter);
+    TPolyMarker3D* pfpPolyShower = new TPolyMarker3D(pfpShowerCounter);
+
+    // initialise counters
+    int trackPoints  = 0;
+    int showerPoints = 0;
+
+    for(auto const& pfp: pfps){
+      std::vector<art::Ptr<recob::SpacePoint> > sps = fmspp.at(pfp.key());
+      int pdg = pfp->PdgCode(); // Track or shower
+      for (auto sp : sps){
+	TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(sp) - showerStartPosition;
+	x = pos.X();
+	y = pos.Y();
+	z = pos.Z();
+	if (pdg==11){
+	  pfpPolyShower->SetPoint(showerPoints,x,y,z);
+	  ++showerPoints;
+	} else if (pdg==13){
+	  pfpPolyTrack->SetPoint(trackPoints,x,y,z);
+	  ++trackPoints;
+	}
+      } // loop over sps
+    } // loop over pfps
+    pfpPolyShower->SetMarkerStyle(20);
+    pfpPolyShower->SetMarkerColor(4);
+    pfpPolyShower->Draw();
+    pfpPolyTrack->SetMarkerStyle(20);
+    pfpPolyTrack->SetMarkerColor(6);
+    pfpPolyTrack->Draw();
+    
+  } // if (fDrawAllPFPs)
+
+  // Draw all of the things
+  allPoly->SetMarkerStyle(20);
+  allPoly->Draw();
+  trackPoly->SetMarkerStyle(20);
+  trackPoly->SetMarkerColor(2);
+  trackPoly->Draw();
+  startPoly->SetMarkerStyle(21);
+  startPoly->SetMarkerSize(2);
+  startPoly->SetMarkerColor(3);
+  startPoly->Draw();
+  dirPoly->SetLineWidth(1);
+  dirPoly->SetLineColor(6);
+  dirPoly->Draw();
+
+  // Save the canvas. Don't usually need this when using TFileService but this in the alg
+  // not a module and didn't work without this so im going with it. 
+  canvas->Write();
 }
 
 

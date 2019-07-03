@@ -21,6 +21,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Track.h"
+#include "larreco/ShowerFinder/ShowerPropertyHolder.h"
 
 //C++ Includes
 
@@ -34,7 +35,11 @@
 #include "TMath.h"
 #include "TPrincipal.h"
 #include "TVector.h"
-
+#include "TTree.h"
+#include "TCanvas.h"
+#include "TPolyMarker3D.h"
+#include "TPolyLine3D.h"
+#include "TString.h"
 
 namespace shower {
   class SBNShowerAlg;
@@ -73,12 +78,18 @@ class shower::SBNShowerAlg {
   double SpacePointPerpendiular(const art::Ptr<recob::SpacePoint>&sp, TVector3& vertex, 
 				TVector3& direction, double proj);
 
+  void TrackValidationPlotter(const art::Ptr<recob::PFParticle>& pfparticle,
+			      art::Event& Event,
+			      reco::shower::ShowerPropertyHolder& ShowerPropHolder);
 
  private:
 
   bool fUseCollectionOnly;
+  art::InputTag                           fHitModuleLabel;
+  art::InputTag                           fPFParticleModuleLabel;
+  detinfo::DetectorProperties const*      fDetProp = nullptr;
   art::ServiceHandle<geo::Geometry const> fGeom;
-  detinfo::DetectorProperties const* fDetProp = nullptr;
+  art::ServiceHandle<art::TFileService>   tfs;
 
 };
 
