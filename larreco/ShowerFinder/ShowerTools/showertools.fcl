@@ -51,6 +51,7 @@ shower3Dtrackfinder:{
     MaxPerpendicularDist:  1
     ForwardHitsOnly:       true
     ThreeDTrackFinding:    true
+    DebugEVD:              false
     Nfitpass:        4
     Nfithits:        [83, 50, 33, 33]
     Toler:           [50., 8.3, 3.3, 3.3 ]

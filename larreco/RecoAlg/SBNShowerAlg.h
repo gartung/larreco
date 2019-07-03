@@ -78,7 +78,7 @@ class shower::SBNShowerAlg {
   double SpacePointPerpendiular(const art::Ptr<recob::SpacePoint>&sp, TVector3& vertex, 
 				TVector3& direction, double proj);
 
-  void TrackValidationPlotter(const art::Ptr<recob::PFParticle>& pfparticle,
+  void DebugEVD(const art::Ptr<recob::PFParticle>& pfparticle,
 			      art::Event& Event,
 			      reco::shower::ShowerPropertyHolder& ShowerPropHolder);
 

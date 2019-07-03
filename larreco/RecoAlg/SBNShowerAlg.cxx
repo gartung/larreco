@@ -250,9 +250,11 @@ double shower::SBNShowerAlg::SpacePointPerpendiular(const art::Ptr<recob::SpaceP
 }
 
 
-void shower::SBNShowerAlg::TrackValidationPlotter(const art::Ptr<recob::PFParticle>& pfparticle,
+void shower::SBNShowerAlg::DebugEVD(const art::Ptr<recob::PFParticle>& pfparticle,
 						  art::Event& Event,
 						  reco::shower::ShowerPropertyHolder& ShowerPropHolder){
+
+  std::cout<<"Making Debug Event Display"<<std::endl;
 
   //Function for drawing reco showers to check direction and initial track selection
 

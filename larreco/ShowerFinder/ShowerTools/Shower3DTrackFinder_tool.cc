@@ -78,6 +78,7 @@ namespace ShowerRecoTools{
     std::vector<unsigned int>  fNfithits;
     std::vector<double>        fToler;
     bool                       fApplyChargeWeight;
+    bool                       fDebugEVD;
     art::InputTag              fPFParticleModuleLabel;
     detinfo::DetectorProperties const* fDetProp;
     art::ServiceHandle<geo::Geometry> fGeom;
@@ -99,6 +100,7 @@ namespace ShowerRecoTools{
   void Shower3DTrackFinder::configure(const fhicl::ParameterSet& pset)
   {
     fApplyChargeWeight     = pset.get<bool>                      ("ApplyChargeWeight");
+    fDebugEVD              = pset.get<bool>                      ("DebugEVD");  
     fNfitpass              = pset.get<unsigned int>              ("Nfitpass");
     fNfithits              = pset.get<std::vector<unsigned int> >("Nfithits");
     fToler                 = pset.get<std::vector<double> >      ("Toler");
@@ -358,8 +360,10 @@ namespace ShowerRecoTools{
     ShowerPropHolder.SetInitialTrack(track);
     ShowerPropHolder.SetInitialTrackHits(TrackHits);
 
-    fSBNShowerAlg.TrackValidationPlotter(pfparticle,Event,ShowerPropHolder);
-
+    if (fDebugEVD){
+	std::cout<<"Do DebugEVD"<<std::endl;
+	fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerPropHolder);
+    }
 
     std::cout <<"#########################################\n"<<
       "track finder 3d done\n" <<"#########################################\n"<< std::endl;
@@ -375,7 +379,7 @@ namespace ShowerRecoTools{
       double proj = fSBNShowerAlg.SpacePointProjection(spacePoint, showerStartPosition, showerDirection);
       double perp = fSBNShowerAlg.SpacePointPerpendiular(spacePoint, showerStartPosition, showerDirection, proj);
       
-      std::cout<<"Proj: "<<proj<<", Perp: "<<perp<<std::endl;
+      //std::cout<<"Proj: "<<proj<<", Perp: "<<perp<<std::endl;
       if (fForwardHitsOnly){
 	if (proj>0 && proj<fMaxProjectionDist && TMath::Abs(perp)<fMaxPerpendicularDist){
           trackSpacePoints.push_back(spacePoint);
