@@ -137,6 +137,9 @@ private:
   std::map<std::string,std::vector<float> > sDirX_TreeVal;
   std::map<std::string,std::vector<float> > sDirY_TreeVal;
   std::map<std::string,std::vector<float> > sDirZ_TreeVal;
+  std::map<std::string,std::vector<float> > sTrueDirX_TreeVal;
+  std::map<std::string,std::vector<float> > sTrueDirY_TreeVal;
+  std::map<std::string,std::vector<float> > sTrueDirZ_TreeVal;
   std::map<std::string,std::vector<float> > sDirDiff_TreeVal;
   std::map<std::string,std::vector<float> > sStartX_TreeVal;
   std::map<std::string,std::vector<float> > sStartY_TreeVal;
@@ -287,6 +290,9 @@ void ana::ShowerValidation::beginJob() {
   initTree(Tree,"sDirX",sDirX_TreeVal,fShowerModuleLabels);
   initTree(Tree,"sDirY",sDirY_TreeVal,fShowerModuleLabels);
   initTree(Tree,"sDirZ",sDirZ_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"sTrueDirX",sTrueDirX_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"sTrueDirY",sTrueDirY_TreeVal,fShowerModuleLabels);
+  initTree(Tree,"sTrueDirZ",sTrueDirZ_TreeVal,fShowerModuleLabels);
   initTree(Tree,"sDirDiff",sDirDiff_TreeVal,fShowerModuleLabels);
   initTree(Tree,"sStartX",sStartX_TreeVal,fShowerModuleLabels);
   initTree(Tree,"sStartY",sStartY_TreeVal,fShowerModuleLabels);
@@ -307,30 +313,31 @@ void ana::ShowerValidation::beginJob() {
   initTree(Tree,"sBestPlane",sBestPlane_TreeVal,fShowerModuleLabels);
   initTree(Tree,"sGeoProjectionMatched",sGeoProjectionMatched_TreeVal,fShowerModuleLabels);
 
-  initTree(Tree,"pfpNeutrinos",pfpNeutrinos_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpTracks",pfpTracks_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpShowers",pfpShowers_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpVertexDistX",pfpVertexDistX_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpVertexDistY",pfpVertexDistY_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpVertexDistZ",pfpVertexDistZ_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpVertexDistMag",pfpVertexDistMag_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpShowersVertces",pfpShowersVertices_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpProjectionMatched",pfpProjectionMatched_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpHitsComp",pfpHitsComp_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpEnergyComp",pfpEnergyComp_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpHitsPurity",pfpHitsPurity_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpEnergyPurity",pfpEnergyPurity_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpTrackProjectionMatched",pfpTrackProjectionMatched_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpTrackHitsComp",pfpTrackHitsComp_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpTrackEnergyComp",pfpTrackEnergyComp_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpTrackHitsPurity",pfpTrackHitsPurity_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpTrackEnergyPurity",pfpTrackEnergyPurity_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpShowerProjectionMatched",pfpShowerProjectionMatched_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpShowerHitsComp",pfpShowerHitsComp_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpShowerEnergyComp",pfpShowerEnergyComp_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpShowerHitsPurity",pfpShowerHitsPurity_TreeVal,fShowerModuleLabels);
-  initTree(Tree,"pfpShowerEnergyPurity",pfpShowerEnergyPurity_TreeVal,fShowerModuleLabels);
-
+  if (fPFPValidation){
+    initTree(Tree,"pfpNeutrinos",pfpNeutrinos_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpTracks",pfpTracks_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpShowers",pfpShowers_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpVertexDistX",pfpVertexDistX_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpVertexDistY",pfpVertexDistY_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpVertexDistZ",pfpVertexDistZ_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpVertexDistMag",pfpVertexDistMag_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpShowersVertces",pfpShowersVertices_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpProjectionMatched",pfpProjectionMatched_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpHitsComp",pfpHitsComp_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpEnergyComp",pfpEnergyComp_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpHitsPurity",pfpHitsPurity_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpEnergyPurity",pfpEnergyPurity_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpTrackProjectionMatched",pfpTrackProjectionMatched_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpTrackHitsComp",pfpTrackHitsComp_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpTrackEnergyComp",pfpTrackEnergyComp_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpTrackHitsPurity",pfpTrackHitsPurity_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpTrackEnergyPurity",pfpTrackEnergyPurity_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpShowerProjectionMatched",pfpShowerProjectionMatched_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpShowerHitsComp",pfpShowerHitsComp_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpShowerEnergyComp",pfpShowerEnergyComp_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpShowerHitsPurity",pfpShowerHitsPurity_TreeVal,fShowerModuleLabels);
+    initTree(Tree,"pfpShowerEnergyPurity",pfpShowerEnergyPurity_TreeVal,fShowerModuleLabels);
+  }
   initTree(Tree,"eSegmentation",eSegmentation_TreeVal,fShowerModuleLabels);
   initTree(Tree,"eNumTracks",eNumTracks_TreeVal,fShowerModuleLabels);
   initTree(Tree,"eTrueEnergy",eTrueEnergy_TreeVal,fShowerModuleLabels);
@@ -1097,6 +1104,8 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       //The three vector for track length is the shower direction
       //TVector3  TrueShowerDirection = (PositionTrajEnd - PositionTrajStart).Vect();
       TVector3  TrueShowerDirection(MCShowerParticle->Px(), MCShowerParticle->Py(),MCShowerParticle->Pz());
+      TrueShowerDirection = TrueShowerDirection.Unit();
+
 
       //Initial track lentgh of the shower.
       double TrueTrackLength = TrueShowerDirection.Mag();
@@ -1138,18 +1147,24 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       float ShowerDirection_Xdiff = -99999;
       float ShowerDirection_Ydiff = -99999;
       float ShowerDirection_Zdiff = -99999;
+      float ShowerDirection_XTrue = -99999;
+      float ShowerDirection_YTrue = -99999;
+      float ShowerDirection_ZTrue = -99999;
       float ShowerDirection_diff  = -99999;
 
       if(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.Z()*ShowerDirection.Z())) !=0){
 	ShowerDirection_Xdiff = (TrueShowerDirection.Y()*ShowerDirection.Y() + TrueShowerDirection.Z()*ShowerDirection.Z())/(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.Z()*ShowerDirection.Z())));
+	ShowerDirection_XTrue = TrueShowerDirection.X();
       }
 
       if(TMath::Sqrt((TrueShowerDirection.X()*TrueShowerDirection.X() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.X()*ShowerDirection.X() + ShowerDirection.Z()*ShowerDirection.Z())) !=0){
 	ShowerDirection_Ydiff = (TrueShowerDirection.X()*ShowerDirection.X() + TrueShowerDirection.Z()*ShowerDirection.Z())/(TMath::Sqrt((TrueShowerDirection.X()*TrueShowerDirection.X() + TrueShowerDirection.Z()*TrueShowerDirection.Z()))*TMath::Sqrt((ShowerDirection.X()*ShowerDirection.X() + ShowerDirection.Z()*ShowerDirection.Z())));
+	ShowerDirection_YTrue = TrueShowerDirection.Y();
       }
 
       if(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.X()*TrueShowerDirection.X()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.X()*ShowerDirection.X())) !=0){
 	ShowerDirection_Zdiff = (TrueShowerDirection.Y()*ShowerDirection.Y() + TrueShowerDirection.X()*ShowerDirection.X())/(TMath::Sqrt((TrueShowerDirection.Y()*TrueShowerDirection.Y() + TrueShowerDirection.X()*TrueShowerDirection.X()))*TMath::Sqrt((ShowerDirection.Y()*ShowerDirection.Y() + ShowerDirection.X()*ShowerDirection.X())));
+	ShowerDirection_ZTrue = TrueShowerDirection.Z();
       }
 
       if(TrueShowerDirection.Mag() != 0 || ShowerDirection.Mag() !=0){
@@ -1164,12 +1179,18 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	sDirX_TreeVal[fShowerModuleLabel].push_back(ShowerDirection_Xdiff);
 	sDirY_TreeVal[fShowerModuleLabel].push_back(ShowerDirection_Ydiff);
 	sDirZ_TreeVal[fShowerModuleLabel].push_back(ShowerDirection_Zdiff);
+	sTrueDirX_TreeVal[fShowerModuleLabel].push_back(ShowerDirection_XTrue);
+	sTrueDirY_TreeVal[fShowerModuleLabel].push_back(ShowerDirection_YTrue);
+	sTrueDirZ_TreeVal[fShowerModuleLabel].push_back(ShowerDirection_ZTrue);
 	sDirDiff_TreeVal[fShowerModuleLabel].push_back(ShowerDirection_diff);
       }
       else{
 	sDirX_TreeVal[fShowerModuleLabel].push_back(-99999);
 	sDirY_TreeVal[fShowerModuleLabel].push_back(-99999);
 	sDirZ_TreeVal[fShowerModuleLabel].push_back(-99999);
+	sTrueDirX_TreeVal[fShowerModuleLabel].push_back(-99999);
+	sTrueDirY_TreeVal[fShowerModuleLabel].push_back(-99999);
+	sTrueDirZ_TreeVal[fShowerModuleLabel].push_back(-99999);
 	sDirDiff_TreeVal[fShowerModuleLabel].push_back(-99999);
       }
 
@@ -1414,6 +1435,9 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     sDirX_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     sDirY_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     sDirZ_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
+    sTrueDirX_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
+    sTrueDirY_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
+    sTrueDirZ_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     sDirDiff_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     sStartX_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();
     sStartY_TreeVal[fShowerModuleLabels[shwrlab_it]].clear();

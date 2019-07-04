@@ -38,11 +38,26 @@ showertrackfinder:{
     ProjectionMatchingAlg: @local::standard_projectionmatchingalg
 
     Nfitpass:        4
-    Nfithits:        [50, 30, 20, 20]
-    Toler:           [30., 5., 2., 2.]
-    ApplyChargeWeight: false
-    PFParticleModuleLabel: "pandora"
-    
+    Nfithits:        [83, 50, 33, 33]
+    Toler:           [50., 8.3, 3.3, 3.3 ]
+    ApplyChargeWeight: true
+    PFParticleModuleLabel: "pandora"    
+    }
+
+shower3Dtrackfinder:{
+    tool_type: Shower3DTrackFinder
+    SBNShowerAlg:          @local::standard_sbnshoweralg
+    ProjectionMatchingAlg: @local::standard_projectionmatchingalg
+    MaxProjectionDist:     10
+    MaxPerpendicularDist:  1
+    ForwardHitsOnly:       true
+    ThreeDTrackFinding:    true
+    DebugEVD:              false
+    Nfitpass:        4
+    Nfithits:        [83, 50, 33, 33]
+    Toler:           [50., 8.3, 3.3, 3.3 ]
+    ApplyChargeWeight: true
+    PFParticleModuleLabel: "pandora"    
     }
 
 showerstartposition:{
@@ -55,8 +70,8 @@ showerstartposition:{
 showerstandardcalodedx:{
     tool_type: ShowerStandardCalodEdx
     CalorimetryAlg:  @local::standard_calorimetryalgmc
-    MaxHitPlane:     false
-    MissFirstPoint:  false
+    MaxHitPlane:     true
+    MissFirstPoint:  true
     dEdxTrackLength: 3    
 
     }
@@ -77,3 +92,4 @@ showertrackdirection:{
 
 
 END_PROLOG
+
