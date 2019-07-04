@@ -108,7 +108,6 @@ namespace calo{
     double fADCtoEl=1.;
 
     fADCtoEl = fCalAreaConstants[plane];
-
     double dQdx_e = dQdx/fADCtoEl;  // Conversion from ADC/cm to e/cm
     return dEdx_from_dQdx_e(dQdx_e, time, T0);
   }
@@ -116,8 +115,9 @@ namespace calo{
   // ----------------- apply Lifetime and recombination correction.  -----------------//
   double CalorimetryAlg::dEdx_from_dQdx_e(double dQdx_e, double time, double T0) const
   {
-    if (fDoLifeTimeCorrection)
+    if (fDoLifeTimeCorrection){
       dQdx_e *= LifetimeCorrection(time, T0);   // Lifetime Correction (dQdx_e in e/cm)
+    }
     if(fUseModBox) {
       return detprop->ModBoxCorrection(dQdx_e);
     } else {

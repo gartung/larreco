@@ -163,8 +163,9 @@ private:
 
   /// Orders hits along the best fit line through the charge-weighted centre of the hits.
   /// Orders along the line perpendicular to the least squares line if perpendicular is set to true.
+ public:
   std::vector<art::Ptr<recob::Hit> > FindOrderOfHits(std::vector<art::Ptr<recob::Hit> > const& hits, bool perpendicular = false);
-
+ private: 
   /// Takes a map of the shower hits on each plane (ordered from what has been decided to be the start)
   /// Returns a map of the initial track-like part of the shower on each plane
   std::map<int,std::vector<art::Ptr<recob::Hit> > > FindShowerStart(std::map<int,std::vector<art::Ptr<recob::Hit> > > const& orderedShowerMap);

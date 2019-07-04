@@ -5,6 +5,10 @@ shower::SBNShowerAlg::SBNShowerAlg(const fhicl::ParameterSet& pset):
   fUseCollectionOnly = pset.get<bool>("UseCollectionOnly");
 }
 
+
+//Order the shower hits with regards to their projected length onto 
+//the shower direction from the shower start position. This is done
+//in the 2D coordinate system (wire direction, x)
 void shower::SBNShowerAlg::OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& hits, 
 					   TVector3& ShowerStartPosition,
 					   TVector3& ShowerDirection 
@@ -83,6 +87,9 @@ void shower::SBNShowerAlg::OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& h
   return;
 }
 
+
+//Orders the shower spacepoints with regards to there prejected length from 
+//the shower start position in the shower direction.
 void shower::SBNShowerAlg::OrderShowerSpacePoints( std::vector<art::Ptr<recob::SpacePoint> >& 
 						   showersps, TVector3& vertex, 
 						   TVector3& direction){
@@ -118,7 +125,7 @@ TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoi
 
 }
 
-
+//Returns the vector to the shower centre and the total charge of the shower.
 TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoint> >& showersps,
 					    art::FindManyP<recob::Hit>& fmh, float& totalCharge){
 
@@ -141,14 +148,20 @@ TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoi
       if(fUseCollectionOnly){
 	if(hit->SignalType() == geo::kCollection){
 	  charge = hit->Integral();
+	  //Correct for the lifetime: Need to do other detproperites
+	  charge *= TMath::Exp((fDetProp->SamplingRate() * (hit)->PeakTime()) / (fDetProp->ElectronLifetime()*1e3));
 	  break;
 	}
       }
 
       //Check if any of the points are not withing 2 sigma.
       if(!fUseCollectionOnly){
-	charge += hit->Integral();
-	charge2 += hit->Integral() * hit->Integral();
+	
+	//Correct for the lifetime FIX: Need  to do other detproperties somehow
+	double Q = hit->Integral()*TMath::Exp( (fDetProp->SamplingRate() * (hit)->PeakTime()) / (fDetProp->ElectronLifetime()*1e3));
+
+	charge  += Q;
+	charge2 += Q*Q;
       }
     }
 
@@ -163,18 +176,29 @@ TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoi
       }
 
       charge = 0;
+      int n = 0;
       for(auto const& hit: hits){
-	if(hit->Integral() > (mean - 2*rms) && hit->Integral() < (mean + 2*rms))
-	  charge += hit->Integral();
+	double lifetimecorrection =  TMath::Exp((fDetProp->SamplingRate() * (hit)->PeakTime()) / (fDetProp->ElectronLifetime()*1e3));
+	if(hit->Integral()*lifetimecorrection > (mean - 2*rms) && hit->Integral()*lifetimecorrection < (mean + 2*rms)){
+	  charge += hit->Integral()*lifetimecorrection;
+	  ++n;
+	}
       }
-    }
 
+      if(n==0){
+	mf::LogWarning("SBNShowerAlg") << 
+	  "no points used to make the charge value. \n";
+      }
+
+      charge /= n;
+    }
+  
     chargePoint += charge * pos;
     totalCharge += charge;
 
     if(charge == 0){
-      mf::LogWarning("ShowerStartPosition") << 
-	"Averaged charge, within 2 sigma, for a spacepoint is zero, Maybe this not a good method";
+      mf::LogWarning("SBNShowerAlg") << 
+	"Averaged charge, within 2 sigma, for a spacepoint is zero, Maybe this not a good method. \n";
     }
   }
     
@@ -184,7 +208,7 @@ TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoi
  
 }
 
-
+//Return the spacepoint position in 3D cartesian coordinates.
 TVector3 shower::SBNShowerAlg::SpacePointPosition(const art::Ptr<recob::SpacePoint>& sp){
 
   const Double32_t* sp_xyz = sp->XYZ();
@@ -192,6 +216,8 @@ TVector3 shower::SBNShowerAlg::SpacePointPosition(const art::Ptr<recob::SpacePoi
   return sp_postiion;
 }
 
+
+//Return the charge of the spacepoint in ADC. 
 double shower::SBNShowerAlg::SpacePointCharge(art::Ptr<recob::SpacePoint> sp,
 					      art::FindManyP<recob::Hit>& fmh){
 
@@ -203,12 +229,29 @@ double shower::SBNShowerAlg::SpacePointCharge(art::Ptr<recob::SpacePoint> sp,
     Charge += hit->Integral();
   }
 
-  Charge /= hits.size();
+  Charge /= (float) hits.size();
 
   return Charge;
 }
 
+//Return the spacepoint time.
+double shower::SBNShowerAlg::SpacePointTime(art::Ptr<recob::SpacePoint> sp,
+					    art::FindManyP<recob::Hit>& fmh){
 
+  double Time = 0;
+  
+  //Avergae over the hits 
+  std::vector<art::Ptr<recob::Hit> > hits = fmh.at(sp.key());
+  for(auto const& hit: hits){
+    Time += hit->PeakTime();
+  }
+
+  Time /= (float) hits.size();
+  return Time;
+}
+
+
+//Return the cooordinates of the hit in cm in wire direction and x.
 TVector2 shower::SBNShowerAlg::HitCoordinates(art::Ptr<recob::Hit> const& hit) {
 
   //Get the pitch

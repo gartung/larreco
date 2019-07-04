@@ -43,7 +43,7 @@ namespace ShowerRecoTools {
     ~ShowerLinearEnergy(); 
     
     //Generic Direction Finder
-    int CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+    int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 			  art::Event& Event,
 			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
 			  ) override;
@@ -106,7 +106,7 @@ namespace ShowerRecoTools {
 
   }
   
-  int ShowerLinearEnergy::CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+  int ShowerLinearEnergy::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 					    art::Event& Event,
 					    reco::shower::ShowerPropertyHolder& ShowerPropHolder
 					    ){

@@ -28,7 +28,7 @@ namespace ShowerRecoTools{
     virtual ~IShowerTool() noexcept = default;
       
     //Generic Energy Finder
-    virtual int CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+    virtual int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 				  art::Event& Event,
 				  reco::shower::ShowerPropertyHolder& ShowerPropHolder
 				  ) = 0;
