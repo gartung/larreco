@@ -1,4 +1,4 @@
-
+add_subdirectory(ShowerTools)
 add_subdirectory(ShowerReco3D)
 add_subdirectory(job)
 
@@ -26,6 +26,7 @@ art_make(
 			art_Persistency_Common
 			art_Utilities
 			canvas
+			larreco_RecoAlg_MCRecoUtils
 			${MF_MESSAGELOGGER}
 			
 	                ${FHICLCPP}

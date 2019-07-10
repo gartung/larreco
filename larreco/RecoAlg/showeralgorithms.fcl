@@ -65,4 +65,26 @@ dune10kt_showerenergy:
   ZIntercept: -0.0191387
 }
 
+standard_emshoweralgtest:
+{
+ CalorimetryAlg:        @local::standard_calorimetryalgmc
+ ShowerEnergyAlg:       @local::standard_showerenergyalg
+ ProjectionMatchingAlg: @local::standard_projectionmatchingalg
+ MinTrackLength:  3
+ dEdxTrackLength: 3
+ SpacePointSize:  0.1
+ Nfitpass:        4
+ Nfithits:        [50, 30, 20, 20]
+ Toler:           [30., 5., 2., 2.]
+}
+
+
+standard_sbnshoweralg:
+{
+    UseCollectionOnly: false
+    HitModuleLabel:        "linecluster"
+    PFParticleModuleLabel: "pandora"
+    EMShowerAlg:       @local::standard_emshoweralgtest
+}
+
 END_PROLOG

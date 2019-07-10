@@ -1,5 +1,6 @@
 #include "showeralgorithms.fcl"
 #include "clusteralgorithms.fcl"
+#include "showertools.fcl"
 #include "calorimetry.fcl" 
 
 BEGIN_PROLOG
@@ -122,6 +123,45 @@ standard_neutrinoshowereff:
     FidVolCutX:		      10
     FidVolCutY:		      10
     FidVolCutZ:		      10	
+}
+
+
+standard_showervalidation: {
+ module_type: "ShowerValidation"
+ GenieGenModuleLabel:      "generator"
+ LArGeantModuleLabel:      "largeant"
+ HitsModuleLabel:          "gaushit"
+ TrackModuleLabel:         "pandoraTrack"
+ PFParticleLabel:          "pandora"
+ PFPValidation:             true
+ ShowerModuleLabels:        ["emshower"]
+ HitModuleLabels:           ["gaushit"]
+ UseBiggestShower:          true
+ DrawCanvases:              false
+ FillOnlyClosestShower:     true
+ RemoveNonContainedParticles: true
+ Verbose:                   0
+ MinHitSize:                20
+ SimEnergyCut:              0.1 
+ DensityCut:                1.2
+ MaxSimEnergy:              1500
+}
+
+standard_sbnshower: {
+ 
+    module_type: "SBNShower"
+
+    ShowerFinderTools: [
+         @local::showerstartposition,
+         @local::showerpcadirection,
+         @local::showerlinearenergy,
+         @local::showertrackfinder,
+         @local::showerstandardcalodedx
+          ]
+
+    PFParticleModuleLabel:      "pandora"
+    SecondInteration:           false
+    AllowPartialShowers:        false
 }
 
 

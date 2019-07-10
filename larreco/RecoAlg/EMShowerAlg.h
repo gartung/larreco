@@ -190,12 +190,12 @@ private:
   /// Takes initial track hits from multiple views and forms a track object which best represents the start of the shower
   std::unique_ptr<recob::Track> MakeInitialTrack(std::map<int,std::vector<art::Ptr<recob::Hit> > > const& initialHitsMap,
 						 std::map<int,std::vector<art::Ptr<recob::Hit> > > const& showerHitsMap);
-
+ public: 
   /// Takes the hits associated with a shower and orders then so they follow the direction of the shower
   void OrderShowerHits(std::vector<art::Ptr<recob::Hit> > const& shower,
 		       std::vector<art::Ptr<recob::Hit> >& orderedShower,
 		       art::Ptr<recob::Vertex> const& vertex);
-
+ private: 
   /// Projects a 3D point (units [cm]) onto a 2D plane
   /// Returns 2D point (units [cm])
   TVector2 Project3DPointOntoPlane(TVector3 const& point, int plane, int cryostat = 0);
