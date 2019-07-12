@@ -11,3 +11,4 @@ art_make(
 install_headers()
 install_source()
 
+include_directories( $ENV{TENSORFLOW_INC}/absl )
