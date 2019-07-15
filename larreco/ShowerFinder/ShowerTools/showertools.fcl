@@ -9,8 +9,9 @@ showerpcadirection:{
      PFParticleModuleLabel: "pandora"
      NSegments: 6
      UseStartPosition: true
-     ChargeWeighted: true
-     SBNShowerAlg: @local::standard_sbnshoweralg
+     ChargeWeighted:   true
+     SBNShowerAlg:     @local::standard_sbnshoweralg
+     CalorimetryAlg:   @local::standard_calorimetryalgmc
      }
 
 showerlinearenergy:{
@@ -74,6 +75,23 @@ showerstandardcalodedx:{
     dEdxTrackLength: 3    
 
     }
+
+showertrackhitdirection:{
+    tool_type: ShowerTrackHitDirection
+    UsePandoraVertex: true  
+    UseStartPosition: true 
+    HitModuleLabel: "linecluster"
+    PFParticleModuleLabel: "pandora"
+}
+
+showertrackdirection:{
+    tool_type: ShowerTrackDirection
+    SBNShowerAlg:          @local::standard_sbnshoweralg
+    UsePandoraVertex: true  
+    UseStartPosition: true 
+    DebugEVD:         false
+}
+
 
 END_PROLOG
 

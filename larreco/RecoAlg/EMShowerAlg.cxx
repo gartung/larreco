@@ -28,15 +28,15 @@ shower::EMShowerAlg::EMShowerAlg(fhicl::ParameterSet const& pset) : fDetProp(lar
   }
   fDetector = pset.get<std::string>("Detector","dune35t");
 
-  hTrueDirection = tfs->make<TH1I>("trueDir","",2,0,2);
+  //  hTrueDirection = tfs->make<TH1I>("trueDir","",2,0,2);
 
   //this->MakePicture();
   // tmp
   fMakeGradientPlot = pset.get<bool>("MakeGradientPlot",false);
   fMakeRMSGradientPlot = pset.get<bool>("MakeRMSGradientPlot",false);
   fNumShowerSegments = pset.get<int>("NumShowerSegments",4);
-  hNumHitsInSegment = tfs->make<TProfile>("NumHitsInSegment","",100,0,100);
-  hNumSegments = tfs->make<TProfile>("NumSegments","",100,0,100);
+  //  hNumHitsInSegment = tfs->make<TProfile>("NumHitsInSegment","",100,0,100);
+  //  hNumSegments = tfs->make<TProfile>("NumSegments","",100,0,100);
 
 }
 
@@ -666,6 +666,8 @@ std::vector<art::Ptr<recob::Hit> > shower::EMShowerAlg::FindOrderOfHits(std::vec
   // Find a rough shower 'direction'
   TVector2 direction = ShowerDirection(hits);
 
+  std::cout << "direction.X(): " << direction.X() << " Y: " <<  direction.Y() << std::endl; 
+
   if (perpendicular)
     direction = direction.Rotate(TMath::Pi()/2);
 
@@ -1062,7 +1064,7 @@ recob::Shower shower::EMShowerAlg::MakeShower(art::PtrVector<recob::Hit> const& 
   }
   //std::cout<<pl0<<" "<<pl1<<std::endl;
 //  if (pl0!=-1&&pl1!=-1) {
-//    pl0 = 1;
+//    pl0 = 1;§
 //    pl1 = 2;
 //  }
   if (pl0!=-1&&pl1!=-1
@@ -1173,6 +1175,7 @@ recob::Shower shower::EMShowerAlg::MakeShower(art::PtrVector<recob::Hit> const& 
 	}
       }
       iok = 0;
+
       if (fDebug > 1) {
 	std::cout << "Best plane is " << bestPlane << std::endl;
 	std::cout << "dE/dx for each plane is: " << dEdx[0] << ", " << dEdx[1] << " and " << dEdx[2] << std::endl;
@@ -1595,8 +1598,9 @@ void shower::EMShowerAlg::FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> 
       //std::cout<<i<<" "<<hit->WireID()<<" "<<tpc<<std::endl;
       if (hit->WireID().TPC==tpc.TPC){
 	TVector2 coord = HitCoordinates(hit);
-	//std::cout<<i<<" "<<hit->WireID()<<" "<<hit->PeakTime()<<std::endl;
+	//	std::cout<<i<<" "<<hit->WireID()<<" "<<hit->PeakTime()<<std::endl;
 	if (i==0||(std::abs((coord.Y()-(parm[0]+coord.X()*parm[1]))*cos(atan(parm[1])))<fToler[i-1])||fitok==1){
+	  //	  std::cout << "EM Shower passed" << std::endl;
 	  ++nhits;
 	  if (nhits==fNfithits[i]+1) break;
 	  wfit.push_back(coord.X());
@@ -1612,7 +1616,6 @@ void shower::EMShowerAlg::FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> 
 	}
       }
     }
-    std::cout<<wfit.size()<<std::endl;
     if (i<fNfitpass-1&&wfit.size()){
       fitok = WeightedFit(wfit.size(), &wfit[0], &tfit[0], &cfit[0], &parm[0]);
     }

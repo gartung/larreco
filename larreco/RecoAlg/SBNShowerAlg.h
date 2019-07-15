@@ -69,6 +69,8 @@ class shower::SBNShowerAlg {
 
   double SpacePointCharge(art::Ptr<recob::SpacePoint> sp, art::FindManyP<recob::Hit>& fmh);
 
+  double SpacePointTime(art::Ptr<recob::SpacePoint> sp, art::FindManyP<recob::Hit>& fmh);
+
   TVector2 HitCoordinates(art::Ptr<recob::Hit> const& hit);
 
 

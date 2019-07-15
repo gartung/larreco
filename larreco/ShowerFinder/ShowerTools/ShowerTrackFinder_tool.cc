@@ -48,7 +48,7 @@ namespace ShowerRecoTools{
     ~ShowerTrackFinder(); 
     
     //Generic Track Finder
-    int CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+    int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 			  art::Event& Event,
 			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
 			  ) override;
@@ -103,7 +103,7 @@ namespace ShowerRecoTools{
   }
   
   
-  int ShowerTrackFinder::CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+  int ShowerTrackFinder::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 					   art::Event& Event,
 					   reco::shower::ShowerPropertyHolder& ShowerPropHolder
 					   ){
@@ -282,7 +282,7 @@ namespace ShowerRecoTools{
 
       xyz.emplace_back(recob::tracking::Point_t(spt.X(), spt.Y(), spt.Z()));
       
-      TVector3 dir = spt - spt1;
+      TVector3 dir = -(spt - spt1);
       
       pxpypz.emplace_back(recob::tracking::Vector_t(dir.X(), dir.Y(), dir.Z()));
       

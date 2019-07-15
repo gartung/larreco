@@ -170,7 +170,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
       std::cout << "on next tool:" <<  fShowerToolNames[i]  << std::endl;
       //Calculate the metric
-      int err = fShowerTool->CaclulateProperty(pfp,evt,sprop_holder);
+      int err = fShowerTool->CalculateProperty(pfp,evt,sprop_holder);
       if(err){
 	mf::LogError("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
 	if(!fAllowPartialShowers && !fSecondInteration) break;
@@ -185,7 +185,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
       for(auto const& fShowerTool: fShowerTools){
 	//Calculate the metric
-	int err = fShowerTool->CaclulateProperty(pfp,evt,sprop_holder);
+	int err = fShowerTool->CalculateProperty(pfp,evt,sprop_holder);
       
 	if(err){
 	  mf::LogError("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;

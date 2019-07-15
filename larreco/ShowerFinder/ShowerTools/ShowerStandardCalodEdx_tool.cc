@@ -41,7 +41,7 @@ namespace ShowerRecoTools{
     ~ShowerStandardCalodEdx(); 
     
     //Generic Direction Finder
-    int CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+    int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 			  art::Event& Event,
 			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
 			  ) override;
@@ -78,7 +78,7 @@ namespace ShowerRecoTools{
     fMissFirstPoint  = pset.get<bool> ("MissFirstPoint"); 
   }
   
-  int ShowerStandardCalodEdx::CaclulateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+  int ShowerStandardCalodEdx::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 						art::Event& Event,
 						reco::shower::ShowerPropertyHolder& ShowerPropHolder
 						){
