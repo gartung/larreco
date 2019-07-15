@@ -86,8 +86,10 @@ showertrackhitdirection:{
 
 showertrackdirection:{
     tool_type: ShowerTrackDirection
+    SBNShowerAlg:          @local::standard_sbnshoweralg
     UsePandoraVertex: true  
     UseStartPosition: true 
+    DebugEVD:         false
 }
 
 

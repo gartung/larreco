@@ -310,6 +310,8 @@ void shower::SBNShowerAlg::DebugEVD(const art::Ptr<recob::PFParticle>& pfparticl
   // Create the canvas
   TString canvasName = Form("canvas_%i_%i_%i_%i",run,subRun,event,PFPID);
   TCanvas* canvas = tfs->make<TCanvas>(canvasName, canvasName);
+
+  std::cout << "canvasName: " << canvasName << std::endl;
     
   // Initialise variables
   float x;
@@ -384,15 +386,19 @@ id. Stopping.";
   // get the space points associated to the initial track hits
   std::vector<art::Ptr<recob::SpacePoint> > trackSpacePoints;
   for (auto hit : trackHits){
+
     const std::vector<art::Ptr<recob::SpacePoint> > sps = fmsph.at(hit.key());
-    const art::Ptr<recob::SpacePoint> sp = sps.front();
-    trackSpacePoints.push_back(sp);
+
+    if(sps.size() > 0){
+      const art::Ptr<recob::SpacePoint> sp = sps.front();
+      trackSpacePoints.push_back(sp);
+    }
   }
 
   // Get the min and max projections along the direction to know how long to draw 
   // the direction line
-  double minProj=0;
-  double maxProj=0;
+  double minProj=-1;
+  double maxProj=1;
 
   //initialise counter point
   int point = 0;
