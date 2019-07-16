@@ -132,17 +132,18 @@ namespace ShowerRecoTools{
     //If there is only one vertex good news we just say that is the start of the shower.
     if(vtx_cand.size() == 1){
       art::Ptr<recob::Vertex> StartPositionVertex = vtx_cand[0];
-      double xyz[3];
+      double xyz[3] = {-999,-999,-999};
       StartPositionVertex->XYZ(xyz);
       TVector3 ShowerStartPosition = {xyz[0], xyz[1], xyz[2]};
-      ShowerPropHolder.SetShowerStartPosition(ShowerStartPosition);
+      ShowerPropHolder.SetProperty(ShowerStartPosition,"ShowerStartPosition");
       return 0;
     }
 
     //If we there have none then use the direction to find the neutrino vertex 
-    if(ShowerPropHolder.CheckShowerDirection()){
+    if(ShowerPropHolder.CheckProperty("ShowerDirection")){
 
-      TVector3 ShowerDirection = ShowerPropHolder.GetShowerDirection();
+      TVector3 ShowerDirection = {-999, -999, -999};
+      ShowerPropHolder.GetProperty("ShowerDirection",ShowerDirection);
       
       art::FindManyP<recob::SpacePoint> fmspp(pfpHandle, Event, fPFParticleModuleLabel);
 
@@ -165,7 +166,7 @@ namespace ShowerRecoTools{
 
       //Set the start position.
       TVector3 ShowerStartPosition = fSBNShowerAlg.SpacePointPosition(spacePoints_pfp[0]);
-      ShowerPropHolder.SetShowerStartPosition(ShowerStartPosition);
+      ShowerPropHolder.SetProperty(ShowerStartPosition,"ShowerStartPosition");
       return 0; 
     }
     

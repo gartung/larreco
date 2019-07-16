@@ -16,7 +16,7 @@
 
 //LArSoft Includes 
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/ShowerFinder/ShowerPropertyHolder.h"
+#include "larreco/ShowerFinder/ShowerPropertyHolder.hh"
 
 #include <string>
 

@@ -3,7 +3,13 @@
 //### Author: Dominic Barker                                                   ###
 //### Date: 15.05.19                                                           ###
 //### Description: Generic Shower Charaterisation module which allows the      ###
-//###              the user choose which tool to calculate shower metrics      ###
+//###              the user choose which tool to calculate shower metrics.     ###
+//###              For a complete shower the tools must define (use the exact  ###
+//###              name) the following  metrics in the shower property holder: ###
+//###              ShowerStartPosition                                         ###
+//###              ShowerDirection                                             ###
+//###              ShowerEnergy                                                ###
+//###              ShowerdEdx                                                  ###
 //################################################################################
 
 //Framework includes
@@ -31,7 +37,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
-#include "larreco/ShowerFinder/ShowerPropertyHolder.h"
+#include "larreco/ShowerFinder/ShowerPropertyHolder.hh"
 
 //Root Includes
 #include "TVector3.h"
@@ -197,30 +203,48 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
     if(!fAllowPartialShowers){
       bool accept = true; 
-      accept = accept & sprop_holder.CheckShowerStartPosition();
-      accept = accept & sprop_holder.CheckShowerDirection();
-      accept = accept & sprop_holder.CheckShowerEnergy();
-      accept = accept & sprop_holder.CheckShowerdEdx();
-      accept = accept & sprop_holder.CheckInitialTrack();
+      accept = accept & sprop_holder.CheckProperty("ShowerStartPosition");
+      accept = accept & sprop_holder.CheckProperty("ShowerDirection");
+      accept = accept & sprop_holder.CheckProperty("ShowerEnergy");
+      accept = accept & sprop_holder.CheckProperty("ShowerdEdx");
+      accept = accept & sprop_holder.CheckProperty("ShowerInitialTrack");
+      accept = accept & sprop_holder.CheckProperty("ShowerInitialTrackHits"); 
       if(!accept){continue;}
     }
 
 
     //Get the properties 
-    const TVector3                           ShowerStartPosition  = sprop_holder.GetShowerStartPosition();
-    const TVector3                           ShowerDirection      = sprop_holder.GetShowerDirection();
-    const std::vector<double>                ShowerEnergy         = sprop_holder.GetShowerEnergy();
-    const std::vector<double>                ShowerdEdx           = sprop_holder.GetShowerdEdx();
-    const recob::Track                       InitialTrack         = sprop_holder.GetInitialTrack();
-    const std::vector<art::Ptr<recob::Hit> > InitialTrackHits     = sprop_holder.GetInitialTrackHits(); 
-    const int                                BestPlane            = sprop_holder.GetBestPlane();
+    TVector3                           ShowerStartPosition  = {-999,-999,-999};
+    TVector3                           ShowerDirection      = {-999,-999,-999};
+    std::vector<double>                ShowerEnergy         = {-999,-999,-999};
+    std::vector<double>                ShowerdEdx           = {-999,-999,-999};
+    recob::Track                       InitialTrack;    
+    std::vector<art::Ptr<recob::Hit> > InitialTrackHits;     
+    int                                BestPlane            = -999;
     
+    int err = 0;
+    if(sprop_holder.CheckProperty("ShowerStartPosition"))    err += sprop_holder.GetProperty("ShowerStartPosition",ShowerStartPosition);
+    if(sprop_holder.CheckProperty("ShowerDirection"))        err += sprop_holder.GetProperty("ShowerDirection",ShowerDirection);
+    if(sprop_holder.CheckProperty("ShowerEnergy"))           err += sprop_holder.GetProperty("ShowerEnergy",ShowerEnergy);
+    if(sprop_holder.CheckProperty("ShowerdEdx"))             err += sprop_holder.GetProperty("ShowerdEdx",ShowerdEdx);
+    if(sprop_holder.CheckProperty("ShowerInitialTrack"))     err += sprop_holder.GetProperty("ShowerInitialTrack",InitialTrack);
+    if(sprop_holder.CheckProperty("ShowerInitialTrackHits")) err += sprop_holder.GetProperty("ShowerInitialTrackHits",InitialTrackHits);
+    if(sprop_holder.CheckProperty("ShowerBestPlane"))        err += sprop_holder.GetProperty("ShowerBestPlane",BestPlane);
+
     //To Do
-    const TVector3            ShowerDirectionErr              = sprop_holder.GetShowerDirectionErr();
-    const TVector3            ShowerStartPositionErrvertexErr = sprop_holder.GetShowerStartPositionErr();
-    const std::vector<double> ShowerEnergyErr                 = sprop_holder.GetShowerEnergyErr();
-    const std::vector<double> ShowerdEdxErr                   = sprop_holder.GetShowerdEdxErr(); ;
-    
+    TVector3                           ShowerStartPositionErr  = {-999,-999,-999};
+    TVector3                           ShowerDirectionErr      = {-999,-999,-999};
+    std::vector<double>                ShowerEnergyErr         = {-999,-999,-999};
+    std::vector<double>                ShowerdEdxErr           = {-999,-999,-999};
+    if(sprop_holder.CheckPropertyError("ShowerStartPosition"))   err += sprop_holder.GetPropertyError("ShowerStartPosition", ShowerStartPositionErr);
+    if(sprop_holder.CheckPropertyError("ShowerDirection"))       err += sprop_holder.GetPropertyError("ShowerDirection",ShowerDirectionErr);
+    if(sprop_holder.CheckPropertyError("ShowerEnergy"))          err += sprop_holder.GetPropertyError("ShowerEnergy",ShowerEnergyErr);
+    if(sprop_holder.CheckPropertyError("ShowerdEdx"))            err += sprop_holder.GetPropertyError("ShowerdEdx",ShowerdEdx);
+
+    if(err){
+      throw cet::exception("SBNShower")  << "Errorin SBNShower Module. A Check on a shower property failed " << std::endl;
+    }
+
     //Check the shower
     std::cout<<"Shower Vertex: X:"<<ShowerStartPosition.X()<<" Y: "<<ShowerStartPosition.Y()<<" Z: "<<ShowerStartPosition.Z()<<std::endl;
     std::cout<<"Shower Direction: X:"<<ShowerDirection.X()<<" Y: "<<ShowerDirection.Y()<<" Z: "<<ShowerDirection.Z()<<std::endl;
@@ -238,7 +262,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     initialtracks->push_back(InitialTrack);
     art::Ptr<recob::Track> InitialTrackPtr(makeTrackPtr(initialtracks->size() - 1));
   
-    //Associate the trakc and the shower 
+    //Associate the track and the shower 
     trackAssociations->addSingle(ShowerPtr,InitialTrackPtr);
 
     //Associate the pfparticle 
@@ -272,7 +296,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     }
 
     //Reset the showerproperty holder.
-    sprop_holder.clear();
+    sprop_holder.ClearAll();
   }
   
   // Put in event
@@ -283,7 +307,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
   evt.put(std::move(trackAssociations));
   evt.put(std::move(spShowerAssociations));
   evt.put(std::move(hittrackAssociations));
-  evt.put(std::move( pfShowerAssociations));
+  evt.put(std::move(pfShowerAssociations));
 }
 
 DEFINE_ART_MODULE(reco::shower::SBNShower)

@@ -21,7 +21,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Track.h"
-#include "larreco/ShowerFinder/ShowerPropertyHolder.h"
+#include "larreco/ShowerFinder/ShowerPropertyHolder.hh"
 
 //C++ Includes
 
