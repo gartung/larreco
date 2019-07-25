@@ -255,15 +255,13 @@ namespace ShowerRecoTools {
     for(auto& sp: sps){
       
       TVector3 sp_position = fSBNShowerAlg.SpacePointPosition(sp);
-
       
-
       float wht = 1; 
 
+      //Normalise the spacepoint position. 
+      sp_position = sp_position - ShowerCentre;
+      
       if(fChargeWeighted){
-
-	//Normalise the spacepoint position. 
-	sp_position = sp_position - ShowerCentre;
 
 	//Get the charge.
 	float Charge = fSBNShowerAlg.SpacePointCharge(sp,fmh);

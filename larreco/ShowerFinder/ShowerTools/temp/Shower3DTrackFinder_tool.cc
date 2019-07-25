@@ -381,13 +381,13 @@ namespace ShowerRecoTools{
       
       //std::cout<<"Proj: "<<proj<<", Perp: "<<perp<<std::endl;
       if (fForwardHitsOnly){
-	if (proj>0 && proj<fMaxProjectionDist && TMath::Abs(perp)<fMaxPerpendicularDist){
+    	if (proj>0 && proj<fMaxProjectionDist && TMath::Abs(perp)<fMaxPerpendicularDist){
           trackSpacePoints.push_back(spacePoint);
-	}
+	    }
       } else {
-	if (TMath::Abs(proj)<fMaxProjectionDist && TMath::Abs(perp)<fMaxPerpendicularDist){
-	  trackSpacePoints.push_back(spacePoint);
-	}
+        if (TMath::Abs(proj)<fMaxProjectionDist && TMath::Abs(perp)<fMaxPerpendicularDist){
+	    trackSpacePoints.push_back(spacePoint);
+	    }
       }
     }
 

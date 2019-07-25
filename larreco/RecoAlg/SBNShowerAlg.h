@@ -13,7 +13,6 @@
 #include "canvas/Persistency/Common/FindManyP.h"
 
 //LArSoft Includes
-
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larcore/Geometry/Geometry.h"
@@ -21,16 +20,14 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Track.h"
-#include "larreco/ShowerFinder/ShowerPropertyHolder.hh"
+#include "larreco/ShowerFinder/ShowerElementHolder.hh"
 
 //C++ Includes
-
 #include <iostream>
 #include <vector>
 #include <map> 
 
 //Root Includes
-
 #include "TVector3.h"
 #include "TMath.h"
 #include "TPrincipal.h"
@@ -82,7 +79,7 @@ class shower::SBNShowerAlg {
 
   void DebugEVD(const art::Ptr<recob::PFParticle>& pfparticle,
 			      art::Event& Event,
-			      reco::shower::ShowerPropertyHolder& ShowerPropHolder);
+			      reco::shower::ShowerElementHolder& ShowerEleHolder);
 
  private:
 
