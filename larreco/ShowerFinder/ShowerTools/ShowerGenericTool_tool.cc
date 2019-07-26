@@ -25,7 +25,7 @@
 namespace ShowerRecoTools {
 
   
-  class ShowerGenericTool:IShowerTool {
+  class ShowerGenericTool: public IShowerTool {
     
   public:
     
@@ -34,7 +34,7 @@ namespace ShowerRecoTools {
     ~ShowerGenericTool(); 
     
     //Generic Direction Finder
-    int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
 			  art::Event& Event,
 			  reco::shower::ShowerElementHolder& ShowerEleHolder
 			  ) override;
@@ -48,8 +48,8 @@ namespace ShowerRecoTools {
     void InitialiseProducers() override;
 
     //Function to add the assoctions
-    int AddAssociations(art::Event& Event,
-			reco::shower::ShowerElementHolder& ShowerEleHolder) override;
+    void AddAssociations(art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder) override;
 
 
 
@@ -69,26 +69,27 @@ namespace ShowerRecoTools {
   {
   }
 
-  void ShowerStartPosition::InitialiseProducers(){
+  void ShowerGenericTool::InitialiseProducers(){
     if(producerPtr == NULL){
-      mf::LogWarning("ShowerStartPosition") << "The producer ptr has not been set" << std::endl;
+      mf::LogWarning("ShowerGenericTool") << "The producer ptr has not been set" << std::endl;
       return;
     }
   }
 
 
-  int ShowerGenericTool::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
-					   art::Event& Event,
-					   reco::shower::ShowerElementHolder& ShowerEleHolder){
+  int ShowerGenericTool::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+					  art::Event& Event,
+					  reco::shower::ShowerElementHolder& ShowerEleHolder){
     
     return 0;
   }
 
-  void ShowerStartPosition::AddAssociations(art::Event& Event,
-					    reco::shower::ShowerElementHolder& ShowerEleHolder
-					    ){
-    return 0;
+  void ShowerGenericTool::AddAssociations(art::Event& Event,
+					  reco::shower::ShowerElementHolder& ShowerEleHolder
+					  ){
+    return;
   }
+}
   
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerGenericTool)
   

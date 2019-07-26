@@ -1,8 +1,8 @@
 //############################################################################
-//### Name:        ShowerGenericTool                                       ###
-//### Author:      You                                                     ###
-//### Date:        13.05.19                                                ###
-//### Description: Generic form of the shower tools                        ###
+//### Name:        ShowerExampleTool                                       ###
+//### Author:      Dominic Barker                                          ###
+//### Date:        26.06.19                                                ###
+//### Description: Example form of the shower tools                        ###
 //###                                                                      ###
 //############################################################################
 
@@ -23,11 +23,12 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/Shower.h"
+#include "larreco/RecoAlg/SBNShowerAlg.h"
 
 namespace ShowerRecoTools {
 
   
-  class ShowerExampleTool:IShowerTool {
+  class ShowerExampleTool: public IShowerTool {
     
   public:
     
@@ -38,7 +39,7 @@ namespace ShowerRecoTools {
     //Example Direction Finder
     int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
 			  art::Event& Event,
-			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
+			  reco::shower::ShowerElementHolder& ShowerEleHolder
 			  ) override;
 
   private:
@@ -50,7 +51,7 @@ namespace ShowerRecoTools {
     void InitialiseProducers() override;
 
     //Function to add the assoctions
-    int AddAssociations(art::Event& Event,
+    void AddAssociations(art::Event& Event,
 			reco::shower::ShowerElementHolder& ShowerEleHolder) override;
 
     //prehaps you want a fcl parameter. 
@@ -83,9 +84,9 @@ namespace ShowerRecoTools {
     
   }
 
-  void ShowerStartPosition::InitialiseProducers(){
+  void ShowerExampleTool::InitialiseProducers(){
     if(producerPtr == NULL){
-      mf::LogWarning("ShowerStartPosition") << "The producer ptr has not been set" << std::endl;
+      mf::LogWarning("ShowerExampleTool") << "The producer ptr has not been set" << std::endl;
       return;
     }
 
@@ -118,7 +119,7 @@ namespace ShowerRecoTools {
     
 
     //Remember the module goes through the tools and if you want to (fcl param) it will loop over them twice. You can check to see if a element has been set with a specific name:
-    bool shower_direction_set ShowerElementHolder.CheckElement("ShowerDirection");
+    bool shower_direction_set = ShowerEleHolder.CheckElement("ShowerDirection");
     
     TVector3 ShowerDirection = {-999, -999, -999};
     
@@ -128,42 +129,63 @@ namespace ShowerRecoTools {
     }
 
     //Do some crazy physics - Some legacy code in here for ease. 
-    recob::Vertex proposed_vertex = vertices[0]; 
+    art::Ptr<recob::Vertex> proposed_vertex = vertices[0]; 
     double xyz[3] = {-999,-999,-999};
     proposed_vertex->XYZ(xyz);
-
+    
     if(ShowerDirection.X() < 0){
       xyz[0] = - xyz[0];
       xyz[1] = - xyz[1];
       xyz[2] = - xyz[2];
     }
-    recob::Vertex vew_vertex = recob::Vertex(xyz);
+    recob::Vertex new_vertex = recob::Vertex(xyz);
     TVector3 recobshower_vertex = {xyz[0], xyz[1], xyz[2]};
     TVector3 recobshower_err = {xyz[0]*0.1, xyz[1]*0.1, xyz[2]*0.1}; 
-    //You can set elements of the recob::shower just choose the right name (you can acess them later);
-    ShowerEleHolder.SetElement(recobshower_verex,recobshower_err,"ShowerStartPosition");
+    //You can set elements of the recob::shower just choose the right name (you can acess them later). You can give the property an error anf this must be done the for standard recob::shower properties;
+    ShowerEleHolder.SetElement(recobshower_vertex,recobshower_err,"ShowerStartPosition");
     
     //Or you can set one of the save elements 
-    ShowerEleHolder.SetElement(vew_vertex,"myvertex");
+    ShowerEleHolder.SetElement(new_vertex,"myvertex");
 
-    //Or a new unsave one 
-    ShowerEleHolder.SetElement(xyz,"xyz");
+    //Or a new unsave one.
+    std::vector<double> xyz_vec = {xyz[0],xyz[1],xyz[2]};
+    ShowerEleHolder.SetElement(xyz_vec,"xyz");
+
+    //If you want to check if your element was actually made before the shower is made you can set a bool. If partial showers is turned off then the shower will not be made if this element is not filled. Properties i.e. elements with errors i.e. ShowerStartPosition  will not be checked. There is no way to store properties in the Event, only products are stored. You can make your own class which holds the error. The defualt is not to check the element. The recob::shower properties are checked however. 
+    ShowerEleHolder.SetElement(xyz_vec,"xyz",true);
+
+    //You can see if an element will be checked before the shower is save with 
+    bool will_be_checked = ShowerEleHolder.CheckElementSavTag("xyz");
+    if(will_be_checked){std::cout << "Element checked at save time" << std::endl;}
+
+    //You can also changed the tag.
+    ShowerEleHolder.SetElementSaveTag("xyz",false);
+
+    //Note: Elements that are actually saved because you defined them in InitialiseProducers will be checked regardless. We don't want you saving nothign now. 
+    
+    //You can also get the shower number that you are current one (the first shower number is 0).
+    int showernum = ShowerEleHolder.GetShowerNumber();
+    std::cout << "You on are shower: " << showernum << std::endl;
 
     //You can also read out what ptr are set and what elements are set: Coming soon.
 
+
+    //Remember to add make a new fcl parmas list for your new tool. For examles see showertools.fcl. And remember to add it the the list in the module fcl params list.
+
     return 0;
   }
 
-  void ShowerStartPosition::AddAssociations(art::Event& Event,
-					   reco::shower::ShowerElementHolder& ShowerEleHolder
-					   ){
+  void ShowerExampleTool::AddAssociations(art::Event& Event,
+					  reco::shower::ShowerElementHolder& ShowerEleHolder
+					  ){
     //Here you add elements to associations defined. You can get the art::Ptrs by  GetProducedElementPtr<T>. Then you can add single like a usally association using AddSingle<assn<T>. Ass below.
-    const art::Ptr<recob::Vertex> vertexptr =  GetProducedElementPtr<recob::Vertex>("myvertex", ShowerEleHolder);
+    const art::Ptr<recob::Vertex> vertexptr = GetProducedElementPtr<recob::Vertex>("myvertex", ShowerEleHolder);
     const art::Ptr<recob::Shower> showerptr = GetProducedElementPtr<recob::Shower>("shower", ShowerEleHolder);
     AddSingle<art::Assns<recob::Shower, recob::Vertex> >(showerptr,vertexptr,"myvertexassan");
     
-    return 0;
+    return;
   }
+}
   
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerExampleTool)
   

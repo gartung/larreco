@@ -42,7 +42,7 @@
 namespace ShowerRecoTools {
 
   
-  class ShowerPCADirection:IShowerTool {
+  class ShowerPCADirection: public IShowerTool {
     
   public:
     
@@ -51,10 +51,10 @@ namespace ShowerRecoTools {
     ~ShowerPCADirection(); 
     
     //Generic Direction Finder
-    int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
-			  art::Event& Event,
-			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
-			  ) override;
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
 
   private:
     
@@ -99,9 +99,9 @@ namespace ShowerRecoTools {
     fChargeWeighted         = pset.get<bool>         ("ChargeWeighted");
   }
 
-  int ShowerPCADirection::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
-					    art::Event& Event,
-					    reco::shower::ShowerPropertyHolder& ShowerPropHolder){
+  int ShowerPCADirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+					   art::Event& Event,
+					   reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     std::cout <<"#########################################\n"<<
       "hello world PCA direction\n" <<"#########################################\n"<< std::endl;
@@ -142,10 +142,12 @@ namespace ShowerRecoTools {
     TVector3 Eigenvector = ShowerPCAVector(spacePoints_pfp,fmh,ShowerCentre);
 
     //Check if we are pointing the correct direction or not, First try the start position
-    if(ShowerPropHolder.CheckShowerStartPosition() && fUseStartPosition){
+    if(ShowerEleHolder.CheckElement("ShowerStartPosition") && fUseStartPosition){
 	
       //Get the General direction as the vector between the start position and the centre
-      TVector3 StartPositionVec = ShowerPropHolder.GetShowerStartPosition();
+      TVector3 StartPositionVec = {-999, -999, -999};
+      ShowerEleHolder.GetElement("ShowerStartPosition",StartPositionVec);
+
       TVector3 GeneralDir       = (ShowerCentre - StartPositionVec).Unit();
           
       //Dot product
@@ -158,7 +160,11 @@ namespace ShowerRecoTools {
 	Eigenvector[2] = - Eigenvector[2];
       }
       
-      ShowerPropHolder.SetShowerDirection(Eigenvector);
+      //To do
+      TVector3 EigenvectorErr = {-999,-999,-999};
+      
+      ShowerEleHolder.SetElement(Eigenvector,EigenvectorErr,"ShowerDirection");
+
       std::cout <<"#########################################\n"<<
 	"PCA direction Done\n" <<"#########################################\n"<< std::endl;
       return 0; 
@@ -174,7 +180,10 @@ namespace ShowerRecoTools {
       Eigenvector[2] = - Eigenvector[2];
     }
     
-    ShowerPropHolder.SetShowerDirection(Eigenvector);
+    //To do
+    TVector3 EigenvectorErr = {-999,-999,-999};
+
+    ShowerEleHolder.SetElement(Eigenvector,EigenvectorErr,"ShowerDirection");
     
     std::cout <<"#########################################\n"<<
       "PCA direction Done\n" <<"#########################################\n"<< std::endl;

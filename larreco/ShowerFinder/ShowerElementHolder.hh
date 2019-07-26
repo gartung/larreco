@@ -36,6 +36,13 @@ public:
 
   virtual ~ShowerElementBase() noexcept = default;
   
+  virtual bool CheckIfSet(){
+    throw cet::exception("ShowerElementHolder") << "Trying to check an element that is not a product" << std::endl;
+  }
+  virtual void SetCheckIfSet(bool check){
+    throw cet::exception("ShowerElementHolder") << "Trying to set an element that is not a product" << std::endl;
+  }
+
   bool CheckShowerElement(){
     if(elementPtr) return true;
     else return false;
@@ -96,13 +103,13 @@ public:
   
   ShowerDataProduct(){
     this->elementPtr      = 1;
-    storeproduct          = false;
+    checkifset            = false;
   }
 
-  ShowerDataProduct(T& Element, bool Storeproduct){
+  ShowerDataProduct(T& Element, bool Checkifset){
     this->elementPtr      = 1;
     this->element         = Element;
-    storeproduct          =  Storeproduct;
+    checkifset            =  Checkifset;
   }
 
 
@@ -111,16 +118,16 @@ public:
     this->elementPtr    = 0;
   }
 
-  bool StoreProduct(){
-    return storeproduct;
+  bool CheckIfSet(){
+    return checkifset;
   }
 
-  void SetStoreProduct(bool storeelement){
-    storeproduct = storeelement;
+  void SetCheckIfSet(bool Checkifset){
+    checkifset = Checkifset;
   }
 
   private:
-  bool storeproduct;
+  bool checkifset;
 };
 
 //This class holds shower properties e.g. ShowerDirection. The user must define the associated error  
@@ -242,16 +249,16 @@ public:
   //This sets the value of the data product. Just give a name and a object
   //e.g. TVector3 ShowerElementHolder.SetElement((TVector3) StartPosition, "StartPosition");
   template <class T>
-  void SetElement(T& dataproduct, std::string Name, bool storeproduct=false){
+  void SetElement(T& dataproduct, std::string Name, bool checkifset=false){
     
     if(showerdataproducts.find(Name) != showerdataproducts.end()){
       reco::shower::ShowerDataProduct<T>* showerdataprod = dynamic_cast<reco::shower::ShowerDataProduct<T> *>(showerdataproducts[Name].get());
       showerdataprod->SetShowerElement(dataproduct);
-      showerdataprod->SetStoreProduct(storeproduct);
+      showerdataprod->SetCheckIfSet(checkifset);
       return;
     }
     else{
-      showerdataproducts[Name] = std::unique_ptr<reco::shower::ShowerDataProduct<T> >(new reco::shower::ShowerDataProduct<T>(dataproduct,storeproduct));
+      showerdataproducts[Name] = std::unique_ptr<reco::shower::ShowerDataProduct<T> >(new reco::shower::ShowerDataProduct<T>(dataproduct,checkifset));
       return;
     }
   }
@@ -319,11 +326,9 @@ public:
   }
 
   //Find if the product is one what is being stored.
-  template <class T> 
-  bool StoreElement(std::string Name){
+  bool CheckElementSavTag(std::string Name){
     if(showerdataproducts.find(Name) != showerdataproducts.end()){
-      reco::shower::ShowerDataProduct<T>* showerdataprod = dynamic_cast<reco::shower::ShowerDataProduct<T> *>(showerdataproducts[Name].get());
-      return showerdataprod->StoreProduct();
+    return showerdataproducts[Name]->CheckIfSet();
     }
     return false;
   }
@@ -342,15 +347,13 @@ public:
     return;
   }
 
-  //Set the indicator saying if the element is going to be stored.
-  template <class T>  
-  void SetStoreElement(std::string Name, bool storeelement){
+  //Set the indicator saying if the shower is going to be stored.
+  void SetElementSaveTag(std::string Name, bool checkelement){
     if(showerdataproducts.find(Name) != showerdataproducts.end()){
-      reco::shower::ShowerDataProduct<T>* showerdataprod = dynamic_cast<reco::shower::ShowerDataProduct<T> *>(showerdataproducts[Name].get());
-      showerdataprod->SetStoreProduct(storeelement);
+      showerdataproducts[Name]->SetCheckIfSet(checkelement);
       return;
     }
-    mf::LogError("ShowerElementHolder") << "Trying set the storage of the data product: " << Name << ". This data product does not exist in the element holder" << std::endl;
+    mf::LogError("ShowerElementHolder") << "Trying set the checking of the data product: " << Name << ". This data product does not exist in the element holder" << std::endl;
     return;
   }
 

@@ -39,7 +39,7 @@ namespace ShowerRecoTools{
 				 ) = 0;
 
     //Function to initialise the producer i.e produces<std::vector<recob::Vertex> >(); commands go here.
-    virtual void InitialiseProducers() = 0;
+    virtual void InitialiseProducers(){return;}
     
     //Set the point looking back at the producer module show we can make things in the module
     void SetPtr(art::EDProducer* modulePtr){
@@ -53,7 +53,7 @@ namespace ShowerRecoTools{
 
     //End function so the user can add associations 
     virtual void AddAssociations(art::Event& Event,
-				 reco::shower::ShowerElementHolder& ShowerEleHolder) = 0;
+				 reco::shower::ShowerElementHolder& ShowerEleHolder){return;}
     
   private:
     
