@@ -26,6 +26,7 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Shower.h"
 #include "larreco/RecoAlg/SBNShowerAlg.h"
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
@@ -48,14 +49,22 @@ namespace ShowerRecoTools{
     ~ShowerTrackFinder(); 
     
     //Generic Track Finder
-    int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
-			  art::Event& Event,
-			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
-			  ) override;
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
 
   private:  
     
     void configure(const fhicl::ParameterSet& pset) override;
+
+    void InitialiseProducers() override;
+
+    //Function to add the assoctions
+    void AddAssociations(art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder) override;
+
+
 
     std::vector<art::Ptr<recob::Hit> > FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> >& hits, TVector3& ShowerStartPosition, TVector3& ShowerDirection);
 
@@ -101,27 +110,44 @@ namespace ShowerRecoTools{
 	<< "ShowerTrackFinderEMShower: fNfithits and fToler need to have size fNfitpass";
     }
   }
+
+  void ShowerTrackFinder::InitialiseProducers(){
+    if(producerPtr == NULL){
+      mf::LogWarning("ShowerStartPosition") << "The producer ptr has not been set" << std::endl;
+      return;
+    }
+
+    InitialiseProduct<std::vector<recob::Track> >("InitialTrack"); 
+    InitialiseProduct<art::Assns<recob::Shower, recob::Track > >("ShowerTrackAssn");
+    InitialiseProduct<art::Assns<recob::Track, recob::Hit > >("ShowerTrackHitAssn");
+
+
+  }
+
   
   
-  int ShowerTrackFinder::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
-					   art::Event& Event,
-					   reco::shower::ShowerPropertyHolder& ShowerPropHolder
+  int ShowerTrackFinder::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+					  art::Event& Event,
+					  reco::shower::ShowerElementHolder& ShowerEleHolder
 					   ){
     std::cout <<"#########################################\n"<<
       "hello world track finder\n" <<"#########################################\n"<< std::endl;
 
     //This is all based on the shower vertex being known. If it is not lets not do the track 
-    if(!ShowerPropHolder.CheckShowerStartPosition()){
+    if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
       mf::LogError("ShowerTrackFinder") << "Start position not set, returning "<< std::endl;
       return 1;
     }
-    if(!ShowerPropHolder.CheckShowerDirection()){
+    if(!ShowerEleHolder.CheckElement("ShowerDirection")){
       mf::LogError("ShowerTrackFinder") << "Direction not set, returning "<< std::endl;
       return 1;
     }
     
-    TVector3 ShowerStartPosition = ShowerPropHolder.GetShowerStartPosition();
-    TVector3 ShowerDirection     = ShowerPropHolder.GetShowerDirection();
+    TVector3 ShowerStartPosition = {-999,-999,-999};
+    ShowerEleHolder.GetElement("ShowerStartPosition",ShowerStartPosition);
+    
+    TVector3 ShowerDirection     = {-999,-999,-999};
+    ShowerEleHolder.GetElement("ShowerDirection",ShowerDirection);
 
     // Get the assocated pfParicle vertex PFParticles
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
@@ -308,8 +334,8 @@ namespace ShowerRecoTools{
 				      util::kBogusI, util::kBogusF, util::kBogusI, recob::tracking::SMatrixSym55(), 
 				      recob::tracking::SMatrixSym55(), pfparticle.key());
 
-    ShowerPropHolder.SetInitialTrack(track); 
-    ShowerPropHolder.SetInitialTrackHits(TrackHits);
+    ShowerEleHolder.SetElement(track,"InitialTrack"); 
+    ShowerEleHolder.SetElement(TrackHits, "InitialTrackHits");
 
     std::cout <<"#########################################\n"<<
       "track finder done\n" <<"#########################################\n"<< std::endl;
@@ -459,6 +485,22 @@ namespace ShowerRecoTools{
 
 }
 
+  void ShowerTrackFinder::AddAssociations(art::Event& Event,
+					  reco::shower::ShowerElementHolder& ShowerEleHolder
+					  ){
+
+    const art::Ptr<recob::Track> trackptr = GetProducedElementPtr<recob::Track>("InitialTrack", ShowerEleHolder);
+    const art::Ptr<recob::Shower> showerptr = GetProducedElementPtr<recob::Shower>("shower", ShowerEleHolder);
+
+    AddSingle<art::Assns<recob::Shower, recob::Track> >(showerptr,trackptr,"ShowerTrackAssn");
+
+    std::vector<art::Ptr<recob::Hit> > TrackHits;
+    ShowerEleHolder.GetElement("InitialTrackHits",TrackHits);   
+
+    for(auto const& TrackHit: TrackHits){
+      AddSingle<art::Assns<recob::Track, recob::Hit> >(trackptr,TrackHit,"ShowerTrackHitAssn");
+    }
+  }
 
 }
 

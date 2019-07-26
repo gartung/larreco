@@ -73,14 +73,14 @@ namespace ShowerRecoTools{
       //Check the element has been set 
       bool check_element = ShowerEleHolder.CheckElement(InstanceName);
       if(!check_element){
-	throw cet::exception("IShowerTool") << "tried to get a element that does not exist";
+	throw cet::exception("IShowerTool") << "tried to get a element that does not exist. Failed at making the art ptr for Element: " << InstanceName << std::endl;;
 	return art::Ptr<T>();
       }
 
       //Check the unique ptr has been set.
       bool check_ptr = UniquePtrs->CheckUniqueProduerPtr(InstanceName);
       if(!check_ptr){
-	throw cet::exception("IShowerTool") << "tried to get a ptr that does not exist";
+	throw cet::exception("IShowerTool") << "tried to get a ptr that does not exist. Failed at making the art ptr for Element" << InstanceName;
 	return art::Ptr<T>();
       }
 

@@ -230,7 +230,7 @@ public:
 
   void Reset() override {
     if(!ptr){
-      throw cet::exception("ShowerPtrMaker") << "Trying to reset ptr but it has not been set in the first place" << std::endl;
+      throw cet::exception("ShowerPtrMaker") << "Trying to reset ptr but it has not been set in the first place. Please contatc Dom Barker" << std::endl;
     }
     ptrmaker.reset(nullptr);
     ptr = 0;
@@ -254,7 +254,7 @@ public:
   int SetShowerUniqueProduerPtr(std::string InstanceName, type<T>){
       //Add to the assns
       if(showerassnPtrs.find(InstanceName) != showerassnPtrs.end()){
-	mf::LogError("ShowerProduedPtrsHolder") << "Trying to set ptr: " << InstanceName << ". Instance already exists" << std::endl;
+	throw cet::exception("ShowerProduedPtrsHolder") << "Trying to set ptr: " << InstanceName << ". Instance already exists" << std::endl;
 	return 1;
       }
       showerassnPtrs[InstanceName] = std::unique_ptr<reco::shower::ShowerUniqueAssnPtr<T> >(new reco::shower::ShowerUniqueAssnPtr<T>());
@@ -267,7 +267,7 @@ public:
 
     //Then add the products
     if(showerproductPtrs.find(InstanceName) != showerproductPtrs.end()){
-      mf::LogError("ShowerProduedPtrsHolder") << "Trying to set ptr: " << InstanceName << ". Instance already exists" << std::endl;
+      throw cet::exception("ShowerProduedPtrsHolder") << "Trying to set ptr: " << InstanceName << ". Instance already exists" << std::endl;
       return 1;
     }
     if(showerPtrMakers.find(InstanceName) != showerPtrMakers.end()){
@@ -331,7 +331,7 @@ public:
       return assn->GetPtr();   
     }
     else{
-      throw cet::exception("ShowerProduedPtrsHolder") << "Element does not exist" << std::endl;
+      throw cet::exception("ShowerProduedPtrsHolder") << "Trying to get Ptr for: " << InstanceName << " but Element does not exist" << std::endl;
       return T(); 
     }
   }
@@ -341,16 +341,23 @@ public:
   template <class T, class A, class B>
   void AddSingle(A& a, B& b, std::string InstanceName){
     if(showerassnPtrs.find(InstanceName) == showerassnPtrs.end()){ 
-      throw cet::exception("ShowerProduedPtrsHolder") << "Element does not exist" << std::endl;
+      throw cet::exception("ShowerProduedPtrsHolder") << "Trying to get the association: " << InstanceName << "Element does not exist" << std::endl;
       return;
     }
     if(!is_assn<T>::value){
-      throw cet::exception("ShowerProduedPtrsHolder") << "Element is not an assoication" << std::endl;
+      throw cet::exception("ShowerProduedPtrsHolder") << "Element type  is not an assoication please only use this for assocations" << std::endl;
       return;
     }
     reco::shower::ShowerUniqueAssnPtr<T>* assnptr = dynamic_cast<reco::shower::ShowerUniqueAssnPtr<T> *>(showerassnPtrs[InstanceName].get());
+    if(assnptr == NULL){
+      throw cet::exception("ShowerProduedPtrsHolder") << "Failed to cast back. Maybe you got the type wrong or you are accidently accessing a differently named product" << std::endl;
+    }
     
     T* assn = dynamic_cast<T*>(assnptr->GetPtr().get()); 
+    if(assn == NULL){
+      throw cet::exception("ShowerProduedPtrsHolder")  << "Something went wrong trying to cast tothe assn. Maybe the name: " << InstanceName << " exists but its not an assn" << std::endl;
+    }
+
     assn->addSingle(a,b);
     return;
   }  
@@ -384,13 +391,16 @@ public:
   template <class T> 
   art::Ptr<T> GetArtPtr(std::string InstanceName, int iter){
     if(showerPtrMakers.find(InstanceName) == showerPtrMakers.end()){
-      throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker does not exist" << std::endl;
+      throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker does not exist for " << InstanceName << " Did you initialise this? "  << std::endl;
     }
     else{
       if(!showerPtrMakers[InstanceName]->CheckPtrMaker()){
-	throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker is not set" << std::endl;
+	throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker is not set. This is an issue for the devlopment team me. Contact Dom Barker" << std::endl;
       }
       reco::shower::ShowerPtrMaker<T>* ptrmaker = dynamic_cast<reco::shower::ShowerPtrMaker<T> *>(showerPtrMakers[InstanceName].get());
+      if(ptrmaker == NULL){
+	throw cet::exception("ShowerProduedPtrsHolder") << "Failed to cast back. Maybe you got the type wrong or you are accidently accessing a differently named product" << std::endl;
+      }
       return ptrmaker->GetArtPtr(iter);
     }
   }

@@ -43,10 +43,10 @@ namespace ShowerRecoTools {
     ~ShowerLinearEnergy(); 
     
     //Generic Direction Finder
-    int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
-			  art::Event& Event,
-			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
-			  ) override;
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerElementHolder
+			 ) override;
   private:
     
     // Define standard art tool interface
@@ -106,9 +106,9 @@ namespace ShowerRecoTools {
 
   }
   
-  int ShowerLinearEnergy::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+  int ShowerLinearEnergy::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
 					    art::Event& Event,
-					    reco::shower::ShowerPropertyHolder& ShowerPropHolder
+					    reco::shower::ShowerElementHolder& ShowerEleHolder
 					    ){
 
     std::cout << "hello world linear energy" << std::endl;
@@ -191,7 +191,10 @@ namespace ShowerRecoTools {
       return 1;
     }
 
-    ShowerPropHolder.SetShowerEnergy(ShowerLinearEnergy);
+    //Tod do
+    std::vector<double> EnergyError = {-999,-999,-999};
+
+    ShowerEleHolder.SetElement(ShowerLinearEnergy,EnergyError,"ShowerEnergy");
     return 0;
   }
 

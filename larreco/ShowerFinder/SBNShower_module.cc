@@ -226,11 +226,12 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
     //Calculate the shower properties 
     //Loop over the shower tools
+    int err = 0;
     for(auto const& fShowerTool: fShowerTools){
 
       std::cout << "on next tool:" <<  fShowerToolNames[i]  << std::endl;
       //Calculate the metric
-      int err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
+      err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
       if(err){
 	mf::LogError("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
 	if(!fAllowPartialShowers && !fSecondInteration) break;
@@ -245,7 +246,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
       for(auto const& fShowerTool: fShowerTools){
 	//Calculate the metric
-	int err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
+	err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
       
 	if(err){
 	  mf::LogError("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
@@ -255,39 +256,42 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
       }
     }
 
+    //If we want a full shower and we recieved an error call from a tool return;
+    if(err && !fAllowPartialShowers){
+      mf::LogError("SBNShower") << "Error on tool. Assuming all the shower products and properties were not setting and bailing." << std::endl;
+      continue;
+    }
+
+    //If we are are not allowing partial shower check all the products to make the shower are correctly set
     if(!fAllowPartialShowers){
       bool accept = true; 
       accept = accept & selement_holder.CheckElement("ShowerStartPosition");
       accept = accept & selement_holder.CheckElement("ShowerDirection");
       accept = accept & selement_holder.CheckElement("ShowerEnergy");
       accept = accept & selement_holder.CheckElement("ShowerdEdx");
-      accept = accept & selement_holder.CheckElement("ShowerInitialTrack");
-      accept = accept & selement_holder.CheckElement("ShowerInitialTrackHits"); 
       if(!accept){continue;}
     }
 
+    //Check All of the products that have been asked to be checked.
+    
 
     //Get the properties 
     TVector3                           ShowerStartPosition  = {-999,-999,-999};
     TVector3                           ShowerDirection      = {-999,-999,-999};
     std::vector<double>                ShowerEnergy         = {-999,-999,-999};
     std::vector<double>                ShowerdEdx           = {-999,-999,-999};
-    recob::Track                       InitialTrack;    
-    std::vector<art::Ptr<recob::Hit> > InitialTrackHits;     
-    
+
     int                                BestPlane               = -999;
     TVector3                           ShowerStartPositionErr  = {-999,-999,-999};
     TVector3                           ShowerDirectionErr      = {-999,-999,-999};
     std::vector<double>                ShowerEnergyErr         = {-999,-999,-999};
     std::vector<double>                ShowerdEdxErr           = {-999,-999,-999};
     
-    int err = 0;
+    err = 0;
     if(selement_holder.CheckElement("ShowerStartPosition"))    err += selement_holder.GetElementAndError("ShowerStartPosition",ShowerStartPosition,ShowerStartPositionErr);
     if(selement_holder.CheckElement("ShowerDirection"))        err += selement_holder.GetElementAndError("ShowerDirection",ShowerDirection,ShowerDirectionErr);
     if(selement_holder.CheckElement("ShowerEnergy"))           err += selement_holder.GetElementAndError("ShowerEnergy",ShowerEnergy,ShowerEnergyErr);
     if(selement_holder.CheckElement("ShowerdEdx"))             err += selement_holder.GetElementAndError("ShowerdEdx",ShowerdEdx,ShowerdEdxErr  );
-    if(selement_holder.CheckElement("ShowerInitialTrack"))     err += selement_holder.GetElement("ShowerInitialTrack",InitialTrack);
-    if(selement_holder.CheckElement("ShowerInitialTrackHits")) err += selement_holder.GetElement("ShowerInitialTrackHits",InitialTrackHits);
     if(selement_holder.CheckElement("ShowerBestPlane"))        err += selement_holder.GetElement("ShowerBestPlane",BestPlane);
 
     if(err){
@@ -297,7 +301,6 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     //Check the shower
     std::cout<<"Shower Vertex: X:"<<ShowerStartPosition.X()<<" Y: "<<ShowerStartPosition.Y()<<" Z: "<<ShowerStartPosition.Z()<<std::endl;
     std::cout<<"Shower Direction: X:"<<ShowerDirection.X()<<" Y: "<<ShowerDirection.Y()<<" Z: "<<ShowerDirection.Z()<<std::endl;
-    std::cout<<"Shower Track: NumHits: "<<InitialTrack.NumberTrajectoryPoints()<<std::endl;
     std::cout<<"Shower dEdx: size: "<<ShowerdEdx.size()<<" Plane 0: "<<ShowerdEdx.at(0)<<" Plane 1: "<<ShowerdEdx.at(1)<<" Plane 2: "<<ShowerdEdx.at(2)<<std::endl;
     std::cout<<"Shower Energy: size: "<<ShowerEnergy.size()<<" Plane 0: "<<ShowerEnergy.at(0)<<" Plane 1: "<<ShowerEnergy.at(1)<<" Plane 2: "<<ShowerEnergy.at(2)<<std::endl;
     std::cout<<"Shower Best Plane: "<<BestPlane<<std::endl;
