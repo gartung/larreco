@@ -60,7 +60,7 @@ namespace ShowerRecoTools{
 
 			void InitialiseProducers() override;
 
-			void AddAssociations(art::Event& Event,
+			int AddAssociations(art::Event& Event,
 					reco::shower::ShowerElementHolder& ShowerEleHolder) override;
 
 
@@ -302,10 +302,19 @@ namespace ShowerRecoTools{
 	}
 
 
-	void Shower3DTrackFinder::AddAssociations(art::Event& Event,
+	int Shower3DTrackFinder::AddAssociations(art::Event& Event,
 			reco::shower::ShowerElementHolder& ShowerEleHolder
 			){
-		const art::Ptr<recob::Track> trackptr = GetProducedElementPtr<recob::Track>("InitialTrack", ShowerEleHolder);
+
+		if(!ShowerEleHolder.CheckElement("InitialTrack")){
+			mf::LogError("ShowerTrackFinderAddAssn") << "Track not set so the assocation can not be made  "<< std::endl;
+			return 1;
+		}
+
+
+		int trackptrsize = GetVectorPtrSize("InitialTrack");
+
+		const art::Ptr<recob::Track> trackptr = GetProducedElementPtr<recob::Track>("InitialTrack", ShowerEleHolder,trackptrsize-1);
 		const art::Ptr<recob::Shower> showerptr = GetProducedElementPtr<recob::Shower>("shower", ShowerEleHolder);
 		AddSingle<art::Assns<recob::Shower, recob::Track> >(showerptr,trackptr,"ShowerTrackAssn");
 
@@ -320,7 +329,7 @@ namespace ShowerRecoTools{
 		for(auto const& TrackSpacePoint: TrackSpacePoints){
 			AddSingle<art::Assns<recob::Track, recob::SpacePoint> >(trackptr,TrackSpacePoint,"ShowerTrackSpacePointAssn");
 		}
-
+		return 0;
 	}
 }
 
