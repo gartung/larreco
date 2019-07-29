@@ -1,7 +1,7 @@
 cet_enable_asserts()
 
 set( showerfinder_tool_lib_list
-                        larreco_RecoAlg
+			larreco_RecoAlg
 			larcorealg_Geometry
 			lardataobj_RecoBase
 			larcore_Geometry_Geometry_service

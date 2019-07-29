@@ -41,10 +41,10 @@ namespace ShowerRecoTools{
     ~ShowerStandardCalodEdx(); 
     
     //Generic Direction Finder
-    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-			 art::Event& Event,
-			 reco::shower::ShowerElementHolder& ShowerEleHolder
-			 ) override;
+    int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+			  art::Event& Event,
+			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
+			  ) override;
 
   private:
     
@@ -78,37 +78,31 @@ namespace ShowerRecoTools{
     fMissFirstPoint  = pset.get<bool> ("MissFirstPoint"); 
   }
   
-  int ShowerStandardCalodEdx::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-					       art::Event& Event,
-					       reco::shower::ShowerElementHolder& ShowerEleHolder
-					       ){
+  int ShowerStandardCalodEdx::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+						art::Event& Event,
+						reco::shower::ShowerPropertyHolder& ShowerPropHolder
+						){
 
 
-    if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
+    if(!ShowerPropHolder.CheckShowerStartPosition()){
       mf::LogError("ShowerStandardCalodEdx") << "Start position not set, returning "<< std::endl;
       return 1;
     }
-    if(!ShowerEleHolder.CheckElement("InitialTrackHits")){
+    if(!ShowerPropHolder.CheckInitialTrackHits()){
       mf::LogError("ShowerStandardCalodEdx") << "Initial Track Hits not set returning"<< std::endl;
-      return 1;
-    }
-    if(!ShowerEleHolder.CheckElement("ShowerDirection")){
-      mf::LogError("ShowerStandardCalodEdx") << "Shower Direction not set"<< std::endl;
       return 1;
     }
 
 
     //Get the initial track hits
-    std::vector<art::Ptr<recob::Hit> > trackhits;
-    ShowerEleHolder.GetElement("InitialTrackHits",trackhits);
+    std::vector<art::Ptr<recob::Hit> > trackhits =  ShowerPropHolder.GetInitialTrackHits();
 
     if(trackhits.size() == 0){
       mf::LogWarning("ShowerStandardCalodEdx") << "Not Hits in the initial track" << std::endl;
       return 0;
     }
     
-    TVector3 ShowerStartPosition = {-999,-999,-999};
-    ShowerEleHolder.GetElement("ShowerStartPosition",ShowerStartPosition);
+    TVector3 ShowerStartPosition = ShowerPropHolder.GetShowerStartPosition();
     geo::TPCID vtxTPC = fGeom->FindTPCAtPosition(ShowerStartPosition); 
 
       
@@ -121,10 +115,7 @@ namespace ShowerRecoTools{
     std::vector<double> dEdxVec;
     //std::map<geo::PlaneID, std::vector<art::Ptr<recob::Hit> > > trackhits;
     std::vector<std::vector<art::Ptr<recob::Hit> > > trackHits;
-
-
-    TVector3 showerDir = {-999,-999,-999};
-    ShowerEleHolder.GetElement("ShowerDirection",showerDir);
+    TVector3 showerDir = ShowerPropHolder.GetShowerDirection();
     
     unsigned int numPlanes = fGeom->Nplanes();
     
@@ -221,10 +212,8 @@ namespace ShowerRecoTools{
       trackPlaneHits.clear();
     } //end loop over planes 
 
-    //To do
-    std::vector<double> dEdxVecErr = {-999,-999,-999};
     
-    ShowerEleHolder.SetElement(dEdxVec,dEdxVecErr,"ShowerdEdx");
+    ShowerPropHolder.SetShowerdEdx(dEdxVec);
 
     //Set The best plane 
     if (fMaxHitPlane){
@@ -236,8 +225,8 @@ namespace ShowerRecoTools{
       throw cet::exception("ShowerTrackFinderEMShower") << "No best plane set";
       return 1;
     } else {
-      ShowerEleHolder.SetElement(bestPlane,"ShowerBestPlane");
-      //ShowerEleHolder.SetBestPlane(bestHitsPlane);
+      ShowerPropHolder.SetBestPlane(bestPlane);
+      //ShowerPropHolder.SetBestPlane(bestHitsPlane);
     }
     std::cout<<"Best Plane: "<<bestPlane<<" and plane with most hits: "<<bestHitsPlane<<std::endl;
 

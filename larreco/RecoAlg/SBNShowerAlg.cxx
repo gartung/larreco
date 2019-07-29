@@ -295,7 +295,7 @@ double shower::SBNShowerAlg::SpacePointPerpendiular(const art::Ptr<recob::SpaceP
 
 void shower::SBNShowerAlg::DebugEVD(const art::Ptr<recob::PFParticle>& pfparticle,
 						  art::Event& Event,
-						  reco::shower::ShowerPropertyHolder& ShowerPropHolder){
+						  reco::shower::ShowerElementHolder& ShowerEleHolder){
 
   std::cout<<"Making Debug Event Display"<<std::endl;
 
@@ -361,23 +361,27 @@ id. Stopping.";
     return;
   }
 
-  if(!ShowerPropHolder.CheckShowerStartPosition()){
+  if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
     mf::LogError("Shower3DTrackFinder") << "Start position not set, returning "<< std::endl;
     return;
   }
-  if(!ShowerPropHolder.CheckShowerDirection()){
+    if(!ShowerEleHolder.CheckElement("ShowerDirection")){
     mf::LogError("Shower3DTrackFinder") << "Direction not set, returning "<< std::endl;
     return;
   }
-  if(!ShowerPropHolder.CheckInitialTrackHits()){
+  if(!ShowerEleHolder.CheckElement("InitialTrackHits")){
     mf::LogError("Shower3DTrackFinder") << "TrackHits not set, returning "<< std::endl;
     return;
   }
 
   // Get info from shower property holder
-  TVector3 showerStartPosition = ShowerPropHolder.GetShowerStartPosition();
-  TVector3 showerDirection     = ShowerPropHolder.GetShowerDirection();
-  std::vector<art::Ptr<recob::Hit> > trackHits=ShowerPropHolder.GetInitialTrackHits();
+  TVector3 showerStartPosition = {-999,-999,-999};
+  TVector3 showerDirection = {-999,-999,-999};
+  std::vector<art::Ptr<recob::Hit> > trackHits;
+
+  ShowerEleHolder.GetElement("ShowerStartPosition",showerStartPosition);
+  ShowerEleHolder.GetElement("ShowerDirection", showerDirection);
+  ShowerEleHolder.GetElement("InitialTrackHits",trackHits);
   
   // Create 3D point at vertex, chosed to be origin for ease of use of display
   double startXYZ[3] = {0,0,0};

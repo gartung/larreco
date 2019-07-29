@@ -2,37 +2,51 @@ add_subdirectory(ShowerTools)
 add_subdirectory(ShowerReco3D)
 add_subdirectory(job)
 
-art_make( 
-#          EXCLUDE ShowerSelectorFilter_module.cc
-          MODULE_LIBRARIES
-			larreco_RecoAlg
-                        larsim_MCCheater_BackTrackerService_service
-	                larsim_MCCheater_ParticleInventoryService_service
-                        lardataobj_AnalysisBase
-                        lardataobj_RecoBase
-                        larcorealg_Geometry
-                        larcore_Geometry_Geometry_service
-                        larreco_Calorimetry
-                        lardataobj_AnalysisBase
-                        larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
-                        lardata_Utilities
-                        nusimdata_SimulationBase
-                        ${ART_FRAMEWORK_CORE}
-			${ART_FRAMEWORK_PRINCIPAL}
-			${ART_FRAMEWORK_SERVICES_REGISTRY}
-			${ART_FRAMEWORK_SERVICES_BASIC}
-			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-			${ART_ROOT_IO_TFILESERVICE_SERVICE}
-			art_Persistency_Common
-			art_Utilities
-			canvas
-			larreco_RecoAlg_MCRecoUtils
-			${MF_MESSAGELOGGER}
+# art_make(
+# 	 LIB_LIBRARIES
+# 			lardataobj_RecoBase 
+#                         larcorealg_Geometry
+#                         larcore_Geometry_Geometry_service
+# 			art_Persistency_Common
+# 			art_Persistency_Provenance
+# 			art_Utilities
+# 			canvas
+# 			${MF_MESSAGELOGGER}
+# 	                ${FHICLCPP}
+# 			cetlib cetlib_except
+#                         ${ROOT_BASIC_LIB_LIST}
+# 			${Boost_SYSTEM_LIBRARY}
+# #          EXCLUDE ShowerSelectorFilter_module.cc
+#           MODULE_LIBRARIES
+# 			larreco_ShowerFinder
+# 			larreco_RecoAlg
+#                         larsim_MCCheater_BackTrackerService_service
+# 	                larsim_MCCheater_ParticleInventoryService_service
+#                         lardataobj_AnalysisBase
+#                         lardataobj_RecoBase
+#                         larcorealg_Geometry
+#                         larcore_Geometry_Geometry_service
+#                         larreco_Calorimetry
+#                         lardataobj_AnalysisBase
+#                         larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+#                         lardata_Utilities
+#                         nusimdata_SimulationBase
+#                         ${ART_FRAMEWORK_CORE}
+# 			${ART_FRAMEWORK_PRINCIPAL}
+# 			${ART_FRAMEWORK_SERVICES_REGISTRY}
+# 			${ART_FRAMEWORK_SERVICES_BASIC}
+# 			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
+# 			${ART_ROOT_IO_TFILESERVICE_SERVICE}
+# 			art_Persistency_Common
+# 			art_Utilities
+# 			canvas
+# 			larreco_RecoAlg_MCRecoUtils
+# 			${MF_MESSAGELOGGER}
 			
-	                ${FHICLCPP}
-			cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
-         )
+# 	                ${FHICLCPP}
+# 			cetlib cetlib_except
+#                         ${ROOT_BASIC_LIB_LIST}
+#          )
 
 #simple_plugin( ShowerSelectorFilter "module"
 #         		  larevt_Filters
@@ -41,6 +55,53 @@ art_make(
 # 			  nusimdata_SimulationBase
 #                
 # 	     )     
+
+art_make( 
+          LIB_LIBRARIES
+			lardataobj_RawData
+			lardataobj_RecoBase 
+                        larcorealg_Geometry
+                        larcore_Geometry_Geometry_service
+			art_Persistency_Common
+			art_Persistency_Provenance
+			art_Utilities
+			canvas
+			${MF_MESSAGELOGGER}
+	                ${FHICLCPP}
+			cetlib cetlib_except
+                        ${ROOT_BASIC_LIB_LIST}
+			${Boost_SYSTEM_LIBRARY}
+          MODULE_LIBRARIES 
+#	  		larreco_ShowerFinder
+                        larsim_MCCheater_BackTrackerService_service
+	                larsim_MCCheater_ParticleInventoryService_service
+			larreco_RecoAlg
+                        lardataobj_RecoBase
+			lardataobj_MCBase
+                        larcorealg_Geometry
+                        larcore_Geometry_Geometry_service
+                        lardata_Utilities
+			lardataobj_AnalysisBase
+                        larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+                        nusimdata_SimulationBase
+                        ${ART_FRAMEWORK_CORE}
+			${ART_FRAMEWORK_PRINCIPAL}
+			${ART_FRAMEWORK_SERVICES_REGISTRY}
+			${ART_FRAMEWORK_SERVICES_BASIC}
+			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
+			${ART_ROOT_IO_TFILESERVICE_SERVICE}
+                        art_Framework_Services_System_TriggerNamesService_service
+			art_Persistency_Common
+			art_Utilities
+			canvas
+			${MF_MESSAGELOGGER}
+			
+	                ${FHICLCPP}
+			cetlib cetlib_except
+                        ${ROOT_BASIC_LIB_LIST}
+			larreco_RecoAlg_MCRecoUtils 
+         )
+
 
 install_headers()
 install_fhicl()

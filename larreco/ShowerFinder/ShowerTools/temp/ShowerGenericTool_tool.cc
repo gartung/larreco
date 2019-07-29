@@ -25,7 +25,7 @@
 namespace ShowerRecoTools {
 
   
-  class ShowerGenericTool: public IShowerTool {
+  class ShowerGenericTool:IShowerTool {
     
   public:
     
@@ -34,23 +34,15 @@ namespace ShowerRecoTools {
     ~ShowerGenericTool(); 
     
     //Generic Direction Finder
-    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+    int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 			  art::Event& Event,
-			  reco::shower::ShowerElementHolder& ShowerEleHolder
+			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
 			  ) override;
 
   private:
     
     // Define standard art tool interface
     void configure(const fhicl::ParameterSet& pset) override;
-
-    //Function to initialise the producer i.e produces<std::vector<recob::Vertex> >(); commands go here.
-    void InitialiseProducers() override;
-
-    //Function to add the assoctions
-    void AddAssociations(art::Event& Event,
-			 reco::shower::ShowerElementHolder& ShowerEleHolder) override;
-
 
 
   };
@@ -69,25 +61,11 @@ namespace ShowerRecoTools {
   {
   }
 
-  void ShowerGenericTool::InitialiseProducers(){
-    if(producerPtr == NULL){
-      mf::LogWarning("ShowerGenericTool") << "The producer ptr has not been set" << std::endl;
-      return;
-    }
-  }
+  int ShowerGenericTool::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+					   art::Event& Event,
+					   reco::shower::ShowerPropertyHolder& ShowerPropHolder){
 
-
-  int ShowerGenericTool::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-					  art::Event& Event,
-					  reco::shower::ShowerElementHolder& ShowerEleHolder){
-    
     return 0;
-  }
-
-  void ShowerGenericTool::AddAssociations(art::Event& Event,
-					  reco::shower::ShowerElementHolder& ShowerEleHolder
-					  ){
-    return;
   }
 }
   

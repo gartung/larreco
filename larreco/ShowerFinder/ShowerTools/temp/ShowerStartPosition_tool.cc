@@ -9,12 +9,8 @@
 #include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 
 //Framework Includes
-#include "fhiclcpp/ParameterSet.h"  
-#include "art/Framework/Core/ModuleMacros.h" 
-#include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Event.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h" 
 #include "art/Utilities/ToolMacros.h"
+#include "art/Utilities/make_tool.h"
 #include "art/Utilities/make_tool.h"
 #include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -26,12 +22,12 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/Utilities/AssociationUtil.h"
+#include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/SBNShowerAlg.h"
-
 
 //C++ Includes 
 #include <iostream>
@@ -44,7 +40,7 @@
 namespace ShowerRecoTools{
 
 
-  class ShowerStartPosition: public IShowerTool {
+  class ShowerStartPosition:IShowerTool {
 
   public:
     
@@ -56,17 +52,10 @@ namespace ShowerRecoTools{
     void configure(const fhicl::ParameterSet& pset) override;
     
     //Generic Direction Finder
-    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+    int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 			  art::Event& Event,
-			  reco::shower::ShowerElementHolder& ShowerEleHolder
+			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
 			  ) override;
-
-    //Function to initialise the producer i.e produces<std::vector<recob::Vertex> >(); commands go here.
-    void InitialiseProducers() override;
-
-    //Function to add the assoctions
-    void AddAssociations(art::Event& Event,
-			reco::shower::ShowerElementHolder& ShowerEleHolder) override;
     
     
     art::InputTag fPFParticleModuleLabel;
@@ -91,18 +80,11 @@ namespace ShowerRecoTools{
   {
     fPFParticleModuleLabel      = pset.get<art::InputTag>("PFParticleModuleLabel","");
   }
-
-  void ShowerStartPosition::InitialiseProducers(){
-    if(producerPtr == NULL){
-      mf::LogWarning("ShowerStartPosition") << "The producer ptr has not been set" << std::endl;
-      return;
-    }
-  }
-
-  int ShowerStartPosition::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-					    art::Event& Event,
-					    reco::shower::ShowerElementHolder& ShowerEleHolder
-					    ){
+ 
+  int ShowerStartPosition::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
+					     art::Event& Event,
+					     reco::shower::ShowerPropertyHolder& ShowerPropHolder
+					     ){
 
     std::cout << "hello world start position" << std::endl;
 
@@ -153,16 +135,15 @@ namespace ShowerRecoTools{
       double xyz[3] = {-999,-999,-999};
       StartPositionVertex->XYZ(xyz);
       TVector3 ShowerStartPosition = {xyz[0], xyz[1], xyz[2]};
-      TVector3 ShowerStartPositionErr = {-999, -999, -999};
-      ShowerEleHolder.SetElement(ShowerStartPosition,ShowerStartPositionErr,"ShowerStartPosition");
+      ShowerPropHolder.SetProperty(ShowerStartPosition,"ShowerStartPosition");
       return 0;
     }
 
     //If we there have none then use the direction to find the neutrino vertex 
-    if(ShowerEleHolder.CheckElement("ShowerDirection")){
+    if(ShowerPropHolder.CheckProperty("ShowerDirection")){
 
       TVector3 ShowerDirection = {-999, -999, -999};
-      ShowerEleHolder.GetElement("ShowerDirection",ShowerDirection);
+      ShowerPropHolder.GetProperty("ShowerDirection",ShowerDirection);
       
       art::FindManyP<recob::SpacePoint> fmspp(pfpHandle, Event, fPFParticleModuleLabel);
 
@@ -185,22 +166,13 @@ namespace ShowerRecoTools{
 
       //Set the start position.
       TVector3 ShowerStartPosition = fSBNShowerAlg.SpacePointPosition(spacePoints_pfp[0]);
-      TVector3 ShowerStartPositionErr = {-999,-999,-999};
-      ShowerEleHolder.SetElement(ShowerStartPosition,ShowerStartPositionErr,"ShowerStartPosition");
+      ShowerPropHolder.SetProperty(ShowerStartPosition,"ShowerStartPosition");
       return 0; 
     }
     
     mf::LogWarning("ShowerStartPosition") << "Start Position has not been set yet. If you are not calculating the start position again then maybe you should stop";
     return 0; 
   }
-
-  void ShowerStartPosition::AddAssociations(art::Event& Event,
-					    reco::shower::ShowerElementHolder& ShowerEleHolder
-					   ){
-
-    return;
-  }
-
 }
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerStartPosition)
 
