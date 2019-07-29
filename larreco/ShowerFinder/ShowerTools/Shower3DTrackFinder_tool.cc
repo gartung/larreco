@@ -268,8 +268,8 @@ namespace ShowerRecoTools{
 		ShowerEleHolder.SetElement(trackSpacePoints,"InitialTrackSpacePoints");
 
 		if (fDebugEVD){
-			std::cout<<"Do DebugEVD"<<std::endl;
-			//fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerPropHolder);
+			std::cout<<"Doing DebugEVD"<<std::endl;
+			fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
 		}
 
 		std::cout <<"#########################################\n"<<
