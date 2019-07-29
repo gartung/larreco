@@ -72,7 +72,7 @@ namespace ShowerRecoTools {
 
     //fcl
     art::InputTag fPFParticleModuleLabel;
-    int fNSegments; 
+    float fNSegments; 
     bool fUseStartPosition;
     bool fChargeWeighted; 
 

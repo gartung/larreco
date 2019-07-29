@@ -175,7 +175,7 @@ namespace ShowerRecoTools{
 
     //We cannot progress with no spacepoints.
     if(spacePoints.size() == 0){
-       throw cet::exception("Shower3DTrackFinder") << "No Space Points. Stopping.";
+      mf::LogError("Shower3DTrackFinder") << "No space points, returning "<< std::endl;
       return 1;
     }
     

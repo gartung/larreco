@@ -834,6 +834,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	      if(clusterHandle.isValid()){
 		std::vector< art::Ptr<recob::Cluster> > pfpClusters = fmpfc.at(Daughter.key());
 		ana::ShowerValidation::PFPValidation(pfpClusters,Daughter,evt,clusterHandle,ShowersMothers,MCTrack_Energy_map,MCTrack_hit_map,fShowerModuleLabel);
+
 	      }
 	    }
 
@@ -841,16 +842,25 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    if (Daughter->PdgCode() == 11) {
 	      pfpPrimaries.push_back(Daughter->Self());
 	      ++pfpShowerCounter;
-
+	      std::cout<<"Breaking?"<<std::endl;
 	      art::Handle<std::vector<recob::Vertex > > vertexHandle;
-	      evt.get(fmpfv.at(0).front().id(),vertexHandle);
-
-	      if(vertexHandle.isValid()) {
-		std::vector< art::Ptr<recob::Vertex> > pfpVertexVector = fmpfv.at(Daughter.key());
-		pfpShowerVertexCounter = pfpVertexVector.size();
-		pfpShowersVertices_TreeVal[fShowerModuleLabel].push_back(pfpShowerVertexCounter);
-      
+	      if (fmpfv.isValid()) {
+		std::cout<<"fmpfv.isValid: "<<std::endl;
+		std::cout<<fmpfv.at(0).front().id()<<std::endl;
+		
+		evt.get(fmpfv.at(0).front().id(),vertexHandle);
+		std::cout<<"No?"<<std::endl;
+		
+		if(vertexHandle.isValid()) {
+		  std::vector< art::Ptr<recob::Vertex> > pfpVertexVector = fmpfv.at(Daughter.key());
+		  pfpShowerVertexCounter = pfpVertexVector.size();
+		  pfpShowersVertices_TreeVal[fShowerModuleLabel].push_back(pfpShowerVertexCounter);
+		  
+		}
 	      }
+	      
+	      std::cout<<"No!"<<std::endl;
+
 	    }else if (Daughter->PdgCode() == 13) {
 	      pfpPrimaries.push_back(Daughter->Self());
 	      ++pfpTrackCounter;
@@ -858,7 +868,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	      std::cout<<"Something has gone horribly wrong, PFP PDG != 11||13"<<std::endl;
 	    }
 	  } // end loop over neutrino daughters
-
+	  std::cout<<"Daughters done"<<std::endl;
 	  if(fmpfv.isValid()) {
 	    art::Handle<std::vector<recob::Vertex > > vertexHandle;
 	    evt.get(fmpfv.at(0).front().id(),vertexHandle);
@@ -1661,7 +1671,7 @@ void ana::ShowerValidation::PFPValidation(std::vector<art::Ptr<recob::Cluster> >
 					  std::map<art::ProductID,std::map<int,std::map<geo::PlaneID, int> > > & MCTrack_hit_map,
 					  std::string & fShowerModuleLabel){
 
-
+  std::cout<<"PFP Validation"<<std::endl;
   //Get the associated hits
   art::FindManyP<recob::Hit> fmhc(clusterHandle, evt, clusterHandle.provenance()->moduleLabel());
 
@@ -1827,7 +1837,7 @@ void ana::ShowerValidation::PFPValidation(std::vector<art::Ptr<recob::Cluster> >
     std::cout << "#################################################"    << std::endl;
     std::cout << "                 PFP Metrics                     "    << std::endl;
     std::cout << "#################################################"    << std::endl;
-    std::cout << "Projection matched:          " << projectionMatched   << std::endl;
+    std::cout << "Projection matched:      " << projectionMatched   << std::endl;
     std::cout << "PFP hit completeness:    " << completeness_hits       << std::endl;
     std::cout << "PFP hit purity:          " << purity_hits             << std::endl;
     std::cout << "PFP energy completeness: " << completeness_energy     << std::endl;

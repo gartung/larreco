@@ -7,7 +7,8 @@ set( showerfinder_tool_lib_list
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
 			nutools_RandomUtils_NuRandomService_service
-  			${ART_FRAMEWORK_CORE}
+      larreco_RecoAlg_MCRecoUtils
+      ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
 			${ART_FRAMEWORK_SERVICES_REGISTRY}
 			art_Persistency_Common

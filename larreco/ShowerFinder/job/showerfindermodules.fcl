@@ -155,7 +155,7 @@ standard_sbnshower: {
          @local::showerstartposition,
          @local::showerpcadirection,
          @local::showerlinearenergy,
-         @local::showertrackfinder,
+         @local::shower3Dtrackfinder,
          @local::showerstandardcalodedx
           ]
 

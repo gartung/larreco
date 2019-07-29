@@ -92,6 +92,27 @@ showertrackdirection:{
     DebugEVD:         false
 }
 
+showertrackpcadirection:{
+     tool_type: ShowerTrackPCADirection
+     DebugEVD:         false    
+     ChargeWeighted:   true
+     MinPCAPoints:     10 
+     PFParticleModuleLabel: "pandora"
+     HitModuleLabel:        "linecluster"
+     SBNShowerAlg:     @local::standard_sbnshoweralg
+     CalorimetryAlg:   @local::standard_calorimetryalgmc
+}
+
+showerdirectioncheater:{
+    tool_type:              ShowerDirectionCheater     
+    SBNShowerAlg:           @local::standard_sbnshoweralg
+    PFParticleModuleLabel:  "pandora"
+    NSegments:              6
+    RMSFlip:                false 
+    VertexFlip:             false
+}
+
+
 
 END_PROLOG
 
