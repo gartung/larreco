@@ -52,8 +52,8 @@ namespace ShowerRecoTools{
     }
 
     //End function so the user can add associations 
-    virtual void AddAssociations(art::Event& Event,
-				 reco::shower::ShowerElementHolder& ShowerEleHolder){return;}
+    virtual int  AddAssociations(art::Event& Event,
+				 reco::shower::ShowerElementHolder& ShowerEleHolder){return 0;}
     
   private:
     
@@ -68,19 +68,19 @@ namespace ShowerRecoTools{
     
     //Function to return the art:ptr for the corrsponding index iter. This allows the user the make associations
     template <class T >
-      art::Ptr<T> GetProducedElementPtr(std::string InstanceName, reco::shower::ShowerElementHolder& ShowerEleHolder, int iter=-1){
+      art::Ptr<T> GetProducedElementPtr(std::string Name, reco::shower::ShowerElementHolder& ShowerEleHolder, int iter=-1){
 
       //Check the element has been set 
-      bool check_element = ShowerEleHolder.CheckElement(InstanceName);
+      bool check_element = ShowerEleHolder.CheckElement(Name);
       if(!check_element){
-	throw cet::exception("IShowerTool") << "tried to get a element that does not exist. Failed at making the art ptr for Element: " << InstanceName << std::endl;;
+	throw cet::exception("IShowerTool") << "tried to get a element that does not exist. Failed at making the art ptr for Element: " << Name << std::endl;;
 	return art::Ptr<T>();
       }
 
       //Check the unique ptr has been set.
-      bool check_ptr = UniquePtrs->CheckUniqueProduerPtr(InstanceName);
+      bool check_ptr = UniquePtrs->CheckUniqueProduerPtr(Name);
       if(!check_ptr){
-	throw cet::exception("IShowerTool") << "tried to get a ptr that does not exist. Failed at making the art ptr for Element" << InstanceName;
+	throw cet::exception("IShowerTool") << "tried to get a ptr that does not exist. Failed at making the art ptr for Element" << Name;
 	return art::Ptr<T>();
       }
 
@@ -94,24 +94,36 @@ namespace ShowerRecoTools{
       }
 
       //Make the ptr
-      art::Ptr<T> artptr = UniquePtrs->GetArtPtr<T>(InstanceName,index);
+      art::Ptr<T> artptr = UniquePtrs->GetArtPtr<T>(Name,index);
       return artptr;
     }
             
     //Function so that the user can add products to the art event. This will set up the unique ptrs and the ptr makers required.
     //Example: InitialiseProduct<std::vector<recob<vertex>>("MyVertex")
     template <class T> 
-      void InitialiseProduct(std::string InstanceName){
-      std::cout << "Setting Up Instance: " << InstanceName << std::endl;
+      void InitialiseProduct(std::string Name, std::string InstanceName=""){
       producerPtr->produces<T>(InstanceName);
-      UniquePtrs->SetShowerUniqueProduerPtr(InstanceName,type<T>());
+      UniquePtrs->SetShowerUniqueProduerPtr(type<T>(),Name,InstanceName);
     }
 
     //Function so that the user can add assocations to the event. 
     //Example: AddSingle<art::Assn<recob::Vertex,recob::shower>((art::Ptr<recob::Vertex>) Vertex, (art::Prt<recob::shower>) Shower), "myassn")
     template <class T,class A, class B>
-      void AddSingle(A& a, B& b, std::string InstanceName){
-      UniquePtrs->AddSingle<T>(a,b,InstanceName);
+      void AddSingle(A& a, B& b, std::string Name){
+      UniquePtrs->AddSingle<T>(a,b,Name);
+    }
+
+    //Function to get the size of the vector, for the event,  that is held in the unique producer ptr that will be put in the event.
+    int GetVectorPtrSize(std::string Name){
+      return UniquePtrs->GetVectorPtrSize(Name);
+    }
+
+    void PrintPtrs(){
+      UniquePtrs->PrintPtrs();
+    }
+
+    void PrintPtr(std::string Name){
+     UniquePtrs->PrintPtr(Name);
     }
 
     //Producer ptr

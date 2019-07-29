@@ -765,9 +765,12 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     art::Handle<std::vector<recob::Shower> > showerListHandle;
     std::vector<art::Ptr<recob::Shower> > showers;
     std::string fShowerModuleLabel = fShowerModuleLabels[shwrlab_it];
+   
     if(evt.getByLabel(fShowerModuleLabel,showerListHandle))
-      {art::fill_ptr_vector(showers,showerListHandle);}
-
+      {
+    	art::fill_ptr_vector(showers,showerListHandle);
+      }
+    
     if(showers.size() == 0){
       if(fVerbose){std::cout << "No Shower in the Event" << std::endl;}
       continue;
@@ -777,7 +780,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
     std::vector<art::Ptr<recob::PFParticle> > pfps;
     if(evt.getByLabel(fPFParticleLabel,pfpListHandle))
       {art::fill_ptr_vector(pfps,pfpListHandle);}
-
 
     //Getting the Shower Information
     //Association between Showers and 2d Hits
@@ -909,6 +911,17 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 
       }
     }
+
+    if(fmh.size() == 0){
+      std::cout << " No hits in a recob shower. Association is made incorrectly. Bailing" << std::endl;
+      continue;
+    }
+    
+    if(fmh.at(0).size() == 0){
+      std::cout << " No hits in a recob shower. Association is made incorrectly. Bailing" << std::endl;
+      continue;
+    }
+
 
     //Get the ID of the shower hit module
     art::ProductID showerhit_productid = fmh.at(0).front().id();

@@ -162,6 +162,7 @@ standard_sbnshower: {
     PFParticleModuleLabel:      "pandora"
     SecondInteration:           false
     AllowPartialShowers:        false
+    Verbose:                    false 
 }
 
 

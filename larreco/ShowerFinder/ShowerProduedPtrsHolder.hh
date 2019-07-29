@@ -14,13 +14,14 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Principal/Event.h"
 #include "larreco/ShowerFinder/ShowerElementHolder.hh"
-#include "larreco/ShowerFinder/ShowerProduedPtrsHolder.hh"
 
 //C++ Includes 
 #include <iostream> 
 #include <map>
 #include <string> 
 #include <memory>
+#include <iomanip>
+#include <cxxabi.h>
 
 namespace reco {
   namespace shower {
@@ -63,8 +64,12 @@ public:
 
   virtual void AddDataProduct(reco::shower::ShowerElementHolder& selement_holder, std::string Name) = 0;
 
-  virtual void MoveToEvent(art::Event& evt, std::string Name) = 0;
+  virtual void MoveToEvent(art::Event& evt) = 0;
 
+  virtual std::string GetType() = 0;
+  virtual std::string GetInstanceName() = 0;
+
+  virtual int GetVectorPtrSize(){return -1;}
 };
 
 //Class that holds a unique ptr for the product. This is what is stored in the map. The product is put into
@@ -74,9 +79,10 @@ class reco::shower::ShowerUniqueProductPtr<std::vector<T> >: public reco::shower
 
 public:
 
-  ShowerUniqueProductPtr<std::vector<T> >(){
+  ShowerUniqueProductPtr<std::vector<T> >(std::string& Instancename){
     ptr = 1;
     showeruniqueptr = std::make_unique<std::vector<T> >();
+    InstanceName = Instancename;
   }
 
   //Get the unique ptr for the data product.
@@ -97,18 +103,38 @@ public:
   //Add a data product on to the vector that will be added to the event.
   void AddDataProduct(reco::shower::ShowerElementHolder& selement_holder, std::string Name) override {
     T product;
-    selement_holder.GetElement(Name, product);
+    int err = selement_holder.GetElement(Name, product);
+    if(err){
+      mf::LogError("ShowerElementHolder") << "Trying to add data product: " << Name << ". This element does not exist in the element holder" << std::endl;
+      return;
+    }
     showeruniqueptr->push_back(product);
+    return;
   }
 
   //Final thing to do move to the event.
-  void MoveToEvent(art::Event& evt, std::string Name) override {
-    evt.put(std::move(showeruniqueptr),Name);
+  void MoveToEvent(art::Event& evt) override {
+    evt.put(std::move(showeruniqueptr),InstanceName);
   }
+
+  std::string GetType() override {
+    int status = -9;
+    return abi::__cxa_demangle(typeid(showeruniqueptr.get()).name(),NULL,NULL,&status);  
+  }
+
+  std::string GetInstanceName() override { 
+    return InstanceName;
+  }
+
+  int GetVectorPtrSize() override { 
+    return showeruniqueptr->size();
+  }
+
 
 private:
   std::unique_ptr<std::vector<T> > showeruniqueptr;
   int ptr;
+  std::string InstanceName;
 };
 
 
@@ -122,9 +148,10 @@ class reco::shower::ShowerUniqueAssnPtr: public reco::shower::ShowerUniqueProdue
 
 public:
 
-  ShowerUniqueAssnPtr(){
+  ShowerUniqueAssnPtr(std::string& Instancename){
     ptr = 1;
     showeruniqueptr = std::make_unique<T>();
+    InstanceName = Instancename;
   }
 
   //Get the ptr to the association.
@@ -143,17 +170,27 @@ public:
   }
 
   //place the association to the event.
-  void MoveToEvent(art::Event& evt, std::string Name) override {
-    evt.put(std::move(showeruniqueptr), Name);
+  void MoveToEvent(art::Event& evt) override {
+    evt.put(std::move(showeruniqueptr), InstanceName);
   }
 
   //Not need but the compiler complains if its not here.
   void AddDataProduct(reco::shower::ShowerElementHolder& selement_holder, std::string Name) override {std::cout << "should not be here" << std::endl;}
 
+  std::string GetType() override {
+    int status = -9;
+    return abi::__cxa_demangle(typeid(showeruniqueptr.get()).name(),NULL,NULL,&status);  
+  }
+
+  std::string GetInstanceName() override { 
+    return InstanceName;
+  }
+
 
 private:
   std::unique_ptr<T> showeruniqueptr;
   int ptr;
+  std::string InstanceName;
 };
 
 
@@ -169,7 +206,7 @@ public:
   
   virtual bool CheckPtrMaker() = 0;
     
-  virtual void SetPtrMaker(art::Event& evt, std::string InstanceName) = 0;
+  virtual void SetPtrMaker(art::Event& evt) = 0;
 
   virtual void Reset() = 0;
 
@@ -181,14 +218,11 @@ class reco::shower::ShowerPtrMaker : public ShowerPtrMakerBase{
 
 public:
 
-  ShowerPtrMaker(art::Event& evt, std::string InstanceName){
-    ptrmaker = new std::unique_ptr<art::PtrMaker<T> >(new art::PtrMaker<T>(evt,InstanceName));
-    ptr = 1;
-  }
 
-  ShowerPtrMaker(){
+  ShowerPtrMaker(std::string Instancename){
     ptrmaker = nullptr;
     ptr = 0;
+    InstanceName = Instancename;
   }
 
   bool CheckPtrMaker() override {
@@ -223,7 +257,7 @@ public:
   }
 
   //Set the ptr maker this is reset at the start of the event. 
-  void SetPtrMaker(art::Event& evt, std::string InstanceName) override {
+  void SetPtrMaker(art::Event& evt) override {
     ptrmaker.reset(new art::PtrMaker<T>(evt,InstanceName));
     ptr = 1;
   }
@@ -239,6 +273,7 @@ public:
 private:
 
   std::unique_ptr<art::PtrMaker<T> > ptrmaker; 
+  std::string InstanceName;
   int ptr;
 };
 
@@ -251,40 +286,40 @@ public:
   
   //Initialise the a unique ptr in the map. This will be added to the event.
   template <class T>
-  int SetShowerUniqueProduerPtr(std::string InstanceName, type<T>){
+  int SetShowerUniqueProduerPtr(type<T>, std::string Name, std::string Instance=""){
       //Add to the assns
-      if(showerassnPtrs.find(InstanceName) != showerassnPtrs.end()){
-	throw cet::exception("ShowerProduedPtrsHolder") << "Trying to set ptr: " << InstanceName << ". Instance already exists" << std::endl;
+      if(showerassnPtrs.find(Name) != showerassnPtrs.end()){
+	throw cet::exception("ShowerProduedPtrsHolder") << "Trying to set ptr: " << Name << ". Instance already exists" << std::endl;
 	return 1;
       }
-      showerassnPtrs[InstanceName] = std::unique_ptr<reco::shower::ShowerUniqueAssnPtr<T> >(new reco::shower::ShowerUniqueAssnPtr<T>());
+      showerassnPtrs[Name] = std::unique_ptr<reco::shower::ShowerUniqueAssnPtr<T> >(new reco::shower::ShowerUniqueAssnPtr<T>(Instance));
       return 0;
   }
   
   //Set the unique ptr. The unique ptr will be filled into the event.
   template <class T>
-  int SetShowerUniqueProduerPtr(std::string InstanceName, type<std::vector<T> >){
+  int SetShowerUniqueProduerPtr(type<std::vector<T> >, std::string Name, std::string Instance=""){
 
     //Then add the products
-    if(showerproductPtrs.find(InstanceName) != showerproductPtrs.end()){
-      throw cet::exception("ShowerProduedPtrsHolder") << "Trying to set ptr: " << InstanceName << ". Instance already exists" << std::endl;
+    if(showerproductPtrs.find(Name) != showerproductPtrs.end()){
+      throw cet::exception("ShowerProduedPtrsHolder") << "Trying to set ptr: " << Name << ". Instance already exists" << std::endl;
       return 1;
     }
-    if(showerPtrMakers.find(InstanceName) != showerPtrMakers.end()){
+    if(showerPtrMakers.find(Name) != showerPtrMakers.end()){
       throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker already exist. It should not be set again" << std::endl;
     }
-    showerPtrMakers[InstanceName]   = std::unique_ptr<reco::shower::ShowerPtrMaker<T> >(new reco::shower::ShowerPtrMaker<T>());
-    showerproductPtrs[InstanceName] = std::unique_ptr<reco::shower::ShowerUniqueProductPtr<std::vector<T > > >(new reco::shower::ShowerUniqueProductPtr<std::vector<T> >());
+    showerPtrMakers[Name]   = std::unique_ptr<reco::shower::ShowerPtrMaker<T> >(new reco::shower::ShowerPtrMaker<T>(Instance));
+    showerproductPtrs[Name] = std::unique_ptr<reco::shower::ShowerUniqueProductPtr<std::vector<T > > >(new reco::shower::ShowerUniqueProductPtr<std::vector<T> >(Instance));
     return 0;
   }
 
   
   //Checks if the ptr exists
-  bool CheckUniqueProduerPtr(std::string InstanceName){
-    if(showerproductPtrs.find(InstanceName) != showerproductPtrs.end()){
+  bool CheckUniqueProduerPtr(std::string Name){
+    if(showerproductPtrs.find(Name) != showerproductPtrs.end()){
       return true;
     }
-    if(showerassnPtrs.find(InstanceName) != showerassnPtrs.end()){
+    if(showerassnPtrs.find(Name) != showerassnPtrs.end()){
       return true;
     }
     return false;
@@ -312,26 +347,37 @@ public:
   //Global command to move all products into the event. This is done in the module.
   void MoveAllToEvent(art::Event& evt){
     for(auto const& showerproductPtr: showerproductPtrs){
-      (showerproductPtr.second)->MoveToEvent(evt,showerproductPtr.first);
+      (showerproductPtr.second)->MoveToEvent(evt);
     }
     for(auto const& showerassnPtr: showerassnPtrs){
-      (showerassnPtr.second)->MoveToEvent(evt,showerassnPtr.first);
+      (showerassnPtr.second)->MoveToEvent(evt);
     }
   }
+
+  bool CheckAllProducedElements(reco::shower::ShowerElementHolder& selement_holder){
+    bool checked = true;
+    for(auto const& showerproductPtr: showerproductPtrs){
+      if(showerproductPtr.first == "shower"){continue;}
+      std::cout << " showerproductPtr.first: " << showerproductPtr.first << std::endl;
+      checked *= selement_holder.CheckElement(showerproductPtr.first);
+    }
+    return checked;
+  }
+
   
   //This returns the unique ptr. This is a legacy code.
   template <class T>  
-  T& GetPtr(std::string InstanceName){
-    if(showerproductPtrs.find(InstanceName) != showerproductPtrs.end()){ 
-      reco::shower::ShowerUniqueProductPtr<T>* prod = dynamic_cast<reco::shower::ShowerUniqueProductPtr<T> *>(showerproductPtrs[InstanceName].get());
+  T& GetPtr(std::string Name){
+    if(showerproductPtrs.find(Name) != showerproductPtrs.end()){ 
+      reco::shower::ShowerUniqueProductPtr<T>* prod = dynamic_cast<reco::shower::ShowerUniqueProductPtr<T> *>(showerproductPtrs[Name].get());
       return prod->GetPtr();
     }
-    else if(showerassnPtrs.find(InstanceName) != showerassnPtrs.end()){ 
-      reco::shower::ShowerUniqueAssnPtr<T>* assn = dynamic_cast<reco::shower::ShowerUniqueAssnPtr<T> *>(showerassnPtrs[InstanceName].get());
+    else if(showerassnPtrs.find(Name) != showerassnPtrs.end()){ 
+      reco::shower::ShowerUniqueAssnPtr<T>* assn = dynamic_cast<reco::shower::ShowerUniqueAssnPtr<T> *>(showerassnPtrs[Name].get());
       return assn->GetPtr();   
     }
     else{
-      throw cet::exception("ShowerProduedPtrsHolder") << "Trying to get Ptr for: " << InstanceName << " but Element does not exist" << std::endl;
+      throw cet::exception("ShowerProduedPtrsHolder") << "Trying to get Ptr for: " << Name << " but Element does not exist" << std::endl;
       return T(); 
     }
   }
@@ -339,23 +385,23 @@ public:
   //Wrapper so that the use the addSingle command for the association. Add A and B to the association just 
   //as if add single add.
   template <class T, class A, class B>
-  void AddSingle(A& a, B& b, std::string InstanceName){
-    if(showerassnPtrs.find(InstanceName) == showerassnPtrs.end()){ 
-      throw cet::exception("ShowerProduedPtrsHolder") << "Trying to get the association: " << InstanceName << "Element does not exist" << std::endl;
+  void AddSingle(A& a, B& b, std::string Name){
+    if(showerassnPtrs.find(Name) == showerassnPtrs.end()){ 
+      throw cet::exception("ShowerProduedPtrsHolder") << "Trying to get the association: " << Name << "Element does not exist" << std::endl;
       return;
     }
     if(!is_assn<T>::value){
       throw cet::exception("ShowerProduedPtrsHolder") << "Element type  is not an assoication please only use this for assocations" << std::endl;
       return;
     }
-    reco::shower::ShowerUniqueAssnPtr<T>* assnptr = dynamic_cast<reco::shower::ShowerUniqueAssnPtr<T> *>(showerassnPtrs[InstanceName].get());
+    reco::shower::ShowerUniqueAssnPtr<T>* assnptr = dynamic_cast<reco::shower::ShowerUniqueAssnPtr<T> *>(showerassnPtrs[Name].get());
     if(assnptr == NULL){
       throw cet::exception("ShowerProduedPtrsHolder") << "Failed to cast back. Maybe you got the type wrong or you are accidently accessing a differently named product" << std::endl;
     }
     
     T* assn = dynamic_cast<T*>(assnptr->GetPtr().get()); 
     if(assn == NULL){
-      throw cet::exception("ShowerProduedPtrsHolder")  << "Something went wrong trying to cast tothe assn. Maybe the name: " << InstanceName << " exists but its not an assn" << std::endl;
+      throw cet::exception("ShowerProduedPtrsHolder")  << "Something went wrong trying to cast tothe assn. Maybe the name: " << Name << " exists but its not an assn" << std::endl;
     }
 
     assn->addSingle(a,b);
@@ -368,36 +414,36 @@ public:
       if(showerPtrMakers.find(showerPtrMaker.first) == showerPtrMakers.end()){
 	throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker was empty. This is concerning" << std::endl;
       }
-      showerPtrMakers[showerPtrMaker.first]->SetPtrMaker(evt,showerPtrMaker.first);
+      showerPtrMakers[showerPtrMaker.first]->SetPtrMaker(evt);
     }
   }
 
   //Wrapper to access a particle PtrMaker. This is legacy as is not used.
   template <class T> 
-  art::PtrMaker<T>& GetPtrMaker(std::string InstanceName){
-    if(showerPtrMakers.find(InstanceName) == showerPtrMakers.end()){
+  art::PtrMaker<T>& GetPtrMaker(std::string Name){
+    if(showerPtrMakers.find(Name) == showerPtrMakers.end()){
       throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker does not exist" << std::endl;
     }
     else{
-      if(!showerPtrMakers[InstanceName]->CheckPtrMaker()){
+      if(!showerPtrMakers[Name]->CheckPtrMaker()){
 	throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker is not set" << std::endl;
       }
-      reco::shower::ShowerPtrMaker<T>* ptrmaker = dynamic_cast<reco::shower::ShowerPtrMaker<T> *>(showerassnPtrs[InstanceName].get());
+      reco::shower::ShowerPtrMaker<T>* ptrmaker = dynamic_cast<reco::shower::ShowerPtrMaker<T> *>(showerassnPtrs[Name].get());
       return ptrmaker->GetPtrMaker();
     }
   }
 
   //Wrapper to return to the the user the art ptr corresponding the index iter. 
   template <class T> 
-  art::Ptr<T> GetArtPtr(std::string InstanceName, int iter){
-    if(showerPtrMakers.find(InstanceName) == showerPtrMakers.end()){
-      throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker does not exist for " << InstanceName << " Did you initialise this? "  << std::endl;
+  art::Ptr<T> GetArtPtr(std::string Name, int iter){
+    if(showerPtrMakers.find(Name) == showerPtrMakers.end()){
+      throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker does not exist for " << Name << " Did you initialise this? "  << std::endl;
     }
     else{
-      if(!showerPtrMakers[InstanceName]->CheckPtrMaker()){
+      if(!showerPtrMakers[Name]->CheckPtrMaker()){
 	throw cet::exception("ShowerProduedPtrsHolder") << "PtrMaker is not set. This is an issue for the devlopment team me. Contact Dom Barker" << std::endl;
       }
-      reco::shower::ShowerPtrMaker<T>* ptrmaker = dynamic_cast<reco::shower::ShowerPtrMaker<T> *>(showerPtrMakers[InstanceName].get());
+      reco::shower::ShowerPtrMaker<T>* ptrmaker = dynamic_cast<reco::shower::ShowerPtrMaker<T> *>(showerPtrMakers[Name].get());
       if(ptrmaker == NULL){
 	throw cet::exception("ShowerProduedPtrsHolder") << "Failed to cast back. Maybe you got the type wrong or you are accidently accessing a differently named product" << std::endl;
       }
@@ -411,6 +457,99 @@ public:
       (showerPtrMaker.second)->Reset();
     }
   }
+
+  int GetVectorPtrSize(std::string Name){
+    if(showerproductPtrs.find(Name) != showerproductPtrs.end()){
+      return showerproductPtrs[Name]->GetVectorPtrSize();
+    }
+    throw cet::exception("ShowerProduedPtrsHolder") << "Product: " << Name << " has not been set in the producers map" << std::endl;
+  }
+
+  void PrintPtr(std::string Name){
+    if(showerproductPtrs.find(Name) != showerproductPtrs.end()){
+      std::string Type     = showerproductPtrs[Name]->GetType();
+      std::string InstanceName = showerproductPtrs[Name]->GetInstanceName();
+      std::cout << "Element Name: " << Name << " Instance Name: " << InstanceName <<  " Type: " << Type << std::endl;
+      return;
+    }
+    if(showerassnPtrs.find(Name) != showerassnPtrs.end()){
+      std::string Type      = showerassnPtrs[Name]->GetType();
+      std::string InstanceName  = showerassnPtrs[Name]->GetInstanceName();
+      std::cout << "Element Name: " << Name << " Instance Name: " << InstanceName <<  " Type: " << Type << std::endl;
+      return;
+    }
+    mf::LogError("ShowerElementHolder") << "Trying to print Element: " << Name << ". This element does not exist in the element holder" << std::endl;
+    return;
+  }
+
+  
+  //This function will print out all the pointers and there types for the user to check. 
+  void PrintPtrs(){
+    
+    unsigned int maxname = 0;
+    for(auto const& showerprodPtr: showerproductPtrs){
+      if(showerprodPtr.first.size() > maxname){
+	maxname = showerprodPtr.first.size();
+      }
+    }
+    for(auto const& showerassnPtr: showerassnPtrs){
+      if(showerassnPtr.first.size() > maxname){
+	maxname = showerassnPtr.first.size();
+      }
+    }
+
+    std::map<std::string,std::pair<std::string,std::string> > Type_showerprodPtrs;
+    std::map<std::string,std::pair<std::string,std::string> > Type_showerassnPtrs;
+    for(auto const& showerprodPtr: showerproductPtrs){
+      std::string Type         = (showerprodPtr.second)->GetType();
+      std::string InstanceName = (showerprodPtr.second)->GetInstanceName();
+      Type_showerprodPtrs[showerprodPtr.first] = std::make_pair(InstanceName,Type);
+    }
+    for(auto const& showerassnPtr: showerassnPtrs){
+      std::string Type         = (showerassnPtr.second)->GetType();
+      std::string InstanceName = (showerassnPtr.second)->GetInstanceName();
+      Type_showerassnPtrs[showerassnPtr.first] = std::make_pair(InstanceName,Type);
+    }
+
+    unsigned int maxtype     = 0;
+    unsigned int maxinstname = 0;
+    for(auto const& Type_showerprodPtr: Type_showerprodPtrs){
+      if(Type_showerprodPtr.second.second.size() > maxtype){
+	maxtype = Type_showerprodPtr.second.second.size();
+      }
+      if(Type_showerprodPtr.second.first.size() > maxinstname){
+	maxinstname = Type_showerprodPtr.second.first.size();
+      }
+    }
+    for(auto const& Type_showerassnPtr: Type_showerassnPtrs){
+      if(Type_showerassnPtr.second.second.size() > maxtype){
+	maxtype = Type_showerassnPtr.second.second.size();
+      }
+      if(Type_showerassnPtr.second.first.size() > maxinstname){
+	maxinstname = Type_showerassnPtr.second.first.size();
+      }
+    }
+
+    unsigned int n = maxname + maxtype + maxinstname + 51;
+    std::cout << std::left << std::setfill('*') << std::setw(n-1) << "**" <<std::endl;
+    std::cout << "Unique Ptrs that are added to the event" << std::endl;
+    std::cout << std::left << std::setfill('*') << std::setw(n-1) << "**" <<std::endl;
+    for(auto const& Type_showerprodPtr: Type_showerprodPtrs){
+      std::cout << std::left << std::setfill(' ') << std::setw(21) << "* Data Product Name: " << std::setw(maxname) << Type_showerprodPtr.first;
+      std::cout << std::left << std::setfill(' ') << " * Instance Name: " << std::setw(maxinstname) << Type_showerprodPtr.second.first;  
+      std::cout << std::left << std::setfill(' ') << " * Type: " << std::setw(maxtype) << Type_showerprodPtr.second.second <<  " *" << std::endl;
+    }
+    for(auto const& Type_showerassnPtr: Type_showerassnPtrs){
+      std::cout << std::left << std::setfill(' ') << std::setw(maxname) << std::setw(21)  << "* Association Name: " << std::setw(maxname) << Type_showerassnPtr.first;
+      std::cout << std::left << std::setfill(' ') << " * Instance Name: " << std::setw(maxinstname) << Type_showerassnPtr.second.first;  
+      std::cout << std::left << std::setfill(' ') << " * Type: " << std::setw(maxtype) <<  Type_showerassnPtr.second.second<< " *" << std::endl;
+    }
+    std::cout << std::left << std::setfill('*') << std::setw(n-1) << "**" <<std::endl;
+    std::cout << std::setfill(' ');
+    std::cout << std::setw(0); 
+    return;
+  }
+
 
 
 private:

@@ -18,6 +18,8 @@
 #include <map>
 #include <string> 
 #include <memory>
+#include <iomanip>
+#include <cxxabi.h>
 
 namespace reco {
   namespace shower {
@@ -43,12 +45,14 @@ public:
     throw cet::exception("ShowerElementHolder") << "Trying to set an element that is not a product" << std::endl;
   }
 
+  virtual std::string GetType() = 0;
+
   bool CheckShowerElement(){
     if(elementPtr) return true;
     else return false;
   }
 
-  void Clear(){
+   void Clear(){
     elementPtr    = 0;
   }
 
@@ -90,7 +94,12 @@ public:
       return T();
     }
   } 
-    
+
+  std::string GetType() override {
+    int status = -9;
+    return abi::__cxa_demangle(typeid(element).name(),NULL,NULL,&status);  
+  }
+
 protected:
   T   element; 
 };
@@ -102,11 +111,11 @@ class reco::shower::ShowerDataProduct : public reco::shower::ShowerElementAccess
 public:
   
   ShowerDataProduct(){
-    this->elementPtr      = 1;
+    this->elementPtr      = 0;
     checkifset            = false;
   }
 
-  ShowerDataProduct(T& Element, bool Checkifset){
+  ShowerDataProduct(T& Element, bool& Checkifset){
     this->elementPtr      = 1;
     this->element         = Element;
     checkifset            =  Checkifset;
@@ -122,7 +131,7 @@ public:
     return checkifset;
   }
 
-  void SetCheckIfSet(bool Checkifset){
+  void SetCheckIfSet(bool& Checkifset){
     checkifset = Checkifset;
   }
 
@@ -137,7 +146,7 @@ class reco::shower::ShowerProperty : public reco::shower::ShowerElementAccessor<
 public:
 
   ShowerProperty(){
-    this->elementPtr = 1;
+    this->elementPtr = 0;
   }
   
   ShowerProperty(T& Element, T2& ElementErr){
@@ -186,26 +195,28 @@ public:
     if(showerproperties.find(Name) != showerproperties.end()){
       if(showerproperties[Name]->CheckShowerElement()){
 	  reco::shower::ShowerElementAccessor<T> *showerprop = dynamic_cast<reco::shower::ShowerElementAccessor<T> *>(showerproperties[Name].get());
+	  if(showerprop == NULL){
+	    throw cet::exception("ShowerElementHolder") << "Trying to get Element: " << Name << ". This element you are filling is not the correct type" << std::endl;
+	  }
 	  showerprop->GetShowerElement(Element);
 	  return 0;
 	}
       else{
-	mf::LogWarning("ShowerElementHolder") << "Trying to get Element" << Name << ". This elment has not been filled" << std::endl;
-	reco::shower::ShowerElementAccessor<T> *showerprop = dynamic_cast<reco::shower::ShowerElementAccessor<T> *>(showerproperties[Name].get());
-	showerprop->GetShowerElement(Element);
+	mf::LogWarning("ShowerElementHolder") << "Trying to get Element " << Name << ". This elment has not been filled" << std::endl;
 	return 1;
       }
     }
     else if(showerdataproducts.find(Name) != showerdataproducts.end()){
       if(showerdataproducts[Name]->CheckShowerElement()){
 	reco::shower::ShowerElementAccessor<T> *showerprop = dynamic_cast<reco::shower::ShowerElementAccessor<T> *>(showerdataproducts[Name].get());
+	if(showerprop == NULL){
+	  throw cet::exception("ShowerElementHolder") << "Trying to get Element: " << Name << ". This element you are filling is not the correct type" << std::endl;
+	}
 	showerprop->GetShowerElement(Element);
 	return 0;
       }
       else{
-	mf::LogWarning("ShowerElementHolder") << "Trying to get Element" << Name << ". This elment has not been filled" << std::endl;
-	reco::shower::ShowerElementAccessor<T> *showerprop = dynamic_cast<reco::shower::ShowerElementAccessor<T> *>(showerdataproducts[Name].get());
-	showerprop->GetShowerElement(Element);
+	mf::LogWarning("ShowerElementHolder") << "Trying to get Element " << Name << ". This elment has not been filled" << std::endl;
 	return 1;
       }
     }
@@ -219,12 +230,18 @@ public:
     if(showerproperties.find(Name) != showerproperties.end()){ 
       if(showerproperties[Name]->CheckShowerElement()){
 	reco::shower::ShowerElementAccessor<T> *showerprop = dynamic_cast<reco::shower::ShowerElementAccessor<T> *>(showerproperties[Name].get());
+	if(showerprop == NULL){
+	  throw cet::exception("ShowerElementHolder") << "Trying to get Element: " << Name << ". This element you are filling is not the correct type" << std::endl;
+	}
 	return showerprop->GetShowerElement();
       }
     }
     else if(showerdataproducts.find(Name) != showerdataproducts.end()){   
       if(showerdataproducts[Name]->CheckShowerElement()){ 
 	reco::shower::ShowerElementAccessor<T> *showerprop = dynamic_cast<reco::shower::ShowerElementAccessor<T> *>(showerdataproducts[Name].get());
+	if(showerprop == NULL){
+	  throw cet::exception("ShowerElementHolder") << "Trying to get Element: " << Name << ". This element you are filling is not the correct type" << std::endl;
+	}
 	return showerprop->GetShowerElement();
       }
     }	
@@ -236,7 +253,7 @@ public:
   template <class T, class T2>
   int GetElementAndError(std::string Name, T& Element,  T2& ElementErr){
     if(showerproperties.find(Name) == showerproperties.end()){
-      mf::LogError("ShowerElementHolder") << "Trying to get Element Errorr: " << Name << ". This elment does not exist in the element holder" << std::endl;
+      mf::LogError("ShowerElementHolder") << "Trying to get Element Error: " << Name << ". This elment does not exist in the element holder" << std::endl;
       return 1;
     }
     reco::shower::ShowerProperty<T,T2> *showerprop = dynamic_cast<reco::shower::ShowerProperty<T,T2> *>(showerproperties[Name].get());
@@ -357,14 +374,100 @@ public:
     return;
   }
 
+  bool CheckAllElementSaveTag(){
+    bool checked = true;
+    for(auto const& showerdataproduct: showerdataproducts){
+      bool check  = showerdataproduct.second->CheckIfSet();
+      if(check){
+	bool elementset = showerdataproduct.second->CheckShowerElement();
+	if(!elementset){
+	  mf::LogError("ShowerElementHolder") << "The following element is not set and was asked to be checked: " << showerdataproduct.first << std::endl;
+	  checked = false;
+	}
+      }
+    }
+    return checked;
+  }
+
   //Set the shower number. This is required the association making.
-  void SetShowerNumber(int shower_iter){
+  void SetShowerNumber(int& shower_iter){
     showernumber = shower_iter;
   }
   
   //Get the shower number.
   int GetShowerNumber(){
     return showernumber;
+  }
+
+  void PrintElement(std::string Name){
+    if(showerdataproducts.find(Name) != showerdataproducts.end()){
+      std::string Type = showerdataproducts[Name]->GetType();
+      std::cout << "Element Name: " << Name << " Type: " << Type << std::endl;
+      return;
+    }
+    if(showerproperties.find(Name) != showerproperties.end()){
+      std::string Type = showerproperties[Name]->GetType();
+      std::cout << "Element Name: " << Name << " Type: " << Type << std::endl;
+      return;
+    }
+    mf::LogError("ShowerElementHolder") << "Trying to print Element: " << Name << ". This element does not exist in the element holder" << std::endl;
+    return;
+  }
+
+  //This function will print out all the elements and there types for the user to check. 
+  void PrintElements(){
+
+    unsigned int maxname = 0;
+    for(auto const& showerprop: showerproperties){
+      if(showerprop.first.size() > maxname){
+	maxname = showerprop.first.size();
+      }
+    }
+    for(auto const& showerdataprod: showerdataproducts){
+      if(showerdataprod.first.size() > maxname){
+	maxname = showerdataprod.first.size();
+      }
+    }
+
+    std::map<std::string,std::string> Type_showerprops;
+    std::map<std::string,std::string> Type_showerdataprods;
+    for(auto const& showerprop: showerproperties){
+      std::string Type = (showerprop.second)->GetType();
+      Type_showerprops[showerprop.first] = Type;
+    }
+    for(auto const& showerdataprod: showerdataproducts){
+      std::string Type = (showerdataprod.second)->GetType();
+      Type_showerdataprods[showerdataprod.first] = Type;
+    }
+
+    unsigned int maxtype = 0;
+    for(auto const& Type_showerprop: Type_showerprops){
+      if(Type_showerprop.second.size() > maxtype){
+	maxtype = Type_showerprop.second.size();
+      }
+    }
+    for(auto const& Type_showerdataprod: Type_showerdataprods){
+      if(Type_showerdataprod.second.size() > maxtype){
+	maxtype = Type_showerdataprod.second.size();
+      }
+    }
+
+    unsigned int n = maxname + maxtype + 33;
+    std::cout << std::left << std::setfill('*') << std::setw(n-1) << "*" <<std::endl;
+    std::cout << "Elements in the element holder" << std::endl;
+    std::cout << std::left << std::setfill('*') << std::setw(n-1) << "*" <<std::endl;
+    for(auto const& Type_showerprop: Type_showerprops){
+      std::cout << std::left << std::setfill(' ') << std::setw(21) << "* Property Name: " << std::setw(maxname) << Type_showerprop.first;
+      std::cout << std::left << std::setfill(' ') << " * Type: " << std::setw(maxtype) << Type_showerprop.second <<  " * " << std::endl;
+    }
+    for(auto const& Type_showerdataprod: Type_showerdataprods){
+      std::cout << std::left << std::setfill(' ') << std::setw(maxname) << std::setw(21)  << "* Data Product Name: " << std::setw(maxname) << Type_showerdataprod.first;
+      std::cout << std::left << std::setfill(' ') << " * Type: " << std::setw(maxtype) <<  Type_showerdataprod.second << " *" << std::endl;
+    }
+    std::cout << std::left << std::setfill('*') << std::setw(n-1) << "*" <<std::endl;
+    std::cout << std::setfill(' ');
+    std::cout << std::setw(0); 
+    return;
   }
 
 private:

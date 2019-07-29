@@ -1,6 +1,6 @@
 //############################################################################
 //### Name:        ShowerTrackFinder                                       ###
-//### Author:      Dominic Barker                                          ###
+//### Author:      Dominic Barker (dominic.barker@sheffield.ac.uk          ###
 //### Date:        13.05.19                                                ###
 //### Description: Tool for finding the initial shower track using a rms   ###
 //###              based method to define when the shower starts to        ###
@@ -61,9 +61,9 @@ namespace ShowerRecoTools{
     void InitialiseProducers() override;
 
     //Function to add the assoctions
-    void AddAssociations(art::Event& Event,
-			 reco::shower::ShowerElementHolder& ShowerEleHolder) override;
-
+    int AddAssociations(art::Event& Event,
+			reco::shower::ShowerElementHolder& ShowerEleHolder) override;
+    
 
 
     std::vector<art::Ptr<recob::Hit> > FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> >& hits, TVector3& ShowerStartPosition, TVector3& ShowerDirection);
@@ -153,6 +153,8 @@ namespace ShowerRecoTools{
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, pfpHandle)){
       throw cet::exception("ShowerTrackFinderEMShower") << "Could not get the pandora pf particles. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
+      recob::Track track;
+      ShowerEleHolder.SetElement(track,"InitialTrack");
       return 1;
     }
     
@@ -160,6 +162,8 @@ namespace ShowerRecoTools{
     art::Handle<std::vector<recob::Cluster> > clusHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, clusHandle)){
       throw cet::exception("ShowerTrackFinderEMShower") << "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
+      recob::Track track;
+      ShowerEleHolder.SetElement(track,"InitialTrack");
       return 1;
     }
     art::FindManyP<recob::Cluster> fmc(pfpHandle, Event, fPFParticleModuleLabel);
@@ -169,7 +173,7 @@ namespace ShowerRecoTools{
     if(clusters.size()<2){
       mf::LogError("ShowerTrackFinder") << "Not enough clusters: "<<clusters.size() << std::endl;
       // throw cet::exception("ShowerTrackFinderEMShower") << "Not enough clusters: "
-      // 						<<clusters.size(<<" ");
+      // <<clusters.size(<<" ");
       return 1;
     }
 
@@ -262,7 +266,7 @@ namespace ShowerRecoTools{
     std::vector<art::Ptr<recob::Hit> > nextmaxPlaneHits = (plane_trackhits.at(nextmaxplane));
 
     if(maxPlaneHits.size() < 2 && nextmaxPlaneHits.size() < 2){
-      mf::LogWarning("ShowerTrackFinder") << "Not Enough Hits" << std::endl;
+      mf::LogError("ShowerTrackFinder") << "Not enough hit to make track " << std::endl;
       return 0;
     }
 
@@ -270,7 +274,7 @@ namespace ShowerRecoTools{
     pma::Track3D* pmatrack = fProjectionMatchingAlg.buildSegment(maxPlaneHits, nextmaxPlaneHits, ShowerStartPosition);
 
     if(!pmatrack){
-      mf::LogWarning("ShowerTrackFinder") << "No PMA track made " << std::endl;
+      mf::LogError("ShowerTrackFinder") << "Failed fit " << std::endl;
       return 1;
     }
 
@@ -285,6 +289,8 @@ namespace ShowerRecoTools{
 
     if(spts.size() < 2){
       mf::LogWarning("ShowerTrackFinder") << "Not Enough Spacepoints" << std::endl;
+      recob::Track track;
+      ShowerEleHolder.SetElement(track,"InitialTrack");
       return 1;
     } 
 
@@ -485,11 +491,20 @@ namespace ShowerRecoTools{
 
 }
 
-  void ShowerTrackFinder::AddAssociations(art::Event& Event,
-					  reco::shower::ShowerElementHolder& ShowerEleHolder
-					  ){
+  int ShowerTrackFinder::AddAssociations(art::Event& Event,
+					 reco::shower::ShowerElementHolder& ShowerEleHolder
+					 ){
+    
+    //Check the track has been set 
+    if(!ShowerEleHolder.CheckElement("InitialTrack")){
+      mf::LogError("ShowerTrackFinderAddAssn") << "Track not set so the assocation can not be made  "<< std::endl;
+      return 1;
+    }
 
-    const art::Ptr<recob::Track> trackptr = GetProducedElementPtr<recob::Track>("InitialTrack", ShowerEleHolder);
+    //Get the size of the ptr as it is.
+    int trackptrsize = GetVectorPtrSize("InitialTrack");
+
+    const art::Ptr<recob::Track> trackptr = GetProducedElementPtr<recob::Track>("InitialTrack", ShowerEleHolder,trackptrsize-1);
     const art::Ptr<recob::Shower> showerptr = GetProducedElementPtr<recob::Shower>("shower", ShowerEleHolder);
 
     AddSingle<art::Assns<recob::Shower, recob::Track> >(showerptr,trackptr,"ShowerTrackAssn");
@@ -500,8 +515,9 @@ namespace ShowerRecoTools{
     for(auto const& TrackHit: TrackHits){
       AddSingle<art::Assns<recob::Track, recob::Hit> >(trackptr,TrackHit,"ShowerTrackHitAssn");
     }
+  
+  return 0;
   }
-
 }
 
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerTrackFinder)

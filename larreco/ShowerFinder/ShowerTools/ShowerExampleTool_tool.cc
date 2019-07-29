@@ -1,6 +1,6 @@
 //############################################################################
 //### Name:        ShowerExampleTool                                       ###
-//### Author:      Dominic Barker                                          ###
+//### Author:      Dominic Barker (dominic.barker@sheffield.ac.uk          ###
 //### Date:        26.06.19                                                ###
 //### Description: Example form of the shower tools                        ###
 //###                                                                      ###
@@ -51,9 +51,9 @@ namespace ShowerRecoTools {
     void InitialiseProducers() override;
 
     //Function to add the assoctions
-    void AddAssociations(art::Event& Event,
+    int AddAssociations(art::Event& Event,
 			reco::shower::ShowerElementHolder& ShowerEleHolder) override;
-
+    
     //prehaps you want a fcl parameter. 
     art::InputTag fPFParticleModuleLabel;
     
@@ -168,22 +168,35 @@ namespace ShowerRecoTools {
     std::cout << "You on are shower: " << showernum << std::endl;
 
     //You can also read out what ptr are set and what elements are set: Coming soon.
-
+    PrintPtrs();
+    PrintPtr("myvertex");
+    ShowerEleHolder.PrintElements();
+    ShowerEleHolder.PrintElement("myvertex");
 
     //Remember to add make a new fcl parmas list for your new tool. For examles see showertools.fcl. And remember to add it the the list in the module fcl params list.
 
     return 0;
   }
 
-  void ShowerExampleTool::AddAssociations(art::Event& Event,
-					  reco::shower::ShowerElementHolder& ShowerEleHolder
-					  ){
-    //Here you add elements to associations defined. You can get the art::Ptrs by  GetProducedElementPtr<T>. Then you can add single like a usally association using AddSingle<assn<T>. Ass below.
-    const art::Ptr<recob::Vertex> vertexptr = GetProducedElementPtr<recob::Vertex>("myvertex", ShowerEleHolder);
+  int ShowerExampleTool::AddAssociations(art::Event& Event,
+					 reco::shower::ShowerElementHolder& ShowerEleHolder
+					 ){
+    //Here you add elements to associations defined. You can get the art::Ptrs by  GetProducedElementPtr<T>. Then you can add single like a usally association using AddSingle<assn<T>. Assn below.
+
+    //First check the element has been set
+    if(!ShowerEleHolder.CheckElement("myvertex")){
+      mf::LogError("ShowerExampleTooAddAssn") << "vertex not set."<< std::endl;
+      return 1;
+    }
+
+    //Then you can get the size of the vector which the unique ptr hold so that you can do associations. If you are comfortable in the fact that your element will always be made when a shower is made you don't need to to do this you can just get the art ptr as:      const art::Ptr<recob::Vertex> vertexptr = GetProducedElementPtr<recob::Vertex>("myvertex", ShowerEleHolder);. Note doing this when you allow partial showers to be set can screw up the assocation for the partial shower. 
+    int ptrsize = GetVectorPtrSize("myvertex");
+
+    const art::Ptr<recob::Vertex> vertexptr = GetProducedElementPtr<recob::Vertex>("myvertex", ShowerEleHolder,ptrsize);
     const art::Ptr<recob::Shower> showerptr = GetProducedElementPtr<recob::Shower>("shower", ShowerEleHolder);
     AddSingle<art::Assns<recob::Shower, recob::Vertex> >(showerptr,vertexptr,"myvertexassan");
     
-    return;
+    return 0;
   }
 }
   
