@@ -348,11 +348,10 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
     //Loop over the tool data products and add them.
     uniqueproducerPtrs.AddDataProducts(selement_holder);
-
-
+		
     //AddAssociations
     for(auto const& fShowerTool: fShowerTools){
-      fShowerTool->AddAssociations(evt,selement_holder);
+			fShowerTool->AddAssociations(evt,selement_holder);
     }
 
     //Reset the showerproperty holder.

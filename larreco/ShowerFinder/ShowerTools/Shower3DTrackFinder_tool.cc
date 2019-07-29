@@ -84,8 +84,8 @@ namespace ShowerRecoTools{
 
 	Shower3DTrackFinder::Shower3DTrackFinder(const fhicl::ParameterSet& pset)
 		: fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
-		fProjectionMatchingAlg(pset.get<fhicl::ParameterSet>("ProjectionMatchingAlg")),
-		fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
+			fProjectionMatchingAlg(pset.get<fhicl::ParameterSet>("ProjectionMatchingAlg")),
+			fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
 	{
 		configure(pset);
 	}
@@ -110,10 +110,10 @@ namespace ShowerRecoTools{
 			return;
 		}
 
-		InitialiseProduct<std::vector<recob::Track> >("InitialTrack");
-		InitialiseProduct<art::Assns<recob::Shower, recob::Track > >("ShowerTrackAssn");
-		InitialiseProduct<art::Assns<recob::Track, recob::Hit > >("ShowerTrackHitAssn");
-		InitialiseProduct<art::Assns<recob::Track, recob::SpacePoint> >("ShowerTrackSpacePointAssn");
+		InitialiseProduct<std::vector<recob::Track> >                   ("InitialTrack");
+		InitialiseProduct<art::Assns<recob::Shower, recob::Track > >    ("ShowerTrackAssn");
+		InitialiseProduct<art::Assns<recob::Track, recob::Hit > >       ("ShowerTrackHitAssn");
+		InitialiseProduct<art::Assns<recob::Track, recob::SpacePoint> > ("ShowerTrackSpacePointAssn");
 	}
 
 
@@ -188,70 +188,20 @@ namespace ShowerRecoTools{
 		trackSpacePoints = FindTrackSpacePoints(spacePoints,ShowerStartPosition,ShowerDirection);
 
 		// Get the hits associated to the space points and seperate them by planes
-		std::map<geo::PlaneID, std::vector<art::Ptr<recob::Hit> > > plane_trackhits;
+		std::vector<art::Ptr<recob::Hit> > trackHits;
 		for(auto const& spacePoint: trackSpacePoints){
-
-			//Get the hit
+			//Get the hits
 			const art::Ptr<recob::Hit> hit = fohsp.at(spacePoint.key());
-
-			geo::WireID wire = hit->WireID();
-			plane_trackhits[wire.asPlaneID()].push_back(hit);
+			trackHits.push_back(hit);
 		}
 
-		//Decide which plane to use
-		int maxhits       = 1; // set to 1 as we require at least 2 track hits per plane
-		geo::TPCID vtxTPC = fGeom->FindTPCAtPosition(ShowerStartPosition);
-		geo::PlaneID maxplane; // Note this contains both tpc and cryostat information
-
-		for(auto const& plane : plane_trackhits){
-			std::vector<art::Ptr<recob::Hit> >  trackhits = plane.second;
-			geo::TPCID maxTPC = (plane.first).asTPCID();
-			if( maxTPC == vtxTPC){
-				if((int) trackhits.size() > maxhits ){
-					maxplane = plane.first;
-					maxhits  = trackhits.size();
-				}
-			}
-		}
-
-		if( maxhits == 1 || !maxplane){
-			mf::LogError("Shower3DTrackFinder") << "Max Plane not set " << std::endl;
+		if (trackHits.size()<2){
+			mf::LogWarning("Shower3DTrackFinder") << "Not Enough Hits to make Track "<<std::endl;
 			return 1;
-		}
-
-		int nextmaxhits  = 1;
-		geo::PlaneID nextmaxplane;
-
-		for(auto const& plane : plane_trackhits){
-			//Check clusters are not in same plane
-			if( (plane.first) == maxplane){continue;}
-			//Need to make sure clusters are in same tpc
-			geo::TPCID nextmaxTPC = (plane.first).asTPCID();
-			if( nextmaxTPC == vtxTPC){
-				std::vector<art::Ptr<recob::Hit> > trackhits = plane.second;
-				if((int) trackhits.size() > nextmaxhits){
-					nextmaxplane = plane.first;
-					nextmaxhits  = trackhits.size();
-				}
-			}
-		}
-
-
-		if( nextmaxhits == 1 || !nextmaxplane){
-			mf::LogError("Shower3DTrackFinder") << "Next Max Plane not set " << std::endl;
-			return 1;
-		}
-
-		std::vector<art::Ptr<recob::Hit> > maxPlaneHits = (plane_trackhits.at(maxplane));
-		std::vector<art::Ptr<recob::Hit> > nextmaxPlaneHits = (plane_trackhits.at(nextmaxplane));
-
-		if(maxPlaneHits.size() < 2 && nextmaxPlaneHits.size() < 2){
-			mf::LogWarning("Shower3DTrackFinder") << "Not Enough Hits" << std::endl;
-			return 0;
 		}
 
 		//Build the 3D track
-		pma::Track3D* pmatrack = fProjectionMatchingAlg.buildSegment(maxPlaneHits, nextmaxPlaneHits, ShowerStartPosition);
+		pma::Track3D* pmatrack = fProjectionMatchingAlg.buildSegment(trackHits, ShowerStartPosition);
 
 		if(!pmatrack){
 			mf::LogWarning("Shower3DTrackFinder") << "No PMA track made " << std::endl;
@@ -308,19 +258,14 @@ namespace ShowerRecoTools{
 			spt1 = spt;
 		}
 
-		std::vector<art::Ptr<recob::Hit> > TrackHits;
-		for(auto const& trackhits_p: plane_trackhits){
-			TrackHits.insert(TrackHits.end(),trackhits_p.second.begin(),trackhits_p.second.end());
-		}
-
 		//Actually make the thing.
 		recob::Track track = recob::Track(recob::TrackTrajectory(std::move(xyz), std::move(pxpypz), std::move(flags), false),
 				util::kBogusI, util::kBogusF, util::kBogusI, recob::tracking::SMatrixSym55(),
 				recob::tracking::SMatrixSym55(), pfparticle.key());
 
     ShowerEleHolder.SetElement(track,"InitialTrack");
-		ShowerEleHolder.SetElement(TrackHits, "InitialTrackHits");
-		ShowerEleHolder.SetElement(spts,"InitialTrackSpacePoints");
+		ShowerEleHolder.SetElement(trackHits, "InitialTrackHits");
+		ShowerEleHolder.SetElement(trackSpacePoints,"InitialTrackSpacePoints");
 
 		if (fDebugEVD){
 			std::cout<<"Do DebugEVD"<<std::endl;
@@ -360,22 +305,18 @@ namespace ShowerRecoTools{
 	void Shower3DTrackFinder::AddAssociations(art::Event& Event,
 			reco::shower::ShowerElementHolder& ShowerEleHolder
 			){
-
 		const art::Ptr<recob::Track> trackptr = GetProducedElementPtr<recob::Track>("InitialTrack", ShowerEleHolder);
 		const art::Ptr<recob::Shower> showerptr = GetProducedElementPtr<recob::Shower>("shower", ShowerEleHolder);
-
 		AddSingle<art::Assns<recob::Shower, recob::Track> >(showerptr,trackptr,"ShowerTrackAssn");
 
 		std::vector<art::Ptr<recob::Hit> > TrackHits;
 		ShowerEleHolder.GetElement("InitialTrackHits",TrackHits);
-
 		for(auto const& TrackHit: TrackHits){
 			AddSingle<art::Assns<recob::Track, recob::Hit> >(trackptr,TrackHit,"ShowerTrackHitAssn");
 		}
 
 		std::vector<art::Ptr<recob::SpacePoint> > TrackSpacePoints;
 		ShowerEleHolder.GetElement("InitialTrackSpacePoints",TrackSpacePoints);
-
 		for(auto const& TrackSpacePoint: TrackSpacePoints){
 			AddSingle<art::Assns<recob::Track, recob::SpacePoint> >(trackptr,TrackSpacePoint,"ShowerTrackSpacePointAssn");
 		}
