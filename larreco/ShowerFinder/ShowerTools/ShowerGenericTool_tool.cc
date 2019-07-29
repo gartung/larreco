@@ -48,9 +48,9 @@ namespace ShowerRecoTools {
     void InitialiseProducers() override;
 
     //Function to add the assoctions
-    void AddAssociations(art::Event& Event,
-			 reco::shower::ShowerElementHolder& ShowerEleHolder) override;
-
+    int AddAssociations(art::Event& Event,
+			reco::shower::ShowerElementHolder& ShowerEleHolder) override;
+    
 
 
   };
@@ -84,10 +84,10 @@ namespace ShowerRecoTools {
     return 0;
   }
 
-  void ShowerGenericTool::AddAssociations(art::Event& Event,
-					  reco::shower::ShowerElementHolder& ShowerEleHolder
-					  ){
-    return;
+  int ShowerGenericTool::AddAssociations(art::Event& Event,
+					 reco::shower::ShowerElementHolder& ShowerEleHolder
+					 ){
+    return 0;
   }
 }
   

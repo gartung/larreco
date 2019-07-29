@@ -1,6 +1,6 @@
 //############################################################################
 //### Name:        ShowerPCADirection                                      ###
-//### Author:      Dominic Barker                                          ###
+//### Author:      Dominic Barker (dominic.barker@sheffield.ac.uk          ###
 //### Date:        13.05.19                                                ###
 //### Description: Tool for finding the shower direction using PCA         ###
 //###              methods. Derviced from PandoraShowers Method            ###

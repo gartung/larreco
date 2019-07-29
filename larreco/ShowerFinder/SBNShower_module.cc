@@ -74,6 +74,7 @@ private:
   art::InputTag fPFParticleModuleLabel;
   bool          fSecondInteration;
   bool          fAllowPartialShowers;
+  bool          fVerbose; 
 
   //fcl tools
   std::vector<std::unique_ptr<ShowerRecoTools::IShowerTool> > fShowerTools;
@@ -102,13 +103,13 @@ art::Ptr<T> reco::shower::SBNShower::GetProducedElementPtr(std::string InstanceN
   
   //Get the number of the shower we are on.
   int index;
-  if(iter == -1){
+  if(iter != -1){
     index = iter;
   }
   else{
     index = ShowerEleHolder.GetShowerNumber();
   }
-  
+
   //Make the ptr
   art::Ptr<T> artptr = uniqueproducerPtrs.GetArtPtr<T>(InstanceName,index);
   return artptr;
@@ -120,22 +121,20 @@ reco::shower::SBNShower::SBNShower(fhicl::ParameterSet const& pset) :
   EDProducer{pset}
 {
   this->reconfigure(pset);
-  produces<std::vector<recob::Shower> >("shower");
-  produces<art::Assns<recob::Shower, recob::Hit> >("hitAssociationsbase");
-  produces<art::Assns<recob::Shower, recob::Cluster> >("clusterAssociationsbase");
-  produces<art::Assns<recob::Shower, recob::SpacePoint> >("spShowerAssociationsbase");
-  produces<art::Assns<recob::Shower, recob::PFParticle> >("pfShowerAssociationsbase");
-
-  //  produces<std::vector<recob::Track> >(); 
-  //  produces<art::Assns<recob::Shower, recob::Track> >(); 
-  //  produces<art::Assns<recob::Track, recob::Hit> >();
+  produces<std::vector<recob::Shower> >();
+  produces<art::Assns<recob::Shower, recob::Hit> >();
+  produces<art::Assns<recob::Shower, recob::Cluster> >();
+  produces<art::Assns<recob::Shower, recob::SpacePoint> >();
+  produces<art::Assns<recob::Shower, recob::PFParticle> >();
 
   // Output -- showers and associations with hits and clusters
-  uniqueproducerPtrs.SetShowerUniqueProduerPtr("shower"                   ,type<std::vector<recob::Shower> >());
-  uniqueproducerPtrs.SetShowerUniqueProduerPtr("clusterAssociationsbase" ,type<art::Assns<recob::Shower, recob::Cluster> >());
-  uniqueproducerPtrs.SetShowerUniqueProduerPtr("hitAssociationsbase"     ,type<art::Assns<recob::Shower, recob::Hit> >());
-  uniqueproducerPtrs.SetShowerUniqueProduerPtr("spShowerAssociationsbase",type<art::Assns<recob::Shower, recob::SpacePoint > >());
-  uniqueproducerPtrs.SetShowerUniqueProduerPtr("pfShowerAssociationsbase",type<art::Assns<recob::Shower, recob::PFParticle> >());
+  uniqueproducerPtrs.SetShowerUniqueProduerPtr(type<std::vector<recob::Shower> >(),"shower");
+  uniqueproducerPtrs.SetShowerUniqueProduerPtr(type<art::Assns<recob::Shower, recob::Cluster> >(),"clusterAssociationsbase");
+  uniqueproducerPtrs.SetShowerUniqueProduerPtr(type<art::Assns<recob::Shower, recob::Hit> >(),"hitAssociationsbase");
+  uniqueproducerPtrs.SetShowerUniqueProduerPtr(type<art::Assns<recob::Shower, recob::SpacePoint > >(),"spShowerAssociationsbase");
+  uniqueproducerPtrs.SetShowerUniqueProduerPtr(type<art::Assns<recob::Shower, recob::PFParticle> >(),"pfShowerAssociationsbase");
+
+  uniqueproducerPtrs.PrintPtrs();
 
 }
 
@@ -162,12 +161,10 @@ void reco::shower::SBNShower::reconfigure(fhicl::ParameterSet const& pset) {
   fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","pandora");
   fSecondInteration      = pset.get<bool         >("SecondInteration",false);
   fAllowPartialShowers   = pset.get<bool         >("AllowPartialShowers",false);
+  fVerbose               = pset.get<bool         >("Verbose",false);
 }
     
 void reco::shower::SBNShower::produce(art::Event& evt) {
-
-  // Output -- showers and associations with hits and clusters
-  // auto showers                = std::make_unique<std::vector<recob::Shower> >();
 
   //Ptr makers for the products 
   uniqueproducerPtrs.SetPtrMakers(evt);
@@ -270,10 +267,21 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
       accept = accept & selement_holder.CheckElement("ShowerEnergy");
       accept = accept & selement_holder.CheckElement("ShowerdEdx");
       if(!accept){continue;}
+          
+      //Check All of the products that have been asked to be checked.
+      bool elements_are_set = selement_holder.CheckAllElementSaveTag();
+      if(!elements_are_set){
+	mf::LogError("SBNShower") << "Not all the elements in the property holder which should be set are not. Bailing. " << std::endl; 
+	continue;
+      }
+      
+      ///Check all the producers 
+      bool producers_are_set = uniqueproducerPtrs.CheckAllProducedElements(selement_holder);
+      if(!producers_are_set){
+	mf::LogError("SBNShower") << "Not all the elements in the property holder which are produced are not set. Bailing. " << std::endl; 
+	continue;
+      }
     }
-
-    //Check All of the products that have been asked to be checked.
-    
 
     //Get the properties 
     TVector3                           ShowerStartPosition  = {-999,-999,-999};
@@ -298,28 +306,23 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
       throw cet::exception("SBNShower")  << "Error in SBNShower Module. A Check on a shower property failed " << std::endl;
     }
 
-    //Check the shower
-    std::cout<<"Shower Vertex: X:"<<ShowerStartPosition.X()<<" Y: "<<ShowerStartPosition.Y()<<" Z: "<<ShowerStartPosition.Z()<<std::endl;
-    std::cout<<"Shower Direction: X:"<<ShowerDirection.X()<<" Y: "<<ShowerDirection.Y()<<" Z: "<<ShowerDirection.Z()<<std::endl;
-    std::cout<<"Shower dEdx: size: "<<ShowerdEdx.size()<<" Plane 0: "<<ShowerdEdx.at(0)<<" Plane 1: "<<ShowerdEdx.at(1)<<" Plane 2: "<<ShowerdEdx.at(2)<<std::endl;
-    std::cout<<"Shower Energy: size: "<<ShowerEnergy.size()<<" Plane 0: "<<ShowerEnergy.at(0)<<" Plane 1: "<<ShowerEnergy.at(1)<<" Plane 2: "<<ShowerEnergy.at(2)<<std::endl;
-    std::cout<<"Shower Best Plane: "<<BestPlane<<std::endl;
+    if(fVerbose){
+      //Check the shower
+      std::cout<<"Shower Vertex: X:"<<ShowerStartPosition.X()<<" Y: "<<ShowerStartPosition.Y()<<" Z: "<<ShowerStartPosition.Z()<<std::endl;
+      std::cout<<"Shower Direction: X:"<<ShowerDirection.X()<<" Y: "<<ShowerDirection.Y()<<" Z: "<<ShowerDirection.Z()<<std::endl;
+      std::cout<<"Shower dEdx: size: "<<ShowerdEdx.size()<<" Plane 0: "<<ShowerdEdx.at(0)<<" Plane 1: "<<ShowerdEdx.at(1)<<" Plane 2: "<<ShowerdEdx.at(2)<<std::endl;
+      std::cout<<"Shower Energy: size: "<<ShowerEnergy.size()<<" Plane 0: "<<ShowerEnergy.at(0)<<" Plane 1: "<<ShowerEnergy.at(1)<<" Plane 2: "<<ShowerEnergy.at(2)<<std::endl;
+      std::cout<<"Shower Best Plane: "<<BestPlane<<std::endl;
+
+      //Print what has been created in the shower
+      selement_holder.PrintElements();
+    }
 
     //Make the shower 
     recob::Shower shower = recob::Shower(ShowerDirection, ShowerDirectionErr,ShowerStartPosition, ShowerDirectionErr,ShowerEnergy,ShowerEnergyErr,ShowerdEdx, ShowerdEdxErr, BestPlane, -999);
     selement_holder.SetElement(shower,"shower");
     ++shower_iter;
     art::Ptr<recob::Shower> ShowerPtr = this->GetProducedElementPtr<recob::Shower>("shower",selement_holder);
-
-    //Make the track and the pointer 
-    //initialtracks->push_back(InitialTrack);
-    //art::Ptr<recob::Track> InitialTrackPtr(makeTrackPtr(initialtracks->size() - 1));
-    //Associate the track and the shower 
-    //   trackAssociations->addSingle(ShowerPtr,InitialTrackPtr);
-    //Associate the track and the initial hits.
-    //    for(auto const& hit: InitialTrackHits){
-    //  hittrackAssociations->addSingle(InitialTrackPtr,hit);
-    //}
 
     //Associate the pfparticle 
     uniqueproducerPtrs.AddSingle<art::Assns<recob::Shower, recob::PFParticle>>(ShowerPtr,pfp,"pfShowerAssociationsbase");
@@ -350,9 +353,16 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     uniqueproducerPtrs.AddDataProducts(selement_holder);
 		
     //AddAssociations
+    int assn_err = 0;
     for(auto const& fShowerTool: fShowerTools){
 			fShowerTool->AddAssociations(evt,selement_holder);
+      assn_err += fShowerTool->AddAssociations(evt,selement_holder);
     }
+    if(!fAllowPartialShowers && assn_err > 0){
+      mf::LogError("SBNShower") << "A association failed and you are not allowing partial showers. The event will not be added to the event " << std::endl; 
+      continue;
+    }
+   
 
     //Reset the showerproperty holder.
     selement_holder.ClearAll();

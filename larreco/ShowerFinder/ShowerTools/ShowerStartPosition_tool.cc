@@ -1,6 +1,6 @@
 //############################################################################
 //### Name:        ShowerStartPosition                                     ###
-//### Author:      Dominic Barker                                          ###
+//### Author:      Dominic Barker (dominic.barker@sheffield.ac.uk          ###
 //### Date:        13.05.19                                                ###
 //### Description: Tool for finding the start poistion                     ###
 //###              methods.                                                ###
@@ -60,14 +60,6 @@ namespace ShowerRecoTools{
 			  art::Event& Event,
 			  reco::shower::ShowerElementHolder& ShowerEleHolder
 			  ) override;
-
-    //Function to initialise the producer i.e produces<std::vector<recob::Vertex> >(); commands go here.
-    void InitialiseProducers() override;
-
-    //Function to add the assoctions
-    void AddAssociations(art::Event& Event,
-			reco::shower::ShowerElementHolder& ShowerEleHolder) override;
-    
     
     art::InputTag fPFParticleModuleLabel;
     
@@ -92,12 +84,6 @@ namespace ShowerRecoTools{
     fPFParticleModuleLabel      = pset.get<art::InputTag>("PFParticleModuleLabel","");
   }
 
-  void ShowerStartPosition::InitialiseProducers(){
-    if(producerPtr == NULL){
-      mf::LogWarning("ShowerStartPosition") << "The producer ptr has not been set" << std::endl;
-      return;
-    }
-  }
 
   int ShowerStartPosition::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
 					    art::Event& Event,
@@ -194,12 +180,6 @@ namespace ShowerRecoTools{
     return 0; 
   }
 
-  void ShowerStartPosition::AddAssociations(art::Event& Event,
-					    reco::shower::ShowerElementHolder& ShowerEleHolder
-					   ){
-
-    return;
-  }
 
 }
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerStartPosition)
