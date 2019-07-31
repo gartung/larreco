@@ -28,7 +28,7 @@
 //C++ Includes
 #include <iostream>
 #include <vector>
-#include <map> 
+#include <map>
 
 //Root Includes
 #include "TVector3.h"
@@ -42,26 +42,26 @@
 #include "TString.h"
 
 namespace shower {
-	class SBNShowerCheatingAlg;
+  class SBNShowerCheatingAlg;
 }
 
 class shower::SBNShowerCheatingAlg {
-	public:
-		SBNShowerCheatingAlg(const fhicl::ParameterSet& pset);
+  public:
+    SBNShowerCheatingAlg(const fhicl::ParameterSet& pset);
 
-		std::map<int,const simb::MCParticle*> GetTrueParticleMap();
-		std::map<int,std::vector<int> > GetTrueChain(std::map<int,const simb::MCParticle*> &trueParticles);
-		void CheatDebugEVD(const simb::MCParticle* trueParticle, art::Event& Event,
-				reco::shower::ShowerElementHolder& ShowerEleHolder, 
-				const art::Ptr<recob::PFParticle>& pfparticle);
+    std::map<int,const simb::MCParticle*> GetTrueParticleMap();
+    std::map<int,std::vector<int> > GetTrueChain(std::map<int,const simb::MCParticle*> &trueParticles);
+    void CheatDebugEVD(const simb::MCParticle* trueParticle, art::Event& Event,
+        reco::shower::ShowerElementHolder& ShowerEleHolder,
+        const art::Ptr<recob::PFParticle>& pfparticle);
 
-	private:
+  private:
 
-		shower::SBNShowerAlg fSBNShowerAlg;
+    shower::SBNShowerAlg fSBNShowerAlg;
 
-		art::InputTag                           						fHitModuleLabel;
-		art::InputTag                           						fPFParticleModuleLabel;
-		art::ServiceHandle<cheat::ParticleInventoryService> particleInventory;
-		art::ServiceHandle<art::TFileService>   tfs;
+    art::InputTag                                       fHitModuleLabel;
+    art::InputTag                                       fPFParticleModuleLabel;
+    art::ServiceHandle<cheat::ParticleInventoryService> particleInventory;
+    art::ServiceHandle<art::TFileService>   tfs;
 };
 #endif

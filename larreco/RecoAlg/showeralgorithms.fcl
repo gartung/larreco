@@ -88,7 +88,8 @@ standard_sbnshoweralg:
 
 standard_sbnshowercheatingalg:
 {
-    HitModuleLabel:        "linecluster"
+		SBNShowerAlg:            @local::standard_sbnshoweralg
+		HitModuleLabel:        "linecluster"
     PFParticleModuleLabel: "pandora"
 }
 
