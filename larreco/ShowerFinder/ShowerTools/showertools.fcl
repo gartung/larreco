@@ -1,22 +1,22 @@
 #include "showeralgorithms.fcl"
 #include "clusteralgorithms.fcl"
-#include "calorimetry.fcl"                                                                           
+#include "calorimetry.fcl"
 
 BEGIN_PROLOG
 
 showerpcadirection:{
-     tool_type: ShowerPCADirection   
-     PFParticleModuleLabel: "pandora"
-     NSegments: 6
-     UseStartPosition: true
-     ChargeWeighted:   true
-     SBNShowerAlg:     @local::standard_sbnshoweralg
-     CalorimetryAlg:   @local::standard_calorimetryalgmc
-     }
+    tool_type: ShowerPCADirection
+    PFParticleModuleLabel: "pandora"
+    NSegments: 6
+    UseStartPosition: true
+    ChargeWeighted:   true
+    SBNShowerAlg:     @local::standard_sbnshoweralg
+    CalorimetryAlg:   @local::standard_calorimetryalgmc
+}
 
 showerlinearenergy:{
     tool_type:  ShowerLinearEnergy
-    PFParticleModuleLabel: "pandora" 
+    PFParticleModuleLabel: "pandora"
     UGradient:   0.00155644
     UIntercept:  5.92931
     VGradient:   0.00173915
@@ -27,10 +27,9 @@ showerlinearenergy:{
     XIntercept:  0
     YGradient:   0
     YIntercept:  0
-    ThreeDGradient:  0 
+    ThreeDGradient:  0
     ThreeDIntercept: 0
-    
-    }
+}
 
 showertrackfinder:{
     tool_type: ShowerTrackFinder
@@ -84,29 +83,28 @@ shower3Dtrackfinder:{
     Nfithits:        [83, 50, 33, 33]
     Toler:           [50., 8.3, 3.3, 3.3 ]
     ApplyChargeWeight: true
-    PFParticleModuleLabel: "pandora"    
-    }
+    PFParticleModuleLabel: "pandora"
+}
 
 showerstartposition:{
     tool_type: ShowerStartPosition
     PFParticleModuleLabel: "pandora"
     UseCollectionOnly: false
     SBNShowerAlg: @local::standard_sbnshoweralg
-    }
+}
 
 showerstandardcalodedx:{
     tool_type: ShowerStandardCalodEdx
     CalorimetryAlg:  @local::standard_calorimetryalgmc
     MaxHitPlane:     true
     MissFirstPoint:  true
-    dEdxTrackLength: 3    
-
-    }
+    dEdxTrackLength: 3
+}
 
 showertrackhitdirection:{
     tool_type: ShowerTrackHitDirection
-    UsePandoraVertex: true  
-    UseStartPosition: true 
+    UsePandoraVertex: true
+    UseStartPosition: true
     HitModuleLabel: "linecluster"
     PFParticleModuleLabel: "pandora"
 }
@@ -138,26 +136,43 @@ showersmarttracktrajectorypointdirection: {
 }
     
 showertrackpcadirection:{
-     tool_type: ShowerTrackPCADirection
-     DebugEVD:         false    
-     ChargeWeighted:   true
-     MinPCAPoints:     10 
-     PFParticleModuleLabel: "pandora"
-     HitModuleLabel:        "linecluster"
-     SBNShowerAlg:     @local::standard_sbnshoweralg
-     CalorimetryAlg:   @local::standard_calorimetryalgmc
+    tool_type: ShowerTrackPCADirection
+    DebugEVD:         false
+    ChargeWeighted:   true
+    MinPCAPoints:     10
+    PFParticleModuleLabel: "pandora"
+    HitModuleLabel:        "linecluster"
+    SBNShowerAlg:     @local::standard_sbnshoweralg
+    CalorimetryAlg:   @local::standard_calorimetryalgmc
+}
+
+showerstartpositioncheater:{
+    tool_type:               ShowerStartPositionCheater
+    SBNShowerAlg:            @local::standard_sbnshoweralg
+    SBNShowerCheatingAlg:    @local::standard_sbnshowercheatingalg
+    PFParticleModuleLabel:  "pandora"
 }
 
 showerdirectioncheater:{
-    tool_type:              ShowerDirectionCheater     
+    tool_type:              ShowerDirectionCheater
     SBNShowerAlg:           @local::standard_sbnshoweralg
+    SBNShowerCheatingAlg:   @local::standard_sbnshowercheatingalg
     PFParticleModuleLabel:  "pandora"
     NSegments:              6
-    RMSFlip:                false 
+    RMSFlip:                false
     VertexFlip:             false
 }
 
+showertrackfindercheater:{
+    tool_type:               ShowerTrackFinderCheater
+    SBNShowerAlg:            @local::standard_sbnshoweralg
+    SBNShowerCheatingAlg:    @local::standard_sbnshowercheatingalg
+    PFParticleModuleLabel:  "pandora"
+    HitModuleLabel:         "linecluster"
+    MaxProjectionDist:      10
+    MaxPerpendicularDist:   1
+    DebugEVD:              false
+}
 
 
 END_PROLOG
-

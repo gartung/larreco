@@ -10,6 +10,7 @@ art_make(
                         larcore_Geometry_Geometry_service
                         lardata_RecoObjects larreco_Deprecated
                         lardataobj_AnalysisBase
+      larreco_RecoAlg_MCRecoUtils
 			larreco_Calorimetry
                         lardata_Utilities
                         larreco_RecoAlg_ClusterRecoUtil

@@ -60,9 +60,6 @@ namespace ShowerRecoTools{
 
 			void InitialiseProducers() override;
 
-			int AddAssociations(art::Event& Event,
-					reco::shower::ShowerElementHolder& ShowerEleHolder) override;
-
 
 			std::vector<art::Ptr<recob::SpacePoint> > FindTrackSpacePoints(std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, TVector3& showerStartPosition,TVector3& showerDirection);
 

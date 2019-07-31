@@ -1,19 +1,12 @@
-include_directories( $ENV{PANDORA_INC} )
-include_directories( $ENV{LARPANDORACONTENT_INC} )
-
-add_subdirectory(Cheating)
-
-cet_enable_asserts()
-
-set( showerfinder_tool_lib_list
+set( showerfinder_cheating_tool_lib_list
 			larreco_RecoAlg
 			larcorealg_Geometry
 			lardataobj_RecoBase
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
 			nutools_RandomUtils_NuRandomService_service
-     			larreco_RecoAlg_MCRecoUtils
-      			${ART_FRAMEWORK_CORE}
+      larreco_RecoAlg_MCRecoUtils
+      ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
 			${ART_FRAMEWORK_SERVICES_REGISTRY}
 			art_Persistency_Common
@@ -33,10 +26,9 @@ set( showerfinder_tool_lib_list
 			${Boost_SYSTEM_LIBRARY}
 			${CLHEP}
 			${ROOT_BASIC_LIB_LIST}
-			larpandora_LArPandoraEventBuilding
     )
 
-art_make(TOOL_LIBRARIES ${showerfinder_tool_lib_list}
+art_make(TOOL_LIBRARIES ${showerfinder_cheating_tool_lib_list}
         )
 
 install_headers()

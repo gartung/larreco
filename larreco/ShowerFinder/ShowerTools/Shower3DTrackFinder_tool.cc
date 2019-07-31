@@ -185,6 +185,7 @@ namespace ShowerRecoTools{
 
 		// If we are selecting the track hits in 3D do it before spliting into planes
 		std::vector<art::Ptr<recob::SpacePoint> > trackSpacePoints;
+
 		trackSpacePoints = FindTrackSpacePoints(spacePoints,ShowerStartPosition,ShowerDirection);
 
 		// Get the hits associated to the space points and seperate them by planes
@@ -268,8 +269,8 @@ namespace ShowerRecoTools{
 		ShowerEleHolder.SetElement(trackSpacePoints,"InitialTrackSpacePoints");
 
 		if (fDebugEVD){
-			std::cout<<"Do DebugEVD"<<std::endl;
-			//fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerPropHolder);
+			std::cout<<"Doing DebugEVD"<<std::endl;
+			fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
 		}
 
 		std::cout <<"#########################################\n"<<

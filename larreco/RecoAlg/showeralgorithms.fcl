@@ -84,7 +84,13 @@ standard_sbnshoweralg:
     UseCollectionOnly: false
     HitModuleLabel:        "linecluster"
     PFParticleModuleLabel: "pandora"
-    EMShowerAlg:       @local::standard_emshoweralgtest
+}
+
+standard_sbnshowercheatingalg:
+{
+		SBNShowerAlg:            @local::standard_sbnshoweralg
+		HitModuleLabel:        "linecluster"
+    PFParticleModuleLabel: "pandora"
 }
 
 END_PROLOG

@@ -185,7 +185,7 @@ namespace ShowerRecoTools{
 						//	    int expHits = (int)fdEdxTrackLength/pitch;	    
 						fdEdx = fCalorimetryAlg.dEdx_AREA(dQdx, avgT/nhits, trackPlaneHits[0]->WireID().Plane);
 
-						//	    std::cout<<"dQdx: "<<dQdx<<" dEdx: "<<fdEdx<<" avgT/nhits: "<< avgT/nhits <<" numHits: "<<nhits<< " pitch: "<<pitch<<" plane: "<<trackPlaneHits[0]->WireID().Plane<<std::endl;
+						std::cout<<"dQdx: "<<dQdx<<" dEdx: "<<fdEdx<<" avgT/nhits: "<< avgT/nhits <<" numHits: "<<nhits<< " pitch: "<<pitch<<" plane: "<<trackPlaneHits[0]->WireID().Plane<<std::endl;
 
 						if (isinf(fdEdx)) { //TODO add error message logger
 							fdEdx=-999;
@@ -226,7 +226,7 @@ namespace ShowerRecoTools{
 			//ShowerEleHolder.SetBestPlane(bestHitsPlane);
 		}
 		std::cout<<"Best Plane: "<<bestPlane<<" and plane with most hits: "<<bestHitsPlane<<std::endl;
-
+		std::cout<<"dEdx: "<<dEdxVec[bestPlane]<<std::endl;
 
 		return 0;
 	}
