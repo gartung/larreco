@@ -185,6 +185,7 @@ namespace ShowerRecoTools{
 
 		// If we are selecting the track hits in 3D do it before spliting into planes
 		std::vector<art::Ptr<recob::SpacePoint> > trackSpacePoints;
+
 		trackSpacePoints = FindTrackSpacePoints(spacePoints,ShowerStartPosition,ShowerDirection);
 
 		// Get the hits associated to the space points and seperate them by planes

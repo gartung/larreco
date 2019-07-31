@@ -1,8 +1,4 @@
-add_subdirectory(Cheating)
-
-cet_enable_asserts()
-
-set( showerfinder_tool_lib_list
+set( showerfinder_cheating_tool_lib_list
 			larreco_RecoAlg
 			larcorealg_Geometry
 			lardataobj_RecoBase
@@ -32,7 +28,7 @@ set( showerfinder_tool_lib_list
 			${ROOT_BASIC_LIB_LIST}
     )
 
-art_make(TOOL_LIBRARIES ${showerfinder_tool_lib_list}
+art_make(TOOL_LIBRARIES ${showerfinder_cheating_tool_lib_list}
         )
 
 install_headers()

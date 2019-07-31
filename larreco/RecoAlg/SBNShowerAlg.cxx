@@ -2,7 +2,6 @@
 
 shower::SBNShowerAlg::SBNShowerAlg(const fhicl::ParameterSet& pset):  
 	fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
-	//,tfs(art::ServiceHandle<art::TFileService>());
 {
 	fUseCollectionOnly     = pset.get<bool>("UseCollectionOnly");
 	fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel");

@@ -844,14 +844,10 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 	    if (Daughter->PdgCode() == 11) {
 	      pfpPrimaries.push_back(Daughter->Self());
 	      ++pfpShowerCounter;
-	      std::cout<<"Breaking?"<<std::endl;
 	      art::Handle<std::vector<recob::Vertex > > vertexHandle;
 	      if (fmpfv.isValid()) {
-		std::cout<<"fmpfv.isValid: "<<std::endl;
-		std::cout<<fmpfv.at(0).front().id()<<std::endl;
 		
 		evt.get(fmpfv.at(0).front().id(),vertexHandle);
-		std::cout<<"No?"<<std::endl;
 		
 		if(vertexHandle.isValid()) {
 		  std::vector< art::Ptr<recob::Vertex> > pfpVertexVector = fmpfv.at(Daughter.key());
@@ -861,7 +857,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
 		}
 	      }
 	      
-	      std::cout<<"No!"<<std::endl;
 
 	    }else if (Daughter->PdgCode() == 13) {
 	      pfpPrimaries.push_back(Daughter->Self());
@@ -1263,7 +1258,7 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       sNumHits_TreeVal[fShowerModuleLabel].push_back(showerhits.size());
 
       if(EvaluatesdEdx){
-	std::cout<<"Shower dEdx: size: "<<ShowerdEdX_vec.size()<<" Plane 0: "<<ShowerdEdX_vec.at(0)<<" Plane 1: "<<ShowerdEdX_vec.at(1)<<" Plane 2: "<<ShowerdEdX_vec.at(2)<<std::endl;
+	std::cout<<"Shower dEdx: size: "<<ShowerdEdX_vec.size()<<" Plane 0: "<<ShowerdEdX_vec.at(0)<<" Plane 1: "<<ShowerdEdX_vec.at(1)<<" Plane 2: "<<ShowerdEdX_vec.at(2)<<" and best plane: "<<ShowerBest_Plane<<std::endl;
 
 	sdEdx_TreeVal[fShowerModuleLabel].push_back((ShowerdEdX_vec[ShowerBest_Plane]));
       }
@@ -1603,9 +1598,9 @@ void ana::ShowerValidation::ClusterValidation(std::vector< art::Ptr<recob::Clust
       std::map<geo::PlaneID, int> hitPlaneMap = RecoUtils::NumberofPlaneHitsFromTrack(*daughterID, clusterhits);
 
       for(std::map<geo::PlaneID, int>::iterator hitPlaneMapit = hitPlaneMap.begin();  hitPlaneMapit != hitPlaneMap.end();  hitPlaneMapit++){
-	std::cout<<"Plane ID: "<<(*hitPlaneMapit).first<<std::endl;
-	std::cout<<"SignalHits: "<<(*hitPlaneMapit).second<<std::endl;
-	std::cout<<"TotalHits: "<<MCTrack_hit_map[hitHandle.id()][*daughterID][(*hitPlaneMapit).first]<<std::endl;
+	//std::cout<<"Plane ID: "<<(*hitPlaneMapit).first<<std::endl;
+	//std::cout<<"SignalHits: "<<(*hitPlaneMapit).second<<std::endl;
+	//std::cout<<"TotalHits: "<<MCTrack_hit_map[hitHandle.id()][*daughterID][(*hitPlaneMapit).first]<<std::endl;
 
 	//Count how many hits are from the true shower.
 	signalhits += (*hitPlaneMapit).second;
@@ -1684,7 +1679,6 @@ void ana::ShowerValidation::PFPValidation(std::vector<art::Ptr<recob::Cluster> >
 					  std::map<art::ProductID,std::map<int,std::map<geo::PlaneID, int> > > & MCTrack_hit_map,
 					  std::string & fShowerModuleLabel){
 
-  std::cout<<"PFP Validation"<<std::endl;
   //Get the associated hits
   art::FindManyP<recob::Hit> fmhc(clusterHandle, evt, clusterHandle.provenance()->moduleLabel());
 
