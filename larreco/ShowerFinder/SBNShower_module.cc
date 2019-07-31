@@ -151,10 +151,13 @@ void reco::shower::SBNShower::reconfigure(fhicl::ParameterSet const& pset) {
   }
 
   //  Initialise the EDProducer ptr in the tools 
-  for(auto const& ShowerTool: fShowerTools){
-    ShowerTool->SetPtr(this);
-    ShowerTool->InitaliseProducerPtr(uniqueproducerPtrs);
-    ShowerTool->InitialiseProducers();
+  std::vector<std::string> SetupTools;
+  for(unsigned int i=0; i<fShowerTools.size(); ++i){ 
+    if(std::find(SetupTools.begin(), SetupTools.end(), fShowerToolNames[i]) != SetupTools.end()){continue;}
+    fShowerTools[i]->SetPtr(this);
+    fShowerTools[i]->InitaliseProducerPtr(uniqueproducerPtrs);
+    fShowerTools[i]->InitialiseProducers();
+    SetupTools.push_back(fShowerToolNames[i]);
   }
 
   //Initialise the other paramters.
@@ -255,18 +258,28 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
     //If we want a full shower and we recieved an error call from a tool return;
     if(err && !fAllowPartialShowers){
-      mf::LogError("SBNShower") << "Error on tool. Assuming all the shower products and properties were not setting and bailing." << std::endl;
+      mf::LogError("SBNShower") << "Error on tool. Assuming all the shower products and properties were not set and bailing." << std::endl;
       continue;
     }
 
     //If we are are not allowing partial shower check all the products to make the shower are correctly set
     if(!fAllowPartialShowers){
-      bool accept = true; 
-      accept = accept & selement_holder.CheckElement("ShowerStartPosition");
-      accept = accept & selement_holder.CheckElement("ShowerDirection");
-      accept = accept & selement_holder.CheckElement("ShowerEnergy");
-      accept = accept & selement_holder.CheckElement("ShowerdEdx");
-      if(!accept){continue;}
+      if(!selement_holder.CheckElement("ShowerStartPosition")){
+	mf::LogError("SBNShower") << "The start position is not set in the element holder. bailing" << std::endl;
+	continue;
+      }
+      if(!selement_holder.CheckElement("ShowerDirection")){
+	mf::LogError("SBNShower") << "The direction is not set in the element holder. bailing" << std::endl;
+	continue;
+      }
+      if(!selement_holder.CheckElement("ShowerEnergy")){
+	mf::LogError("SBNShower") << "The energy is not set in the element holder. bailing" << std::endl;
+	continue;
+      }
+      if(!selement_holder.CheckElement("ShowerdEdx")){
+	mf::LogError("SBNShower") << "The dEdx is not set in the element holder. bailing" << std::endl;
+        continue;
+      }
           
       //Check All of the products that have been asked to be checked.
       bool elements_are_set = selement_holder.CheckAllElementSaveTag();
@@ -355,7 +368,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     //AddAssociations
     int assn_err = 0;
     for(auto const& fShowerTool: fShowerTools){
-			fShowerTool->AddAssociations(evt,selement_holder);
+      fShowerTool->AddAssociations(evt,selement_holder);
       assn_err += fShowerTool->AddAssociations(evt,selement_holder);
     }
     if(!fAllowPartialShowers && assn_err > 0){

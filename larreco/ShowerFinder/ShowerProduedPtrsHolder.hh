@@ -358,7 +358,6 @@ public:
     bool checked = true;
     for(auto const& showerproductPtr: showerproductPtrs){
       if(showerproductPtr.first == "shower"){continue;}
-      std::cout << " showerproductPtr.first: " << showerproductPtr.first << std::endl;
       checked *= selement_holder.CheckElement(showerproductPtr.first);
     }
     return checked;

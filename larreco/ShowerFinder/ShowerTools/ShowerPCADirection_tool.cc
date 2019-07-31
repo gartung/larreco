@@ -164,6 +164,8 @@ namespace ShowerRecoTools {
       TVector3 EigenvectorErr = {-999,-999,-999};
       
       ShowerEleHolder.SetElement(Eigenvector,EigenvectorErr,"ShowerDirection");
+      
+      std::cout << "ShowerDirection: " << Eigenvector.X() << " Y: " << Eigenvector.Y() << " Z: " << Eigenvector.Z() << std::endl;
 
       std::cout <<"#########################################\n"<<
 	"PCA direction Done\n" <<"#########################################\n"<< std::endl;

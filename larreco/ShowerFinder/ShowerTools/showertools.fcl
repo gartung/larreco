@@ -42,6 +42,33 @@ showertrackfinder:{
     Toler:           [50., 8.3, 3.3, 3.3 ]
     ApplyChargeWeight: true
     PFParticleModuleLabel: "pandora"    
+    HitsModuleLabel: "linecluster"
+    UsePandoraSlidingFitTrajectory: true
+    SlidingFitHalfWindow: 20
+    MinTrajectoryPoints: 2
+    }
+
+shower2Dlinearregressiontrackhitfinder:{
+    tool_type:       Shower2DLinearRegressionTrackHitFinder
+    SBNShowerAlg:    @local::standard_sbnshoweralg
+    Nfitpass:        4
+    Nfithits:        [83, 50, 33, 33]
+    Toler:           [50., 8.3, 3.3, 3.3 ]
+    ApplyChargeWeight: true
+    PFParticleModuleLabel: "pandora"    
+    HitsModuleLabel: "linecluster"
+    }
+
+showerpmatrackfinder:{
+    tool_type: ShowerPMATrackFinder
+    MinTrajectoryPoints: 2
+    ProjectionMatchingAlg: @local::standard_projectionmatchingalg
+    } 
+
+showerpandoraslidingfittrackfinder:{
+    tool_type: ShowerPandoraSlidingFitTrackFinder
+    SlidingFitHalfWindow: 20
+    MinTrajectoryPoints: 2
     }
 
 shower3Dtrackfinder:{
@@ -88,10 +115,28 @@ showertrackdirection:{
     tool_type: ShowerTrackDirection
     SBNShowerAlg:          @local::standard_sbnshoweralg
     UsePandoraVertex: true  
-    UseStartPosition: true 
+    UsePositionInfo: true 
     DebugEVD:         false
 }
 
+showertracktrajectorypointdirection: { 
+    tool_type: ShowerTrackTrajectoryPointDirection
+    TrajPoint: 1
+    DebugEVD: false
+    UsePandoraVertex: true
+    UsePositonInfo: true
+    }
+
+showersmarttracktrajectorypointdirection: {
+    tool_type: ShowerSmartTrackTrajectoryPointDirection
+    UsePandoraVertex: false
+    AllowDynamicSliding: false
+    DebugEVD: false
+    UseStartPos: false
+    UsePositionInfo: true
+    AngleCut: 0.01745
+}
+    
 showertrackpcadirection:{
      tool_type: ShowerTrackPCADirection
      DebugEVD:         false    
