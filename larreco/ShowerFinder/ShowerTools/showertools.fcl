@@ -106,6 +106,8 @@ showerstartpositioncheater:{
     SBNShowerAlg:            @local::standard_sbnshoweralg
     SBNShowerCheatingAlg:    @local::standard_sbnshowercheatingalg
     PFParticleModuleLabel:  "pandora"
+    HitModuleLabel:         "linecluster"
+    ClusterCheating:         false
 }
 
 showerdirectioncheater:{
@@ -126,7 +128,7 @@ showertrackfindercheater:{
     HitModuleLabel:         "linecluster"
     MaxProjectionDist:      10
     MaxPerpendicularDist:   1
-    DebugEVD:              false
+    DebugEVD:               false
 }
 
 showerlinearenergycheater:{

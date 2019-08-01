@@ -125,39 +125,47 @@ namespace ShowerRecoTools {
       return 1;
     }
 
-    //Get the clusters
-    art::Handle<std::vector<recob::Cluster> > clusHandle;
-    if (!Event.getByLabel(fPFParticleModuleLabel, clusHandle)){
-      throw cet::exception("ShowerLinearEnergy") << "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
-      return 1;
+    std::map<geo::View_t, std::vector<art::Ptr<recob::Hit> > > view_hits;
+
+    if (ShowerEleHolder.CheckElement("CheatHits")){
+      std::cout<<"Cheating"<<std::endl;
+      std::vector<art::Ptr<recob::Hit> > hits;
+      ShowerEleHolder.GetElement("CheatHits",hits);
+      for (auto const& hit : hits){
+        geo::View_t view = hit->View();
+        view_hits[view].push_back(hit);
+      }
+    } else {
+      //Get the clusters
+      art::Handle<std::vector<recob::Cluster> > clusHandle;
+      if (!Event.getByLabel(fPFParticleModuleLabel, clusHandle)){
+        throw cet::exception("ShowerLinearEnergy") << "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
+        return 1;
+      }
+      art::FindManyP<recob::Cluster> fmc(pfpHandle, Event, fPFParticleModuleLabel);
+      std::vector<art::Ptr<recob::Cluster> > clusters = fmc.at(pfparticle.key());
+
+      //Get the hit association
+      art::FindManyP<recob::Hit> fmhc(clusHandle, Event, fPFParticleModuleLabel);
+
+      //Loop over the clusters in the plane and get the hits
+      for(auto const& cluster: clusters){
+
+        //Get the hits
+        std::vector<art::Ptr<recob::Hit> > hits = fmhc.at(cluster.key());
+
+        //Get the view.
+        geo::View_t view = cluster->View();
+
+        view_hits[view].insert(view_hits[view].end(),hits.begin(),hits.end());
+      }
     }
-    art::FindManyP<recob::Cluster> fmc(pfpHandle, Event, fPFParticleModuleLabel);
-    std::vector<art::Ptr<recob::Cluster> > clusters = fmc.at(pfparticle.key());
-
-    //Get the hit association
-    art::FindManyP<recob::Hit> fmhc(clusHandle, Event, fPFParticleModuleLabel);
-
-    //Match up views
-    std::map<geo::View_t,std::vector<art::Ptr<recob::Hit> > > view_clusters;
-
-    //Loop over the clusters in the plane and get the hits
-    for(auto const& cluster: clusters){
-
-      //Get the hits
-      std::vector<art::Ptr<recob::Hit> > hits = fmhc.at(cluster.key());
-
-      //Get the view.
-      geo::View_t view = cluster->View();
-
-      view_clusters[view].insert(view_clusters[view].end(),hits.begin(),hits.end());
-    }
-
     std::map<unsigned int, double > view_energies;
     //Accounting for events crossing the cathode.
-    for(auto const& cluster: view_clusters){
+    for(auto const& view_hit_iter: view_hits){
 
-      std::vector<art::Ptr<recob::Hit> > hits = cluster.second;
-      geo::View_t view = cluster.first;
+      std::vector<art::Ptr<recob::Hit> > hits = view_hit_iter.second;
+      geo::View_t view = view_hit_iter.first;
 
       //Calculate the Energy for
       double Energy = CalculateEnergy(hits,view);
