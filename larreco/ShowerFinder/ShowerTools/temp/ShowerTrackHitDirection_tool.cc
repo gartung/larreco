@@ -48,7 +48,7 @@ namespace ShowerRecoTools {
     //Generic Direction Finder
     int CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 			  art::Event& Event,
-			  reco::shower::ShowerPropertyHolder& ShowerPropHolder
+			  reco::shower::ShowerElementHolder& ShowerEleHolder
 			  ) override;
 
   private:
@@ -88,72 +88,120 @@ namespace ShowerRecoTools {
 
   int ShowerTrackHitDirection::CalculateProperty(const art::Ptr<recob::PFParticle>& pfparticle,
 					    art::Event& Event,
-					    reco::shower::ShowerPropertyHolder& ShowerPropHolder){
+					    reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     std::cout << "on shower track hit direction" << std::endl;
 
     //Check the Track Hits has been defined
-    if(!ShowerPropHolder.CheckInitialTrackHits()){
-      mf::LogError("ShowerDirection") << "Initial track hits not set"<< std::endl;
+    if(!ShowerEleHolder.CheckElement("InitialTrackHits")){
+      mf::LogError("ShowerTrackHitDirection") << "Initial track hits not set"<< std::endl;
       return 0;
     }
     
     //Check the Track Hits has been defined
-    if(!ShowerPropHolder.CheckInitialTrack()){
-      mf::LogError("ShowerDirection") << "Initial track not set"<< std::endl;
+    if(!ShowerEleHolder.CheckElement("InitialTrack")){
+      mf::LogError("ShowerTrackHitDirection") << "Initial track not set"<< std::endl;
       return 0;
     }
    
     //Check the start position is set.
-    if(fUsePandoraVertex && !ShowerPropHolder.CheckShowerStartPosition()){
-      mf::LogError("ShowerTrackFinder") << "Start position not set, returning "<< std::endl;
+    if(fUsePandoraVertex && !ShowerEleHolder.CheckElement("ShowerStartPosition")){
+      mf::LogError("ShowerTrackHitDirection") << "Start position not set, returning "<< std::endl;
       return 0;
     }
     
     //Get the spacepoints associated to hits
     art::Handle<std::vector<recob::Hit> > hitHandle;
     if (!Event.getByLabel(fHitModuleLabel, hitHandle)){
-      throw cet::exception("ShowerStartPosition") << "Could not configure the spacepoint handle. Something is configured incorrectly. Stopping"; 
+      throw cet::exception("ShowerTrackHitDirection") << "Could not configure the spacepoint handle. Something is configured incorrectly. Stopping"; 
       return 1;
     } 
 
+    //Get the spacepoint handle. We need to do this in 3D.
     art::FindManyP<recob::SpacePoint> fmsp(hitHandle, Event, fPFParticleModuleLabel);
     if(!fmsp.isValid()){
-      throw cet::exception("ShowerStartPosition") << "Spacepoint and hit association not valid. Stopping.";
+      throw cet::exception("ShowerTrackHitDirection") << "Spacepoint and hit association not valid. Stopping.";
       return 1;
     }
-    std::cout << "fmsp.size(): " << fmsp.size() << std::endl;
-     
 
-    std::vector<art::Ptr<recob::Hit> > InitialTrackHits = ShowerPropHolder.GetInitialTrackHits();
+    //Get the initial track hits.
+    std::vector<art::Ptr<recob::Hit> > InitialTrackHits;
+    ShowerEleHolder.GetElement("InitialTrackHits",InitialTrackHits);
 
-    recob::Track InitialTrack = ShowerPropHolder.GetInitialTrack();
+    //Get the initial track?
+    recob::Track InitialTrack;
+    ShowerEleHolder.GetElement("InitialTrack");
+
+    //Get the start poistion 
+    TVector3 StartPosition;
+    if(fUsePandoraVertex){
+      StartPosition = ShowerEleHolder.GetShowerStartPosition();
+    }
+    else{ 
+      geo::Point_t Start_point = InitialTrack.Start();
+      StartPosition = {Start_point.X(),Start_point.Y(),Start_point.Z()};
+    }
     
-    TH1D* XHist = new TH1D("XHist","XHist",30,-1,1);
-    TH1D* YHist = new TH1D("YHist","YHist",30,-1,1);
-    TH1D* ZHist = new TH1D("ZHist","ZHist",30,-1,1);
+    //Calculate the mean direction and the the standard deviation
+    float sumX=0, sumX2=0;
+    float sumY=0, sumY2=0;
+    float sumZ=0, sumZ2=0;
 
-    if(fUseStartPosition){ 
-      geo::Point_t StartPosition;
-      if(fUsePandoraVertex){
-	TVector3 StartPosition_vec = ShowerPropHolder.GetShowerStartPosition();
-	StartPosition.SetCoordinates(StartPosition_vec.X(),StartPosition_vec.Y(),StartPosition_vec.Z()); 
+    //Get the spacepoints associated to the track hit 
+    std::vector<art::Ptr<recob::SpacePoint > > intitaltrack_sp;
+    for(auto const hit: InitialTrackHits){  
+      std::vector<art::Ptr<recob::SpacePoint > > sps = fmsp.at(hit.key());
+      for(auto const sp: sps){
+	intitaltrack_sp.push_back(sp);
+	
+	//Get the direction relative to the start positon 
+	fSBNShowerAlg.SpacePointPosition(sp) - StartPosition
       }
-      else{ 
-	StartPosition = InitialTrack.Start();
-      }
+    }
+
+    //Calculate the mean direction and the the standard deviation
+    float sumX=0, sumX2=0;
+    float sumY=0, sumY2=0;
+    float sumZ=0, sumZ2=0;
+    for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
+      geo::Vector_t TrajPosition = (InitialTrack.LocationAtPoint(traj) - StartPosition).Unit();
+      sumX += TrajPosition.X(); sumX2 += TrajPosition.X()*TrajPosition.X();
+      sumY += TrajPosition.Y(); sumY2 += TrajPosition.Y()*TrajPosition.Y();
+      sumZ += TrajPosition.Z(); sumZ2 += TrajPosition.Z()*TrajPosition.Z();
+    }
+
+    float NumTraj =  InitialTrack.NumberTrajectoryPoints();
+    geo::Vector_t Mean = {sumX/NumTraj,sumY/NumTraj,sumZ/NumTraj};
+    Mean = Mean.Unit();
       
-      //Loop over the hits
-      for (unsigned int hitIt=0; hitIt<InitialTrackHits.size(); ++hitIt) {
-	art::Ptr<recob::Hit> hit = InitialTrackHits.at(hitIt);
-	std::cout << "peaktime: " << hit->PeakTime() << std::endl;
-      }
+    float RMSX = 999;
+    float RMSY = 999;
+    float RMSZ = 999;
+    if(sumX2/NumTraj - ((sumX/NumTraj)*((sumX/NumTraj))) > 0){
+      RMSX = TMath::Sqrt(sumX2/NumTraj - ((sumX/NumTraj)*((sumX/NumTraj))));
+    }
+    if(sumY2/NumTraj - ((sumY/NumTraj)*((sumY/NumTraj))) > 0){
+      RMSY = TMath::Sqrt(sumY2/NumTraj - ((sumY/NumTraj)*((sumY/NumTraj))));
+    }
+    if(sumZ2/NumTraj - ((sumZ/NumTraj)*((sumZ/NumTraj))) > 0){
+      RMSZ = TMath::Sqrt(sumZ2/NumTraj - ((sumZ/NumTraj)*((sumZ/NumTraj))));
+    }
 
-      geo::Vector_t Mean = {XHist->GetMean(), YHist->GetMean(), ZHist->GetMean()};
-      geo::Vector_t RMS  = {XHist->GetRMS(), YHist->GetRMS(), ZHist->GetRMS()};
+    
+    
 
-      //Remove trajectory points from the mean that are not with one sigma.
-      float N = 0.;
+      
+    //Loop over the hits
+    for (unsigned int hitIt=0; hitIt<InitialTrackHits.size(); ++hitIt) {
+      art::Ptr<recob::Hit> hit = InitialTrackHits.at(hitIt);
+      
+    }
+    
+    geo::Vector_t Mean = {XHist->GetMean(), YHist->GetMean(), ZHist->GetMean()};
+    geo::Vector_t RMS  = {XHist->GetRMS(), YHist->GetRMS(), ZHist->GetRMS()};
+    
+    //Remove trajectory points from the mean that are not with one sigma.
+    float N = 0.;
       TVector3 Direction_Mean = {0,0,0};
       for(unsigned int traj=0; traj<InitialTrack.NumberTrajectoryPoints(); ++traj){
 	geo::Vector_t Direction = InitialTrack.DirectionAtPoint(traj);
@@ -168,7 +216,7 @@ namespace ShowerRecoTools {
       
       //Take the mean value
       TVector3 Direction = Direction_Mean*(1/N);
-      ShowerPropHolder.SetShowerDirection(Direction);
+      ShowerEleHolder.SetShowerDirection(Direction);
       return 0;
     }
 

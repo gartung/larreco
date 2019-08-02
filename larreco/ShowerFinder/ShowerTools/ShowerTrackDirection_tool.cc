@@ -38,199 +38,224 @@
 
 namespace ShowerRecoTools {
 
+  
+  class ShowerTrackDirection:IShowerTool {
+    
+  public:
+    
+    ShowerTrackDirection(const fhicl::ParameterSet& pset);
+    
+    ~ShowerTrackDirection(); 
+    
+    //Generic Direction Finder
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
+    
+  private:
+    
+    // Define standard art tool interface
+    void configure(const fhicl::ParameterSet& pset) override;
 
-	class ShowerTrackDirection:IShowerTool {
+    //Algoritma
+    shower::SBNShowerAlg       fSBNShowerAlg;
 
-		public:
+    //fcl
+    bool fUsePandoraVertex;
+    bool fUsePositionInfo;
+    bool fDebugEVD; 
 
-			ShowerTrackDirection(const fhicl::ParameterSet& pset);
+    //services
+    detinfo::DetectorProperties const* fDetProp;
 
-			~ShowerTrackDirection(); 
+  };
+  
+  
+  ShowerTrackDirection::ShowerTrackDirection(const fhicl::ParameterSet& pset)
+    :fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
+     fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
 
-			//Generic Direction Finder
-			int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-					art::Event& Event,
-					reco::shower::ShowerElementHolder& ShowerEleHolder
-					) override;
+  {
+    configure(pset);
+  }
+  
+  ShowerTrackDirection::~ShowerTrackDirection()
+  {
+  }
+  
+  void ShowerTrackDirection::configure(const fhicl::ParameterSet& pset)
+  {
+    fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
+    fUsePositionInfo          = pset.get<bool>("UsePositionInfo");
+    fDebugEVD                 = pset.get<bool>("DebugEVD");  
 
-		private:
+  }
 
-			// Define standard art tool interface
-			void configure(const fhicl::ParameterSet& pset) override;
+  int ShowerTrackDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+					     art::Event& Event,
+					     reco::shower::ShowerElementHolder& ShowerEleHolder){
 
-			//Algoritma
-			shower::SBNShowerAlg       fSBNShowerAlg;
+    std::cout << "ShowerTrackDirection_tool" << std::endl;
 
-			//fcl
-			bool fUsePandoraVertex;
-			bool fUseStartPosition;
-			bool fDebugEVD; 
+    //Check the Track has been defined
+    if(!ShowerEleHolder.CheckElement("InitialTrack")){
+      mf::LogError("ShowerTrackDirection") << "Initial track not set"<< std::endl;
+      return 0;
+    }
+    
+    //Check the start position is set.
+    if(fUsePandoraVertex && !ShowerEleHolder.CheckElement("ShowerStartPosition")){
+      mf::LogError("ShowerTrackDirection") << "Start position not set, returning "<< std::endl;
+      return 0;
+    }
 
-			//services
-			detinfo::DetectorProperties const* fDetProp;
+    //Get the track
+    recob::Track InitialTrack;
+    ShowerEleHolder.GetElement("InitialTrack",InitialTrack);
 
-	};
+    if(fUsePositionInfo){ 
+      geo::Point_t StartPosition;
+      if(fUsePandoraVertex){
+	TVector3 StartPosition_vec = {-999,-999,-999};
+	ShowerEleHolder.GetElement("ShowerStartPosition",StartPosition_vec);
+	StartPosition.SetCoordinates(StartPosition_vec.X(),StartPosition_vec.Y(),StartPosition_vec.Z()); 
+      }
+      else{ 
+	StartPosition = InitialTrack.Start();
+      }
+      
+      //Calculate the mean direction and the the standard deviation
+      float sumX=0, sumX2=0;
+      float sumY=0, sumY2=0;
+      float sumZ=0, sumZ2=0;
+      for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
+	geo::Vector_t TrajPosition = (InitialTrack.LocationAtPoint(traj) - StartPosition).Unit();
+      	sumX += TrajPosition.X(); sumX2 += TrajPosition.X()*TrajPosition.X();
+      	sumY += TrajPosition.Y(); sumY2 += TrajPosition.Y()*TrajPosition.Y();
+      	sumZ += TrajPosition.Z(); sumZ2 += TrajPosition.Z()*TrajPosition.Z();
+      }
 
+      float NumTraj =  InitialTrack.NumberTrajectoryPoints();
+      geo::Vector_t Mean = {sumX/NumTraj,sumY/NumTraj,sumZ/NumTraj};
+      Mean = Mean.Unit();
+      
+      float RMSX = 999;
+      float RMSY = 999;
+      float RMSZ = 999;
+      if(sumX2/NumTraj - ((sumX/NumTraj)*((sumX/NumTraj))) > 0){
+	RMSX = TMath::Sqrt(sumX2/NumTraj - ((sumX/NumTraj)*((sumX/NumTraj))));
+      }
+      if(sumY2/NumTraj - ((sumY/NumTraj)*((sumY/NumTraj))) > 0){
+	RMSY = TMath::Sqrt(sumY2/NumTraj - ((sumY/NumTraj)*((sumY/NumTraj))));
+      }
+      if(sumZ2/NumTraj - ((sumZ/NumTraj)*((sumZ/NumTraj))) > 0){
+	RMSZ = TMath::Sqrt(sumZ2/NumTraj - ((sumZ/NumTraj)*((sumZ/NumTraj))));
+      }
 
-	ShowerTrackDirection::ShowerTrackDirection(const fhicl::ParameterSet& pset)
-		:fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
-		fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
+      TVector3 Direction_Mean = {0,0,0};
+      int N = 0;
+      //Remove trajectory points from the mean that are not with one sigma.
+      for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
+	geo::Point_t TrajPosition = InitialTrack.LocationAtPoint(traj);
+	geo::Vector_t Direction   = (TrajPosition - StartPosition).Unit();
 
-	{
-		configure(pset);
+	if((TMath::Abs((Direction-Mean).X()) < 1*RMSX) && 
+	   (TMath::Abs((Direction-Mean).Y()) < 1*RMSY) && 
+	   (TMath::Abs((Direction-Mean).Z()) < 1*RMSZ)){
+	  TVector3 Direction_vec = {Direction.X(),Direction.Y(),Direction.Z()};
+	  if(Direction_vec.Mag() == 0){continue;}
+	  Direction_Mean += Direction_vec;
+	  ++N;
 	}
+      }
 
-	ShowerTrackDirection::~ShowerTrackDirection()
-	{
+      
+      //Take the mean value
+      if(N > 0){
+	TVector3 Direction    = Direction_Mean.Unit();
+	TVector3 DirectionErr = {RMSX,RMSY,RMSZ};
+	ShowerEleHolder.SetElement(Direction,DirectionErr,"ShowerDirection");
+      }
+      else{
+	mf::LogError("ShowerDirection") << "None of the points are within 1 sigma"<< std::endl;
+	return 1;
+      }
+
+      if (fDebugEVD){
+	std::cout << "running mad" << std::endl;
+	fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
+      }
+      return 0;
+
+    }
+    else{
+
+      float sumX=0, sumX2=0;
+      float sumY=0, sumY2=0;
+      float sumZ=0, sumZ2=0;
+      for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
+	geo::Vector_t  Direction = InitialTrack.DirectionAtPoint(traj);
+      	sumX += Direction.X(); sumX2 += Direction.X()*Direction.X();
+      	sumY += Direction.Y(); sumY2 += Direction.Y()*Direction.Y();
+      	sumZ += Direction.Z(); sumZ2 += Direction.Z()*Direction.Z();
+      }
+
+      float NumTraj =  InitialTrack.NumberTrajectoryPoints();
+      geo::Vector_t Mean = {sumX/NumTraj,sumY/NumTraj,sumZ/NumTraj};
+      Mean = Mean.Unit();
+
+      float RMSX = 999;
+      float RMSY = 999;
+      float RMSZ = 999;
+      if(sumX2/NumTraj - ((sumX/NumTraj)*((sumX/NumTraj))) > 0){
+	RMSX = TMath::Sqrt(sumX2/NumTraj - ((sumX/NumTraj)*((sumX/NumTraj))));
+      }
+      if(sumY2/NumTraj - ((sumY/NumTraj)*((sumY/NumTraj))) > 0){
+	RMSY = TMath::Sqrt(sumY2/NumTraj - ((sumY/NumTraj)*((sumY/NumTraj))));
+      }
+      if(sumZ2/NumTraj - ((sumZ/NumTraj)*((sumZ/NumTraj))) > 0){
+	RMSZ = TMath::Sqrt(sumZ2/NumTraj - ((sumZ/NumTraj)*((sumZ/NumTraj))));
+      }
+
+      //Remove trajectory points from the mean that are not with one sigma.
+      float N = 0.;
+      TVector3 Direction_Mean = {0,0,0};
+      for(unsigned int traj=0; traj<InitialTrack.NumberTrajectoryPoints(); ++traj){
+	geo::Vector_t Direction = InitialTrack.DirectionAtPoint(traj).Unit();
+	if((TMath::Abs((Direction-Mean).X()) < 1*RMSX) && 
+	   (TMath::Abs((Direction-Mean).Y()) < 1*RMSY) && 
+	   (TMath::Abs((Direction-Mean).Z()) < 1*RMSZ)){
+	  TVector3 Direction_vec = {Direction.X(),Direction.Y(),Direction.Z()};
+	  if(Direction_vec.Mag() == 0){continue;}
+	  Direction_Mean += Direction_vec;
+	  ++N;
 	}
+      }
+      
+      //Take the mean value
+      if(N>0){
+	TVector3 Direction = Direction_Mean.Unit();
+	TVector3 DirectionErr = {RMSX,RMSY,RMSZ};
+	ShowerEleHolder.SetElement(Direction,DirectionErr,"ShowerDirection");
+      }
+      else{
+	mf::LogError("ShowerDirection") << "None of the points are within 1 sigma"<< std::endl;
+	return 1;
+      }
 
-	void ShowerTrackDirection::configure(const fhicl::ParameterSet& pset)
-	{
-		fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
-		fUseStartPosition         = pset.get<bool>("UseStartPosition");
-		fDebugEVD                 = pset.get<bool>("DebugEVD");  
+      if (fDebugEVD){
+	fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
+      }
 
-	}
-
-	int ShowerTrackDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-			art::Event& Event,
-			reco::shower::ShowerElementHolder& ShowerEleHolder){
-
-		std::cout << "ShowerTrackDirection_tool" << std::endl;
-
-		//Check the Track has been defined
-		if(!ShowerEleHolder.CheckElement("InitialTrack")){
-			mf::LogError("ShowerTrackDirection") << "Initial track not set, returning"<< std::endl;
-			return 1;
-		}
-
-		//Check the start position is set.
-		if(!ShowerEleHolder.CheckElement("ShowerStartPosition") && fUsePandoraVertex){
-			mf::LogError("ShowerTrackDirection") << "Start position not set, returning "<< std::endl;
-			return 1;
-		}
-
-		recob::Track InitialTrack;
-		ShowerEleHolder.GetElement("InitialTrack",InitialTrack);
-
-		TH1D* XHist = new TH1D("XHist","XHist",30,-1,1);
-		TH1D* YHist = new TH1D("YHist","YHist",30,-1,1);
-		TH1D* ZHist = new TH1D("ZHist","ZHist",30,-1,1);
-
-		if(fUseStartPosition){ 
-			geo::Point_t StartPosition;
-			if(fUsePandoraVertex){
-				TVector3 StartPosition_vec = {-999, -999, -999};
-				ShowerEleHolder.GetElement("ShowerStartPosition",StartPosition_vec);
-				StartPosition.SetCoordinates(StartPosition_vec.X(),StartPosition_vec.Y(),StartPosition_vec.Z()); 
-			}
-			else{ 
-				StartPosition = InitialTrack.Start();
-			}
-
-			//Loop over the trajectory points and average the direction
-			for(unsigned int traj=0; traj<InitialTrack.NumberTrajectoryPoints(); ++traj){
-				geo::Point_t  TrajPosition = InitialTrack.LocationAtPoint(traj);
-				//std::cout << "Traj Position X: " << TrajPosition.X() << " Y: " << TrajPosition.Y() << " Z: " <<  TrajPosition.Z() << std::endl; 
-				//std::cout << "Start Position X: " <<  StartPosition.X() <<" Y: " << StartPosition.Y() << " Z: " << StartPosition.Z() << std::endl;
-				geo::Vector_t Direction    = (TrajPosition - StartPosition).Unit();
-
-				XHist->Fill(Direction.X());
-				YHist->Fill(Direction.Y());
-				ZHist->Fill(Direction.Z());
-			}
-
-			TFile *MyFile = new TFile("test.root","RECREATE");
-			XHist->Write();
-			YHist->Write();
-			ZHist->Write();
-			MyFile->Close();
-
-			//geo::Vector_t Mean = {XHist->GetMean(), YHist->GetMean(), ZHist->GetMean()};
-			//geo::Vector_t RMS  = {XHist->GetRMS(), YHist->GetRMS(), ZHist->GetRMS()};
-
-			float N = 0.;
-			TVector3 Direction_Mean = {0,0,0};
-			//Remove trajectory points from the mean that are not with one sigma.
-			for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
-				geo::Point_t TrajPosition = InitialTrack.LocationAtPoint(traj);
-				geo::Vector_t Direction   = (TrajPosition - StartPosition).Unit();
-				// if((TMath::Abs((Direction-Mean).X()) < 2*RMS.X()) && 
-				//    (TMath::Abs((Direction-Mean).Y()) < 2*RMS.Y()) && 
-				//    (TMath::Abs((Direction-Mean).Z()) < 2*RMS.Z())){
-				TVector3 Direction_vec = {Direction.X(),Direction.Y(),Direction.Z()};
-				Direction_Mean += Direction_vec;
-				++N;
-				//}
-			}
-
-
-			//Take the mean value
-			if(N > 0){
-				Direction_Mean *= 1/N;
-				TVector3 Direction = Direction_Mean.Unit();
-				TVector3 DirectionErr = {-999,-999,-999};
-				ShowerEleHolder.SetElement(Direction,DirectionErr,"ShowerDirection");
-			}
-			else{
-				mf::LogError("ShowerDirection") << "None of the points are within 2 sigma"<< std::endl;
-				return 1;
-			}
-
-			if (fDebugEVD){
-				std::cout << "running mad" << std::endl;
-				fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
-			}
-			return 0;
-
-		}	else { //If not using start position
-			//Loop over the trajectory points and average the direction
-			for(unsigned int traj=0; traj<InitialTrack.NumberTrajectoryPoints(); ++traj){
-				geo::Vector_t  Direction = InitialTrack.DirectionAtPoint(traj);
-				XHist->Fill(Direction.X());
-				YHist->Fill(Direction.Y());
-				ZHist->Fill(Direction.Z());
-			}
-
-			geo::Vector_t Mean = {XHist->GetMean(), YHist->GetMean(), ZHist->GetMean()};
-			geo::Vector_t RMS  = {XHist->GetRMS(), YHist->GetRMS(), ZHist->GetRMS()};
-
-			//Remove trajectory points from the mean that are not with one sigma.
-			float N = 0.;
-			TVector3 Direction_Mean = {0,0,0};
-			for(unsigned int traj=0; traj<InitialTrack.NumberTrajectoryPoints(); ++traj){
-				geo::Vector_t Direction = InitialTrack.DirectionAtPoint(traj);
-				if((TMath::Abs((Direction-Mean).X()) < 2*RMS.X()) && 
-						(TMath::Abs((Direction-Mean).Y())< 2*RMS.Y()) && 
-						(TMath::Abs((Direction-Mean).Z()) < 2*RMS.Z())){
-					TVector3 Direction_vec = {Direction.X(),Direction.Y(),Direction.Z()};
-					Direction_Mean += Direction_vec;
-					++N;
-				}
-			}
-
-			//Take the mean value
-			if(N>0){
-				Direction_Mean *= 1/N;
-				TVector3 Direction = Direction_Mean.Unit();
-				TVector3 DirectionErr = {-999,-999,-999};
-				ShowerEleHolder.SetElement(Direction,DirectionErr,"ShowerDirection");
-			}
-			else{
-				mf::LogError("ShowerDirection") << "None of the points are within 2 sigma"<< std::endl;
-				return 1;
-			}
-
-			if (fDebugEVD){
-				std::cout << "running mad" << std::endl;
-				fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
-			}
-
-			return 0;
-		}
-	}
+      
+    }
+    return 0;
+  }
 }
 
-
+  
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerTrackDirection)
+  
+
 
