@@ -65,7 +65,6 @@ namespace ShowerRecoTools {
       //FCL
       art::InputTag fPFParticleModuleLabel;
       art::InputTag fHitModuleLabel;
-      bool          fClusterCheating;
   };
 
 
@@ -84,7 +83,6 @@ namespace ShowerRecoTools {
   {
     fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","");
     fHitModuleLabel        = pset.get<art::InputTag>("HitModuleLabel");
-    fClusterCheating       = pset.get<bool>         ("ClusterCheating");
   }
 
   int ShowerStartPositionCheater::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
@@ -139,41 +137,6 @@ namespace ShowerRecoTools {
     ShowerEleHolder.SetElement(trueStartPos,trueStartPosErr,"ShowerStartPosition");
 
     ShowerEleHolder.SetElement(trueParticle,"TrueParticle");
-
-    std::cout<<"Test"<<std::endl;
-    if (fClusterCheating){
-      std::cout<<"Doing Cluster Cheating"<<std::endl;
-      art::Handle<std::vector<recob::Hit> > hitHandle;
-      std::vector<art::Ptr<recob::Hit> > hits;
-      if(Event.getByLabel(fHitModuleLabel, hitHandle)){
-        art::fill_ptr_vector(hits, hitHandle);
-      }
-
-      // Get the hits associated with the space points
-      art::FindManyP<recob::SpacePoint> fmsph(hitHandle, Event, fPFParticleModuleLabel);
-      if(!fmsph.isValid()){
-        throw cet::exception("ShowerStartPositionCheater") << "Spacepoint and hit association not valid. Stopping.";
-        return 1;
-      }
-
-      std::vector<art::Ptr<recob::Hit> > cheatHits;
-      std::vector<art::Ptr<recob::SpacePoint> > cheatSpacePoints;
-
-      for (auto hit : hits){
-        int trueParticleID = TMath::Abs(RecoUtils::TrueParticleID(hit));
-        if (trueParticleID == trueParticle->TrackId()){
-          cheatHits.push_back(hit);
-          std::vector<art::Ptr<recob::SpacePoint> > sps = fmsph.at(hit.key());
-          if (sps.size() == 1){
-            art::Ptr<recob::SpacePoint> sp = sps.front();
-            cheatSpacePoints.push_back(sp);
-          }
-        }
-      }
-
-      ShowerEleHolder.SetElement(cheatHits, "CheatHits");
-      ShowerEleHolder.SetElement(cheatSpacePoints,"CheatSpacePoints");
-    }
 
     std::cout <<"#########################################\n"<<
       "start position cheater Done\n" <<"#########################################\n"<< std::endl;

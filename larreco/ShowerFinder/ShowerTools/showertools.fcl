@@ -107,7 +107,6 @@ showerstartpositioncheater:{
     SBNShowerCheatingAlg:    @local::standard_sbnshowercheatingalg
     PFParticleModuleLabel:  "pandora"
     HitModuleLabel:         "linecluster"
-    ClusterCheating:         false
 }
 
 showerdirectioncheater:{
