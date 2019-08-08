@@ -168,6 +168,7 @@ showerstartpositioncheater:{
     SBNShowerAlg:            @local::standard_sbnshoweralg
     SBNShowerCheatingAlg:    @local::standard_sbnshowercheatingalg
     PFParticleModuleLabel:  "pandora"
+    HitModuleLabel:         "linecluster"
 }
 
 showerdirectioncheater:{
@@ -188,7 +189,7 @@ showertrackfindercheater:{
     HitModuleLabel:         "linecluster"
     MaxProjectionDist:      10
     MaxPerpendicularDist:   1
-    DebugEVD:              false
+    DebugEVD:               false
 }
 
 showertracktrajtospacepoint:{
@@ -209,6 +210,26 @@ showerslidingstandardcalodedx:{
     dEdxTrackLength:       999 #Max Distance a spacepoint can be away from the start of the track.
     UseMedian:              true
     PFParticleModuleLabel: "pandora"
+}
+
+showerlinearenergycheater:{
+    tool_type:               ShowerLinearEnergyCheat
+    SBNShowerAlg:            @local::standard_sbnshoweralg
+    SBNShowerCheatingAlg:    @local::standard_sbnshowercheatingalg
+    PFParticleModuleLabel:  "pandora"
+    HitModuleLabel:         "linecluster"
+    UGradient:   0.00155644
+    UIntercept:  5.92931
+    VGradient:   0.00173915
+    VIntercept:  -2.13307
+    ZGradient:   0.00153631
+    ZIntercept:  5.19711
+    XGradient:   0
+    XIntercept:  0
+    YGradient:   0
+    YIntercept:  0
+    ThreeDGradient:  0
+    ThreeDIntercept: 0
 }
 
 END_PROLOG

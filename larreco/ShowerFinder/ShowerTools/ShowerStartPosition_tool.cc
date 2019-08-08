@@ -9,11 +9,11 @@
 #include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 
 //Framework Includes
-#include "fhiclcpp/ParameterSet.h"  
-#include "art/Framework/Core/ModuleMacros.h" 
+#include "fhiclcpp/ParameterSet.h"
+#include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Principal/Event.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h" 
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
 #include "art_root_io/TFileService.h"
@@ -22,7 +22,7 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
-//LArSoft Includes 
+//LArSoft Includes
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/Utilities/AssociationUtil.h"
@@ -33,11 +33,11 @@
 #include "larreco/RecoAlg/SBNShowerAlg.h"
 
 
-//C++ Includes 
+//C++ Includes
 #include <iostream>
 #include <vector>
 
-//Root Includes 
+//Root Includes
 #include "TVector3.h"
 #include "TMath.h"
 
@@ -46,39 +46,39 @@ namespace ShowerRecoTools{
 
   class ShowerStartPosition: public IShowerTool {
 
-  public:
-    
-    ShowerStartPosition(const fhicl::ParameterSet& pset);
-    
-    ~ShowerStartPosition(); 
-    
-    // Define standard art tool interface
-    void configure(const fhicl::ParameterSet& pset) override;
-    
-    //Generic Direction Finder
-    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-			  art::Event& Event,
-			  reco::shower::ShowerElementHolder& ShowerEleHolder
-			  ) override;
-    
-    art::InputTag fPFParticleModuleLabel;
-    
-  private:
-    shower::SBNShowerAlg fSBNShowerAlg;
+    public:
+
+      ShowerStartPosition(const fhicl::ParameterSet& pset);
+
+      ~ShowerStartPosition();
+
+      // Define standard art tool interface
+      void configure(const fhicl::ParameterSet& pset) override;
+
+      //Generic Direction Finder
+      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+          art::Event& Event,
+          reco::shower::ShowerElementHolder& ShowerEleHolder
+          ) override;
+
+      art::InputTag fPFParticleModuleLabel;
+
+    private:
+      shower::SBNShowerAlg fSBNShowerAlg;
 
   };
-  
-  
+
+
   ShowerStartPosition::ShowerStartPosition(const fhicl::ParameterSet& pset)
     : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
   {
     configure(pset);
   }
-  
+
   ShowerStartPosition::~ShowerStartPosition()
   {
   }
-  
+
   void ShowerStartPosition::configure(const fhicl::ParameterSet& pset)
   {
     fPFParticleModuleLabel      = pset.get<art::InputTag>("PFParticleModuleLabel","");
@@ -86,9 +86,9 @@ namespace ShowerRecoTools{
 
 
   int ShowerStartPosition::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-					    art::Event& Event,
-					    reco::shower::ShowerElementHolder& ShowerEleHolder
-					    ){
+      art::Event& Event,
+      reco::shower::ShowerElementHolder& ShowerEleHolder
+      ){
 
     std::cout << "hello world start position" << std::endl;
 
@@ -98,16 +98,16 @@ namespace ShowerRecoTools{
     if (Event.getByLabel(fPFParticleModuleLabel, vtxHandle))
       art::fill_ptr_vector(vertices, vtxHandle);
     else {
-      throw cet::exception("ShowerStartPosition") << "Could not get the pandora vertices. Something is not configured correctly. Please give the correct pandora module label. Stopping"; 
+      throw cet::exception("ShowerStartPosition") << "Could not get the pandora vertices. Something is not configured correctly. Please give the correct pandora module label. Stopping";
       return 1;
-    } 
+    }
 
     //Get the spacepoints handle and the hit assoication
     art::Handle<std::vector<recob::SpacePoint> > spHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, spHandle)){
-      throw cet::exception("ShowerStartPosition") << "Coquld not configure the spacepoint handle. Something is configured incorrectly. Stopping"; 
+      throw cet::exception("ShowerStartPosition") << "Coquld not configure the spacepoint handle. Something is configured incorrectly. Stopping";
       return 1;
-    } 
+    }
     art::FindManyP<recob::Hit> fmh(spHandle, Event, fPFParticleModuleLabel);
     if(!fmh.isValid()){
       throw cet::exception("ShowerStartPosition") << "Spacepoint and hit association not valid. Stopping.";
@@ -125,14 +125,19 @@ namespace ShowerRecoTools{
       throw cet::exception("ShowerStartPosition") << "Vertex and PF particle association is somehow not valid. Stopping";
       return 1;
     }
-    std::vector<art::Ptr<recob::Vertex> > vtx_cand = fmv.at(pfparticle.key());
-
-    //If there is more than one then fail becuase I don't think that this can be the case 
-    if(vtx_cand.size() > 1){
-	throw cet::exception("ShowerStartPosition") << "There is more than one vertex associated with the pfparticle. Something the creator of this tool did not consider. Stopping";
+    std::vector<art::Ptr<recob::Vertex> > vtx_cand;
+    try{
+      vtx_cand = fmv.at(pfparticle.key());
+    } catch(...){
+      mf::LogWarning("ShowerStartPosition") << "PFP-Vertex assan not set, returning";
       return 1;
     }
-    
+    //If there is more than one then fail becuase I don't think that this can be the case
+    if(vtx_cand.size() != 1){
+      mf::LogWarning("ShowerStartPosition") << "Wrong number of vertices: "<<vtx_cand.size()<<", returning";
+      return 1;
+    }
+
     //If there is only one vertex good news we just say that is the start of the shower.
     if(vtx_cand.size() == 1){
       art::Ptr<recob::Vertex> StartPositionVertex = vtx_cand[0];
@@ -144,17 +149,17 @@ namespace ShowerRecoTools{
       return 0;
     }
 
-    //If we there have none then use the direction to find the neutrino vertex 
+    //If we there have none then use the direction to find the neutrino vertex
     if(ShowerEleHolder.CheckElement("ShowerDirection")){
 
       TVector3 ShowerDirection = {-999, -999, -999};
       ShowerEleHolder.GetElement("ShowerDirection",ShowerDirection);
-      
+
       art::FindManyP<recob::SpacePoint> fmspp(pfpHandle, Event, fPFParticleModuleLabel);
 
       if (!fmspp.isValid()){
-	throw cet::exception("ShowerStartPosition") << "Trying to get the spacepoints and failed. Something is not configured correctly. Stopping ";
-	return 1;
+        throw cet::exception("ShowerStartPosition") << "Trying to get the spacepoints and failed. Something is not configured correctly. Stopping ";
+        return 1;
       }
 
       //Get the spacepoints
@@ -163,7 +168,7 @@ namespace ShowerRecoTools{
       //Cannot continue if we have no spacepoints
       if(spacePoints_pfp.size() == 0){return 0;}
 
-      //Get the Shower Center 
+      //Get the Shower Center
       TVector3 ShowerCentre = fSBNShowerAlg.ShowerCentre(spacePoints_pfp,fmh);
 
       //Order the Hits from the shower centre. The most negative will be the start position.
@@ -173,11 +178,11 @@ namespace ShowerRecoTools{
       TVector3 ShowerStartPosition = fSBNShowerAlg.SpacePointPosition(spacePoints_pfp[0]);
       TVector3 ShowerStartPositionErr = {-999,-999,-999};
       ShowerEleHolder.SetElement(ShowerStartPosition,ShowerStartPositionErr,"ShowerStartPosition");
-      return 0; 
+      return 0;
     }
-    
+
     mf::LogWarning("ShowerStartPosition") << "Start Position has not been set yet. If you are not calculating the start position again then maybe you should stop";
-    return 0; 
+    return 0;
   }
 
 
