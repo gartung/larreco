@@ -93,17 +93,26 @@ namespace ShowerRecoTools {
 
     //Check the Track has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrack")){
-      mf::LogError("ShowerDirection") << "Initial track not set"<< std::endl;
+      mf::LogError("ShowerTrackTrajectoryPointDirection") << "Initial track not set"<< std::endl;
       return 1;
     }
     recob::Track InitialTrack;
     ShowerEleHolder.GetElement("InitialTrack",InitialTrack);
     
     if((int)InitialTrack.NumberTrajectoryPoints()-1 < fTrajPoint){
-      mf::LogError("ShowerDirection") << "Less that fTrajPoint trajectory points, bailing."<< std::endl;
+      mf::LogError("ShowerTrackTrajectoryPointDirection") << "Less that fTrajPoint trajectory points, bailing."<< std::endl;
       fTrajPoint = InitialTrack.NumberTrajectoryPoints()-1;
     }
-    
+
+    //ignore bogus info.
+    auto flags = InitialTrack.FlagsAtPoint(fTrajPoint);
+    if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+       || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+      {
+      mf::LogError("ShowerTrackTrajectoryPointDirection") << "Bogus trajectory poitn bailing."<< std::endl;
+      return 1;
+      }
+
 
     geo::Vector_t Direction_vec;
     //Get the difference between the point and the start position.
@@ -135,7 +144,6 @@ namespace ShowerRecoTools {
     TVector3 Direction = {Direction_vec.X(), Direction_vec.Y(),Direction_vec.Z()};
     TVector3 DirectionErr = {-999,-999,-999};
     ShowerEleHolder.SetElement(Direction,DirectionErr,"ShowerDirection");
-
     return 0;
   }
 }

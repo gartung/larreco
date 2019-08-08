@@ -174,6 +174,13 @@ namespace ShowerRecoTools{
     
     ShowerEleHolder.SetElement(InitialTrack,"InitialTrack"); 
     
+    TVector3 Start = {InitialTrack.Start().X(), InitialTrack.Start().Y(), InitialTrack.Start().Z()};
+    TVector3 End   = {InitialTrack.End().X(), InitialTrack.End().Y(),InitialTrack.End().Z()};
+    float tracklength = (Start-End).Mag();
+
+    ShowerEleHolder.SetElement(tracklength,"InitialTrackLength");
+
+
     return 0;
   }
 
@@ -187,23 +194,23 @@ namespace ShowerRecoTools{
       mf::LogError("ShowerPandoraSlidingFitTrackFinderAddAssn") << "Track not set so the assocation can not be made  "<< std::endl;
       return 1;
     }
-
+    
     //Get the size of the ptr as it is.
     int trackptrsize = GetVectorPtrSize("InitialTrack");
-
+    
     const art::Ptr<recob::Track> trackptr = GetProducedElementPtr<recob::Track>("InitialTrack", ShowerEleHolder,trackptrsize-1);
     const art::Ptr<recob::Shower> showerptr = GetProducedElementPtr<recob::Shower>("shower", ShowerEleHolder);
-
+    
     AddSingle<art::Assns<recob::Shower, recob::Track> >(showerptr,trackptr,"ShowerTrackAssn");
-
+    
     std::vector<art::Ptr<recob::SpacePoint> >  TrackSpacepoints;
     ShowerEleHolder.GetElement("InitialTrackSpacePoints",TrackSpacepoints);   
-
+    
     for(auto const& TrackSpacepoint: TrackSpacepoints){
       AddSingle<art::Assns<recob::Track, recob::SpacePoint> >(trackptr,TrackSpacepoint,"ShowerTrackSpacepointAssn");
     }
-  
-  return 0;
+    
+    return 0;
   }
 }
 

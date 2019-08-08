@@ -367,9 +367,11 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 		
     //AddAssociations
     int assn_err = 0;
+    std::vector<std::string> SetupTools;
     for(auto const& fShowerTool: fShowerTools){
-      fShowerTool->AddAssociations(evt,selement_holder);
+      if(std::find(SetupTools.begin(), SetupTools.end(), fShowerToolNames[i]) != SetupTools.end()){continue;}
       assn_err += fShowerTool->AddAssociations(evt,selement_holder);
+      SetupTools.push_back(fShowerToolNames[i]);
     }
     if(!fAllowPartialShowers && assn_err > 0){
       mf::LogError("SBNShower") << "A association failed and you are not allowing partial showers. The event will not be added to the event " << std::endl; 

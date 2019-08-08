@@ -65,24 +65,22 @@ namespace ShowerRecoTools{
 
 			// Define standard art tool interface
 			shower::SBNShowerAlg       fSBNShowerAlg;
-			pma::ProjectionMatchingAlg fProjectionMatchingAlg;
 
 			float fMaxProjectionDist;    // Maximum projection along shower direction, length of cylinder
 			float fMaxPerpendicularDist; // Maximum perpendicular distance, radius of cylinder
 			bool  fForwardHitsOnly;       // Only take hits downstream of shower vertex (projection>0)
 			bool  fDebugEVD;
 
+	                bool fAllowDyanmicLength;  //Use the initial track length to get instead of the fMaxProjectionDist 
+
 			// For 2D method for comparison
 			art::InputTag              fPFParticleModuleLabel;
-			detinfo::DetectorProperties const* fDetProp;
-			art::ServiceHandle<geo::Geometry> fGeom;
+
 	};
 
 
 	Shower3DTrackHitFinder::Shower3DTrackHitFinder(const fhicl::ParameterSet& pset)
-		: fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
-			fProjectionMatchingAlg(pset.get<fhicl::ParameterSet>("ProjectionMatchingAlg")),
-			fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
+		: fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
 	{
 		configure(pset);
 	}
@@ -99,6 +97,7 @@ namespace ShowerRecoTools{
 		fMaxPerpendicularDist  = pset.get<float> ("MaxPerpendicularDist");
 		fForwardHitsOnly       = pset.get<bool>  ("ForwardHitsOnly");
 		fDebugEVD              = pset.get<bool>                      ("DebugEVD");  
+		fAllowDyanmicLength    = pset.get<bool>("AllowDyanmicLength");
 	}
 
 	void Shower3DTrackHitFinder::InitialiseProducers(){
@@ -106,11 +105,6 @@ namespace ShowerRecoTools{
 			mf::LogWarning("Shower3DTrackHitFinder") << "The producer ptr has not been set" << std::endl;
 			return;
 		}
-
-		InitialiseProduct<std::vector<recob::Track> >                   ("InitialTrack");
-		InitialiseProduct<art::Assns<recob::Shower, recob::Track > >    ("ShowerTrackAssn");
-		InitialiseProduct<art::Assns<recob::Track, recob::Hit > >       ("ShowerTrackHitAssn");
-		InitialiseProduct<art::Assns<recob::Track, recob::SpacePoint> > ("ShowerTrackSpacePointAssn");
 	}
 
 
@@ -120,6 +114,14 @@ namespace ShowerRecoTools{
 			){
 		std::cout <<"#########################################\n"<<
 			"hello world track finder 3d\n" <<"#########################################\n"<< std::endl;
+
+		//If we want to use a dynamic length value on a second iteraction get theta value now 
+		if(fAllowDyanmicLength){
+		  if(ShowerEleHolder.CheckElement("InitialTrackLength")){
+		    ShowerEleHolder.GetElement("InitialTrackLength",fMaxProjectionDist);
+		  }
+		}
+		    
 
 		//This is all based on the shower vertex being known. If it is not lets not do the track 
 		if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){

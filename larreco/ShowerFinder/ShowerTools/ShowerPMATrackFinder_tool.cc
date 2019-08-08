@@ -258,6 +258,12 @@ namespace ShowerRecoTools{
 				      recob::tracking::SMatrixSym55(), pfparticle.key());
 
     ShowerEleHolder.SetElement(track,"InitialTrack");
+    
+    TVector3 Start = {track.Start().X(), track.Start().Y(), track.Start().Z()};
+    TVector3 End   = {track.End().X(), track.End().Y(),track.End().Z()};
+    float tracklength = (Start-End).Mag();
+    
+    ShowerEleHolder.SetElement(tracklength,"InitialTrackLength");
 
     return 0;
   }

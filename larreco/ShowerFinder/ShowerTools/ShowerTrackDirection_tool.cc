@@ -130,6 +130,13 @@ namespace ShowerRecoTools {
       float sumY=0, sumY2=0;
       float sumZ=0, sumZ2=0;
       for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
+
+	auto flags = InitialTrack.FlagsAtPoint(traj);
+	if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+	   || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+	  {continue;}
+
+
 	geo::Vector_t TrajPosition = (InitialTrack.LocationAtPoint(traj) - StartPosition).Unit();
       	sumX += TrajPosition.X(); sumX2 += TrajPosition.X()*TrajPosition.X();
       	sumY += TrajPosition.Y(); sumY2 += TrajPosition.Y()*TrajPosition.Y();
@@ -157,6 +164,13 @@ namespace ShowerRecoTools {
       int N = 0;
       //Remove trajectory points from the mean that are not with one sigma.
       for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
+
+	auto flags = InitialTrack.FlagsAtPoint(traj);
+	if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+	   || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+	  {continue;}
+	
+	
 	geo::Point_t TrajPosition = InitialTrack.LocationAtPoint(traj);
 	geo::Vector_t Direction   = (TrajPosition - StartPosition).Unit();
 
@@ -195,6 +209,13 @@ namespace ShowerRecoTools {
       float sumY=0, sumY2=0;
       float sumZ=0, sumZ2=0;
       for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
+	
+	auto flags = InitialTrack.FlagsAtPoint(traj);
+	if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+	   || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+	  {continue;}
+	
+	
 	geo::Vector_t  Direction = InitialTrack.DirectionAtPoint(traj);
       	sumX += Direction.X(); sumX2 += Direction.X()*Direction.X();
       	sumY += Direction.Y(); sumY2 += Direction.Y()*Direction.Y();
@@ -222,6 +243,13 @@ namespace ShowerRecoTools {
       float N = 0.;
       TVector3 Direction_Mean = {0,0,0};
       for(unsigned int traj=0; traj<InitialTrack.NumberTrajectoryPoints(); ++traj){
+	
+	auto flags = InitialTrack.FlagsAtPoint(traj);
+	if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+	   || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+	  {continue;}
+	
+
 	geo::Vector_t Direction = InitialTrack.DirectionAtPoint(traj).Unit();
 	if((TMath::Abs((Direction-Mean).X()) < 1*RMSX) && 
 	   (TMath::Abs((Direction-Mean).Y()) < 1*RMSY) && 
@@ -240,7 +268,7 @@ namespace ShowerRecoTools {
 	ShowerEleHolder.SetElement(Direction,DirectionErr,"ShowerDirection");
       }
       else{
-	mf::LogError("ShowerDirection") << "None of the points are within 1 sigma"<< std::endl;
+	mf::LogError("ShowerTrackDirection") << "None of the points are within 1 sigma"<< std::endl;
 	return 1;
       }
 

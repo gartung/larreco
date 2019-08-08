@@ -95,7 +95,7 @@ namespace ShowerRecoTools {
 
     //Check the Track has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrack")){
-      mf::LogError("ShowerDirection") << "Initial track not set"<< std::endl;
+      mf::LogError("ShowerSmartTrackTrajectoryPointDirection") << "Initial track not set"<< std::endl;
       return 1;
     }
     recob::Track InitialTrack;
@@ -103,7 +103,7 @@ namespace ShowerRecoTools {
 
     //Smartly choose the which trajectory point to look at by ignoring the smush of hits at the vertex. 
     if(InitialTrack.NumberTrajectoryPoints() == 1){
-      mf::LogError("ShowerDirection") << "Not Enough trajectory points."<< std::endl;
+      mf::LogError("ShowerSmartTrackTrajectoryPointDirectio") << "Not Enough trajectory points."<< std::endl;
       return 1;
     }
 
@@ -118,7 +118,7 @@ namespace ShowerRecoTools {
       if(fUsePandoraVertex){
 	//Check the Track has been defined
 	if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
-	  mf::LogError("ShowerDirection") << "Shower start position not set"<< std::endl;
+	  mf::LogError("ShowerSmartTrackTrajectoryPointDirectio") << "Shower start position not set"<< std::endl;
 	  return 1;
 	}
 	TVector3 StartPosition_vec = {-999,-999,-999};
@@ -132,26 +132,69 @@ namespace ShowerRecoTools {
       //Loop over the trajectory points and find two corresponding trajectory points where the angle between themselves (or themsleves and the start position) is less the fMinAngle.
       for(unsigned int traj=0; traj<InitialTrack.NumberTrajectoryPoints()-2; ++traj){
 	++trajpoint;
+	
+	//ignore bogus info.
+	auto trajflags = InitialTrack.FlagsAtPoint(trajpoint);
+	if(trajflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+	   || trajflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+	  {continue;}
+	
+
+	bool bail = false;
+
+	//ignore bogus info.
+	auto flags = InitialTrack.FlagsAtPoint(traj);
+	if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+	   || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+	  {continue;}
+
+	//find the next non bogus traj point.
+	int nexttraj = traj+1;
+	auto nextflags = InitialTrack.FlagsAtPoint(nexttraj);
+	while(nextflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
+	      || nextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+	  if(nexttraj == (int)InitialTrack.NumberTrajectoryPoints()-2){bail = true;break;}
+	  ++nexttraj; 
+	  nextflags = InitialTrack.FlagsAtPoint(nexttraj);
+	}
+	
+	//find the next next non bogus traj point.
+	int nextnexttraj = nexttraj+1;
+	auto nextnextflags = InitialTrack.FlagsAtPoint(nextnexttraj);
+	while(nextnextflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+	      || nextnextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+	  if(nexttraj == (int)InitialTrack.NumberTrajectoryPoints()-1){bail = true;break;}
+	  ++nextnexttraj; 
+	  nextnextflags = InitialTrack.FlagsAtPoint(nextnexttraj);
+	}
+	
+	if(bail){
+	  mf::LogError("ShowerSmartTrackTrajectoryPointDirection") << "Trajectory point not set as rest of the traj points are bogus."<< std::endl;
+	  break;
+	}
       
 	geo::Vector_t TrajPosition_vec      = InitialTrack.LocationAtPoint(traj) - StartPosition ;
 	geo::Vector_t NextTrajPosition_vec;
 	geo::Vector_t NextNextTrajPosition_vec;
 	if(fUseStartPos){
-	  NextTrajPosition_vec  = InitialTrack.LocationAtPoint(traj+1) - StartPosition;
-	  NextNextTrajPosition_vec  = InitialTrack.LocationAtPoint(traj+2) - StartPosition;
+	  NextTrajPosition_vec  = InitialTrack.LocationAtPoint(nexttraj) - StartPosition;
+	  NextNextTrajPosition_vec  = InitialTrack.LocationAtPoint(nextnexttraj) - StartPosition;
 	}
 	else{
-	  NextTrajPosition_vec  = InitialTrack.LocationAtPoint(traj+1)  - InitialTrack.LocationAtPoint(traj); 
-	  NextNextTrajPosition_vec  = InitialTrack.LocationAtPoint(traj+2) - InitialTrack.LocationAtPoint(traj+1);
+	  NextTrajPosition_vec  = InitialTrack.LocationAtPoint(nexttraj)  - InitialTrack.LocationAtPoint(traj); 
+	  NextNextTrajPosition_vec  = InitialTrack.LocationAtPoint(nextnexttraj) - InitialTrack.LocationAtPoint(traj+1);
 	}
 
 	TVector3 TrajPosition = {TrajPosition_vec.X(), TrajPosition_vec.Y(),TrajPosition_vec.Z()};
-	if(TrajPosition.Mag() == 0){continue;}
-
 	TVector3 NextTrajPosition = {NextTrajPosition_vec.X(), NextTrajPosition_vec.Y(),NextTrajPosition_vec.Z()};
 	TVector3 NextNextTrajPosition = {NextNextTrajPosition_vec.X(), NextNextTrajPosition_vec.Y(),NextNextTrajPosition_vec.Z()};
-      
-	if(TrajPosition.Angle(NextTrajPosition) < fAngleCut && TrajPosition.Angle(NextNextTrajPosition) <fAngleCut){std::cout << "broken" << std::endl;break;} 
+
+	//Might still be bogus and we can't use the start point  
+	if(TrajPosition.Mag() == 0){continue;}
+	if(NextTrajPosition.Mag() == 0){continue;}
+	if(NextNextTrajPosition.Mag() == 0){continue;}
+
+	if(TrajPosition.Angle(NextTrajPosition) < fAngleCut && TrajPosition.Angle(NextNextTrajPosition) <fAngleCut){break;} 
 
 	if(fAllowDynamicSliding){
 	  StartPosition = {InitialTrack.LocationAtPoint(traj).X(), InitialTrack.LocationAtPoint(traj).Y(), InitialTrack.LocationAtPoint(traj).Z()};
@@ -166,26 +209,86 @@ namespace ShowerRecoTools {
       for(unsigned int traj=0; traj<InitialTrack.NumberTrajectoryPoints()-2; ++traj){
 	++trajpoint;
 
+	//ignore bogus info.
+	auto trajflags = InitialTrack.FlagsAtPoint(trajpoint);
+	if(trajflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+	   || trajflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+	  {continue;}
+
+
+	//ignore bogus info.
+	auto flags = InitialTrack.FlagsAtPoint(traj);
+	if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+	   || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+	  {continue;}
+	
+	bool bail = false;
+
 	geo::Vector_t TrajDirection_vec;
 
 	if(fUseStartPos){
-	  TrajDirection_vec         = InitialTrack.DirectionAtPoint(0);
+	  int prevtraj = 0; 
+	  auto prevflags = InitialTrack.FlagsAtPoint(prevtraj);
+	  while(prevflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
+		|| prevflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+	    if(prevtraj == (int)InitialTrack.NumberTrajectoryPoints()-2){bail = true;break;}
+	    ++prevtraj; 
+	    prevflags = InitialTrack.FlagsAtPoint(prevtraj);
+	  }
+	  TrajDirection_vec         = InitialTrack.DirectionAtPoint(prevtraj);
 	}
 	else if(fAllowDynamicSliding && traj!=0){
-	  TrajDirection_vec         = InitialTrack.DirectionAtPoint(traj-1);
+	  int prevtraj = traj-1; 
+	  auto prevflags = InitialTrack.FlagsAtPoint(prevtraj);
+	  while(prevflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
+		|| prevflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+	    if(prevtraj == 0){bail = true;break;}
+	    --prevtraj; 
+	    prevflags = InitialTrack.FlagsAtPoint(prevtraj);
+	  }
+	TrajDirection_vec         = InitialTrack.DirectionAtPoint(prevtraj);
 	}
 	else{
 	  TrajDirection_vec         = InitialTrack.DirectionAtPoint(traj);
 	}
+     
+	//find the next non bogus traj point.
+	int nexttraj = traj+1;
+	auto nextflags = InitialTrack.FlagsAtPoint(nexttraj);
+	while(nextflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
+	      || nextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+	  if(nexttraj == (int)InitialTrack.NumberTrajectoryPoints()-2){bail = true;break;}
+	  ++nexttraj; 
+	  nextflags = InitialTrack.FlagsAtPoint(nexttraj);
+	}
 	
-	geo::Vector_t NextTrajDirection_vec     = InitialTrack.DirectionAtPoint(traj+1);
-	geo::Vector_t NextNextTrajDirection_vec = InitialTrack.DirectionAtPoint(traj+2);
+	//find the next next non bogus traj point.
+	int nextnexttraj = nexttraj+1;
+	auto nextnextflags = InitialTrack.FlagsAtPoint(nextnexttraj);
+	while(nextnextflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
+	      || nextnextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+	  if(nexttraj == (int)InitialTrack.NumberTrajectoryPoints()-1){bail = true;break;}
+	  ++nextnexttraj; 
+	  nextnextflags = InitialTrack.FlagsAtPoint(nextnexttraj);
+	}
+	
+	if(bail){
+	  mf::LogError("ShowerSmartTrackTrajectoryPointDirection") << "Trajectory point not set as rest of the traj points are bogus."<< std::endl;
+	  break;
+	}
+	
+	
+	geo::Vector_t NextTrajDirection_vec     = InitialTrack.DirectionAtPoint(nexttraj);
+	geo::Vector_t NextNextTrajDirection_vec = InitialTrack.DirectionAtPoint(nextnexttraj);
 
 	TVector3 TrajDirection = {TrajDirection_vec.X(), TrajDirection_vec.Y(),TrajDirection_vec.Z()};
-	if(TrajDirection.Mag() == 0){continue;}
-
 	TVector3 NextTrajDirection = {NextTrajDirection_vec.X(), NextTrajDirection_vec.Y(),NextTrajDirection_vec.Z()};
 	TVector3 NextNextTrajDirection = {NextNextTrajDirection_vec.X(), NextNextTrajDirection_vec.Y(),NextNextTrajDirection_vec.Z()};
+
+	//Might still be bogus and we can't use the start point  
+	if(TrajDirection.Mag() == 0){continue;}
+	if(NextTrajDirection.Mag() == 0){continue;}
+	if(NextNextTrajDirection.Mag() == 0){continue;}
       
 	if(TrajDirection.Angle(NextTrajDirection) < fAngleCut && TrajDirection.Angle(NextNextTrajDirection) <fAngleCut){std::cout << "broken" << std::endl;break;} 
       }
@@ -193,7 +296,7 @@ namespace ShowerRecoTools {
     }
 
     if(trajpoint == (int) InitialTrack.NumberTrajectoryPoints() -3){
-      mf::LogError("ShowerDirection") << "Trajectory point not set."<< std::endl;
+      mf::LogError("ShowerSmartTrackTrajectoryPointDirectio") << "Trajectory point not set."<< std::endl;
       return 1;
     }
 

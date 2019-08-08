@@ -86,6 +86,17 @@ shower3Dtrackfinder:{
     PFParticleModuleLabel: "pandora"
 }
 
+shower3Dtrackhitfinder:{
+    tool_type: Shower3DTrackHitFinder
+    SBNShowerAlg:          @local::standard_sbnshoweralg
+    PFParticleModuleLabel: "pandora"
+    MaxProjectionDist:     10
+    MaxPerpendicularDist:  1
+    ForwardHitsOnly:       true
+    DebugEVD:              false
+    AllowDyanmicLength:   false
+}
+
 showerstartposition:{
     tool_type: ShowerStartPosition
     PFParticleModuleLabel: "pandora"
@@ -103,10 +114,16 @@ showerstandardcalodedx:{
 
 showertrackhitdirection:{
     tool_type: ShowerTrackHitDirection
+    SBNShowerAlg:          @local::standard_sbnshoweralg
     UsePandoraVertex: true
-    UseStartPosition: true
     HitModuleLabel: "linecluster"
     PFParticleModuleLabel: "pandora"
+}
+
+showertrackspacepointdirection:{
+    tool_type: ShowerTrackSpacePointDirection
+    SBNShowerAlg:          @local::standard_sbnshoweralg
+    UsePandoraVertex: true
 }
 
 showertrackdirection:{
@@ -174,5 +191,24 @@ showertrackfindercheater:{
     DebugEVD:              false
 }
 
+showertracktrajtospacepoint:{
+    tool_type: ShowerTrackTrajToSpacepoint
+    SBNShowerAlg:            @local::standard_sbnshoweralg
+    PFParticleModuleLabel: "pandora"
+    MaxDist:               1
+}
+
+showerslidingstandardcalodedx:{
+    tool_type: ShowerSlidingStandardCalodEdx
+    SBNShowerAlg:          @local::standard_sbnshoweralg
+    CalorimetryAlg:        @local::standard_calorimetryalgmc
+    MinDistCutOff:         3 #Distance in wires a hit has to be from the start position to be used
+    MaxDist:               2 #Distance in wires a that a trajectory point can be from a spacepoint to match to it. 
+    MinAngleToWire:        0.26179 #Minimum angle between the wire direction and the shower direction for the spacepoint to be used 
+    ShapingTime:            2
+    dEdxTrackLength:       999 #Max Distance a spacepoint can be away from the start of the track.
+    UseMedian:              true
+    PFParticleModuleLabel: "pandora"
+}
 
 END_PROLOG

@@ -167,7 +167,7 @@ namespace ShowerRecoTools {
     int showernum = ShowerEleHolder.GetShowerNumber();
     std::cout << "You on are shower: " << showernum << std::endl;
 
-    //You can also read out what ptr are set and what elements are set: Coming soon.
+    //You can also read out what ptr are set and what elements are set:.
     PrintPtrs();
     PrintPtr("myvertex");
     ShowerEleHolder.PrintElements();
