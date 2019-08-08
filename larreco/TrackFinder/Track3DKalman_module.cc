@@ -30,9 +30,9 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-// nutools
+// nurandom
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "nutools/RandomUtils/NuRandomService.h"
+#include "nurandom/RandomUtils/NuRandomService.h"
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
