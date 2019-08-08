@@ -4,8 +4,7 @@ set( showerfinder_cheating_tool_lib_list
 			lardataobj_RecoBase
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			nutools_RandomUtils_NuRandomService_service
-      larreco_RecoAlg_MCRecoUtils
+		      larreco_RecoAlg_MCRecoUtils
       ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
 			${ART_FRAMEWORK_SERVICES_REGISTRY}

@@ -29,7 +29,7 @@ art_make(
                         larreco_Calorimetry
                         lardataobj_AnalysisBase
                         lardata_Utilities
-                        larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+                        larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
                         nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
