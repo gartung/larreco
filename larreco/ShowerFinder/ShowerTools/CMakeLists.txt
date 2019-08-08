@@ -32,7 +32,8 @@ set( showerfinder_tool_lib_list
 			${Boost_SYSTEM_LIBRARY}
 			${CLHEP}
 			${ROOT_BASIC_LIB_LIST}
-			larpandora_LArPandoraEventBuilding
+			 LArPandoraContent	
+                        larpandora_LArPandoraInterface
     )
 
 art_make(TOOL_LIBRARIES ${showerfinder_tool_lib_list}

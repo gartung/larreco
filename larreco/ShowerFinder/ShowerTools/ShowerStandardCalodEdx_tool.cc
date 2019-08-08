@@ -131,7 +131,7 @@ namespace ShowerRecoTools{
       geo::PlaneID hitWire = hit->WireID();
       geo::TPCID TPC = hitWire.asTPCID();
       if (TPC==vtxTPC){
-	(trackHits.at(hit->View())).push_back(hit);
+	(trackHits.at(hitWire.Plane)).push_back(hit);
       }
     }
 
