@@ -1,5 +1,5 @@
 //################################################################################
-//### Name: SBNShower                                                          ###
+//### Name: TRACS                                                              ###
 //### Author: Dominic Barker                                                   ###
 //### Date: 15.05.19                                                           ###
 //### Description: Generic Shower Charaterisation module which allows the      ###
@@ -50,16 +50,16 @@
 
 namespace reco {
   namespace shower {
-    class SBNShower;
+    class TRACS;
   }
 }
 
 //Class 
 
-class reco::shower::SBNShower: public art::EDProducer {
+class reco::shower::TRACS: public art::EDProducer {
 public:
 
-  SBNShower(fhicl::ParameterSet const& pset);
+  TRACS(fhicl::ParameterSet const& pset);
 
   void produce(art::Event& evt);
   void reconfigure(fhicl::ParameterSet const& p);
@@ -86,17 +86,17 @@ private:
 };
 
 template <class T >
-art::Ptr<T> reco::shower::SBNShower::GetProducedElementPtr(std::string InstanceName, reco::shower::ShowerElementHolder& ShowerEleHolder, int iter){
+art::Ptr<T> reco::shower::TRACS::GetProducedElementPtr(std::string InstanceName, reco::shower::ShowerElementHolder& ShowerEleHolder, int iter){
   
   bool check_element = ShowerEleHolder.CheckElement(InstanceName);
   if(!check_element){
-    throw cet::exception("SBNShower") << "To get a element that does not exist" << std::endl;
+    throw cet::exception("TRACS") << "To get a element that does not exist" << std::endl;
     return art::Ptr<T>();
   }
   
   bool check_ptr = uniqueproducerPtrs.CheckUniqueProduerPtr(InstanceName);
   if(!check_ptr){
-    throw cet::exception("SBNShower") << "Tried to get a ptr that does not exist" << std::endl;
+    throw cet::exception("TRACS") << "Tried to get a ptr that does not exist" << std::endl;
     return art::Ptr<T>();
   }
   
@@ -117,7 +117,7 @@ art::Ptr<T> reco::shower::SBNShower::GetProducedElementPtr(std::string InstanceN
 
 
 
-reco::shower::SBNShower::SBNShower(fhicl::ParameterSet const& pset) :
+reco::shower::TRACS::TRACS(fhicl::ParameterSet const& pset) :
   EDProducer{pset}
 {
   this->reconfigure(pset);
@@ -138,7 +138,7 @@ reco::shower::SBNShower::SBNShower(fhicl::ParameterSet const& pset) :
 
 }
 
-void reco::shower::SBNShower::reconfigure(fhicl::ParameterSet const& pset) {
+void reco::shower::TRACS::reconfigure(fhicl::ParameterSet const& pset) {
 
   //Intialise the tools 
   auto const tool_psets = pset.get<std::vector<fhicl::ParameterSet>>("ShowerFinderTools");
@@ -167,7 +167,7 @@ void reco::shower::SBNShower::reconfigure(fhicl::ParameterSet const& pset) {
   fVerbose               = pset.get<bool         >("Verbose",false);
 }
     
-void reco::shower::SBNShower::produce(art::Event& evt) {
+void reco::shower::TRACS::produce(art::Event& evt) {
 
   //Ptr makers for the products 
   uniqueproducerPtrs.SetPtrMakers(evt);
@@ -179,13 +179,13 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     art::fill_ptr_vector(pfps, pfpHandle);
   }
   else {
-    throw cet::exception("SBNShower") << "pfps not loaded." << std::endl;
+    throw cet::exception("TRACS") << "pfps not loaded." << std::endl;
   }
  
   //Handle to access the pandora hits assans
   art::Handle<std::vector<recob::Cluster> > clusterHandle;
   if (!evt.getByLabel(fPFParticleModuleLabel,clusterHandle)){
-    throw cet::exception("SBNShower") << "pfp clusters is not loaded." << std::endl;
+    throw cet::exception("TRACS") << "pfp clusters is not loaded." << std::endl;
   }
 
   //Get the assoications to hits, clusters and spacespoints 
@@ -194,13 +194,13 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
   art::FindManyP<recob::SpacePoint> fmspp(pfpHandle, evt, fPFParticleModuleLabel);
 
   if(!fmcp.isValid()){
-    throw cet::exception("SBNShower") << "Find many clusters is not valid." << std::endl;
+    throw cet::exception("TRACS") << "Find many clusters is not valid." << std::endl;
   }
   if(!fmh.isValid()){
-    throw cet::exception("SBNShower") << "Find many hits is not valid." << std::endl;
+    throw cet::exception("TRACS") << "Find many hits is not valid." << std::endl;
   }
   if(!fmspp.isValid()){
-    throw cet::exception("SBNShower") << "Find many spacepoints is not valid." << std::endl;
+    throw cet::exception("TRACS") << "Find many spacepoints is not valid." << std::endl;
   }
 
   //Holder to pass to the functions, contains the 6 properties of the shower 
@@ -233,7 +233,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
       //Calculate the metric
       err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
       if(err){
-	mf::LogError("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
+	mf::LogError("TRACS") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
 	if(!fAllowPartialShowers && !fSecondInteration) break;
       }
       ++i;
@@ -249,7 +249,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 	err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
       
 	if(err){
-	  mf::LogError("SBNShower") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
+	  mf::LogError("TRACS") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
 	  if(!fAllowPartialShowers) break;
 	}
 	++i;
@@ -258,40 +258,40 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
     //If we want a full shower and we recieved an error call from a tool return;
     if(err && !fAllowPartialShowers){
-      mf::LogError("SBNShower") << "Error on tool. Assuming all the shower products and properties were not set and bailing." << std::endl;
+      mf::LogError("TRACS") << "Error on tool. Assuming all the shower products and properties were not set and bailing." << std::endl;
       continue;
     }
 
     //If we are are not allowing partial shower check all the products to make the shower are correctly set
     if(!fAllowPartialShowers){
       if(!selement_holder.CheckElement("ShowerStartPosition")){
-	mf::LogError("SBNShower") << "The start position is not set in the element holder. bailing" << std::endl;
+	mf::LogError("TRACS") << "The start position is not set in the element holder. bailing" << std::endl;
 	continue;
       }
       if(!selement_holder.CheckElement("ShowerDirection")){
-	mf::LogError("SBNShower") << "The direction is not set in the element holder. bailing" << std::endl;
+	mf::LogError("TRACS") << "The direction is not set in the element holder. bailing" << std::endl;
 	continue;
       }
       if(!selement_holder.CheckElement("ShowerEnergy")){
-	mf::LogError("SBNShower") << "The energy is not set in the element holder. bailing" << std::endl;
+	mf::LogError("TRACS") << "The energy is not set in the element holder. bailing" << std::endl;
 	continue;
       }
       if(!selement_holder.CheckElement("ShowerdEdx")){
-	mf::LogError("SBNShower") << "The dEdx is not set in the element holder. bailing" << std::endl;
+	mf::LogError("TRACS") << "The dEdx is not set in the element holder. bailing" << std::endl;
         continue;
       }
           
       //Check All of the products that have been asked to be checked.
       bool elements_are_set = selement_holder.CheckAllElementSaveTag();
       if(!elements_are_set){
-	mf::LogError("SBNShower") << "Not all the elements in the property holder which should be set are not. Bailing. " << std::endl; 
+	mf::LogError("TRACS") << "Not all the elements in the property holder which should be set are not. Bailing. " << std::endl; 
 	continue;
       }
       
       ///Check all the producers 
       bool producers_are_set = uniqueproducerPtrs.CheckAllProducedElements(selement_holder);
       if(!producers_are_set){
-	mf::LogError("SBNShower") << "Not all the elements in the property holder which are produced are not set. Bailing. " << std::endl; 
+	mf::LogError("TRACS") << "Not all the elements in the property holder which are produced are not set. Bailing. " << std::endl; 
 	continue;
       }
     }
@@ -316,7 +316,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
     if(selement_holder.CheckElement("ShowerBestPlane"))        err += selement_holder.GetElement("ShowerBestPlane",BestPlane);
 
     if(err){
-      throw cet::exception("SBNShower")  << "Error in SBNShower Module. A Check on a shower property failed " << std::endl;
+      throw cet::exception("TRACS")  << "Error in TRACS Module. A Check on a shower property failed " << std::endl;
     }
 
     if(fVerbose){
@@ -374,7 +374,7 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
       SetupTools.push_back(fShowerToolNames[i]);
     }
     if(!fAllowPartialShowers && assn_err > 0){
-      mf::LogError("SBNShower") << "A association failed and you are not allowing partial showers. The event will not be added to the event " << std::endl; 
+      mf::LogError("TRACS") << "A association failed and you are not allowing partial showers. The event will not be added to the event " << std::endl; 
       continue;
     }
    
@@ -391,5 +391,5 @@ void reco::shower::SBNShower::produce(art::Event& evt) {
 
 }
 
-DEFINE_ART_MODULE(reco::shower::SBNShower)
+DEFINE_ART_MODULE(reco::shower::TRACS)
 

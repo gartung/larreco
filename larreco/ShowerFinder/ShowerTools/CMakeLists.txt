@@ -32,7 +32,7 @@ set( showerfinder_tool_lib_list
 			${Boost_SYSTEM_LIBRARY}
 			${CLHEP}
 			${ROOT_BASIC_LIB_LIST}
-			 LArPandoraContent	
+			LArPandoraContent	
                         larpandora_LArPandoraInterface
     )
 

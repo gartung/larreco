@@ -147,15 +147,16 @@ standard_showervalidation: {
  MaxSimEnergy:              1500
 }
 
-standard_sbnshower: {
+standard_tracs_shower: {
  
-    module_type: "SBNShower"
+    module_type: "TRACS"
 
     ShowerFinderTools: [
          @local::showerstartposition,
          @local::showerpcadirection,
          @local::showerlinearenergy,
-         @local::shower3Dtrackfinder,
+         @local::shower3Dtrackhitfinder,
+         @local::showerpandoraslidingfittrackfinder,
          @local::showerstandardcalodedx
           ]
 

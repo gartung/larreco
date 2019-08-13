@@ -52,9 +52,6 @@ namespace ShowerRecoTools{
 
       ~ShowerStartPosition();
 
-      // Define standard art tool interface
-      void configure(const fhicl::ParameterSet& pset) override;
-
       //Generic Direction Finder
       int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
           art::Event& Event,
@@ -72,18 +69,12 @@ namespace ShowerRecoTools{
   ShowerStartPosition::ShowerStartPosition(const fhicl::ParameterSet& pset)
     : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
   {
-    configure(pset);
+    fPFParticleModuleLabel      = pset.get<art::InputTag>("PFParticleModuleLabel","");
   }
 
   ShowerStartPosition::~ShowerStartPosition()
   {
   }
-
-  void ShowerStartPosition::configure(const fhicl::ParameterSet& pset)
-  {
-    fPFParticleModuleLabel      = pset.get<art::InputTag>("PFParticleModuleLabel","");
-  }
-
 
   int ShowerStartPosition::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
       art::Event& Event,

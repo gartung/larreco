@@ -28,16 +28,15 @@ namespace ShowerRecoTools{
   class IShowerTool{
 
   public:
-    
-
+  
     virtual ~IShowerTool() noexcept = default;
-      
+    
     //Generic Elemnt Finder. Used to calculate thing about the shower.
     virtual int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
 				 art::Event& Event,
 				 reco::shower::ShowerElementHolder& ShowerEleHolder
 				 ) = 0;
-
+    
     //Function to initialise the producer i.e produces<std::vector<recob::Vertex> >(); commands go here.
     virtual void InitialiseProducers(){return;}
     
@@ -73,7 +72,7 @@ namespace ShowerRecoTools{
       //Check the element has been set 
       bool check_element = ShowerEleHolder.CheckElement(Name);
       if(!check_element){
-	throw cet::exception("IShowerTool") << "tried to get a element that does not exist. Failed at making the art ptr for Element: " << Name << std::endl;;
+	throw cet::exception("IShowerTool") << "tried to get a element that does not exist. Failed at making the art ptr for Element: " << Name << std::endl;
 	return art::Ptr<T>();
       }
 
