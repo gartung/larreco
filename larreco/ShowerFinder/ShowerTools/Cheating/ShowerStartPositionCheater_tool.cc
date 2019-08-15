@@ -55,9 +55,6 @@ namespace ShowerRecoTools {
 
     private:
 
-      // Define standard art tool interface
-      void configure(const fhicl::ParameterSet& pset) override;
-
       //Algorithm functions
       shower::SBNShowerAlg         fSBNShowerAlg;
       shower::SBNShowerCheatingAlg fSBNShowerCheatingAlg;
@@ -72,23 +69,15 @@ namespace ShowerRecoTools {
     : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
     fSBNShowerCheatingAlg(pset.get<fhicl::ParameterSet>("SBNShowerCheatingAlg"))
   {
-    configure(pset);
+    fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","");
+    fHitModuleLabel        = pset.get<art::InputTag>("HitModuleLabel");
   }
 
   ShowerStartPositionCheater::~ShowerStartPositionCheater()
   {
   }
 
-  void ShowerStartPositionCheater::configure(const fhicl::ParameterSet& pset)
-  {
-    fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","");
-    fHitModuleLabel        = pset.get<art::InputTag>("HitModuleLabel");
-  }
-
   int ShowerStartPositionCheater::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
-
-    std::cout <<"#########################################\n"<<
-      "hello world start position cheater\n" <<"#########################################\n"<< std::endl;
 
     //Could store these in the shower element holder and just calculate once?
     std::map<int,const simb::MCParticle*> trueParticles = fSBNShowerCheatingAlg.GetTrueParticleMap();
@@ -126,7 +115,7 @@ namespace ShowerRecoTools {
     std::pair<int,double> ShowerTrackInfo = ShowerUtils::TrueParticleIDFromTrueChain(showersMothers,showerHits,2);
 
     if(ShowerTrackInfo.first==-99999) {
-      std::cout<<"True Shower Not Found"<<std::endl;
+      mf::LogWarning("ShowerStartPosition") << "True Shower Not Found";
       return 1;
     }
 
@@ -138,8 +127,6 @@ namespace ShowerRecoTools {
 
     ShowerEleHolder.SetElement(trueParticle,"TrueParticle");
 
-    std::cout <<"#########################################\n"<<
-      "start position cheater Done\n" <<"#########################################\n"<< std::endl;
     return 0;
   }
 }

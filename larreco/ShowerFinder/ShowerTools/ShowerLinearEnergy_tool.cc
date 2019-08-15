@@ -49,9 +49,6 @@ namespace ShowerRecoTools {
           ) override;
     private:
 
-      // Define standard art tool interface
-      void configure(const fhicl::ParameterSet& pset) override;
-
       double CalculateEnergy(std::vector<art::Ptr<recob::Hit> >& hits, geo::View_t& view);
 
       //SBN I think should only use U,V and W
@@ -79,16 +76,6 @@ namespace ShowerRecoTools {
   ShowerLinearEnergy::ShowerLinearEnergy(const fhicl::ParameterSet& pset):
     detprop(lar::providerFrom<detinfo::DetectorPropertiesService>())
   {
-    configure(pset);
-  }
-
-  ShowerLinearEnergy::~ShowerLinearEnergy()
-  {
-  }
-
-  void ShowerLinearEnergy::configure(const fhicl::ParameterSet& pset)
-  {
-
     fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
 
     fUGradient   = pset.get<double>("UGradient");
@@ -103,15 +90,18 @@ namespace ShowerRecoTools {
     fYIntercept  = pset.get<double>("YIntercept");
     f3DGradient  = pset.get<double>("ThreeDGradient");
     f3DIntercept = pset.get<double>("ThreeDIntercept");
-
   }
+
+  ShowerLinearEnergy::~ShowerLinearEnergy()
+  {
+  }
+
+
 
   int ShowerLinearEnergy::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
       art::Event& Event,
       reco::shower::ShowerElementHolder& ShowerEleHolder
       ){
-
-    std::cout << "hello world linear energy" << std::endl;
 
     //Holder for the final product
     std::vector<double> ShowerLinearEnergy;
@@ -127,38 +117,28 @@ namespace ShowerRecoTools {
 
     std::map<geo::View_t, std::vector<art::Ptr<recob::Hit> > > view_hits;
 
-    if (ShowerEleHolder.CheckElement("CheatHits")){
-      std::cout<<"Cheating"<<std::endl;
-      std::vector<art::Ptr<recob::Hit> > hits;
-      ShowerEleHolder.GetElement("CheatHits",hits);
-      for (auto const& hit : hits){
-        geo::View_t view = hit->View();
-        view_hits[view].push_back(hit);
-      }
-    } else {
-      //Get the clusters
-      art::Handle<std::vector<recob::Cluster> > clusHandle;
-      if (!Event.getByLabel(fPFParticleModuleLabel, clusHandle)){
-        throw cet::exception("ShowerLinearEnergy") << "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
-        return 1;
-      }
-      art::FindManyP<recob::Cluster> fmc(pfpHandle, Event, fPFParticleModuleLabel);
-      std::vector<art::Ptr<recob::Cluster> > clusters = fmc.at(pfparticle.key());
+    //Get the clusters
+    art::Handle<std::vector<recob::Cluster> > clusHandle;
+    if (!Event.getByLabel(fPFParticleModuleLabel, clusHandle)){
+      throw cet::exception("ShowerLinearEnergy") << "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
+      return 1;
+    }
+    art::FindManyP<recob::Cluster> fmc(pfpHandle, Event, fPFParticleModuleLabel);
+    std::vector<art::Ptr<recob::Cluster> > clusters = fmc.at(pfparticle.key());
 
-      //Get the hit association
-      art::FindManyP<recob::Hit> fmhc(clusHandle, Event, fPFParticleModuleLabel);
+    //Get the hit association
+    art::FindManyP<recob::Hit> fmhc(clusHandle, Event, fPFParticleModuleLabel);
 
-      //Loop over the clusters in the plane and get the hits
-      for(auto const& cluster: clusters){
+    //Loop over the clusters in the plane and get the hits
+    for(auto const& cluster: clusters){
 
-        //Get the hits
-        std::vector<art::Ptr<recob::Hit> > hits = fmhc.at(cluster.key());
+      //Get the hits
+      std::vector<art::Ptr<recob::Hit> > hits = fmhc.at(cluster.key());
 
-        //Get the view.
-        geo::View_t view = cluster->View();
+      //Get the view.
+      geo::View_t view = cluster->View();
 
-        view_hits[view].insert(view_hits[view].end(),hits.begin(),hits.end());
-      }
+      view_hits[view].insert(view_hits[view].end(),hits.begin(),hits.end());
     }
     std::map<unsigned int, double > view_energies;
     //Accounting for events crossing the cathode.

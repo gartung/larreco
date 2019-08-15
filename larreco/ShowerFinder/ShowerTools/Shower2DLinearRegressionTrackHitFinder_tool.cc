@@ -1,6 +1,6 @@
 //############################################################################
-//### Name:        Shower2DLinearRegressionTrackHitFinder                    ###
-//### Author:      Dominic Barker (dominic.barker@sheffield.ac.uk          ###
+//### Name:        Shower2DLinearRegressionTrackHitFinder                  ###
+//### Author:      Dominic Barker (dominic.barker@sheffield.ac.uk)         ###
 //### Date:        13.05.19                                                ###
 //### Description: Tool for finding the initial shower track using a rms   ###
 //###              based method to define when the shower starts to        ###
@@ -15,7 +15,7 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-//LArSoft Includes 
+//LArSoft Includes
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -25,92 +25,88 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "larreco/RecoAlg/SBNShowerAlg.h"
 
-//C++ Includes 
+//C++ Includes
 #include <iostream>
 #include <math.h>
 
-//Root Includes 
+//Root Includes
 #include "TVector3.h"
 
 namespace ShowerRecoTools{
 
   class Shower2DLinearRegressionTrackHitFinder:IShowerTool {
-  public:
+    public:
 
-    Shower2DLinearRegressionTrackHitFinder(const fhicl::ParameterSet& pset);
-    
-    ~Shower2DLinearRegressionTrackHitFinder(); 
-    
-    //Generic Track Finder
-    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-			 art::Event& Event,
-			 reco::shower::ShowerElementHolder& ShowerEleHolder
-			 ) override;
+      Shower2DLinearRegressionTrackHitFinder(const fhicl::ParameterSet& pset);
 
-  private:  
-    
-    void configure(const fhicl::ParameterSet& pset) override;
+      ~Shower2DLinearRegressionTrackHitFinder();
 
-    std::vector<art::Ptr<recob::Hit> > FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> >& hits);
+      //Generic Track Finder
+      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+          art::Event& Event,
+          reco::shower::ShowerElementHolder& ShowerEleHolder
+          ) override;
 
-    Int_t WeightedFit(const Int_t n, const Double_t *x, const Double_t *y, const Double_t *w,  Double_t *parm);
+    private:
 
-    // Define standard art tool interface.
+      std::vector<art::Ptr<recob::Hit> > FindInitialTrackHits(
+          std::vector<art::Ptr<recob::Hit> >& hits);
 
-    shower::SBNShowerAlg       fSBNShowerAlg;
-    unsigned int               fNfitpass;
-    std::vector<unsigned int>  fNfithits;
-    std::vector<double>        fToler;
-    bool                       fApplyChargeWeight;
-    art::InputTag              fPFParticleModuleLabel;
-    art::InputTag              fHitsModuleLabel;
+      Int_t WeightedFit(const Int_t n, const Double_t *x, const Double_t *y,
+          const Double_t *w,  Double_t *parm);
+
+      // Define standard art tool interface.
+
+      shower::SBNShowerAlg       fSBNShowerAlg;
+      unsigned int               fNfitpass;
+      std::vector<unsigned int>  fNfithits;
+      std::vector<double>        fToler;
+      bool                       fApplyChargeWeight;
+      art::InputTag              fPFParticleModuleLabel;
+      art::InputTag              fHitsModuleLabel;
   };
-  
-  
-  Shower2DLinearRegressionTrackHitFinder::Shower2DLinearRegressionTrackHitFinder(const fhicl::ParameterSet& pset)
+
+
+  Shower2DLinearRegressionTrackHitFinder::Shower2DLinearRegressionTrackHitFinder(
+      const fhicl::ParameterSet& pset)
     : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
   {
-    configure(pset);
+    fApplyChargeWeight      = pset.get<bool>                      ("ApplyChargeWeight");
+    fNfitpass               = pset.get<unsigned int>              ("Nfitpass");
+    fNfithits               = pset.get<std::vector<unsigned int> >("Nfithits");
+    fToler                  = pset.get<std::vector<double> >      ("Toler");
+    fPFParticleModuleLabel  = pset.get<art::InputTag>             ("PFParticleModuleLabel");
+    fHitsModuleLabel        = pset.get<art::InputTag>             ("HitsModuleLabel");
+
+    if (fNfitpass!=fNfithits.size() ||
+        fNfitpass!=fToler.size()) {
+      throw art::Exception(art::errors::Configuration)
+        << "Shower2DLinearRegressionTrackHitFinderEMShower: fNfithits and fToler need to have size fNfitpass";
+    }
   }
-  
+
   Shower2DLinearRegressionTrackHitFinder::~Shower2DLinearRegressionTrackHitFinder()
   {
   }
-  
-  void Shower2DLinearRegressionTrackHitFinder::configure(const fhicl::ParameterSet& pset)
-  {
-    fApplyChargeWeight              = pset.get<bool>                      ("ApplyChargeWeight");
-    fNfitpass                       = pset.get<unsigned int>              ("Nfitpass");
-    fNfithits                       = pset.get<std::vector<unsigned int> >("Nfithits");
-    fToler                          = pset.get<std::vector<double> >      ("Toler");
-    fPFParticleModuleLabel          = pset.get<art::InputTag>             ("PFParticleModuleLabel");
-    fHitsModuleLabel                = pset.get<art::InputTag>             ("HitsModuleLabel");
- 
-    if (fNfitpass!=fNfithits.size() ||
-	fNfitpass!=fToler.size()) {
-      throw art::Exception(art::errors::Configuration)
-	<< "Shower2DLinearRegressionTrackHitFinderEMShower: fNfithits and fToler need to have size fNfitpass";
-    }
-  }
-  
-  int Shower2DLinearRegressionTrackHitFinder::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-					  art::Event& Event,
-					  reco::shower::ShowerElementHolder& ShowerEleHolder
-					  ){
 
-    //This is all based on the shower vertex being known. If it is not lets not do the track 
+  int Shower2DLinearRegressionTrackHitFinder::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+      art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
+
+    //This is all based on the shower vertex being known. If it is not lets not do the track
     if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
-      mf::LogError("Shower2DLinearRegressionTrackHitFinder") << "Start position not set, returning "<< std::endl;
+      mf::LogError("Shower2DLinearRegressionTrackHitFinder")
+        << "Start position not set, returning "<< std::endl;
       return 1;
     }
     if(!ShowerEleHolder.CheckElement("ShowerDirection")){
-      mf::LogError("Shower2DLinearRegressionTrackHitFinder") << "Direction not set, returning "<< std::endl;
+      mf::LogError("Shower2DLinearRegressionTrackHitFinder")
+        << "Direction not set, returning "<< std::endl;
       return 1;
     }
-    
+
     TVector3 ShowerStartPosition = {-999,-999,-999};
     ShowerEleHolder.GetElement("ShowerStartPosition",ShowerStartPosition);
-    
+
     TVector3 ShowerDirection     = {-999,-999,-999};
     ShowerEleHolder.GetElement("ShowerDirection",ShowerDirection);
 
@@ -122,7 +118,7 @@ namespace ShowerRecoTools{
       ShowerEleHolder.SetElement(track,"InitialTrack");
       return 1;
     }
-    
+
     //Get the clusters
     art::Handle<std::vector<recob::Cluster> > clusHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, clusHandle)){
@@ -131,51 +127,52 @@ namespace ShowerRecoTools{
       ShowerEleHolder.SetElement(track,"InitialTrack");
       return 1;
     }
+
     art::FindManyP<recob::Cluster> fmc(pfpHandle, Event, fPFParticleModuleLabel);
     std::vector<art::Ptr<recob::Cluster> > clusters = fmc.at(pfparticle.key());
-    
 
     if(clusters.size()<2){
-      mf::LogError("Shower2DLinearRegressionTrackHitFinder") << "Not enough clusters: "<<clusters.size() << std::endl;
+      mf::LogError("Shower2DLinearRegressionTrackHitFinder")
+        << "Not enough clusters: "<<clusters.size() << std::endl;
       return 1;
     }
 
-    //Get the hit association 
+    //Get the hit association
     art::FindManyP<recob::Hit> fmhc(clusHandle, Event, fPFParticleModuleLabel);
     std::map<geo::PlaneID, std::vector<art::Ptr<recob::Hit> > > plane_clusters;
-    //Loop over the clusters in the plane and get the hits 
+    //Loop over the clusters in the plane and get the hits
     for(auto const& cluster: clusters){
-      
-      //Get the hits 
+
+      //Get the hits
       std::vector<art::Ptr<recob::Hit> > hits = fmhc.at(cluster.key());
-      
+
       for (auto hit : hits) {
-	geo::WireID wire = hit->WireID();
-	geo::PlaneID plane = wire.asPlaneID();
-	plane_clusters[plane].push_back(hit);
+        geo::WireID wire = hit->WireID();
+        geo::PlaneID plane = wire.asPlaneID();
+        plane_clusters[plane].push_back(hit);
       }
-      
+
       // Was having issues with clusters having hits in multiple planes breaking PMA
       // So switched to the method above. May want to switch back when using PandoraTrack
       //plane_clusters[plane].insert(plane_clusters[plane].end(),hits.begin(),hits.end());
     }
-    
+
     std::vector<art::Ptr<recob::Hit> > InitialTrackHits;
     //Loop over the clusters and order the hits and get the initial track hits in that plane
     for(auto const& cluster: plane_clusters){
 
-      //Get the hits 
-      std::vector<art::Ptr<recob::Hit> > hits = cluster.second;    
+      //Get the hits
+      std::vector<art::Ptr<recob::Hit> > hits = cluster.second;
 
-      //Order the hits 
+      //Order the hits
       fSBNShowerAlg.OrderShowerHits(hits,ShowerStartPosition,ShowerDirection);
-      
-      //Find the initial track hits 
+
+      //Find the initial track hits
       std::vector<art::Ptr<recob::Hit> > trackhits = FindInitialTrackHits(hits);
-      
+
       InitialTrackHits.insert(InitialTrackHits.end(),trackhits.begin(),trackhits.end());
     }
-    
+
     //Holders for the initial track values.
     ShowerEleHolder.SetElement(InitialTrackHits, "InitialTrackHits");
 
@@ -183,67 +180,69 @@ namespace ShowerRecoTools{
     //Get the hits
     art::Handle<std::vector<recob::Hit> > hitHandle;
     if (!Event.getByLabel(fHitsModuleLabel, hitHandle)){
-      throw cet::exception("Shower2DLinearRegressionTrackHitFinder") << "Could not get the hits." << std::endl;
+      throw cet::exception("Shower2DLinearRegressionTrackHitFinder")
+        << "Could not get the hits." << std::endl;
       return 1;
     }
 
-    //get the sp<->hit association 
+    //get the sp<->hit association
     art::FindManyP<recob::SpacePoint> fmsp(hitHandle,Event,fPFParticleModuleLabel);
     if(!fmsp.isValid()){
-      throw cet::exception("Shower2DLinearRegressionTrackHitFinder") << "Spacepoint and hit association not valid. Stopping." << std::endl;
+      throw cet::exception("Shower2DLinearRegressionTrackHitFinder")
+        << "Spacepoint and hit association not valid. Stopping." << std::endl;
       return 1;
     }
 
-    //Get the spacepoints associated to the track hit 
+    //Get the spacepoints associated to the track hit
     std::vector<art::Ptr<recob::SpacePoint > > intitaltrack_sp;
     for(auto const& hit: InitialTrackHits){
       std::vector<art::Ptr<recob::SpacePoint > > sps = fmsp.at(hit.key());
       for(auto const sp: sps){
-	intitaltrack_sp.push_back(sp);
+        intitaltrack_sp.push_back(sp);
       }
     }
-    ShowerEleHolder.SetElement(intitaltrack_sp, "InitialTrackSpacePoints"); 
+    ShowerEleHolder.SetElement(intitaltrack_sp, "InitialTrackSpacePoints");
 
     return 0;
   }
-  
+
   //Function to calculate the what are the initial tracks hits. Adapted from EMShower FindInitialTrackHits
   std::vector<art::Ptr<recob::Hit> > Shower2DLinearRegressionTrackHitFinder::FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> >& hits){
 
     std::vector<art::Ptr<recob::Hit> > trackHits;
-    
+
     double parm[2];
     int fitok = 0;
     std::vector<double> wfit;
     std::vector<double> tfit;
     std::vector<double> cfit;
-    
+
     for (size_t i = 0; i<fNfitpass; ++i){
-      
+
       // Fit a straight line through hits
       unsigned int nhits = 0;
       for (auto &hit: hits){
-	
-	//Not sure I am a fan of doing things in wire tick space. What if id doesn't not iterate properly or the 
-	//two planes in each TPC are not symmetric. 
-	TVector2 coord = fSBNShowerAlg.HitCoordinates(hit);
-	
-	if (i==0||(std::abs((coord.Y()-(parm[0]+coord.X()*parm[1]))*cos(atan(parm[1])))<fToler[i-1])||fitok==1){
-	  ++nhits;
-	  if (nhits==fNfithits[i]+1) break;
-	  wfit.push_back(coord.X());
-	  tfit.push_back(coord.Y());
 
-	  if(fApplyChargeWeight) { cfit.push_back(hit->Integral());
-	  } else { cfit.push_back(1.); };
-	  if (i==fNfitpass-1) {
-	    trackHits.push_back(hit);
-	  }
-	}
+        //Not sure I am a fan of doing things in wire tick space. What if id doesn't not iterate properly or the
+        //two planes in each TPC are not symmetric.
+        TVector2 coord = fSBNShowerAlg.HitCoordinates(hit);
+
+        if (i==0||(std::abs((coord.Y()-(parm[0]+coord.X()*parm[1]))*cos(atan(parm[1])))<fToler[i-1])||fitok==1){
+          ++nhits;
+          if (nhits==fNfithits[i]+1) break;
+          wfit.push_back(coord.X());
+          tfit.push_back(coord.Y());
+
+          if(fApplyChargeWeight) { cfit.push_back(hit->Integral());
+          } else { cfit.push_back(1.); };
+          if (i==fNfitpass-1) {
+            trackHits.push_back(hit);
+          }
+        }
       }
-      
+
       if (i<fNfitpass-1&&wfit.size()){
-	fitok = WeightedFit(wfit.size(), &wfit[0], &tfit[0], &cfit[0], &parm[0]);
+        fitok = WeightedFit(wfit.size(), &wfit[0], &tfit[0], &cfit[0], &parm[0]);
       }
 
       wfit.clear();
@@ -253,7 +252,7 @@ namespace ShowerRecoTools{
     return trackHits;
   }
 
-  //Stolen from EMShowerAlg, a linear regression fitting function 
+  //Stolen from EMShowerAlg, a linear regression fitting function
   Int_t Shower2DLinearRegressionTrackHitFinder::WeightedFit(const Int_t n, const Double_t *x, const Double_t *y, const Double_t *w,  Double_t *parm){
 
     Double_t sumx=0.;

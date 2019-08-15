@@ -1,4 +1,4 @@
-#include "trackfinderalgorithms.fcl"     
+#include "trackfinderalgorithms.fcl"
 #include "showeralgorithms.fcl"
 #include "clusteralgorithms.fcl"
 #include "calorimetry.fcl"
@@ -41,7 +41,7 @@ showertrackfinder:{
     Nfithits:        [83, 50, 33, 33]
     Toler:           [50., 8.3, 3.3, 3.3 ]
     ApplyChargeWeight: true
-    PFParticleModuleLabel: "pandora"    
+    PFParticleModuleLabel: "pandora"
     HitsModuleLabel: "linecluster"
     UsePandoraSlidingFitTrajectory: true
     SlidingFitHalfWindow: 20
@@ -55,7 +55,7 @@ shower2Dlinearregressiontrackhitfinder:{
     Nfithits:        [83, 50, 33, 33]
     Toler:           [50., 8.3, 3.3, 3.3 ]
     ApplyChargeWeight: true
-    PFParticleModuleLabel: "pandora"    
+    PFParticleModuleLabel: "pandora"
     HitsModuleLabel: "linecluster"
     }
 
@@ -63,7 +63,7 @@ showerpmatrackfinder:{
     tool_type: ShowerPMATrackFinder
     MinTrajectoryPoints: 2
     ProjectionMatchingAlg: @local::standard_projectionmatchingalg
-    } 
+    }
 
 showerpandoraslidingfittrackfinder:{
     tool_type: ShowerPandoraSlidingFitTrackFinder
@@ -130,12 +130,12 @@ showertrackspacepointdirection:{
 showertrackdirection:{
     tool_type: ShowerTrackDirection
     SBNShowerAlg:          @local::standard_sbnshoweralg
-    UsePandoraVertex: true  
-    UsePositionInfo: true 
+    UsePandoraVertex: true
+    UsePositionInfo: true
     DebugEVD:         false
 }
 
-showertracktrajectorypointdirection: { 
+showertracktrajectorypointdirection: {
     tool_type: ShowerTrackTrajectoryPointDirection
     TrajPoint: 1
     DebugEVD: false
@@ -152,7 +152,7 @@ showersmarttracktrajectorypointdirection: {
     UsePositionInfo: true
     AngleCut: 0.01745
 }
-    
+
 showertrackpcadirection:{
     tool_type: ShowerTrackPCADirection
     DebugEVD:         false
@@ -205,8 +205,8 @@ showerslidingstandardcalodedx:{
     SBNShowerAlg:          @local::standard_sbnshoweralg
     CalorimetryAlg:        @local::standard_calorimetryalgmc
     MinDistCutOff:         3 #Distance in wires a hit has to be from the start position to be used
-    MaxDist:               2 #Distance in wires a that a trajectory point can be from a spacepoint to match to it. 
-    MinAngleToWire:        0.26179 #Minimum angle between the wire direction and the shower direction for the spacepoint to be used 
+    MaxDist:               2 #Distance in wires a that a trajectory point can be from a spacepoint to match to it.
+    MinAngleToWire:        0.26179 #Minimum angle between the wire direction and the shower direction for the spacepoint to be used
     ShapingTime:            2
     dEdxTrackLength:       999 #Max Distance a spacepoint can be away from the start of the track.
     UseMedian:              true

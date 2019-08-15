@@ -77,11 +77,7 @@ namespace ShowerRecoTools{
   }
 
   int ShowerStartPosition::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event,
-      reco::shower::ShowerElementHolder& ShowerEleHolder
-      ){
-
-    std::cout << "hello world start position" << std::endl;
+      art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     //Get the vertices.
     art::Handle<std::vector<recob::Vertex> > vtxHandle;

@@ -56,11 +56,6 @@ namespace ShowerRecoTools {
 
     private:
 
-      // Define standard art tool interface
-      void configure(const fhicl::ParameterSet& pset) override;
-
-      std::vector<art::Ptr<recob::SpacePoint> > FindTrackSpacePoints(std::map< art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit> > &spacePointHitMap, TVector3& showerStartPosition,TVector3& showerDirection);
-
       //Algorithm functions
       shower::SBNShowerAlg         fSBNShowerAlg;
       shower::SBNShowerCheatingAlg fSBNShowerCheatingAlg;
@@ -68,8 +63,6 @@ namespace ShowerRecoTools {
 
       //fcl
       bool fDebugEVD;
-      float fMaxProjectionDist;    // Maximum projection along shower direction, length of cylinder
-      float fMaxPerpendicularDist; // Maximum perpendicular distance, radius of cylinder
       art::InputTag fPFParticleModuleLabel;
       art::InputTag fHitModuleLabel;
   };
@@ -79,26 +72,16 @@ namespace ShowerRecoTools {
     : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
     fSBNShowerCheatingAlg(pset.get<fhicl::ParameterSet>("SBNShowerCheatingAlg"))
   {
-    configure(pset);
+    fDebugEVD              = pset.get<bool>          ("DebugEVD");
+    fHitModuleLabel        = pset.get<art::InputTag> ("HitModuleLabel");
+    fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel","");
   }
 
   ShowerTrackFinderCheater::~ShowerTrackFinderCheater()
   {
   }
 
-  void ShowerTrackFinderCheater::configure(const fhicl::ParameterSet& pset)
-  {
-    fDebugEVD              = pset.get<bool>          ("DebugEVD");
-    fMaxProjectionDist     = pset.get<float>         ("MaxProjectionDist");
-    fMaxPerpendicularDist  = pset.get<float>         ("MaxPerpendicularDist");
-    fHitModuleLabel        = pset.get<art::InputTag> ("HitModuleLabel");
-    fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel","");
-  }
-
   int ShowerTrackFinderCheater::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
-
-    std::cout <<"#########################################\n"<<
-      "hello world track finder cheater\n" <<"#########################################\n"<< std::endl;
 
     const simb::MCParticle* trueParticle;
 
@@ -134,7 +117,7 @@ namespace ShowerRecoTools {
       for(auto const& cluster: clusters){
 
         //Get the hits
-        std::vector<art::Ptr<recob::Hit> > hits = fmhc.at(cluster.key());       showerHits.insert(showerHits.end(),hits.begin(),hits.end());
+        std::vector<art::Ptr<recob::Hit> > hits = fmhc.at(cluster.key());
         showerHits.insert(showerHits.end(),hits.begin(),hits.end());
       }
 
@@ -142,7 +125,7 @@ namespace ShowerRecoTools {
       std::pair<int,double> ShowerTrackInfo = ShowerUtils::TrueParticleIDFromTrueChain(showersMothers,showerHits,2);
 
       if(ShowerTrackInfo.first==-99999) {
-        std::cout<<"True Shower Not Found"<<std::endl;
+        mf::LogWarning("ShowerStartPosition") << "True Shower Not Found";
         return 1;
       }
       trueParticle = trueParticles[ShowerTrackInfo.first];
@@ -196,8 +179,6 @@ namespace ShowerRecoTools {
     std::vector<art::Ptr<recob::Hit> > trackHits;
     std::vector<art::Ptr<recob::SpacePoint> > trackSpacePoints;
 
-    trackSpacePoints = FindTrackSpacePoints(spacePointHitMap,ShowerStartPosition,ShowerDirection);
-
     for (auto spacePoint : trackSpacePoints){
       art::Ptr<recob::Hit> hit = spacePointHitMap[spacePoint];
       trackHits.push_back(hit);
@@ -210,29 +191,8 @@ namespace ShowerRecoTools {
       fSBNShowerCheatingAlg.CheatDebugEVD(trueParticle, Event, ShowerEleHolder, pfparticle);
     }
 
-    std::cout <<"#########################################\n"<<
-      "trackfinder cheater Done\n" <<"#########################################\n"<< std::endl;
     return 0;
   }
-
-  std::vector<art::Ptr<recob::SpacePoint> > ShowerTrackFinderCheater::FindTrackSpacePoints(std::map< art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit> > &spacePointHitMap, TVector3& showerStartPosition,TVector3& showerDirection){
-
-    std::vector<art::Ptr<recob::SpacePoint> > trackSpacePoints;
-
-    for (auto spacePointHit : spacePointHitMap){
-      art::Ptr<recob::SpacePoint> spacePoint = spacePointHit.first;
-      double proj = fSBNShowerAlg.SpacePointProjection(spacePoint, showerStartPosition, showerDirection);
-      double perp = fSBNShowerAlg.SpacePointPerpendiular(spacePoint, showerStartPosition, showerDirection, proj);
-
-      //std::cout<<"Proj: "<<proj<<", Perp: "<<perp<<std::endl;
-      if (TMath::Abs(proj)<fMaxProjectionDist && TMath::Abs(perp)<fMaxPerpendicularDist){
-        trackSpacePoints.push_back(spacePoint);
-      }
-    }
-
-    return trackSpacePoints;
-  }
-
 }
 
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerTrackFinderCheater)
