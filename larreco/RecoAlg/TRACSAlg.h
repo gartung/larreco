@@ -1,5 +1,5 @@
-#ifndef SBNShowerAlg_hxx
-#define SBNShowerAlg_hxx
+#ifndef TRACSAlg_hxx
+#define TRACSAlg_hxx
 
 //Framework Includes
 #include "fhiclcpp/ParameterSet.h"
@@ -36,12 +36,12 @@
 #include "TString.h"
 
 namespace shower {
-  class SBNShowerAlg;
+  class TRACSAlg;
 }
 
-class shower::SBNShowerAlg {
+class shower::TRACSAlg {
   public:
-    SBNShowerAlg(const fhicl::ParameterSet& pset);
+    TRACSAlg(const fhicl::ParameterSet& pset);
 
     void OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& hits,
         TVector3& ShowerDirection,

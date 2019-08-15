@@ -1,6 +1,6 @@
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
-shower::SBNShowerAlg::SBNShowerAlg(const fhicl::ParameterSet& pset):
+shower::TRACSAlg::TRACSAlg(const fhicl::ParameterSet& pset):
   fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
 {
   fUseCollectionOnly     = pset.get<bool>("UseCollectionOnly");
@@ -12,7 +12,7 @@ shower::SBNShowerAlg::SBNShowerAlg(const fhicl::ParameterSet& pset):
 //Order the shower hits with regards to their projected length onto
 //the shower direction from the shower start position. This is done
 //in the 2D coordinate system (wire direction, x)
-void shower::SBNShowerAlg::OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& hits,
+void shower::TRACSAlg::OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& hits,
     TVector3& ShowerStartPosition,
     TVector3& ShowerDirection
     ){
@@ -93,7 +93,7 @@ void shower::SBNShowerAlg::OrderShowerHits(std::vector<art::Ptr<recob::Hit> >& h
 
 //Orders the shower spacepoints with regards to there prejected length from
 //the shower start position in the shower direction.
-void shower::SBNShowerAlg::OrderShowerSpacePoints( std::vector<art::Ptr<recob::SpacePoint> >&
+void shower::TRACSAlg::OrderShowerSpacePoints( std::vector<art::Ptr<recob::SpacePoint> >&
     showersps, TVector3& vertex,
     TVector3& direction){
 
@@ -117,16 +117,16 @@ void shower::SBNShowerAlg::OrderShowerSpacePoints( std::vector<art::Ptr<recob::S
   return;
 }
 
-TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoint> >&
+TVector3 shower::TRACSAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoint> >&
     showerspcs, art::FindManyP<recob::Hit>& fmh){
   float totalCharge=0;
-  TVector3 centre =  shower::SBNShowerAlg::ShowerCentre(showerspcs,fmh,totalCharge);
+  TVector3 centre =  shower::TRACSAlg::ShowerCentre(showerspcs,fmh,totalCharge);
   return centre;
 
 }
 
 //Returns the vector to the shower centre and the total charge of the shower.
-TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoint> >& showersps,
+TVector3 shower::TRACSAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoint> >& showersps,
     art::FindManyP<recob::Hit>& fmh, float& totalCharge){
 
   TVector3 pos, chargePoint = TVector3(0,0,0);
@@ -186,7 +186,7 @@ TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoi
       }
 
       if(n==0){
-        mf::LogWarning("SBNShowerAlg") <<
+        mf::LogWarning("TRACSAlg") <<
           "no points used to make the charge value. \n";
       }
 
@@ -197,7 +197,7 @@ TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoi
     totalCharge += charge;
 
     if(charge == 0){
-      mf::LogWarning("SBNShowerAlg") <<
+      mf::LogWarning("TRACSAlg") <<
         "Averaged charge, within 2 sigma, for a spacepoint is zero, Maybe this not a good method. \n";
     }
   }
@@ -209,7 +209,7 @@ TVector3 shower::SBNShowerAlg::ShowerCentre(std::vector<art::Ptr<recob::SpacePoi
 }
 
 //Return the spacepoint position in 3D cartesian coordinates.
-TVector3 shower::SBNShowerAlg::SpacePointPosition(const art::Ptr<recob::SpacePoint>& sp){
+TVector3 shower::TRACSAlg::SpacePointPosition(const art::Ptr<recob::SpacePoint>& sp){
 
   const Double32_t* sp_xyz = sp->XYZ();
   TVector3 sp_postiion = {sp_xyz[0], sp_xyz[1], sp_xyz[2]};
@@ -218,7 +218,7 @@ TVector3 shower::SBNShowerAlg::SpacePointPosition(const art::Ptr<recob::SpacePoi
 
 
 //Return the charge of the spacepoint in ADC.
-double shower::SBNShowerAlg::SpacePointCharge(art::Ptr<recob::SpacePoint> sp,
+double shower::TRACSAlg::SpacePointCharge(art::Ptr<recob::SpacePoint> sp,
     art::FindManyP<recob::Hit>& fmh){
 
   double Charge = 0;
@@ -235,7 +235,7 @@ double shower::SBNShowerAlg::SpacePointCharge(art::Ptr<recob::SpacePoint> sp,
 }
 
 //Return the spacepoint time.
-double shower::SBNShowerAlg::SpacePointTime(art::Ptr<recob::SpacePoint> sp,
+double shower::TRACSAlg::SpacePointTime(art::Ptr<recob::SpacePoint> sp,
     art::FindManyP<recob::Hit>& fmh){
 
   double Time = 0;
@@ -252,7 +252,7 @@ double shower::SBNShowerAlg::SpacePointTime(art::Ptr<recob::SpacePoint> sp,
 
 
 //Return the cooordinates of the hit in cm in wire direction and x.
-TVector2 shower::SBNShowerAlg::HitCoordinates(art::Ptr<recob::Hit> const& hit) {
+TVector2 shower::TRACSAlg::HitCoordinates(art::Ptr<recob::Hit> const& hit) {
 
   //Get the pitch
   const geo::WireID  WireID = hit->WireID();
@@ -262,11 +262,11 @@ TVector2 shower::SBNShowerAlg::HitCoordinates(art::Ptr<recob::Hit> const& hit) {
   return TVector2(WireID.Wire*pitch ,fDetProp->ConvertTicksToX(hit->PeakTime(),planeid));
 }
 
-double shower::SBNShowerAlg::SpacePointProjection(const art::Ptr<recob::SpacePoint>&sp,
+double shower::TRACSAlg::SpacePointProjection(const art::Ptr<recob::SpacePoint>&sp,
     TVector3& vertex, TVector3& direction){
 
   // Get the position of the spacepoint
-  TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(sp) - vertex;
+  TVector3 pos = shower::TRACSAlg::SpacePointPosition(sp) - vertex;
 
   // Get the the projected length
   double projLen = pos.Dot(direction);
@@ -274,12 +274,12 @@ double shower::SBNShowerAlg::SpacePointProjection(const art::Ptr<recob::SpacePoi
   return projLen;
 }
 
-double shower::SBNShowerAlg::SpacePointPerpendiular(const art::Ptr<recob::SpacePoint>&sp,
+double shower::TRACSAlg::SpacePointPerpendiular(const art::Ptr<recob::SpacePoint>&sp,
     TVector3& vertex, TVector3& direction,
     double proj){
 
   // Get the position of the spacepoint
-  TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(sp) - vertex;
+  TVector3 pos = shower::TRACSAlg::SpacePointPosition(sp) - vertex;
 
   // Take away the projection * distance to find the perpendicular vector
 
@@ -292,7 +292,7 @@ double shower::SBNShowerAlg::SpacePointPerpendiular(const art::Ptr<recob::SpaceP
 }
 
 
-void shower::SBNShowerAlg::DebugEVD(const art::Ptr<recob::PFParticle>& pfparticle,
+void shower::TRACSAlg::DebugEVD(const art::Ptr<recob::PFParticle>& pfparticle,
     art::Event& Event,
     reco::shower::ShowerElementHolder& ShowerEleHolder){
 
@@ -381,7 +381,7 @@ void shower::SBNShowerAlg::DebugEVD(const art::Ptr<recob::PFParticle>& pfparticl
   // Make 3D points for each spacepoint in the shower
   TPolyMarker3D* allPoly = new TPolyMarker3D(spacePoints.size());
   for (auto spacePoint : spacePoints){
-    TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(spacePoint) - showerStartPosition;
+    TVector3 pos = shower::TRACSAlg::SpacePointPosition(spacePoint) - showerStartPosition;
 
     x = pos.X();
     y = pos.Y();
@@ -390,7 +390,7 @@ void shower::SBNShowerAlg::DebugEVD(const art::Ptr<recob::PFParticle>& pfparticl
     ++point;
 
     // Calculate the projection of (point-startpoint) along the direction
-    double proj = shower::SBNShowerAlg::SpacePointProjection(spacePoint, showerStartPosition,
+    double proj = shower::TRACSAlg::SpacePointProjection(spacePoint, showerStartPosition,
         showerDirection);
     if (proj>maxProj) {
       maxProj = proj;
@@ -410,7 +410,7 @@ void shower::SBNShowerAlg::DebugEVD(const art::Ptr<recob::PFParticle>& pfparticl
   point = 0; // re-initialise counter
   TPolyMarker3D* trackPoly = new TPolyMarker3D(trackSpacePoints.size());
   for (auto spacePoint : trackSpacePoints){
-    TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(spacePoint) - showerStartPosition;
+    TVector3 pos = shower::TRACSAlg::SpacePointPosition(spacePoint) - showerStartPosition;
     x = pos.X();
     y = pos.Y();
     z = pos.Z();
@@ -425,7 +425,7 @@ void shower::SBNShowerAlg::DebugEVD(const art::Ptr<recob::PFParticle>& pfparticl
     art::fill_ptr_vector(pfps, pfpHandle);
   }
   else {
-    throw cet::exception("SBNShower") << "pfps not loaded." << std::endl;
+    throw cet::exception("TRACS") << "pfps not loaded." << std::endl;
   }
   // initialse counters
   // Split into tracks and showers to make it clearer what pandora is doing
@@ -450,7 +450,7 @@ void shower::SBNShowerAlg::DebugEVD(const art::Ptr<recob::PFParticle>& pfparticl
     std::vector<art::Ptr<recob::SpacePoint> > sps = fmspp.at(pfp.key());
     int pdg = pfp->PdgCode(); // Track or shower
     for (auto sp : sps){
-      TVector3 pos = shower::SBNShowerAlg::SpacePointPosition(sp) - showerStartPosition;
+      TVector3 pos = shower::TRACSAlg::SpacePointPosition(sp) - showerStartPosition;
       x = pos.X();
       y = pos.Y();
       z = pos.Z();

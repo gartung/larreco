@@ -23,7 +23,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
@@ -56,7 +56,7 @@ namespace ShowerRecoTools {
     private:
 
       //Algoritma
-      shower::SBNShowerAlg       fSBNShowerAlg;
+      shower::TRACSAlg       fTRACSAlg;
 
       //fcl
       bool fUsePandoraVertex;
@@ -67,7 +67,7 @@ namespace ShowerRecoTools {
 
 
   ShowerTrackDirection::ShowerTrackDirection(const fhicl::ParameterSet& pset)
-    :fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
+    :fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
     fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
     fUsePositionInfo          = pset.get<bool>("UsePositionInfo");
@@ -180,7 +180,7 @@ namespace ShowerRecoTools {
       }
 
       if (fDebugEVD){
-        fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
+        fTRACSAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
       }
       return 0;
 
@@ -253,7 +253,7 @@ namespace ShowerRecoTools {
       }
 
       if (fDebugEVD){
-        fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
+        fTRACSAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
       }
 
 

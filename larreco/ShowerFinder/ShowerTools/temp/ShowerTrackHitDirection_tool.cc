@@ -23,7 +23,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes 
 #include <iostream>
@@ -155,7 +155,7 @@ namespace ShowerRecoTools {
 	intitaltrack_sp.push_back(sp);
 	
 	//Get the direction relative to the start positon 
-	fSBNShowerAlg.SpacePointPosition(sp) - StartPosition
+	fTRACSAlg.SpacePointPosition(sp) - StartPosition
       }
     }
 

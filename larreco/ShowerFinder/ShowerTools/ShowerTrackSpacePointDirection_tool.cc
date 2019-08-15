@@ -19,7 +19,7 @@
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
@@ -53,12 +53,12 @@ namespace ShowerRecoTools {
       bool fUsePandoraVertex;
 
       //Algorithm function
-      shower::SBNShowerAlg fSBNShowerAlg;
+      shower::TRACSAlg fTRACSAlg;
   };
 
 
   ShowerTrackSpacePointDirection::ShowerTrackSpacePointDirection(const fhicl::ParameterSet& pset)
-    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
+    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
     fUsePandoraVertex       = pset.get<bool>         ("UsePandoraVertex");
   }
@@ -70,8 +70,6 @@ namespace ShowerRecoTools {
   int ShowerTrackSpacePointDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
       art::Event& Event,
       reco::shower::ShowerElementHolder& ShowerEleHolder){
-
-    std::cout << "on shower track hit direction" << std::endl;
 
     //Check the Track Hits has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrackSpacePoints")){
@@ -115,7 +113,7 @@ namespace ShowerRecoTools {
     for(auto const& sp: intitaltrack_sp){
 
       //Get the direction relative to the start positon
-      TVector3 pos = fSBNShowerAlg.SpacePointPosition(sp) - StartPosition;
+      TVector3 pos = fTRACSAlg.SpacePointPosition(sp) - StartPosition;
       if(pos.Mag() == 0){continue;}
 
       sumX = pos.X(); sumX2 += pos.X()*pos.X();
@@ -145,7 +143,7 @@ namespace ShowerRecoTools {
     TVector3 Direction_Mean = {0,0,0};
     int N = 0;
     for(auto const sp: intitaltrack_sp){
-      TVector3 Direction = fSBNShowerAlg.SpacePointPosition(sp) - StartPosition;
+      TVector3 Direction = fTRACSAlg.SpacePointPosition(sp) - StartPosition;
       if((TMath::Abs((Direction-Mean).X()) < 1*RMSX) &&
           (TMath::Abs((Direction-Mean).Y())< 1*RMSY) &&
           (TMath::Abs((Direction-Mean).Z()) < 1*RMSZ)){

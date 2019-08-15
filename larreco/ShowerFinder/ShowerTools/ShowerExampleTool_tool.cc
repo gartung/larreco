@@ -22,7 +22,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/Shower.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
 namespace ShowerRecoTools {
 
@@ -53,13 +53,13 @@ namespace ShowerRecoTools {
       art::InputTag fPFParticleModuleLabel;
 
       //Maybe an alg
-      shower::SBNShowerAlg fSBNShowerAlg;
+      shower::TRACSAlg fTRACSAlg;
   };
 
 
   ShowerExampleTool::ShowerExampleTool(const fhicl::ParameterSet& pset)
     //Setup the algs and others here
-    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
+    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
 
   {
     fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","");

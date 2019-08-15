@@ -27,7 +27,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
@@ -55,7 +55,7 @@ namespace ShowerRecoTools{
       // Define standard art tool interface
       art::ServiceHandle<geo::Geometry> fGeom;
       calo::CalorimetryAlg fCalorimetryAlg;
-      shower::SBNShowerAlg fSBNShowerAlg;
+      shower::TRACSAlg fTRACSAlg;
       detinfo::DetectorProperties const* fDetProp;
 
       float fMinAngleToWire;
@@ -73,7 +73,7 @@ namespace ShowerRecoTools{
 
   ShowerSlidingStandardCalodEdx::ShowerSlidingStandardCalodEdx(const fhicl::ParameterSet& pset):
     fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
-    fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
+    fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")),
     fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
   {
     fMinDistCutOff         = pset.get<float>("MinDistCutOff");
@@ -173,7 +173,7 @@ namespace ShowerRecoTools{
       if (TPC !=vtxTPC){continue;}
 
       //Ignore spacepoints within a few wires of the vertex.
-      double dist_from_start = (fSBNShowerAlg.SpacePointPosition(sp) - ShowerStartPosition).Mag();
+      double dist_from_start = (fTRACSAlg.SpacePointPosition(sp) - ShowerStartPosition).Mag();
 
       // std::cout << "hit on plane: " << planeid.Plane << " dist_from_start: " << dist_from_start << std::endl;
 
@@ -197,7 +197,7 @@ namespace ShowerRecoTools{
         if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
         {continue;}
 
-        TVector3 pos = fSBNShowerAlg.SpacePointPosition(sp) - TrajPosition;
+        TVector3 pos = fTRACSAlg.SpacePointPosition(sp) - TrajPosition;
 
         if(pos.Mag() < MinDist && pos.Mag()< fMaxDist*wirepitch){
           MinDist = pos.Mag();

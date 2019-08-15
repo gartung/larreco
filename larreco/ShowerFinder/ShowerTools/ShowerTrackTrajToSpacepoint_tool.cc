@@ -15,13 +15,14 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/FindOneP.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
 //LArSoft Includes
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
@@ -47,12 +48,12 @@ namespace ShowerRecoTools {
       float fMaxDist; //Max distance that a spacepoint can be from a trajecotry point to be matched
       art::InputTag              fPFParticleModuleLabel;
 
-      shower::SBNShowerAlg fSBNShowerAlg;
+      shower::TRACSAlg fTRACSAlg;
   };
 
 
   ShowerTrackTrajToSpacepoint::ShowerTrackTrajToSpacepoint(const fhicl::ParameterSet& pset)
-    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
+    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
     fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel");
     fMaxDist               = pset.get<float>         ("MaxDist");
@@ -124,7 +125,7 @@ namespace ShowerRecoTools {
       for(unsigned int sp=0; sp<intitaltrack_sp.size();++sp){
         //Find the spacepoint closest to the trajectory point.
         art::Ptr<recob::SpacePoint> spacepoint = intitaltrack_sp[sp];
-        TVector3 pos = fSBNShowerAlg.SpacePointPosition(spacepoint) - TrajPosition;
+        TVector3 pos = fTRACSAlg.SpacePointPosition(spacepoint) - TrajPosition;
         if(pos.Mag() < MinDist && pos.Mag()< fMaxDist){
           MinDist = pos.Mag();
           index = sp;

@@ -1,5 +1,5 @@
-#ifndef SBNShowerCheatingAlg_hxx
-#define SBNShowerCheatingAlg_hxx
+#ifndef TRACSCheatingAlg_hxx
+#define TRACSCheatingAlg_hxx
 
 //Framework Includes
 #include "fhiclcpp/ParameterSet.h"
@@ -19,7 +19,7 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "larreco/ShowerFinder/ShowerElementHolder.hh"
 #include "larsim/MCCheater/ParticleInventoryService.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
@@ -37,12 +37,12 @@
 #include "TString.h"
 
 namespace shower {
-  class SBNShowerCheatingAlg;
+  class TRACSCheatingAlg;
 }
 
-class shower::SBNShowerCheatingAlg {
+class shower::TRACSCheatingAlg {
   public:
-    SBNShowerCheatingAlg(const fhicl::ParameterSet& pset);
+    TRACSCheatingAlg(const fhicl::ParameterSet& pset);
 
     std::map<int,const simb::MCParticle*> GetTrueParticleMap();
     std::map<int,std::vector<int> > GetTrueChain(std::map<int,const simb::MCParticle*> &trueParticles);
@@ -56,7 +56,7 @@ class shower::SBNShowerCheatingAlg {
 
   private:
 
-    shower::SBNShowerAlg fSBNShowerAlg;
+    shower::TRACSAlg fTRACSAlg;
 
     art::InputTag                                       fHitModuleLabel;
     art::InputTag                                       fPFParticleModuleLabel;

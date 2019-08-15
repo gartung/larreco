@@ -30,7 +30,7 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
 
 //C++ Includes
@@ -61,13 +61,13 @@ namespace ShowerRecoTools{
       art::InputTag fPFParticleModuleLabel;
 
     private:
-      shower::SBNShowerAlg fSBNShowerAlg;
+      shower::TRACSAlg fTRACSAlg;
 
   };
 
 
   ShowerStartPosition::ShowerStartPosition(const fhicl::ParameterSet& pset)
-    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
+    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
     fPFParticleModuleLabel      = pset.get<art::InputTag>("PFParticleModuleLabel","");
   }
@@ -133,6 +133,9 @@ namespace ShowerRecoTools{
       TVector3 ShowerStartPosition = {xyz[0], xyz[1], xyz[2]};
       TVector3 ShowerStartPositionErr = {-999, -999, -999};
       ShowerEleHolder.SetElement(ShowerStartPosition,ShowerStartPositionErr,"ShowerStartPosition");
+      std::cout<<"TEST 1"<<std::endl;
+      bool test = ShowerEleHolder.CheckElement("ShowerStartPosition");
+      std::cout<<"TEST 2: "<<test<<std::endl;
       return 0;
     }
 
@@ -156,13 +159,13 @@ namespace ShowerRecoTools{
       if(spacePoints_pfp.size() == 0){return 0;}
 
       //Get the Shower Center
-      TVector3 ShowerCentre = fSBNShowerAlg.ShowerCentre(spacePoints_pfp,fmh);
+      TVector3 ShowerCentre = fTRACSAlg.ShowerCentre(spacePoints_pfp,fmh);
 
       //Order the Hits from the shower centre. The most negative will be the start position.
-      fSBNShowerAlg.OrderShowerSpacePoints(spacePoints_pfp,ShowerCentre,ShowerDirection);
+      fTRACSAlg.OrderShowerSpacePoints(spacePoints_pfp,ShowerCentre,ShowerDirection);
 
       //Set the start position.
-      TVector3 ShowerStartPosition = fSBNShowerAlg.SpacePointPosition(spacePoints_pfp[0]);
+      TVector3 ShowerStartPosition = fTRACSAlg.SpacePointPosition(spacePoints_pfp[0]);
       TVector3 ShowerStartPositionErr = {-999,-999,-999};
       ShowerEleHolder.SetElement(ShowerStartPosition,ShowerStartPositionErr,"ShowerStartPosition");
       return 0;

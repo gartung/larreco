@@ -150,15 +150,12 @@ namespace ShowerRecoTools {
       //Calculate the Energy for
       double Energy = CalculateEnergy(hits,view);
 
-      std::cout<<"view: "<<view<<" and energy: "<<Energy<<std::endl;
-
       unsigned int viewNum = view;
       view_energies[viewNum] = Energy;
     }
 
     //TODO think of a better way of doing this
     for (unsigned int plane=0; plane<numPlanes; ++plane) {
-      //std::cout<<"Plane: "<<plane<<std::endl;
       double Energy;
       try{
         Energy = view_energies.at(plane);

@@ -10,8 +10,8 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
+#include "art_root_io/TFileService.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindManyP.h"
@@ -20,9 +20,8 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
-#include "larreco/RecoAlg/SBNShowerCheatingAlg.h"
-#include "larreco/RecoAlg/MCRecoUtils/ShowerUtils.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
+#include "larreco/RecoAlg/TRACSCheatingAlg.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
@@ -31,9 +30,7 @@
 #include <cmath>
 
 //Root Includes
-#include "TVector3.h"
 #include "TMath.h"
-#include "TPrincipal.h"
 #include "TVector.h"
 #include "TTree.h"
 
@@ -60,8 +57,8 @@ namespace ShowerRecoTools {
       double CalculateRMS(std::vector<float> perps);
 
       //Algorithm functions
-      shower::SBNShowerAlg         fSBNShowerAlg;
-      shower::SBNShowerCheatingAlg fSBNShowerCheatingAlg;
+      shower::TRACSAlg         fTRACSAlg;
+      shower::TRACSCheatingAlg fTRACSCheatingAlg;
 
       //Services
       art::ServiceHandle<art::TFileService> tfs;
@@ -80,8 +77,8 @@ namespace ShowerRecoTools {
 
 
   ShowerDirectionCheater::ShowerDirectionCheater(const fhicl::ParameterSet& pset)
-    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
-    fSBNShowerCheatingAlg(pset.get<fhicl::ParameterSet>("SBNShowerCheatingAlg"))
+    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")),
+    fTRACSCheatingAlg(pset.get<fhicl::ParameterSet>("TRACSCheatingAlg"))
   {
     fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
     fNSegments              = pset.get<float>        ("NSegments");
@@ -115,9 +112,8 @@ namespace ShowerRecoTools {
     } else {
 
       //Could store these in the shower element holder and just calculate once?
-      std::map<int,const simb::MCParticle*> trueParticles = fSBNShowerCheatingAlg.GetTrueParticleMap();
-      std::map<int,std::vector<int> > showersMothers = fSBNShowerCheatingAlg.GetTrueChain(trueParticles);
-
+      std::map<int,const simb::MCParticle*> trueParticles = fTRACSCheatingAlg.GetTrueParticleMap();
+      std::map<int,std::vector<int> > showersMothers = fTRACSCheatingAlg.GetTrueChain(trueParticles);
 
       //Get the clusters
       art::Handle<std::vector<recob::Cluster> > clusHandle;
@@ -133,14 +129,13 @@ namespace ShowerRecoTools {
 
       std::vector<art::Ptr<recob::Hit> > showerHits;
       for(auto const& cluster: clusters){
-
         //Get the hits
         std::vector<art::Ptr<recob::Hit> > hits = fmhc.at(cluster.key());
         showerHits.insert(showerHits.end(),hits.begin(),hits.end());
       }
 
       //Get the true particle from the shower
-      std::pair<int,double> ShowerTrackInfo = ShowerUtils::TrueParticleIDFromTrueChain(showersMothers,showerHits,2);
+      std::pair<int,double> ShowerTrackInfo = fTRACSCheatingAlg.TrueParticleIDFromTrueChain(showersMothers,showerHits,2);
 
       if(ShowerTrackInfo.first==-99999) {
         mf::LogWarning("ShowerStartPosition") << "True shower not found, returning";
@@ -150,7 +145,7 @@ namespace ShowerRecoTools {
     }
 
     TVector3 trueDir = {trueParticle->Px(),trueParticle->Py(),trueParticle->Pz()};
-    trueDir = trueDir.Unit();
+    trueDir = trueDir.Unit(); // TODO: Can probably remove?
 
     TVector3 trueDirErr = {-999,-999,-999};
     ShowerEleHolder.SetElement(trueDir,trueDirErr,"ShowerDirection");
@@ -180,7 +175,7 @@ namespace ShowerRecoTools {
 
       //Get Shower Centre
       float TotalCharge;
-      TVector3 ShowerCentre = fSBNShowerAlg.ShowerCentre(spacePoints, fmh, TotalCharge);
+      TVector3 ShowerCentre = fTRACSAlg.ShowerCentre(spacePoints, fmh, TotalCharge);
 
 
       //Check if we are pointing the correct direction or not, First try the start position
@@ -228,11 +223,11 @@ namespace ShowerRecoTools {
   double ShowerDirectionCheater::RMSShowerGradient(std::vector<art::Ptr<recob::SpacePoint> >& sps, TVector3& ShowerCentre, TVector3& Direction){
 
     //Order the spacepoints
-    fSBNShowerAlg.OrderShowerSpacePoints(sps,ShowerCentre,Direction);
+    fTRACSAlg.OrderShowerSpacePoints(sps,ShowerCentre,Direction);
 
     //Get the length of the shower.
-    double minProj =fSBNShowerAlg.SpacePointProjection(sps[0],ShowerCentre,Direction);
-    double maxProj =fSBNShowerAlg.SpacePointProjection(sps[sps.size()-1],ShowerCentre,Direction);
+    double minProj =fTRACSAlg.SpacePointProjection(sps[0],ShowerCentre,Direction);
+    double maxProj =fTRACSAlg.SpacePointProjection(sps[sps.size()-1],ShowerCentre,Direction);
 
     double length = (maxProj-minProj);
     double segmentsize = length/fNSegments;
@@ -243,10 +238,10 @@ namespace ShowerRecoTools {
     for(auto const& sp: sps){
 
       //Get the the projected length
-      double len = fSBNShowerAlg.SpacePointProjection(sp,ShowerCentre,Direction);
+      double len = fTRACSAlg.SpacePointProjection(sp,ShowerCentre,Direction);
 
       //Get the length to the projection
-      double  len_perp = fSBNShowerAlg.SpacePointPerpendiular(sp,ShowerCentre,Direction,len);
+      double  len_perp = fTRACSAlg.SpacePointPerpendiular(sp,ShowerCentre,Direction,len);
 
       int sg_len = round(len/segmentsize);
       //TODO: look at this:

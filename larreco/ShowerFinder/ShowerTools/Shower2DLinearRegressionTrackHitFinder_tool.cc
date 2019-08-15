@@ -23,7 +23,7 @@
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
@@ -57,7 +57,7 @@ namespace ShowerRecoTools{
 
       // Define standard art tool interface.
 
-      shower::SBNShowerAlg       fSBNShowerAlg;
+      shower::TRACSAlg       fTRACSAlg;
       unsigned int               fNfitpass;
       std::vector<unsigned int>  fNfithits;
       std::vector<double>        fToler;
@@ -69,7 +69,7 @@ namespace ShowerRecoTools{
 
   Shower2DLinearRegressionTrackHitFinder::Shower2DLinearRegressionTrackHitFinder(
       const fhicl::ParameterSet& pset)
-    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
+    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
     fApplyChargeWeight      = pset.get<bool>                      ("ApplyChargeWeight");
     fNfitpass               = pset.get<unsigned int>              ("Nfitpass");
@@ -165,7 +165,7 @@ namespace ShowerRecoTools{
       std::vector<art::Ptr<recob::Hit> > hits = cluster.second;
 
       //Order the hits
-      fSBNShowerAlg.OrderShowerHits(hits,ShowerStartPosition,ShowerDirection);
+      fTRACSAlg.OrderShowerHits(hits,ShowerStartPosition,ShowerDirection);
 
       //Find the initial track hits
       std::vector<art::Ptr<recob::Hit> > trackhits = FindInitialTrackHits(hits);
@@ -225,7 +225,7 @@ namespace ShowerRecoTools{
 
         //Not sure I am a fan of doing things in wire tick space. What if id doesn't not iterate properly or the
         //two planes in each TPC are not symmetric.
-        TVector2 coord = fSBNShowerAlg.HitCoordinates(hit);
+        TVector2 coord = fTRACSAlg.HitCoordinates(hit);
 
         if (i==0||(std::abs((coord.Y()-(parm[0]+coord.X()*parm[1]))*cos(atan(parm[1])))<fToler[i-1])||fitok==1){
           ++nhits;

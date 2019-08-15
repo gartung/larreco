@@ -1,13 +1,13 @@
-#include "larreco/RecoAlg/SBNShowerCheatingAlg.h"
+#include "larreco/RecoAlg/TRACSCheatingAlg.h"
 
-shower::SBNShowerCheatingAlg::SBNShowerCheatingAlg(const fhicl::ParameterSet& pset):
-  fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
+shower::TRACSCheatingAlg::TRACSCheatingAlg(const fhicl::ParameterSet& pset):
+  fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
 {
   fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel");
   fHitModuleLabel        = pset.get<art::InputTag> ("HitModuleLabel");
 }
 
-std::map<int,const simb::MCParticle*>  shower::SBNShowerCheatingAlg::GetTrueParticleMap(){
+std::map<int,const simb::MCParticle*>  shower::TRACSCheatingAlg::GetTrueParticleMap(){
 
   const sim::ParticleList& particles = particleInventory->ParticleList();
 
@@ -23,7 +23,7 @@ std::map<int,const simb::MCParticle*>  shower::SBNShowerCheatingAlg::GetTruePart
 }
 
 
-std::map<int,std::vector<int> > shower::SBNShowerCheatingAlg::GetTrueChain(
+std::map<int,std::vector<int> > shower::TRACSCheatingAlg::GetTrueChain(
     std::map<int,const simb::MCParticle*> &trueParticles){
 
   // Roll up showers if not already done:
@@ -47,7 +47,7 @@ std::map<int,std::vector<int> > shower::SBNShowerCheatingAlg::GetTrueChain(
   return showerMothers;
 }
 
-void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* trueParticle,
+void shower::TRACSCheatingAlg::CheatDebugEVD(const simb::MCParticle* trueParticle,
     art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder,
     const art::Ptr<recob::PFParticle>& pfparticle){
 
@@ -143,7 +143,7 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
   // Make 3D points for each spacepoint in the shower
   TPolyMarker3D* showerPoly = new TPolyMarker3D(showerSpacePoints.size());
   for (auto spacePoint : showerSpacePoints){
-    TVector3 pos = fSBNShowerAlg.SpacePointPosition(spacePoint) - showerStartPosition;
+    TVector3 pos = fTRACSAlg.SpacePointPosition(spacePoint) - showerStartPosition;
 
     x = pos.X();
     y = pos.Y();
@@ -152,7 +152,7 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
     ++point;
 
     // Calculate the projection of (point-startpoint) along the direction
-    double proj = fSBNShowerAlg.SpacePointProjection(spacePoint, showerStartPosition,
+    double proj = fTRACSAlg.SpacePointProjection(spacePoint, showerStartPosition,
         showerDirection);
     if (proj>maxProj) {
       maxProj = proj;
@@ -172,7 +172,7 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
   point = 0; // re-initialise counter
   TPolyMarker3D* trackPoly = new TPolyMarker3D(trackSpacePoints.size());
   for (auto spacePoint : trackSpacePoints){
-    TVector3 pos = fSBNShowerAlg.SpacePointPosition(spacePoint) - showerStartPosition;
+    TVector3 pos = fTRACSAlg.SpacePointPosition(spacePoint) - showerStartPosition;
     x = pos.X();
     y = pos.Y();
     z = pos.Z();
@@ -189,7 +189,7 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
   point = 0; // re-initialise counter
 
   for(auto const& sp: otherSpacePoints){
-    TVector3 pos = fSBNShowerAlg.SpacePointPosition(sp) - showerStartPosition;
+    TVector3 pos = fTRACSAlg.SpacePointPosition(sp) - showerStartPosition;
     x = pos.X();
     y = pos.Y();
     z = pos.Z();
@@ -221,7 +221,7 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
   canvas->Write();
 }
 
-int shower::SBNShowerCheatingAlg::TrueParticleID(const art::Ptr<recob::Hit>& hit) {
+int shower::TRACSCheatingAlg::TrueParticleID(const art::Ptr<recob::Hit>& hit) {
   double particleEnergy = 0;
   int likelyTrackID = 0;
   art::ServiceHandle<cheat::BackTrackerService> bt_serv;
@@ -235,7 +235,7 @@ int shower::SBNShowerCheatingAlg::TrueParticleID(const art::Ptr<recob::Hit>& hit
   return likelyTrackID;
 }
 
-std::pair<int,double> shower::SBNShowerCheatingAlg::TrueParticleIDFromTrueChain(std::map<int,std::vector<int>> &ShowersMothers,const std::vector<art::Ptr<recob::Hit> >& hits, int planeid) {
+std::pair<int,double> shower::TRACSCheatingAlg::TrueParticleIDFromTrueChain(std::map<int,std::vector<int>> &ShowersMothers,const std::vector<art::Ptr<recob::Hit> >& hits, int planeid) {
   art::ServiceHandle<cheat::BackTrackerService> bt_serv;
   art::ServiceHandle<cheat::ParticleInventoryService> particleInventory;
 

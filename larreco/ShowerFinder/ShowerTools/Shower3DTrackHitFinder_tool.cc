@@ -15,6 +15,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/FindOneP.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "art/Framework/Core/EDProducer.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -27,7 +28,7 @@
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Shower.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
@@ -63,7 +64,7 @@ namespace ShowerRecoTools{
           TVector3& showerStartPosition,TVector3& showerDirection);
 
       // Define standard art tool interface
-      shower::SBNShowerAlg       fSBNShowerAlg;
+      shower::TRACSAlg       fTRACSAlg;
 
       float fMaxProjectionDist;    // Maximum projection along shower direction, length of cylinder
       float fMaxPerpendicularDist; // Maximum perpendicular distance, radius of cylinder
@@ -78,7 +79,7 @@ namespace ShowerRecoTools{
 
 
   Shower3DTrackHitFinder::Shower3DTrackHitFinder(const fhicl::ParameterSet& pset)
-    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
+    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
     fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel");
 
@@ -166,7 +167,7 @@ namespace ShowerRecoTools{
     }
 
     // Order the spacepoints
-    fSBNShowerAlg.OrderShowerSpacePoints(spacePoints,ShowerStartPosition,ShowerDirection);
+    fTRACSAlg.OrderShowerSpacePoints(spacePoints,ShowerStartPosition,ShowerDirection);
 
     // Get only the space points from the track
     std::vector<art::Ptr<recob::SpacePoint> > trackSpacePoints;
@@ -184,7 +185,7 @@ namespace ShowerRecoTools{
 
     if (fDebugEVD){
       std::cout<<"Do DebugEVD"<<std::endl;
-      fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
+      fTRACSAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
     }
 
     return 0;
@@ -200,9 +201,9 @@ namespace ShowerRecoTools{
     for (auto spacePoint : spacePoints){
       // Calculate the projection along direction and perpendicular distance
       // from "axis" of shower
-      double proj = fSBNShowerAlg.SpacePointProjection(spacePoint,
+      double proj = fTRACSAlg.SpacePointProjection(spacePoint,
           showerStartPosition, showerDirection);
-      double perp = fSBNShowerAlg.SpacePointPerpendiular(spacePoint,
+      double perp = fTRACSAlg.SpacePointPerpendiular(spacePoint,
           showerStartPosition, showerDirection, proj);
 
       if (fForwardHitsOnly){

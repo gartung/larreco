@@ -1,7 +1,7 @@
 #include "showeralgorithms.fcl"
 #include "clusteralgorithms.fcl"
 #include "showertools.fcl"
-#include "calorimetry.fcl" 
+#include "calorimetry.fcl"
 
 BEGIN_PROLOG
 
@@ -9,10 +9,10 @@ standard_shower:
 {
  module_type:              "ShowerReco"
  ClusterModuleLabel:       "showeranglecluster"
- CaloAlg:            	   @local::standard_calorimetryalgmc
- UseArea:		   true
- dEdxlength:		   2.4	#distance that gets used to determine e/gamma separation
- calodEdxlength:	   30   # cutoff distance for hits saved to the calo object.
+ CaloAlg:                @local::standard_calorimetryalgmc
+ UseArea:      true
+ dEdxlength:       2.4  #distance that gets used to determine e/gamma separation
+ calodEdxlength:     30   # cutoff distance for hits saved to the calo object.
 }
 
 standard_tcshower:
@@ -54,10 +54,10 @@ standard_tcshowerelectronlikelihood:
 #{
 # module_type:              "ShowerRecoAna"
 # ClusterModuleLabel:       "showeranglecluster"
-# CaloAlg:            	   @local::standard_calorimetryalgmc
-# UseArea:		   true
-# dEdxlength:		   2.4	#distance that gets used to determine e/gamma separation
-# calodEdxlength:	   30   # cutoff distance for hits saved to the calo object.
+# CaloAlg:                 @local::standard_calorimetryalgmc
+# UseArea:       true
+# dEdxlength:      2.4  #distance that gets used to determine e/gamma separation
+# calodEdxlength:    30   # cutoff distance for hits saved to the calo object.
 #}
 
 standard_showercheater:
@@ -99,30 +99,30 @@ standard_emshower:
 }
 
 argoneut_shower:     @local::standard_shower
-microboone_shower:   @local::standard_shower 
+microboone_shower:   @local::standard_shower
 microboone_shower.UseArea:   false
 
 #argoneut_showerana:     @local::standard_showerana
-#microboone_showerana:   @local::standard_showerana 
+#microboone_showerana:   @local::standard_showerana
 #microboone_showerana.UseArea:   false
 
 
 standard_neutrinoshowereff:
 {
-    module_type:      	      "NeutrinoShowerEff"
-    MCTruthModuleLabel:	      "generator"
+    module_type:              "NeutrinoShowerEff"
+    MCTruthModuleLabel:       "generator"
     HitModuleLabel:           "trajcluster"
-    ShowerModuleLabel: 	      "trajcluster"
+    ShowerModuleLabel:        "trajcluster"
     CNNEMModuleLabel:         ""
-    NeutrinoPDGcode:	      12
-    LeptonPDGcode:	      11
-    MaxNeutrinoE:	      25.0
-    MaxEfrac:		      0.30
-    MinCompleteness:	      0.70	
-    SaveMCTree:		      false
-    FidVolCutX:		      10
-    FidVolCutY:		      10
-    FidVolCutZ:		      10	
+    NeutrinoPDGcode:        12
+    LeptonPDGcode:        11
+    MaxNeutrinoE:       25.0
+    MaxEfrac:         0.30
+    MinCompleteness:        0.70
+    SaveMCTree:         false
+    FidVolCutX:         10
+    FidVolCutY:         10
+    FidVolCutZ:         10
 }
 
 
@@ -142,13 +142,13 @@ standard_showervalidation: {
  RemoveNonContainedParticles: true
  Verbose:                   0
  MinHitSize:                20
- SimEnergyCut:              0.1 
+ SimEnergyCut:              0.1
  DensityCut:                1.2
  MaxSimEnergy:              1500
 }
 
 standard_tracs_shower: {
- 
+
     module_type: "TRACS"
 
     ShowerFinderTools: [
@@ -163,7 +163,7 @@ standard_tracs_shower: {
     PFParticleModuleLabel:      "pandora"
     SecondInteration:           false
     AllowPartialShowers:        false
-    Verbose:                    false 
+    Verbose:                    false
 }
 
 

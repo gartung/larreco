@@ -6,38 +6,38 @@ add_subdirectory(Cheating)
 cet_enable_asserts()
 
 set( showerfinder_tool_lib_list
-			larreco_RecoAlg
-			larcorealg_Geometry
-			lardataobj_RecoBase
-			larcore_Geometry_Geometry_service
-			lardata_Utilities
-			larreco_RecoAlg_MCRecoUtils
-      			${ART_FRAMEWORK_CORE}
-			${ART_FRAMEWORK_PRINCIPAL}
-			${ART_FRAMEWORK_SERVICES_REGISTRY}
-			art_Persistency_Common
-			art_Persistency_Provenance
-			${ART_FRAMEWORK_SERVICES_BASIC}
-			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-           		 ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
-			${ART_ROOT_IO_TFILESERVICE_SERVICE}
-			${ART_FRAMEWORK_SERVICES_SYSTEM_FILECATALOGMETADATA_SERVICE}
-			art_Utilities
-			canvas
-			${MF_MESSAGELOGGER}
-			
-			${FHICLCPP}
-			${CETLIB}
-			${Boost_FILESYSTEM_LIBRARY}
-			${Boost_SYSTEM_LIBRARY}
-			${CLHEP}
-			${ROOT_BASIC_LIB_LIST}
-			LArPandoraContent	
-                        larpandora_LArPandoraInterface
-    )
+  larreco_RecoAlg
+  larcorealg_Geometry
+  lardataobj_RecoBase
+  larcore_Geometry_Geometry_service
+  lardata_Utilities
+  larreco_RecoAlg_MCRecoUtils
+  ${ART_FRAMEWORK_CORE}
+  ${ART_FRAMEWORK_PRINCIPAL}
+  ${ART_FRAMEWORK_SERVICES_REGISTRY}
+  art_Persistency_Common
+  art_Persistency_Provenance
+  ${ART_FRAMEWORK_SERVICES_BASIC}
+  ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
+  ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
+  ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+  ${ART_FRAMEWORK_SERVICES_SYSTEM_FILECATALOGMETADATA_SERVICE}
+  art_Utilities
+  canvas
+  ${MF_MESSAGELOGGER}
+
+  ${FHICLCPP}
+  ${CETLIB}
+  ${Boost_FILESYSTEM_LIBRARY}
+  ${Boost_SYSTEM_LIBRARY}
+  ${CLHEP}
+  ${ROOT_BASIC_LIB_LIST}
+  LArPandoraContent
+  larpandora_LArPandoraInterface
+  )
 
 art_make(TOOL_LIBRARIES ${showerfinder_tool_lib_list}
-        )
+  )
 
 install_headers()
 install_source()
