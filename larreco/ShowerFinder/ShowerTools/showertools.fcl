@@ -1,4 +1,4 @@
-#include "trackfinderalgorithms.fcl"     
+#include "trackfinderalgorithms.fcl"
 #include "showeralgorithms.fcl"
 #include "clusteralgorithms.fcl"
 #include "calorimetry.fcl"
@@ -11,7 +11,7 @@ showerpcadirection:{
     NSegments: 6
     UseStartPosition: true
     ChargeWeighted:   true
-    SBNShowerAlg:     @local::standard_sbnshoweralg
+    TRACSAlg:     @local::standard_tracsalg
     CalorimetryAlg:   @local::standard_calorimetryalgmc
 }
 
@@ -32,30 +32,14 @@ showerlinearenergy:{
     ThreeDIntercept: 0
 }
 
-showertrackfinder:{
-    tool_type: ShowerTrackFinder
-    SBNShowerAlg:          @local::standard_sbnshoweralg
-    ProjectionMatchingAlg: @local::standard_projectionmatchingalg
-
-    Nfitpass:        4
-    Nfithits:        [83, 50, 33, 33]
-    Toler:           [50., 8.3, 3.3, 3.3 ]
-    ApplyChargeWeight: true
-    PFParticleModuleLabel: "pandora"    
-    HitsModuleLabel: "linecluster"
-    UsePandoraSlidingFitTrajectory: true
-    SlidingFitHalfWindow: 20
-    MinTrajectoryPoints: 2
-    }
-
 shower2Dlinearregressiontrackhitfinder:{
     tool_type:       Shower2DLinearRegressionTrackHitFinder
-    SBNShowerAlg:    @local::standard_sbnshoweralg
+    TRACSAlg:    @local::standard_tracsalg
     Nfitpass:        4
     Nfithits:        [83, 50, 33, 33]
     Toler:           [50., 8.3, 3.3, 3.3 ]
     ApplyChargeWeight: true
-    PFParticleModuleLabel: "pandora"    
+    PFParticleModuleLabel: "pandora"
     HitsModuleLabel: "linecluster"
     }
 
@@ -63,7 +47,7 @@ showerpmatrackfinder:{
     tool_type: ShowerPMATrackFinder
     MinTrajectoryPoints: 2
     ProjectionMatchingAlg: @local::standard_projectionmatchingalg
-    } 
+    }
 
 showerpandoraslidingfittrackfinder:{
     tool_type: ShowerPandoraSlidingFitTrackFinder
@@ -71,25 +55,9 @@ showerpandoraslidingfittrackfinder:{
     MinTrajectoryPoints: 2
     }
 
-shower3Dtrackfinder:{
-    tool_type: Shower3DTrackFinder
-    SBNShowerAlg:          @local::standard_sbnshoweralg
-    ProjectionMatchingAlg: @local::standard_projectionmatchingalg
-    MaxProjectionDist:     10
-    MaxPerpendicularDist:  1
-    ForwardHitsOnly:       true
-    ThreeDTrackFinding:    true
-    DebugEVD:              false
-    Nfitpass:        4
-    Nfithits:        [83, 50, 33, 33]
-    Toler:           [50., 8.3, 3.3, 3.3 ]
-    ApplyChargeWeight: true
-    PFParticleModuleLabel: "pandora"
-}
-
 shower3Dtrackhitfinder:{
     tool_type: Shower3DTrackHitFinder
-    SBNShowerAlg:          @local::standard_sbnshoweralg
+    TRACSAlg:          @local::standard_tracsalg
     PFParticleModuleLabel: "pandora"
     MaxProjectionDist:     10
     MaxPerpendicularDist:  1
@@ -102,7 +70,7 @@ showerstartposition:{
     tool_type: ShowerStartPosition
     PFParticleModuleLabel: "pandora"
     UseCollectionOnly: false
-    SBNShowerAlg: @local::standard_sbnshoweralg
+    TRACSAlg: @local::standard_tracsalg
 }
 
 showerstandardcalodedx:{
@@ -115,7 +83,7 @@ showerstandardcalodedx:{
 
 showertrackhitdirection:{
     tool_type: ShowerTrackHitDirection
-    SBNShowerAlg:          @local::standard_sbnshoweralg
+    TRACSAlg:          @local::standard_tracsalg
     UsePandoraVertex: true
     HitModuleLabel: "linecluster"
     PFParticleModuleLabel: "pandora"
@@ -123,19 +91,19 @@ showertrackhitdirection:{
 
 showertrackspacepointdirection:{
     tool_type: ShowerTrackSpacePointDirection
-    SBNShowerAlg:          @local::standard_sbnshoweralg
+    TRACSAlg:          @local::standard_tracsalg
     UsePandoraVertex: true
 }
 
 showertrackdirection:{
     tool_type: ShowerTrackDirection
-    SBNShowerAlg:          @local::standard_sbnshoweralg
-    UsePandoraVertex: true  
-    UsePositionInfo: true 
+    TRACSAlg:          @local::standard_tracsalg
+    UsePandoraVertex: true
+    UsePositionInfo: true
     DebugEVD:         false
 }
 
-showertracktrajectorypointdirection: { 
+showertracktrajectorypointdirection: {
     tool_type: ShowerTrackTrajectoryPointDirection
     TrajPoint: 1
     DebugEVD: false
@@ -152,7 +120,7 @@ showersmarttracktrajectorypointdirection: {
     UsePositionInfo: true
     AngleCut: 0.01745
 }
-    
+
 showertrackpcadirection:{
     tool_type: ShowerTrackPCADirection
     DebugEVD:         false
@@ -160,22 +128,22 @@ showertrackpcadirection:{
     MinPCAPoints:     10
     PFParticleModuleLabel: "pandora"
     HitModuleLabel:        "linecluster"
-    SBNShowerAlg:     @local::standard_sbnshoweralg
+    TRACSAlg:     @local::standard_tracsalg
     CalorimetryAlg:   @local::standard_calorimetryalgmc
 }
 
 showerstartpositioncheater:{
     tool_type:               ShowerStartPositionCheater
-    SBNShowerAlg:            @local::standard_sbnshoweralg
-    SBNShowerCheatingAlg:    @local::standard_sbnshowercheatingalg
+    TRACSAlg:            @local::standard_tracsalg
+    TRACSCheatingAlg:    @local::standard_tracscheatingalg
     PFParticleModuleLabel:  "pandora"
     HitModuleLabel:         "linecluster"
 }
 
 showerdirectioncheater:{
     tool_type:              ShowerDirectionCheater
-    SBNShowerAlg:           @local::standard_sbnshoweralg
-    SBNShowerCheatingAlg:   @local::standard_sbnshowercheatingalg
+    TRACSAlg:           @local::standard_tracsalg
+    TRACSCheatingAlg:   @local::standard_tracscheatingalg
     PFParticleModuleLabel:  "pandora"
     NSegments:              6
     RMSFlip:                false
@@ -184,8 +152,8 @@ showerdirectioncheater:{
 
 showertrackfindercheater:{
     tool_type:               ShowerTrackFinderCheater
-    SBNShowerAlg:            @local::standard_sbnshoweralg
-    SBNShowerCheatingAlg:    @local::standard_sbnshowercheatingalg
+    TRACSAlg:            @local::standard_tracsalg
+    TRACSCheatingAlg:    @local::standard_tracscheatingalg
     PFParticleModuleLabel:  "pandora"
     HitModuleLabel:         "linecluster"
     MaxProjectionDist:      10
@@ -195,19 +163,19 @@ showertrackfindercheater:{
 
 showertracktrajtospacepoint:{
     tool_type: ShowerTrackTrajToSpacepoint
-    SBNShowerAlg:            @local::standard_sbnshoweralg
+    TRACSAlg:            @local::standard_tracsalg
     PFParticleModuleLabel: "pandora"
     MaxDist:               1
 }
 
 showerslidingstandardcalodedx:{
     tool_type: ShowerSlidingStandardCalodEdx
-    SBNShowerAlg:          @local::standard_sbnshoweralg
+    TRACSAlg:          @local::standard_tracsalg
     CalorimetryAlg:        @local::standard_calorimetryalgmc
-    MinDistCutOff:         3 #Distance in wires a hit has to be from the start position to be used
-    MaxDist:               2 #Distance in wires a that a trajectory point can be from a spacepoint to match to it. 
-    MinAngleToWire:        0.26179 #Minimum angle between the wire direction and the shower direction for the spacepoint to be used 
-    ShapingTime:           2
+    MinDistCutOff:         2 #Distance in wires a hit has to be from the start position to be used
+    MaxDist:               2 #Distance in wires a that a trajectory point can be from a spacepoint to match to it.
+    MinAngleToWire:        0 #Minimum angle between the wire direction and the shower direction for the spacepoint to be used
+    ShapingTime:           999
     dEdxTrackLength:       999 #Max Distance a spacepoint can be away from the start of the track.
     UseMedian:              true
     PFParticleModuleLabel: "pandora"
@@ -215,8 +183,8 @@ showerslidingstandardcalodedx:{
 
 showerlinearenergycheater:{
     tool_type:               ShowerLinearEnergyCheat
-    SBNShowerAlg:            @local::standard_sbnshoweralg
-    SBNShowerCheatingAlg:    @local::standard_sbnshowercheatingalg
+    TRACSAlg:            @local::standard_tracsalg
+    TRACSCheatingAlg:    @local::standard_tracscheatingalg
     PFParticleModuleLabel:  "pandora"
     HitModuleLabel:         "linecluster"
     UGradient:   0.00155644

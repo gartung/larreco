@@ -1,13 +1,13 @@
-#include "larreco/RecoAlg/SBNShowerCheatingAlg.h"
+#include "larreco/RecoAlg/TRACSCheatingAlg.h"
 
-shower::SBNShowerCheatingAlg::SBNShowerCheatingAlg(const fhicl::ParameterSet& pset):
-  fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
+shower::TRACSCheatingAlg::TRACSCheatingAlg(const fhicl::ParameterSet& pset):
+  fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
 {
   fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel");
   fHitModuleLabel        = pset.get<art::InputTag> ("HitModuleLabel");
 }
 
-std::map<int,const simb::MCParticle*>  shower::SBNShowerCheatingAlg::GetTrueParticleMap(){
+std::map<int,const simb::MCParticle*>  shower::TRACSCheatingAlg::GetTrueParticleMap(){
 
   const sim::ParticleList& particles = particleInventory->ParticleList();
 
@@ -23,7 +23,7 @@ std::map<int,const simb::MCParticle*>  shower::SBNShowerCheatingAlg::GetTruePart
 }
 
 
-std::map<int,std::vector<int> > shower::SBNShowerCheatingAlg::GetTrueChain(
+std::map<int,std::vector<int> > shower::TRACSCheatingAlg::GetTrueChain(
     std::map<int,const simb::MCParticle*> &trueParticles){
 
   // Roll up showers if not already done:
@@ -47,7 +47,7 @@ std::map<int,std::vector<int> > shower::SBNShowerCheatingAlg::GetTrueChain(
   return showerMothers;
 }
 
-void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* trueParticle,
+void shower::TRACSCheatingAlg::CheatDebugEVD(const simb::MCParticle* trueParticle,
     art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder,
     const art::Ptr<recob::PFParticle>& pfparticle){
 
@@ -92,7 +92,7 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
   std::map< art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit> > spacePointHitMap;
   //Get the hits from the true particle
   for (auto hit : hits){
-    int trueParticleID = TMath::Abs(RecoUtils::TrueParticleID(hit));
+    int trueParticleID = TMath::Abs(TrueParticleID(hit));
     std::vector<art::Ptr<recob::SpacePoint> > sps = fmsph.at(hit.key());
     if (sps.size() == 1){
       art::Ptr<recob::SpacePoint> sp = sps.front();
@@ -143,7 +143,7 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
   // Make 3D points for each spacepoint in the shower
   TPolyMarker3D* showerPoly = new TPolyMarker3D(showerSpacePoints.size());
   for (auto spacePoint : showerSpacePoints){
-    TVector3 pos = fSBNShowerAlg.SpacePointPosition(spacePoint) - showerStartPosition;
+    TVector3 pos = fTRACSAlg.SpacePointPosition(spacePoint) - showerStartPosition;
 
     x = pos.X();
     y = pos.Y();
@@ -152,7 +152,7 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
     ++point;
 
     // Calculate the projection of (point-startpoint) along the direction
-    double proj = fSBNShowerAlg.SpacePointProjection(spacePoint, showerStartPosition,
+    double proj = fTRACSAlg.SpacePointProjection(spacePoint, showerStartPosition,
         showerDirection);
     if (proj>maxProj) {
       maxProj = proj;
@@ -172,7 +172,7 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
   point = 0; // re-initialise counter
   TPolyMarker3D* trackPoly = new TPolyMarker3D(trackSpacePoints.size());
   for (auto spacePoint : trackSpacePoints){
-    TVector3 pos = fSBNShowerAlg.SpacePointPosition(spacePoint) - showerStartPosition;
+    TVector3 pos = fTRACSAlg.SpacePointPosition(spacePoint) - showerStartPosition;
     x = pos.X();
     y = pos.Y();
     z = pos.Z();
@@ -189,7 +189,7 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
   point = 0; // re-initialise counter
 
   for(auto const& sp: otherSpacePoints){
-    TVector3 pos = fSBNShowerAlg.SpacePointPosition(sp) - showerStartPosition;
+    TVector3 pos = fTRACSAlg.SpacePointPosition(sp) - showerStartPosition;
     x = pos.X();
     y = pos.Y();
     z = pos.Z();
@@ -220,3 +220,68 @@ void shower::SBNShowerCheatingAlg::CheatDebugEVD(const simb::MCParticle* truePar
   // not a module and didn't work without this so im going with it.
   canvas->Write();
 }
+
+int shower::TRACSCheatingAlg::TrueParticleID(const art::Ptr<recob::Hit>& hit) {
+  double particleEnergy = 0;
+  int likelyTrackID = 0;
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+  std::vector<sim::TrackIDE> trackIDs = bt_serv->HitToTrackIDEs(hit);
+  for (unsigned int idIt = 0; idIt < trackIDs.size(); ++idIt) {
+    if (trackIDs.at(idIt).energy > particleEnergy) {
+      particleEnergy = trackIDs.at(idIt).energy;
+      likelyTrackID = trackIDs.at(idIt).trackID;
+    }
+  }
+  return likelyTrackID;
+}
+
+std::pair<int,double> shower::TRACSCheatingAlg::TrueParticleIDFromTrueChain(std::map<int,std::vector<int>> &ShowersMothers,const std::vector<art::Ptr<recob::Hit> >& hits, int planeid) {
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+  art::ServiceHandle<cheat::ParticleInventoryService> particleInventory;
+
+  //Find the energy for each track ID.
+  std::map<int,double> trackIDToEDepMap;
+  std::map<int,double> trackIDTo3EDepMap;
+  for (std::vector<art::Ptr<recob::Hit> >::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt) {
+    art::Ptr<recob::Hit> hit = *hitIt;
+
+    //Get the plane ID
+    geo::WireID wireid = (*hitIt)->WireID();
+    int PlaneID = wireid.Plane;
+    std::vector<sim::TrackIDE> trackIDs = bt_serv->HitToTrackIDEs(hit);
+    for (unsigned int idIt = 0; idIt < trackIDs.size(); ++idIt) {
+      trackIDTo3EDepMap[TMath::Abs(trackIDs[idIt].trackID)] += trackIDs[idIt].energy;
+      if(PlaneID == planeid){trackIDToEDepMap[TMath::Abs(trackIDs[idIt].trackID)] += trackIDs[idIt].energy;}
+    }
+  }
+
+  //Find the energy for each showermother.
+  std::map<int,double> MotherIDtoEMap;
+  std::map<int,double> MotherIDto3EMap;
+  for(std::map<int,std::vector<int> >::iterator showermother=ShowersMothers.begin(); showermother!=ShowersMothers.end(); ++showermother){
+    for(std::vector<int>::iterator daughter=(showermother->second).begin(); daughter!=(showermother->second).end(); ++daughter){
+      MotherIDtoEMap[showermother->first]  +=  trackIDToEDepMap[*daughter];
+      MotherIDto3EMap[showermother->first] +=  trackIDTo3EDepMap[*daughter];
+    }
+  }
+
+  //Loop over the mothers to find the most like candidate by identifying which true shower deposited the most energy in the hits.
+  double maxenergy = -1;
+  int objectTrack = -99999;
+  for (std::map<int,double>::iterator mapIt = MotherIDto3EMap.begin(); mapIt != MotherIDto3EMap.end(); mapIt++){
+    double energy_three = mapIt->second;
+    double trackid = mapIt->first;
+    if (energy_three > maxenergy){
+      maxenergy = energy_three;
+      objectTrack = trackid;
+    }
+  }
+
+  //If the none of the shower mother deposited no energy then we cannot match this.
+  if(maxenergy == 0){
+    return std::make_pair(-99999,-99999);
+  }
+
+  return std::make_pair(objectTrack,MotherIDtoEMap[objectTrack]);
+}
+

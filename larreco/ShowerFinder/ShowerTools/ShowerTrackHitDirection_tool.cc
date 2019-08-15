@@ -16,99 +16,89 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
-//LArSoft Includes 
+//LArSoft Includes
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
-//C++ Includes 
+//C++ Includes
 #include <iostream>
 #include <cmath>
 
-//Root Includes 
+//Root Includes
 #include "TVector3.h"
 #include "TMath.h"
-#include "TH1.h" 
+#include "TH1.h"
 
 namespace ShowerRecoTools {
 
-  
-  class ShowerTrackHitDirection:IShowerTool {
-    
-  public:
-    
-    ShowerTrackHitDirection(const fhicl::ParameterSet& pset);
-    
-    ~ShowerTrackHitDirection(); 
-    
-    //Generic Direction Finder
-    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-			 art::Event& Event,
-			 reco::shower::ShowerElementHolder& ShowerEleHolder
-			 ) override;
-    
-  private:
-    
-    // Define standard art tool interface
-    void configure(const fhicl::ParameterSet& pset) override;
 
-    //fcl
-    bool fUsePandoraVertex;
-    art::InputTag fHitModuleLabel;
-    art::InputTag fPFParticleModuleLabel;
+  class ShowerTrackHitDirection:IShowerTool {
+
+    public:
+
+      ShowerTrackHitDirection(const fhicl::ParameterSet& pset);
+
+      ~ShowerTrackHitDirection();
+
+      //Generic Direction Finder
+      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+          art::Event& Event,
+          reco::shower::ShowerElementHolder& ShowerEleHolder
+          ) override;
+
+    private:
+
+      //fcl
+      bool fUsePandoraVertex;
+      art::InputTag fHitModuleLabel;
+      art::InputTag fPFParticleModuleLabel;
 
       //Algorithm function
-    shower::SBNShowerAlg fSBNShowerAlg;
+      shower::TRACSAlg fTRACSAlg;
   };
-  
-  
+
+
   ShowerTrackHitDirection::ShowerTrackHitDirection(const fhicl::ParameterSet& pset)
-    :  fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
-  {
-    configure(pset);
-  }
-  
-  ShowerTrackHitDirection::~ShowerTrackHitDirection()
-  {
-  }
-  
-  void ShowerTrackHitDirection::configure(const fhicl::ParameterSet& pset)
+    :  fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
     fUsePandoraVertex       = pset.get<bool>         ("UsePandoraVertex");
-    fHitModuleLabel         = pset.get<art::InputTag>("HitModuleLabel");     
+    fHitModuleLabel         = pset.get<art::InputTag>("HitModuleLabel");
     fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
   }
 
-  int ShowerTrackHitDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-						art::Event& Event,
-						reco::shower::ShowerElementHolder& ShowerEleHolder){
+  ShowerTrackHitDirection::~ShowerTrackHitDirection()
+  {
+  }
 
-    std::cout << "on shower track hit direction" << std::endl;
+  int ShowerTrackHitDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+      art::Event& Event,
+      reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     //Check the Track Hits has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrackHits")){
       mf::LogError("ShowerTrackHitDirection") << "Initial track hits not set"<< std::endl;
       return 0;
     }
-    
+
     //Check the start position is set.
     if(fUsePandoraVertex && !ShowerEleHolder.CheckElement("ShowerStartPosition")){
       mf::LogError("ShowerTrackHitDirection") << "Start position not set, returning "<< std::endl;
       return 0;
     }
 
-    //Get the start poistion 
+    //Get the start poistion
     TVector3 StartPosition = {-999,-999,-99};
     if(fUsePandoraVertex){
       ShowerEleHolder.GetElement("ShowerStartPosition",StartPosition);
     }
-    else{ 
+    else{
       //Check the Tracks has been defined
       if(!ShowerEleHolder.CheckElement("InitialTrack")){
-	mf::LogError("ShowerTrackHitDirection") << "Initial track not set"<< std::endl;
-	return 0;
+        mf::LogError("ShowerTrackHitDirection") << "Initial track not set"<< std::endl;
+        return 0;
       }
       recob::Track InitialTrack;
       ShowerEleHolder.GetElement("InitialTrack",InitialTrack);
@@ -116,13 +106,13 @@ namespace ShowerRecoTools {
       StartPosition = {Start_point.X(),Start_point.Y(),Start_point.Z()};
     }
 
-    
+
     //Get the spacepoints associated to hits
     art::Handle<std::vector<recob::Hit> > hitHandle;
     if (!Event.getByLabel(fHitModuleLabel, hitHandle)){
-      throw cet::exception("ShowerTrackHitDirection") << "Could not configure the spacepoint handle. Something is configured incorrectly. Stopping"; 
+      throw cet::exception("ShowerTrackHitDirection") << "Could not configure the spacepoint handle. Something is configured incorrectly. Stopping";
       return 1;
-    } 
+    }
 
     //Get the spacepoint handle. We need to do this in 3D.
     art::FindManyP<recob::SpacePoint> fmsp(hitHandle, Event, fPFParticleModuleLabel);
@@ -135,33 +125,33 @@ namespace ShowerRecoTools {
     std::vector<art::Ptr<recob::Hit> > InitialTrackHits;
     ShowerEleHolder.GetElement("InitialTrackHits",InitialTrackHits);
 
-    
+
     //Calculate the mean direction and the the standard deviation
     float sumX=0, sumX2=0;
     float sumY=0, sumY2=0;
     float sumZ=0, sumZ2=0;
 
-    //Get the spacepoints associated to the track hit 
+    //Get the spacepoints associated to the track hit
     std::vector<art::Ptr<recob::SpacePoint > > intitaltrack_sp;
-    for(auto const hit: InitialTrackHits){  
+    for(auto const hit: InitialTrackHits){
       std::vector<art::Ptr<recob::SpacePoint > > sps = fmsp.at(hit.key());
       for(auto const sp: sps){
-	intitaltrack_sp.push_back(sp);
-	
-	//Get the direction relative to the start positon 
-	TVector3 pos = fSBNShowerAlg.SpacePointPosition(sp) - StartPosition;
-	if(pos.Mag() == 0){continue;}
+        intitaltrack_sp.push_back(sp);
 
-	sumX = pos.X(); sumX2 += pos.X()*pos.X();
-	sumY = pos.Y(); sumY2 += pos.Y()*pos.Y();
-	sumZ = pos.Z(); sumZ2 += pos.Z()*pos.Z();
+        //Get the direction relative to the start positon
+        TVector3 pos = fTRACSAlg.SpacePointPosition(sp) - StartPosition;
+        if(pos.Mag() == 0){continue;}
+
+        sumX = pos.X(); sumX2 += pos.X()*pos.X();
+        sumY = pos.Y(); sumY2 += pos.Y()*pos.Y();
+        sumZ = pos.Z(); sumZ2 += pos.Z()*pos.Z();
       }
     }
 
     float NumSps = intitaltrack_sp.size();
     TVector3 Mean = {sumX/NumSps,sumY/NumSps,sumZ/NumSps};
     Mean = Mean.Unit();
-      
+
     float RMSX = 999;
     float RMSY = 999;
     float RMSZ = 999;
@@ -175,18 +165,18 @@ namespace ShowerRecoTools {
       RMSZ = TMath::Sqrt(sumZ2/NumSps - ((sumZ/NumSps)*((sumZ/NumSps))));
     }
 
-    
+
     //Loop over the spacepoints and remove ones the relative direction is not within one sigma.
     TVector3 Direction_Mean = {0,0,0};
-    int N = 0; 
+    int N = 0;
     for(auto const sp: intitaltrack_sp){
-      TVector3 Direction = fSBNShowerAlg.SpacePointPosition(sp) - StartPosition;
-      if((TMath::Abs((Direction-Mean).X()) < 1*RMSX) && 
-	 (TMath::Abs((Direction-Mean).Y())< 1*RMSY) && 
-	 (TMath::Abs((Direction-Mean).Z()) < 1*RMSZ)){
-	if(Direction.Mag() == 0){continue;}
-	++N;
-	Direction_Mean += Direction;
+      TVector3 Direction = fTRACSAlg.SpacePointPosition(sp) - StartPosition;
+      if((TMath::Abs((Direction-Mean).X()) < 1*RMSX) &&
+          (TMath::Abs((Direction-Mean).Y())< 1*RMSY) &&
+          (TMath::Abs((Direction-Mean).Z()) < 1*RMSZ)){
+        if(Direction.Mag() == 0){continue;}
+        ++N;
+        Direction_Mean += Direction;
       }
     }
 
@@ -194,7 +184,7 @@ namespace ShowerRecoTools {
       //Take the mean value
       TVector3 Direction = Direction_Mean.Unit();
       ShowerEleHolder.SetElement(Direction,"ShowerDirection");
-    }  
+    }
     else{
       mf::LogError("ShowerTrackHitDirection") << "None of the points are within 1 sigma"<< std::endl;
       return 1;
@@ -203,6 +193,6 @@ namespace ShowerRecoTools {
   }
 }
 
-  
+
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerTrackHitDirection)
-  
+

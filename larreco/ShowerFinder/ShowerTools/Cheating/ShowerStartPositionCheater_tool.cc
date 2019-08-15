@@ -20,9 +20,8 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
-#include "larreco/RecoAlg/SBNShowerCheatingAlg.h"
-#include "larreco/RecoAlg/MCRecoUtils/ShowerUtils.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
+#include "larreco/RecoAlg/TRACSCheatingAlg.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
@@ -31,9 +30,7 @@
 #include <cmath>
 
 //Root Includes
-#include "TVector3.h"
 #include "TMath.h"
-#include "TPrincipal.h"
 #include "TVector.h"
 #include "TTree.h"
 
@@ -49,18 +46,12 @@ namespace ShowerRecoTools {
 
       //Generic Direction Finder
       int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
+          art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder) override;
 
     private:
 
-      // Define standard art tool interface
-      void configure(const fhicl::ParameterSet& pset) override;
-
       //Algorithm functions
-      shower::SBNShowerAlg         fSBNShowerAlg;
-      shower::SBNShowerCheatingAlg fSBNShowerCheatingAlg;
+      shower::TRACSCheatingAlg fTRACSCheatingAlg;
 
       //FCL
       art::InputTag fPFParticleModuleLabel;
@@ -69,30 +60,21 @@ namespace ShowerRecoTools {
 
 
   ShowerStartPositionCheater::ShowerStartPositionCheater(const fhicl::ParameterSet& pset)
-    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
-    fSBNShowerCheatingAlg(pset.get<fhicl::ParameterSet>("SBNShowerCheatingAlg"))
+    : fTRACSCheatingAlg(pset.get<fhicl::ParameterSet>("TRACSCheatingAlg"))
   {
-    configure(pset);
+    fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","");
+    fHitModuleLabel        = pset.get<art::InputTag>("HitModuleLabel");
   }
 
   ShowerStartPositionCheater::~ShowerStartPositionCheater()
   {
   }
 
-  void ShowerStartPositionCheater::configure(const fhicl::ParameterSet& pset)
-  {
-    fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","");
-    fHitModuleLabel        = pset.get<art::InputTag>("HitModuleLabel");
-  }
-
   int ShowerStartPositionCheater::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
 
-    std::cout <<"#########################################\n"<<
-      "hello world start position cheater\n" <<"#########################################\n"<< std::endl;
-
     //Could store these in the shower element holder and just calculate once?
-    std::map<int,const simb::MCParticle*> trueParticles = fSBNShowerCheatingAlg.GetTrueParticleMap();
-    std::map<int,std::vector<int> > showersMothers = fSBNShowerCheatingAlg.GetTrueChain(trueParticles);
+    std::map<int,const simb::MCParticle*> trueParticles = fTRACSCheatingAlg.GetTrueParticleMap();
+    std::map<int,std::vector<int> > showersMothers = fTRACSCheatingAlg.GetTrueChain(trueParticles);
 
     //Get the hits from the shower:
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
@@ -123,10 +105,10 @@ namespace ShowerRecoTools {
     }
 
     //Get the true particle from the shower
-    std::pair<int,double> ShowerTrackInfo = ShowerUtils::TrueParticleIDFromTrueChain(showersMothers,showerHits,2);
+    std::pair<int,double> ShowerTrackInfo = fTRACSCheatingAlg.TrueParticleIDFromTrueChain(showersMothers,showerHits,2);
 
     if(ShowerTrackInfo.first==-99999) {
-      std::cout<<"True Shower Not Found"<<std::endl;
+      mf::LogWarning("ShowerStartPosition") << "True Shower Not Found";
       return 1;
     }
 
@@ -138,8 +120,6 @@ namespace ShowerRecoTools {
 
     ShowerEleHolder.SetElement(trueParticle,"TrueParticle");
 
-    std::cout <<"#########################################\n"<<
-      "start position cheater Done\n" <<"#########################################\n"<< std::endl;
     return 0;
   }
 }

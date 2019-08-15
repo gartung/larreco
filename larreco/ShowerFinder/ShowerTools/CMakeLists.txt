@@ -34,9 +34,7 @@ set( showerfinder_tool_lib_list
 			LArPandoraContent	
                         larpandora_LArPandoraInterface
     )
-
 art_make(TOOL_LIBRARIES ${showerfinder_tool_lib_list}
-        )
 
 install_headers()
 install_source()

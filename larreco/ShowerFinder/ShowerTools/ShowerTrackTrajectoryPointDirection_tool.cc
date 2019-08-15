@@ -17,79 +17,66 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
-//LArSoft Includes 
+//LArSoft Includes
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
-//C++ Includes 
+//C++ Includes
 #include <iostream>
 #include <cmath>
 
-//Root Includes 
+//Root Includes
 #include "TVector3.h"
 #include "TMath.h"
-#include "TH1.h" 
+#include "TH1.h"
 
 #include "TFile.h"
 
 namespace ShowerRecoTools {
 
-  
+
   class ShowerTrackTrajectoryPointDirection:IShowerTool {
-    
-  public:
-    
-    ShowerTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset);
-    
-    ~ShowerTrackTrajectoryPointDirection(); 
-    
-    //Generic Direction Finder
-    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-			 art::Event& Event,
-			 reco::shower::ShowerElementHolder& ShowerEleHolder
-			 ) override;
-    
-  private:
-    
-    // Define standard art tool interface
-    void configure(const fhicl::ParameterSet& pset) override;
 
-    //fcl
-    bool fUsePandoraVertex;
-    bool fDebugEVD; 
-    bool fUsePositonInfo; 
-    int  fTrajPoint;
+    public:
 
+      ShowerTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset);
+
+      ~ShowerTrackTrajectoryPointDirection();
+
+      //Generic Direction Finder
+      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+          art::Event& Event,
+          reco::shower::ShowerElementHolder& ShowerEleHolder
+          ) override;
+
+    private:
+
+      //fcl
+      bool fUsePandoraVertex;
+      bool fDebugEVD;
+      bool fUsePositonInfo;
+      int  fTrajPoint;
   };
-  
-  
+
+
   ShowerTrackTrajectoryPointDirection::ShowerTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset)
   {
-    configure(pset);
+    fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
+    fDebugEVD                 = pset.get<bool>("DebugEVD");
+    fUsePositonInfo           = pset.get<bool>("UsePositonInfo");
+    fTrajPoint                = pset.get<int>("TrajPoint");
   }
-  
+
   ShowerTrackTrajectoryPointDirection::~ShowerTrackTrajectoryPointDirection()
   {
   }
-  
-  void ShowerTrackTrajectoryPointDirection::configure(const fhicl::ParameterSet& pset)
-  {
-    fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
-    fDebugEVD                 = pset.get<bool>("DebugEVD");  
-    fUsePositonInfo           = pset.get<bool>("UsePositonInfo");
-    fTrajPoint                = pset.get<int>("TrajPoint");
 
-  }
 
-  int ShowerTrackTrajectoryPointDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-					     art::Event& Event,
-					     reco::shower::ShowerElementHolder& ShowerEleHolder){
-
-    std::cout << "ShowerTrackTrajectoryPointDirection_tool" << std::endl;
+  int ShowerTrackTrajectoryPointDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     //Check the Track has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrack")){
@@ -98,7 +85,7 @@ namespace ShowerRecoTools {
     }
     recob::Track InitialTrack;
     ShowerEleHolder.GetElement("InitialTrack",InitialTrack);
-    
+
     if((int)InitialTrack.NumberTrajectoryPoints()-1 < fTrajPoint){
       mf::LogError("ShowerTrackTrajectoryPointDirection") << "Less that fTrajPoint trajectory points, bailing."<< std::endl;
       fTrajPoint = InitialTrack.NumberTrajectoryPoints()-1;
@@ -106,12 +93,12 @@ namespace ShowerRecoTools {
 
     //ignore bogus info.
     auto flags = InitialTrack.FlagsAtPoint(fTrajPoint);
-    if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
-       || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
-      {
+    if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
+        || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+    {
       mf::LogError("ShowerTrackTrajectoryPointDirection") << "Bogus trajectory poitn bailing."<< std::endl;
       return 1;
-      }
+    }
 
 
     geo::Vector_t Direction_vec;
@@ -120,17 +107,17 @@ namespace ShowerRecoTools {
       //Get the start position.
       geo::Point_t StartPosition;
       if(fUsePandoraVertex){
-	//Check the Track has been defined
-	if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
-	  mf::LogError("ShowerDirection") << "Shower start position not set"<< std::endl;
-	  return 1;
-	}
-	TVector3 StartPosition_vec = {-999,-999,-999};
-	ShowerEleHolder.GetElement("ShowerStartPosition",StartPosition_vec);
-	StartPosition.SetCoordinates(StartPosition_vec.X(),StartPosition_vec.Y(),StartPosition_vec.Z()); 
+        //Check the Track has been defined
+        if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
+          mf::LogError("ShowerDirection") << "Shower start position not set"<< std::endl;
+          return 1;
+        }
+        TVector3 StartPosition_vec = {-999,-999,-999};
+        ShowerEleHolder.GetElement("ShowerStartPosition",StartPosition_vec);
+        StartPosition.SetCoordinates(StartPosition_vec.X(),StartPosition_vec.Y(),StartPosition_vec.Z());
       }
-      else{ 
-	StartPosition = InitialTrack.Start();
+      else{
+        StartPosition = InitialTrack.Start();
       }
       //Get the specific trajectory point and look and and the direction from the start position
       geo::Point_t  TrajPosition = InitialTrack.LocationAtPoint(fTrajPoint);
@@ -148,6 +135,6 @@ namespace ShowerRecoTools {
   }
 }
 
-  
+
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerTrackTrajectoryPointDirection)
-  
+

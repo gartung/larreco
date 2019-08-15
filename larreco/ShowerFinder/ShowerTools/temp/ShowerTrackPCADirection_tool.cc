@@ -27,7 +27,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 #include "lardataobj/RecoBase/Wire.h"
 //C++ Includes 
 #include <iostream>
@@ -64,7 +64,7 @@ namespace ShowerRecoTools {
     TVector3 ShowerPCAVector(std::vector<art::Ptr<recob::SpacePoint> >& spacePoints_pfp, art::FindManyP<recob::Hit>& fmh, TVector3& ShowerCentre);
 
     //Algorithm functions
-    shower::SBNShowerAlg fSBNShowerAlg;
+    shower::TRACSAlg fTRACSAlg;
 
     //Services
     detinfo::DetectorProperties const* fDetProp;
@@ -79,7 +79,7 @@ namespace ShowerRecoTools {
   
   
   ShowerTrackPCADirection::ShowerTrackPCADirection(const fhicl::ParameterSet& pset)
-    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg")),
+    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")),
       fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
   {
     configure(pset);
@@ -177,7 +177,7 @@ namespace ShowerRecoTools {
     
     if (fDebugEVD){
         std::cout<<"Do DebugEVD"<<std::endl;
-        fSBNShowerAlg.DebugEVD(pfparticle,Event,ShowerPropHolder);
+        fTRACSAlg.DebugEVD(pfparticle,Event,ShowerPropHolder);
     }
 
     std::cout <<"#########################################\n"<<
@@ -195,13 +195,13 @@ namespace ShowerRecoTools {
     float TotalCharge = 0;
     
     //Get the Shower Centre
-    ShowerCentre = fSBNShowerAlg.ShowerCentre(sps, fmh, TotalCharge);
+    ShowerCentre = fTRACSAlg.ShowerCentre(sps, fmh, TotalCharge);
 
 
     //Normalise the spacepoints, charge weight and add to the PCA.
     for(auto& sp: sps){
       
-      TVector3 sp_position = fSBNShowerAlg.SpacePointPosition(sp);
+      TVector3 sp_position = fTRACSAlg.SpacePointPosition(sp);
       
       float wht = 1; 
 
@@ -211,10 +211,10 @@ namespace ShowerRecoTools {
       if(fChargeWeighted){
 
 	//Get the charge.
-	float Charge = fSBNShowerAlg.SpacePointCharge(sp,fmh);
+	float Charge = fTRACSAlg.SpacePointCharge(sp,fmh);
 
 	//Get the time of the spacepoint 
-	float Time = fSBNShowerAlg.SpacePointTime(sp,fmh);
+	float Time = fTRACSAlg.SpacePointTime(sp,fmh);
 	
 	//Correct for the lifetime at the moment. 
 	Charge *= TMath::Exp((fDetProp->SamplingRate() * Time ) / (fDetProp->ElectronLifetime()*1e3));

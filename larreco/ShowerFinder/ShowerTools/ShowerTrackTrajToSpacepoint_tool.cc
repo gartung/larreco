@@ -15,65 +15,57 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/FindOneP.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
-//LArSoft Includes 
+//LArSoft Includes
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/SBNShowerAlg.h"
+#include "larreco/RecoAlg/TRACSAlg.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
 namespace ShowerRecoTools {
 
-  
+
   class ShowerTrackTrajToSpacepoint: public IShowerTool {
-    
-  public:
-    
-    ShowerTrackTrajToSpacepoint(const fhicl::ParameterSet& pset);
-    
-    ~ShowerTrackTrajToSpacepoint(); 
-    
-    //Generic Direction Finder
-    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-			  art::Event& Event,
-			  reco::shower::ShowerElementHolder& ShowerEleHolder
-			  ) override;
 
-  private:
-    
-    // Define standard art tool interface
-    void configure(const fhicl::ParameterSet& pset) override;
+    public:
 
-    float fMaxDist; //Max distance that a spacepoint can be from a trajecotry point to be matched
-    art::InputTag              fPFParticleModuleLabel;
+      ShowerTrackTrajToSpacepoint(const fhicl::ParameterSet& pset);
 
-    shower::SBNShowerAlg fSBNShowerAlg;
+      ~ShowerTrackTrajToSpacepoint();
+
+      //Generic Direction Finder
+      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+          art::Event& Event,
+          reco::shower::ShowerElementHolder& ShowerEleHolder
+          ) override;
+
+    private:
+
+      float fMaxDist; //Max distance that a spacepoint can be from a trajecotry point to be matched
+      art::InputTag              fPFParticleModuleLabel;
+
+      shower::TRACSAlg fTRACSAlg;
   };
-  
-  
+
+
   ShowerTrackTrajToSpacepoint::ShowerTrackTrajToSpacepoint(const fhicl::ParameterSet& pset)
-    : fSBNShowerAlg(pset.get<fhicl::ParameterSet>("SBNShowerAlg"))
-  {
-    configure(pset);
-  }
-  
-  ShowerTrackTrajToSpacepoint::~ShowerTrackTrajToSpacepoint()
-  {
-  }
-  
-  void ShowerTrackTrajToSpacepoint::configure(const fhicl::ParameterSet& pset)
+    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
     fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel");
     fMaxDist               = pset.get<float>         ("MaxDist");
   }
 
+  ShowerTrackTrajToSpacepoint::~ShowerTrackTrajToSpacepoint()
+  {
+  }
 
   int ShowerTrackTrajToSpacepoint::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-					  art::Event& Event,
-					  reco::shower::ShowerElementHolder& ShowerEleHolder){
+      art::Event& Event,
+      reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     //Check the Track has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrack")){
@@ -94,7 +86,7 @@ namespace ShowerRecoTools {
       return 0;
     }
 
-    //Get the start poistion 
+    //Get the start poistion
     TVector3 ShowerStartPosition = {-999,-999,-999};
     ShowerEleHolder.GetElement("ShowerStartPosition",ShowerStartPosition);
 
@@ -106,16 +98,16 @@ namespace ShowerRecoTools {
     //Get the track
     recob::Track InitialTrack;
     ShowerEleHolder.GetElement("InitialTrack",InitialTrack);
-    
+
     std::vector<art::Ptr<recob::SpacePoint> > new_intitaltrack_sp;
-    //Loop over the trajectory points 
+    //Loop over the trajectory points
     for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
 
       //ignore bogus info.
       auto flags = InitialTrack.FlagsAtPoint(traj);
-      if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex) 
-	 || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
-	{continue;}
+      if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
+          || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+      {continue;}
 
       geo::Point_t TrajPositionPoint = InitialTrack.LocationAtPoint(traj);
       TVector3 TrajPosition = {TrajPositionPoint.X(),TrajPositionPoint.Y(),TrajPositionPoint.Z()};
@@ -124,38 +116,38 @@ namespace ShowerRecoTools {
       TVector3 TrajPositionStart = {TrajPositionStartPoint.X(),TrajPositionStartPoint.Y(),TrajPositionStartPoint.Z()};
 
 
-      //Ignore values with 0 mag from the start position 
+      //Ignore values with 0 mag from the start position
       if((TrajPosition - TrajPositionStart).Mag() == 0){continue;}
       if((TrajPosition - ShowerStartPosition).Mag() == 0){continue;}
 
       float MinDist = 9999;
       unsigned int index = 999;
       for(unsigned int sp=0; sp<intitaltrack_sp.size();++sp){
-	//Find the spacepoint closest to the trajectory point.
-	art::Ptr<recob::SpacePoint> spacepoint = intitaltrack_sp[sp];
-	TVector3 pos = fSBNShowerAlg.SpacePointPosition(spacepoint) - TrajPosition;
-	if(pos.Mag() < MinDist && pos.Mag()< fMaxDist){
-	  MinDist = pos.Mag();
-	  index = sp;
-	}
+        //Find the spacepoint closest to the trajectory point.
+        art::Ptr<recob::SpacePoint> spacepoint = intitaltrack_sp[sp];
+        TVector3 pos = fTRACSAlg.SpacePointPosition(spacepoint) - TrajPosition;
+        if(pos.Mag() < MinDist && pos.Mag()< fMaxDist){
+          MinDist = pos.Mag();
+          index = sp;
+        }
       }
 
       if(index == 999){continue;}
       //Add the spacepoint to the track spacepoints.
       new_intitaltrack_sp.push_back(intitaltrack_sp[index]);
-      
+
       //Delete the spacepoint so it can not be used again.
       intitaltrack_sp.erase(intitaltrack_sp.begin() + index);
     }
-    
-    
+
+
     // Get the spacepoints
     art::Handle<std::vector<recob::SpacePoint> > spHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, spHandle)){
       throw cet::exception("ShowerTrackTrajToSpacepoint") << "Could not configure the spacepoint handle. Something is configured incorrectly. Stopping";
       return 1;
     }
-    
+
     // Get the hits associated with the space points
     art::FindOneP<recob::Hit> fohsp(spHandle, Event, fPFParticleModuleLabel);
     if(!fohsp.isValid()){
@@ -174,11 +166,11 @@ namespace ShowerRecoTools {
     //Save the spacepoints.
     ShowerEleHolder.SetElement(new_intitaltrack_sp,"InitialTrackSpacePoints");
     ShowerEleHolder.SetElement(trackHits,"InitialTrackHits");
-    
+
     return 0;
   }
 
 }
-  
+
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerTrackTrajToSpacepoint)
-  
+
