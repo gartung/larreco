@@ -3,9 +3,6 @@
 
 //Framework Includes
 #include "fhiclcpp/ParameterSet.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "art/Utilities/ToolMacros.h"
-#include "art/Utilities/make_tool.h"
 #include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
@@ -13,9 +10,9 @@
 #include "canvas/Persistency/Common/FindManyP.h"
 
 //LArSoft Includes
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/Utilities/AssociationUtil.h"
-#include "larcore/Geometry/Geometry.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+#include "larsim/MCCheater/BackTrackerService.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
@@ -23,7 +20,6 @@
 #include "larreco/ShowerFinder/ShowerElementHolder.hh"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "larreco/RecoAlg/SBNShowerAlg.h"
-#include "larreco/RecoAlg/MCRecoUtils/RecoUtils.h"
 
 //C++ Includes
 #include <iostream>
@@ -33,7 +29,6 @@
 //Root Includes
 #include "TVector3.h"
 #include "TMath.h"
-#include "TPrincipal.h"
 #include "TVector.h"
 #include "TTree.h"
 #include "TCanvas.h"
@@ -55,6 +50,10 @@ class shower::SBNShowerCheatingAlg {
         reco::shower::ShowerElementHolder& ShowerEleHolder,
         const art::Ptr<recob::PFParticle>& pfparticle);
 
+    int TrueParticleID(const art::Ptr<recob::Hit>& hit);
+
+    std::pair<int,double> TrueParticleIDFromTrueChain(std::map<int,std::vector<int> >& ShowersMothers,const std::vector<art::Ptr<recob::Hit> >& hits, int planeid);
+
   private:
 
     shower::SBNShowerAlg fSBNShowerAlg;
@@ -63,5 +62,6 @@ class shower::SBNShowerCheatingAlg {
     art::InputTag                                       fPFParticleModuleLabel;
     art::ServiceHandle<cheat::ParticleInventoryService> particleInventory;
     art::ServiceHandle<art::TFileService>   tfs;
+
 };
 #endif
