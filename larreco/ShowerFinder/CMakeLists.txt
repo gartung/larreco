@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 add_subdirectory(ShowerTools)
 add_subdirectory(ShowerReco3D)
 add_subdirectory(job)
@@ -49,6 +50,20 @@ art_make(
 			larreco_RecoAlg_MCRecoUtils 
          )
 
+=======
+add_subdirectory(ShowerReco3D)
+add_subdirectory(job)
+
+art_make(MODULE_LIBRARIES
+          larreco_RecoAlg
+          lardataobj_RecoBase
+          ${ART_FRAMEWORK_SERVICES_REGISTRY}
+          ${ROOT_CORE}
+          ${ROOT_PHYSICS}
+          ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+          ${MF_MESSAGELOGGER}
+        )
+>>>>>>> develop
 
 install_headers()
 install_fhicl()
