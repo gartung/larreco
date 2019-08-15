@@ -207,7 +207,7 @@ showerslidingstandardcalodedx:{
     MinDistCutOff:         3 #Distance in wires a hit has to be from the start position to be used
     MaxDist:               2 #Distance in wires a that a trajectory point can be from a spacepoint to match to it. 
     MinAngleToWire:        0.26179 #Minimum angle between the wire direction and the shower direction for the spacepoint to be used 
-    ShapingTime:            2
+    ShapingTime:           2
     dEdxTrackLength:       999 #Max Distance a spacepoint can be away from the start of the track.
     UseMedian:              true
     PFParticleModuleLabel: "pandora"

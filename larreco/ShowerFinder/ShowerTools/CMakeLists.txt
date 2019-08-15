@@ -25,7 +25,6 @@ set( showerfinder_tool_lib_list
 			art_Utilities
 			canvas
 			${MF_MESSAGELOGGER}
-			
 			${FHICLCPP}
 			${CETLIB}
 			${Boost_FILESYSTEM_LIBRARY}

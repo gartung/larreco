@@ -164,9 +164,9 @@ namespace ShowerRecoTools{
 	    if (fMissFirstPoint && w0==w1){
 	      continue;
 	    }
+	      std::cout<<"Wire: "<<w1<<" with dQdx: "<<hit->Integral()/pitch<<" and peak time: "<<hit->PeakTime() << "std::abs((w1-w0)*pitch): " << std::abs((w1-w0)*pitch) <<std::endl;
 
 	    if (std::abs((w1-w0)*pitch)<fdEdxTrackLength){ 
-	      //std::cout<<"Wire: "<<w1<<" with dQdx: "<<hit->Integral()/pitch<<" and peak time: "<<hit->PeakTime()<<std::endl;
 	      vQ.push_back(hit->Integral());
 	      totQ += hit->Integral();
 	      avgT+= hit->PeakTime();

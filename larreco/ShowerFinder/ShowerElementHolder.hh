@@ -38,15 +38,16 @@ public:
 
   virtual ~ShowerElementBase() noexcept = default;
   
-  virtual bool CheckIfSet(){
+  virtual bool CheckTag(){
     throw cet::exception("ShowerElementHolder") << "Trying to check an element that is not a product" << std::endl;
   }
-  virtual void SetCheckIfSet(bool check){
+  virtual void SetCheckTag(bool& check){
     throw cet::exception("ShowerElementHolder") << "Trying to set an element that is not a product" << std::endl;
   }
 
   virtual std::string GetType() = 0;
 
+  //Check if the element has been set.
   bool CheckShowerElement(){
     if(elementPtr) return true;
     else return false;
@@ -59,7 +60,7 @@ public:
 
 protected:
 
-  int elementPtr;
+  bool elementPtr;
   
 };
 
@@ -71,11 +72,13 @@ class reco::shower::ShowerElementAccessor : public reco::shower::ShowerElementBa
 
 public: 
 
+  //Set the element in the holder
   void SetShowerElement(T& Element){
     element = Element;
     this->elementPtr = 1;
   }
   
+  //Fill Element with the element that the holder holds.
   int GetShowerElement(T& Element){
     if(this->elementPtr){
       Element = element;
@@ -86,6 +89,7 @@ public:
     }
   }
 
+  //Return a copy of the shower element. 
   T GetShowerElement(){
     if(this->elementPtr){
       return element;
@@ -95,6 +99,7 @@ public:
     }
   } 
 
+  //Return the type as a string.
   std::string GetType() override {
     int status = -9;
     return abi::__cxa_demangle(typeid(element).name(),NULL,NULL,&status);  
@@ -112,13 +117,13 @@ public:
   
   ShowerDataProduct(){
     this->elementPtr      = 0;
-    checkifset            = false;
+    checktag            = false;
   }
 
-  ShowerDataProduct(T& Element, bool& Checkifset){
+  ShowerDataProduct(T& Element, bool& Checktag){
     this->elementPtr      = 1;
     this->element         = Element;
-    checkifset            =  Checkifset;
+    checktag            = Checktag;
   }
 
 
@@ -127,16 +132,18 @@ public:
     this->elementPtr    = 0;
   }
 
-  bool CheckIfSet(){
-    return checkifset;
+  //Check if we should check the dataproduct in the end.
+  bool CheckTag(){
+    return checktag;
   }
 
-  void SetCheckIfSet(bool& Checkifset){
-    checkifset = Checkifset;
+  //Set if we should check the data product in the end.
+  void SetCheckTag(bool& Checktag){
+    checktag = Checktag;
   }
 
   private:
-  bool checkifset;
+  bool checktag;
 };
 
 //This class holds shower properties e.g. ShowerDirection. The user must define the associated error  
@@ -155,7 +162,7 @@ public:
     propertyErr      = ElementErr;
   }
   
-
+  //Fill the property error as long as it has been set.
   int GetShowerPropertyError(T2& ElementErr){
     if(this->elementPtr){
       ElementErr = propertyErr;
@@ -166,6 +173,7 @@ public:
     }
   }
 
+  //Set the properties. Note you cannot set an property without an error.
   void SetShowerProperty(T& Element, T2& ElementErr){
     this->element    = Element;
     this->elementPtr = 1;
@@ -266,16 +274,16 @@ public:
   //This sets the value of the data product. Just give a name and a object
   //e.g. TVector3 ShowerElementHolder.SetElement((TVector3) StartPosition, "StartPosition");
   template <class T>
-  void SetElement(T& dataproduct, std::string Name, bool checkifset=false){
+  void SetElement(T& dataproduct, std::string Name, bool checktag=false){
     
     if(showerdataproducts.find(Name) != showerdataproducts.end()){
       reco::shower::ShowerDataProduct<T>* showerdataprod = dynamic_cast<reco::shower::ShowerDataProduct<T> *>(showerdataproducts[Name].get());
       showerdataprod->SetShowerElement(dataproduct);
-      showerdataprod->SetCheckIfSet(checkifset);
+      showerdataprod->SetCheckTag(checktag);
       return;
     }
     else{
-      showerdataproducts[Name] = std::unique_ptr<reco::shower::ShowerDataProduct<T> >(new reco::shower::ShowerDataProduct<T>(dataproduct,checkifset));
+      showerdataproducts[Name] = std::unique_ptr<reco::shower::ShowerDataProduct<T> >(new reco::shower::ShowerDataProduct<T>(dataproduct,checktag));
       return;
     }
   }
@@ -343,9 +351,9 @@ public:
   }
 
   //Find if the product is one what is being stored.
-  bool CheckElementSavTag(std::string Name){
+  bool CheckElementTag(std::string Name){
     if(showerdataproducts.find(Name) != showerdataproducts.end()){
-    return showerdataproducts[Name]->CheckIfSet();
+    return showerdataproducts[Name]->CheckTag();
     }
     return false;
   }
@@ -365,19 +373,19 @@ public:
   }
 
   //Set the indicator saying if the shower is going to be stored.
-  void SetElementSaveTag(std::string Name, bool checkelement){
+  void SetElementTag(std::string Name, bool checkelement){
     if(showerdataproducts.find(Name) != showerdataproducts.end()){
-      showerdataproducts[Name]->SetCheckIfSet(checkelement);
+      showerdataproducts[Name]->SetCheckTag(checkelement);
       return;
     }
     mf::LogError("ShowerElementHolder") << "Trying set the checking of the data product: " << Name << ". This data product does not exist in the element holder" << std::endl;
     return;
   }
 
-  bool CheckAllElementSaveTag(){
+  bool CheckAllElementTags(){
     bool checked = true;
     for(auto const& showerdataproduct: showerdataproducts){
-      bool check  = showerdataproduct.second->CheckIfSet();
+      bool check  = showerdataproduct.second->CheckTag();
       if(check){
 	bool elementset = showerdataproduct.second->CheckShowerElement();
 	if(!elementset){

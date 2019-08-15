@@ -98,7 +98,6 @@ namespace ShowerRecoTools{
     fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel");
     
     fCutStartPosition = pset.get<bool> ("CutStartPosition");
-    fTrajDirection    = pset.get<bool> ("TrajDirection");
   }
 
   int ShowerSlidingStandardCalodEdx::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
@@ -260,18 +259,8 @@ namespace ShowerRecoTools{
       //Shaping time doesn't seem to exist in a global place so add it as a fcl.
       if(fShapingTime < time_taken){std::cout << "move for shaping time" << std::endl; continue;}
 
-      if(fTrajDirection){
-	std::cout << "using track direction" << std::endl;
-	ShowerEleHolder.GetElement("ShowerDirection",TrajDirection);
-      }
-
-	//If we still exist then we can be used in the calculation. Calculate the 3D pitch
+      //If we still exist then we can be used in the calculation. Calculate the 3D pitch
       double trackpitch = (TrajDirection*(wirepitch/TrajDirection.Dot(PlaneDirection))).Mag();
-
-      double angleToVert = fGeom->WireAngleToVertical(fGeom->Plane(planeid.Plane).View(),planeid) - 0.5*TMath::Pi();
-      double cosgamma = std::abs(sin(angleToVert)*TrajDirection.Y()+cos(angleToVert)*TrajDirection.Z());
-
-      std::cout << "trackpitch: " << trackpitch << " angle: " << TMath::ATan(TrajDirection.X()/TrajDirection.Z()) << " x pitch: " << wirepitch*TMath::Tan(TMath::ATan(TrajDirection.X()/TrajDirection.Z())) << " wirepitch: " << wirepitch << " plane: " << planeid.Plane << " pitch w: " << wirepitch/cosgamma << " pitch again: " << TMath::Sqrt(((wirepitch/cosgamma)*(wirepitch/cosgamma)) + (wirepitch*TMath::Tan(TMath::ATan(TrajDirection.X()/TrajDirection.Z()))*wirepitch*TMath::Tan(TMath::ATan(TrajDirection.X()/TrajDirection.Z()))))  << std::endl;
 
       if(trackpitch == 0){
 	mf::LogWarning("ShowerSlidingStandardCalodEdx") << "pitch is zero so we are not using the hit "<< std::endl;
@@ -327,6 +316,8 @@ namespace ShowerRecoTools{
 	max_hits = num_hits_plane.second;
       }
     }
+
+    if(dEdx_val[best_plane] == -999){std::cout << "best plane val is -999" << std::endl;}
 
     //To do
     ShowerEleHolder.SetElement(dEdx_val,dEdx_valErr,"ShowerdEdx");

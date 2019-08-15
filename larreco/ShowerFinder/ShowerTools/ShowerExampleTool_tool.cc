@@ -155,11 +155,11 @@ namespace ShowerRecoTools {
     ShowerEleHolder.SetElement(xyz_vec,"xyz",true);
 
     //You can see if an element will be checked before the shower is save with 
-    bool will_be_checked = ShowerEleHolder.CheckElementSavTag("xyz");
+    bool will_be_checked = ShowerEleHolder.CheckElementTag("xyz");
     if(will_be_checked){std::cout << "Element checked at save time" << std::endl;}
 
     //You can also changed the tag.
-    ShowerEleHolder.SetElementSaveTag("xyz",false);
+    ShowerEleHolder.SetElementTag("xyz",false);
 
     //Note: Elements that are actually saved because you defined them in InitialiseProducers will be checked regardless. We don't want you saving nothign now. 
     
