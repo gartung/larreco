@@ -65,9 +65,8 @@ namespace ShowerRecoTools{
       float fdEdxTrackLength;
       bool  fUseMedian;
       art::InputTag fPFParticleModuleLabel;
-
       bool fCutStartPosition;
-      bool fTrajDirection;
+
   };
 
 
@@ -82,10 +81,8 @@ namespace ShowerRecoTools{
     fShapingTime           = pset.get<float>("ShapingTime");
     fdEdxTrackLength       = pset.get<float>("dEdxTrackLength");
     fUseMedian             = pset.get<bool> ("UseMedian");
-    fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel");
-
     fCutStartPosition = pset.get<bool> ("CutStartPosition");
-    fTrajDirection    = pset.get<bool> ("TrajDirection");
+    fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel");
   }
 
   ShowerSlidingStandardCalodEdx::~ShowerSlidingStandardCalodEdx()
@@ -178,9 +175,9 @@ namespace ShowerRecoTools{
       // std::cout << "hit on plane: " << planeid.Plane << " dist_from_start: " << dist_from_start << std::endl;
 
       if(fCutStartPosition){
-        if(dist_from_start < fMinDistCutOff*wirepitch){mf::LogWarning("ShowerSlidingStandardCalodEdx")  << "too close" << std::endl; continue;}
+        if(dist_from_start < fMinDistCutOff*wirepitch){continue;}
 
-        if(dist_from_start > fdEdxTrackLength){mf::LogWarning("ShowerSlidingStandardCalodEdx")  << " too far " << std::endl;continue;}
+        if(dist_from_start > fdEdxTrackLength){continue;}
       }
 
       //Find the closest trajectory point of the track. These should be in order if the user has used ShowerTrackTrajToSpacepoint_tool but the sake of gernicness I'll get the cloest sp.
@@ -206,7 +203,7 @@ namespace ShowerRecoTools{
       }
 
       //If there is no matching trajectory point then bail.
-      if(index == 999){mf::LogWarning("ShowerSlidingStandardCalodEdx") << "traj not found" << std::endl; continue;}
+      if(index == 999){continue;}
 
       geo::Point_t TrajPositionPoint = InitialTrack.LocationAtPoint(index);
       TVector3 TrajPosition = {TrajPositionPoint.X(),TrajPositionPoint.Y(),TrajPositionPoint.Z()};
@@ -215,15 +212,12 @@ namespace ShowerRecoTools{
       TVector3 TrajPositionStart = {TrajPositionStartPoint.X(),TrajPositionStartPoint.Y(),TrajPositionStartPoint.Z()};
 
       //Ignore values with 0 mag from the start position
-      if((TrajPosition - TrajPositionStart).Mag() == 0){mf::LogWarning("ShowerSlidingStandardCalodEdx") << "mag is 0" << std::endl;continue;}
-      if((TrajPosition - ShowerStartPosition).Mag() == 0){mf::LogWarning("ShowerSlidingStandardCalodEdx") << "mag1 is 0" << std::endl;continue;}
+      if((TrajPosition - TrajPositionStart).Mag() == 0){continue;}
+      if((TrajPosition - ShowerStartPosition).Mag() == 0){continue;}
 
+      if((TrajPosition-TrajPositionStart).Mag() < fMinDistCutOff*wirepitch){continue;}
 
-      // std::cout << "(TrajPosition-TrajPositionStart).Mag(): " << (TrajPosition-TrajPositionStart).Mag() << std::endl;
-
-      if((TrajPosition-TrajPositionStart).Mag() < fMinDistCutOff*wirepitch){mf::LogWarning("ShowerSlidingStandardCalodEdx") << "minmidistance cut off" << std::endl; continue;}
-
-      if((TrajPosition-TrajPositionStart).Mag() > fdEdxTrackLength){mf::LogWarning("ShowerSlidingStandardCalodEdx") << " too far " << std::endl;continue;}
+      if((TrajPosition-TrajPositionStart).Mag() > fdEdxTrackLength){continue;}
 
 
       //Get the direction of the trajectory point
@@ -243,26 +237,14 @@ namespace ShowerRecoTools{
       //Shaping time doesn't seem to exist in a global place so add it as a fcl.
       if(fShapingTime < time_taken){mf::LogWarning("ShowerSlidingStandardCalodEdx") << "move for shaping time" << std::endl; continue;}
 
-      if(fTrajDirection){
-        ShowerEleHolder.GetElement("ShowerDirection",TrajDirection);
-      }
-
       //If we still exist then we can be used in the calculation. Calculate the 3D pitch
       double trackpitch = (TrajDirection*(wirepitch/TrajDirection.Dot(PlaneDirection))).Mag();
-
-      if(trackpitch == 0){
-        mf::LogWarning("ShowerSlidingStandardCalodEdx") << "pitch is zero so we are not using the hit "<< std::endl;
-        continue;
-      }
 
       //Calculate the dQdx
       double dQdx = hit->Integral()/trackpitch;
 
       //Calculate the dEdx
       double dEdx = fCalorimetryAlg.dEdx_AREA(dQdx, hit->PeakTime(), planeid.Plane);
-      // std::cout << "TrajDirection.X(): " << TrajDirection.X() << " Y: " << TrajDirection.Y() << TrajDirection.Z() << std::endl;
-      // std::cout << "dQdx: " <<dQdx << " dEdx: " << dEdx << " trackpitch: " << trackpitch << std::endl;
-
 
       //Add the value to the dEdx
       dEdx_vec[planeid.Plane].push_back(dEdx);
@@ -305,7 +287,7 @@ namespace ShowerRecoTools{
       }
     }
 
-    //To do
+    //Need to sort out errors sensibly.
     ShowerEleHolder.SetElement(dEdx_val,dEdx_valErr,"ShowerdEdx");
     ShowerEleHolder.SetElement(best_plane,"ShowerBestPlane");
 

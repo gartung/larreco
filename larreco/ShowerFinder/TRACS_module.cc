@@ -17,22 +17,14 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Utilities/make_tool.h" 
-#include "art_root_io/TFileDirectory.h"
-#include "art/Persistency/Common/PtrMaker.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/PtrVector.h"
 #include "canvas/Persistency/Common/FindManyP.h"
-
-#include "lardataobj/RecoBase/Vertex.h"
-
 
 //LArSoft includes
 #include "lardata/Utilities/AssociationUtil.h"
-#include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
@@ -64,6 +56,8 @@ public:
   void produce(art::Event& evt);
   void reconfigure(fhicl::ParameterSet const& p);
 
+  //This function returns the art::Ptr to the data object InstanceName. In the background it uses the PtrMaker which requires the element index of 
+  //the unique ptr (iter). 
   template <class T >
   art::Ptr<T> GetProducedElementPtr(std::string InstanceName, reco::shower::ShowerElementHolder& ShowerEleHolder, int iter=-1);
 
@@ -85,6 +79,8 @@ private:
 
 };
 
+//This function returns the art::Ptr to the data object InstanceName. In the background it uses the PtrMaker which requires the element index of 
+//the unique ptr (iter). 
 template <class T >
 art::Ptr<T> reco::shower::TRACS::GetProducedElementPtr(std::string InstanceName, reco::shower::ShowerElementHolder& ShowerEleHolder, int iter){
   
@@ -179,13 +175,13 @@ void reco::shower::TRACS::produce(art::Event& evt) {
     art::fill_ptr_vector(pfps, pfpHandle);
   }
   else {
-    throw cet::exception("TRACS") << "pfps not loaded." << std::endl;
+    throw cet::exception("TRACS") << "pfps not loaded. Maybe you got the module label wrong?" << std::endl;
   }
  
   //Handle to access the pandora hits assans
   art::Handle<std::vector<recob::Cluster> > clusterHandle;
   if (!evt.getByLabel(fPFParticleModuleLabel,clusterHandle)){
-    throw cet::exception("TRACS") << "pfp clusters is not loaded." << std::endl;
+    throw cet::exception("TRACS") << "pfp clusters are not loaded." << std::endl;
   }
 
   //Get the assoications to hits, clusters and spacespoints 
@@ -212,12 +208,10 @@ void reco::shower::TRACS::produce(art::Event& evt) {
   // - dEdx 
   reco::shower::ShowerElementHolder selement_holder;
 
-  int i=0;
   int shower_iter = 0;
   //Loop of the pf particles
   for(auto const& pfp: pfps){
 
-    std::cout << "new particle" << std::endl;
     //Update the shower iterator
     selement_holder.SetShowerNumber(shower_iter);
 
@@ -227,22 +221,20 @@ void reco::shower::TRACS::produce(art::Event& evt) {
     //Calculate the shower properties 
     //Loop over the shower tools
     int err = 0;
+    unsigned int i=0;
     for(auto const& fShowerTool: fShowerTools){
 
-      std::cout << "on next tool:" <<  fShowerToolNames[i]  << std::endl;
       //Calculate the metric
       err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
       if(err){
 	mf::LogError("TRACS") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
-	if(!fAllowPartialShowers && !fSecondInteration) break;
+	break;
       }
       ++i;
     }
-
     //Should we do a second interaction now we have done a first pass of the calculation
     i=0;
     if(fSecondInteration){
-      std::cout << "on second iter next tool:" <<  fShowerToolNames[i]  << std::endl;
 
       for(auto const& fShowerTool: fShowerTools){
 	//Calculate the metric
@@ -250,14 +242,14 @@ void reco::shower::TRACS::produce(art::Event& evt) {
       
 	if(err){
 	  mf::LogError("TRACS") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
-	  if(!fAllowPartialShowers) break;
+	  break;
 	}
 	++i;
       }
     }
 
     //If we want a full shower and we recieved an error call from a tool return;
-    if(err && !fAllowPartialShowers){
+    if(err){
       mf::LogError("TRACS") << "Error on tool. Assuming all the shower products and properties were not set and bailing." << std::endl;
       continue;
     }
@@ -280,9 +272,9 @@ void reco::shower::TRACS::produce(art::Event& evt) {
 	mf::LogError("TRACS") << "The dEdx is not set in the element holder. bailing" << std::endl;
         continue;
       }
-          
+
       //Check All of the products that have been asked to be checked.
-      bool elements_are_set = selement_holder.CheckAllElementSaveTag();
+      bool elements_are_set = selement_holder.CheckAllElementTags();
       if(!elements_are_set){
 	mf::LogError("TRACS") << "Not all the elements in the property holder which should be set are not. Bailing. " << std::endl; 
 	continue;
@@ -368,16 +360,17 @@ void reco::shower::TRACS::produce(art::Event& evt) {
     //AddAssociations
     int assn_err = 0;
     std::vector<std::string> SetupTools;
+    unsigned int j=0;
     for(auto const& fShowerTool: fShowerTools){
-      if(std::find(SetupTools.begin(), SetupTools.end(), fShowerToolNames[i]) != SetupTools.end()){continue;}
+      if(std::find(SetupTools.begin(), SetupTools.end(), fShowerToolNames[j]) != SetupTools.end()){++j; continue;}
       assn_err += fShowerTool->AddAssociations(evt,selement_holder);
-      SetupTools.push_back(fShowerToolNames[i]);
+      SetupTools.push_back(fShowerToolNames[j]);
+      ++j;
     }
     if(!fAllowPartialShowers && assn_err > 0){
       mf::LogError("TRACS") << "A association failed and you are not allowing partial showers. The event will not be added to the event " << std::endl; 
       continue;
     }
-   
 
     //Reset the showerproperty holder.
     selement_holder.ClearAll();

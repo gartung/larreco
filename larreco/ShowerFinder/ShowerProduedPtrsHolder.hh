@@ -34,13 +34,6 @@ namespace reco {
   }
 }
 
-//Templates to check if a type is a std::vector
-template <class N>
-struct is_vector { static const int value = 0; };
-
-template <class N, class A>
-struct is_vector<std::vector<N, A> > { static const int value = 1; };
-
 //Template to check if its an assn 
 template <class N>
 struct is_assn { static const int value = 0; }; 
@@ -117,23 +110,32 @@ public:
     evt.put(std::move(showeruniqueptr),InstanceName);
   }
 
+  //This returns the type of the undrlying element. It should be of the form std::unique_ptr<std::vector<T> > 
   std::string GetType() override {
     int status = -9;
     return abi::__cxa_demangle(typeid(showeruniqueptr.get()).name(),NULL,NULL,&status);  
   }
 
+  //A user can set the instances name like an other producer module product. Get it using this.
   std::string GetInstanceName() override { 
     return InstanceName;
   }
 
+  //Get the size of the std::vector. Usful for making assns.
   int GetVectorPtrSize() override { 
     return showeruniqueptr->size();
   }
 
 
 private:
+
+  //Element itself that is put into the art event.
   std::unique_ptr<std::vector<T> > showeruniqueptr;
-  int ptr;
+
+  //bool to see if the element is set.
+  bool ptr;
+
+  //Name when saved into the the event default is ""
   std::string InstanceName;
 };
 
@@ -175,21 +177,31 @@ public:
   }
 
   //Not need but the compiler complains if its not here.
-  void AddDataProduct(reco::shower::ShowerElementHolder& selement_holder, std::string Name) override {std::cout << "should not be here" << std::endl;}
+  void AddDataProduct(reco::shower::ShowerElementHolder& selement_holder, std::string Name) override {
+    throw cet::exception("ShowerUniqueAssnPtr") << "The creator of this code has failed you. Please contact Dominic Bakrer" << std::endl;
+  }
 
+  //Get the type in form as a string. It should be the form of std::unique_ptr<art::Assn<T A, T1 B> >  
   std::string GetType() override {
     int status = -9;
     return abi::__cxa_demangle(typeid(showeruniqueptr.get()).name(),NULL,NULL,&status);  
   }
 
+  //Get the Instance name that product will be saved as in the art::Event.
   std::string GetInstanceName() override { 
     return InstanceName;
   }
 
 
 private:
+
+  //Actual Element the assn. This is put into the event.
   std::unique_ptr<T> showeruniqueptr;
-  int ptr;
+
+  //bool to see if the element is filled.
+  bool ptr;
+
+  //Name when saved into the the event default is ""
   std::string InstanceName;
 };
 
@@ -212,7 +224,7 @@ public:
 
 };
 
-//Derived class - See avove
+//Derived class - See above
 template<class T> 
 class reco::shower::ShowerPtrMaker : public ShowerPtrMakerBase{
 
@@ -225,6 +237,7 @@ public:
     InstanceName = Instancename;
   }
 
+  //Check the ptr maker is ready to be used.
   bool CheckPtrMaker() override {
     if(ptr){
       return true;
@@ -272,8 +285,13 @@ public:
 
 private:
 
+  //The ptr maker itself. Used to make art::Ptrs to make assns.
   std::unique_ptr<art::PtrMaker<T> > ptrmaker; 
+
+  //The name of the data product which will be saved in the event. The ptr maker requires this.
   std::string InstanceName;
+
+  //bool to tell if the ptr maker is ready to use or not.
   int ptr;
 };
 
@@ -432,7 +450,7 @@ public:
     }
   }
 
-  //Wrapper to return to the the user the art ptr corresponding the index iter. 
+  //Wrapper to return to the the user the art ptr corresponding the index iter
   template <class T> 
   art::Ptr<T> GetArtPtr(std::string Name, int iter){
     if(showerPtrMakers.find(Name) == showerPtrMakers.end()){
@@ -457,6 +475,7 @@ public:
     }
   }
 
+  //Return the size of the std::vector of the data object with the unique name string.
   int GetVectorPtrSize(std::string Name){
     if(showerproductPtrs.find(Name) != showerproductPtrs.end()){
       return showerproductPtrs[Name]->GetVectorPtrSize();
@@ -464,6 +483,7 @@ public:
     throw cet::exception("ShowerProduedPtrsHolder") << "Product: " << Name << " has not been set in the producers map" << std::endl;
   }
 
+  //Print the type, the element name and the instance name 
   void PrintPtr(std::string Name){
     if(showerproductPtrs.find(Name) != showerproductPtrs.end()){
       std::string Type     = showerproductPtrs[Name]->GetType();
@@ -552,8 +572,14 @@ public:
 
 
 private:
+
+  //Holder of the data objects of type std::vector<T> that will be saved in the events.
   std::map<std::string,std::unique_ptr<reco::shower::ShowerUniqueProduerPtrBase > > showerproductPtrs;
+
+  //Holder of the data objects of type T that will be saved into the events. I think these will only be assns.
   std::map<std::string,std::unique_ptr<reco::shower::ShowerUniqueProduerPtrBase > > showerassnPtrs;
+
+  //Holder of the ptrMakers whcih make the art::Ptrs of the data objects that lie in showerproductPtrs.
   std::map<std::string,std::unique_ptr<reco::shower::ShowerPtrMakerBase> > showerPtrMakers;
 };
 

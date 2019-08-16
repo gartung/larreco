@@ -139,7 +139,7 @@ namespace ShowerRecoTools{
 
         double wirepitch = fGeom->WirePitch(trackPlaneHits.at(0)->WireID().planeID());
         double angleToVert = fGeom->WireAngleToVertical(fGeom->Plane(plane).View(),
-            trackPlaneHits[0]->WireID().planeID()) - 0.5*TMath::Pi();
+							trackPlaneHits[0]->WireID().planeID()) - 0.5*TMath::Pi();
         double cosgamma = std::abs(sin(angleToVert)*showerDir.Y()+cos(angleToVert)*showerDir.Z());
 
         pitch = wirepitch/cosgamma;
@@ -188,15 +188,16 @@ namespace ShowerRecoTools{
             }
           }
           dEdxVec.push_back(dEdx);
-        } else { // if not (pitch)
-          dEdxVec.push_back(-999);
-        }
-      } else { // if not (trackPlaneHits.size())
+	}
+	else{
+	  throw cet::exception("ShowerStandardCalodEdx") << "pitch is 0. I can't think how it is 0? Stopping so I can tell you" << std::endl;
+	}
+      }else { // if not (trackPlaneHits.size())
         dEdxVec.push_back(-999);
       }
       trackPlaneHits.clear();
     } //end loop over planes
-
+  
     //TODO
     std::vector<double> dEdxVecErr = {-999,-999,-999};
 
@@ -208,13 +209,14 @@ namespace ShowerRecoTools{
     }
 
     if (bestPlane==-999){
-      throw cet::exception("ShowerTrackFinderEMShower") << "No best plane set";
+      throw cet::exception("ShowerStandardCalodEdx") << "No best plane set";
       return 1;
     } else {
       ShowerEleHolder.SetElement(bestPlane,"ShowerBestPlane");
     }
 
     return 0;
+  
   }
 }
 
