@@ -32,28 +32,30 @@
 namespace ShowerRecoTools{
 
   class ShowerPandoraSlidingFitTrackFinder:IShowerTool {
-    public:
+  public:
 
-      ShowerPandoraSlidingFitTrackFinder(const fhicl::ParameterSet& pset);
+    ShowerPandoraSlidingFitTrackFinder(const fhicl::ParameterSet& pset);
 
-      ~ShowerPandoraSlidingFitTrackFinder();
+    ~ShowerPandoraSlidingFitTrackFinder();
 
-      //Generic Track Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder) override;
-    private:
+    //Generic Track Finder
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder) override;
+  private:
 
-      void InitialiseProducers() override;
+    void InitialiseProducers() override;
 
-      //Function to add the assoctions
-      int AddAssociations(art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder) override;
+    //Function to add the assoctions
+    int AddAssociations(art::Event& Event,
+			reco::shower::ShowerElementHolder& ShowerEleHolder) override;
 
 
-      // Define standard art tool interface.
-      art::ServiceHandle<geo::Geometry> fGeom;
-      float fSlidingFitHalfWindow;
-      float fMinTrajectoryPoints;
+    // Define standard art tool interface.
+    art::ServiceHandle<geo::Geometry> fGeom;
+
+    //fcl paramaters 
+    float fSlidingFitHalfWindow; //To Describe
+    float fMinTrajectoryPoints;  //Minimum number of trajectory point to say the track is good.
   };
 
 
@@ -144,24 +146,24 @@ namespace ShowerRecoTools{
             trackState.GetPosition().GetY(), trackState.GetPosition().GetZ()));
       pxpypz.emplace_back(recob::tracking::Vector_t(trackState.GetDirection().GetX(),
             trackState.GetDirection().GetY(), trackState.GetDirection().GetZ()));
+
       // Set flag NoPoint if point has bogus coordinates, otherwise use clean flag set
       if (std::fabs(trackState.GetPosition().GetX()-util::kBogusF)<std::numeric_limits<float>::epsilon() &&
           std::fabs(trackState.GetPosition().GetY()-util::kBogusF)<std::numeric_limits<float>::epsilon() &&
           std::fabs(trackState.GetPosition().GetZ()-util::kBogusF)<std::numeric_limits<float>::epsilon())
       {
         flags.emplace_back(recob::TrajectoryPointFlags(recob::TrajectoryPointFlags::InvalidHitIndex,
-              recob::TrajectoryPointFlagTraits::NoPoint));
+						       recob::TrajectoryPointFlagTraits::NoPoint));
       } else {
         flags.emplace_back(recob::TrajectoryPointFlags());
       }
     }
 
     // note from gc: eventually we should produce a TrackTrajectory, not a Track with empty covariance matrix and bogus chi2, etc.
-    recob::Track InitialTrack  =  recob::Track(recob::TrackTrajectory(std::move(xyz),
-          std::move(pxpypz), std::move(flags), false),
-        util::kBogusI, util::kBogusF, util::kBogusI, recob::tracking::SMatrixSym55(),
-        recob::tracking::SMatrixSym55(), pfparticle.key());
-
+    recob::Track InitialTrack  =  recob::Track(recob::TrackTrajectory(std::move(xyz),std::move(pxpypz), std::move(flags), false),
+					       util::kBogusI, util::kBogusF, util::kBogusI, recob::tracking::SMatrixSym55(),
+					       recob::tracking::SMatrixSym55(), pfparticle.key());
+    
     ShowerEleHolder.SetElement(InitialTrack,"InitialTrack");
 
     TVector3 Start = {InitialTrack.Start().X(), InitialTrack.Start().Y(), InitialTrack.Start().Z()};

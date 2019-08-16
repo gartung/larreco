@@ -11,27 +11,16 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindOneP.h"
 #include "canvas/Persistency/Common/FindManyP.h"
-#include "art/Framework/Core/EDProducer.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 //LArSoft Includes
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Shower.h"
 #include "larreco/RecoAlg/TRACSAlg.h"
-#include "larreco/RecoAlg/ProjectionMatchingAlg.h"
-#include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
-#include "larreco/RecoAlg/PMAlg/Utilities.h"
 
 //C++ Includes
 #include <iostream>
@@ -43,38 +32,38 @@
 namespace ShowerRecoTools{
 
   class Shower3DTrackHitFinder:IShowerTool {
-    public:
-
-      Shower3DTrackHitFinder(const fhicl::ParameterSet& pset);
-
-      ~Shower3DTrackHitFinder();
-
-      //Generic Track Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
-
-    private:
-
-      void InitialiseProducers() override;
-
-      std::vector<art::Ptr<recob::SpacePoint> > FindTrackSpacePoints(
-          std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
-          TVector3& showerStartPosition,TVector3& showerDirection);
-
-      // Define standard art tool interface
-      shower::TRACSAlg       fTRACSAlg;
-
-      float fMaxProjectionDist;    // Maximum projection along shower direction, length of cylinder
-      float fMaxPerpendicularDist; // Maximum perpendicular distance, radius of cylinder
-      bool  fForwardHitsOnly;      // Only take hits downstream of shower vertex (projection>0)
-      bool  fDebugEVD;             // Make Debug Event Display
-
-      bool fAllowDyanmicLength;    //Use the initial track length instead of the fMaxProjectionDist
-
-      art::InputTag fPFParticleModuleLabel;
-
+  public:
+    
+    Shower3DTrackHitFinder(const fhicl::ParameterSet& pset);
+    
+    ~Shower3DTrackHitFinder();
+    
+    //Generic Track Finder
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
+    
+  private:
+    
+    std::vector<art::Ptr<recob::SpacePoint> > FindTrackSpacePoints(std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
+								   TVector3& showerStartPosition,TVector3& showerDirection);
+    
+    //Algorithms
+    shower::TRACSAlg       fTRACSAlg;
+    
+    //Fcl paramters
+    float fMaxProjectionDist;    //Maximum projection along shower direction.
+                                 //length of cylinder
+    float fMaxPerpendicularDist; //Maximum perpendicular distance, radius of cylinder
+    bool  fForwardHitsOnly;      //Only take hits downstream of shower vertex 
+                                 //(projection>0)
+    bool  fDebugEVD;             //Make Debug Event Display
+    bool  fAllowDyanmicLength;   //Use the initial track length instead of the 
+                                 //fMaxProjectionDist
+    
+    art::InputTag fPFParticleModuleLabel;
+    
   };
 
 
@@ -94,16 +83,9 @@ namespace ShowerRecoTools{
   {
   }
 
-  void Shower3DTrackHitFinder::InitialiseProducers(){
-    if(producerPtr == NULL){
-      mf::LogWarning("Shower3DTrackHitFinder") << "The producer ptr has not been set" << std::endl;
-      return;
-    }
-  }
-
-
   int Shower3DTrackHitFinder::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
+					       art::Event& Event, 
+					       reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     //If we want to use a dynamic length value on a second iteraction get theta value now
     if(fAllowDyanmicLength){
@@ -111,7 +93,6 @@ namespace ShowerRecoTools{
         ShowerEleHolder.GetElement("InitialTrackLength",fMaxProjectionDist);
       }
     }
-
 
     //This is all based on the shower vertex being known. If it is not lets not do the track
     if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
@@ -184,16 +165,15 @@ namespace ShowerRecoTools{
     ShowerEleHolder.SetElement(trackSpacePoints,"InitialTrackSpacePoints");
 
     if (fDebugEVD){
-      // mf::LogInfo("Shower3DTrackHitFinder") << "Doing DebugEVD";
       fTRACSAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
     }
 
     return 0;
   }
 
-  std::vector<art::Ptr<recob::SpacePoint> > Shower3DTrackHitFinder::FindTrackSpacePoints(
-      std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, TVector3& showerStartPosition,
-      TVector3& showerDirection){
+  std::vector<art::Ptr<recob::SpacePoint> > Shower3DTrackHitFinder::FindTrackSpacePoints(std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, 
+											 TVector3& showerStartPosition,
+											 TVector3& showerDirection){
 
     // Make a vector to hold the output space points
     std::vector<art::Ptr<recob::SpacePoint> > trackSpacePoints;

@@ -12,7 +12,6 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
@@ -30,7 +29,6 @@
 #include <vector>
 
 //Root Includes
-#include "TVector3.h"
 
 namespace ShowerRecoTools {
 
@@ -38,38 +36,39 @@ namespace ShowerRecoTools {
 
     public:
 
-      ShowerLinearEnergy(const fhicl::ParameterSet& pset);
+    ShowerLinearEnergy(const fhicl::ParameterSet& pset);
+    
+    ~ShowerLinearEnergy();
+    
+    //Physics Function. Calculate the shower Energy.
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerElementHolder
+			 ) override;
+  private:
+    
+    double CalculateEnergy(std::vector<art::Ptr<recob::Hit> >& hits, geo::View_t& view);
+    
+    //fcl parameters 
+    double fUGradient;   //Gradient of the linear fit of total charge to total energy on the U plane.
+    double fUIntercept;  //Intercept of the linear fit of total charge to total energy on the U plane.   
+    double fVGradient;
+    double fVIntercept;
+    double fZGradient;
+    double fZIntercept;
+    double fXGradient;
+    double fXIntercept;
+    double fYGradient;
+    double fYIntercept;
+    double f3DGradient;
+    double f3DIntercept;
+    
+    art::InputTag fPFParticleModuleLabel;
 
-      ~ShowerLinearEnergy();
-
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerElementHolder
-          ) override;
-    private:
-
-      double CalculateEnergy(std::vector<art::Ptr<recob::Hit> >& hits, geo::View_t& view);
-
-      //SBN I think should only use U,V and W
-      double fUGradient;
-      double fUIntercept;
-      double fVGradient;
-      double fVIntercept;
-      double fZGradient;
-      double fZIntercept;
-      double fXGradient;
-      double fXIntercept;
-      double fYGradient;
-      double fYIntercept;
-      double f3DGradient;
-      double f3DIntercept;
-
-
-      art::InputTag fPFParticleModuleLabel;
-      detinfo::DetectorProperties const* detprop = nullptr;
-      art::ServiceHandle<geo::Geometry> fGeom;
-
+    //Services
+    detinfo::DetectorProperties const* detprop = nullptr;
+    art::ServiceHandle<geo::Geometry> fGeom;
+    
   };
 
 
@@ -99,14 +98,13 @@ namespace ShowerRecoTools {
 
 
   int ShowerLinearEnergy::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event,
-      reco::shower::ShowerElementHolder& ShowerEleHolder
-      ){
-
+					   art::Event& Event,
+					   reco::shower::ShowerElementHolder& ShowerEleHolder
+					   ){
+    
     //Holder for the final product
     std::vector<double> ShowerLinearEnergy;
     unsigned int numPlanes = fGeom->Nplanes();
-    //trackHits.resize(numPlanes);
 
     // Get the assocated pfParicle vertex PFParticles
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
@@ -140,6 +138,7 @@ namespace ShowerRecoTools {
 
       view_hits[view].insert(view_hits[view].end(),hits.begin(),hits.end());
     }
+    
     std::map<unsigned int, double > view_energies;
     //Accounting for events crossing the cathode.
     for(auto const& view_hit_iter: view_hits){

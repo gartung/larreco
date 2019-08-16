@@ -23,44 +23,44 @@
 
 //C++ Includes
 #include <iostream>
-#include <cmath>
 
 //Root Includes
 #include "TVector3.h"
 #include "TMath.h"
-#include "TH1.h"
 
 namespace ShowerRecoTools {
 
 
   class ShowerTrackSpacePointDirection:IShowerTool {
 
-    public:
+  public:
 
-      ShowerTrackSpacePointDirection(const fhicl::ParameterSet& pset);
+    ShowerTrackSpacePointDirection(const fhicl::ParameterSet& pset);
 
-      ~ShowerTrackSpacePointDirection();
+    ~ShowerTrackSpacePointDirection();
 
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
+    //Calculate the direction using the initial track spacepoints
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
 
-    private:
+  private:
 
-      //fcl
-      bool fUsePandoraVertex;
+    //fcl
+    bool fUsePandoraVertex; //Direction from point defined as 
+                            //(Position of SP - Vertex) rather than 
+                            //(Position of SP - Track Start Point).
 
-      //Algorithm function
-      shower::TRACSAlg fTRACSAlg;
+    //Algorithm function
+    shower::TRACSAlg fTRACSAlg;
   };
 
 
   ShowerTrackSpacePointDirection::ShowerTrackSpacePointDirection(const fhicl::ParameterSet& pset)
     : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
-    fUsePandoraVertex       = pset.get<bool>         ("UsePandoraVertex");
+    fUsePandoraVertex       = pset.get<bool>("UsePandoraVertex");
   }
 
   ShowerTrackSpacePointDirection::~ShowerTrackSpacePointDirection()
@@ -68,9 +68,9 @@ namespace ShowerRecoTools {
   }
 
   int ShowerTrackSpacePointDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event,
-      reco::shower::ShowerElementHolder& ShowerEleHolder){
-
+						       art::Event& Event,
+						       reco::shower::ShowerElementHolder& ShowerEleHolder){
+    
     //Check the Track Hits has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrackSpacePoints")){
       mf::LogError("ShowerTrackSpacePointDirection") << "Initial track spacepoints not set"<< std::endl;
@@ -79,7 +79,8 @@ namespace ShowerRecoTools {
 
     //Check the start position is set.
     if(fUsePandoraVertex && !ShowerEleHolder.CheckElement("ShowerStartPosition")){
-      mf::LogError("ShowerTrackSpacePointDirection") << "Start position not set, returning "<< std::endl;
+      mf::LogError("ShowerTrackSpacePointDirection")
+	<< "Start position not set, returning "<< std::endl;
       return 0;
     }
 
@@ -91,7 +92,8 @@ namespace ShowerRecoTools {
     else{
       //Check the Tracks has been defined
       if(!ShowerEleHolder.CheckElement("InitialTrack")){
-        mf::LogError("ShowerTrackSpacePointDirection") << "Initial track not set"<< std::endl;
+        mf::LogError("ShowerTrackSpacePointDirection") 
+	  << "Initial track not set"<< std::endl;
         return 0;
       }
       recob::Track InitialTrack;
@@ -159,7 +161,8 @@ namespace ShowerRecoTools {
       ShowerEleHolder.SetElement(Direction,"ShowerDirection");
     }
     else{
-      mf::LogError("ShowerTrackSpacePointDirection") << "None of the points are within 1 sigma"<< std::endl;
+      mf::LogError("ShowerTrackSpacePointDirection") 
+	<< "None of the points are within 1 sigma"<< std::endl;
       return 1;
     }
     return 0;

@@ -11,57 +11,53 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/FindManyP.h"
 
 //LArSoft Includes
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
-#include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
-#include <cmath>
 
 //Root Includes
 #include "TVector3.h"
 #include "TMath.h"
-#include "TH1.h"
-
-#include "TFile.h"
 
 namespace ShowerRecoTools {
 
 
   class ShowerTrackDirection:IShowerTool {
 
-    public:
+  public:
 
-      ShowerTrackDirection(const fhicl::ParameterSet& pset);
+    ShowerTrackDirection(const fhicl::ParameterSet& pset);
 
-      ~ShowerTrackDirection();
+    ~ShowerTrackDirection();
 
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
+    //Find Track Direction using initial track.
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
+    
+  private:
 
-    private:
+    //Algoritms
+    shower::TRACSAlg       fTRACSAlg;
 
-      //Algoritma
-      shower::TRACSAlg       fTRACSAlg;
-
-      //fcl
-      bool fUsePandoraVertex;
-      bool fUsePositionInfo;
-      bool fDebugEVD;
+    //fcl
+    bool fUsePandoraVertex; //Direction from point defined as 
+                            //(Position of traj point - Vertex) rather than
+                            //(Position of traj point - Track Start Point). 
+    bool fUsePositionInfo;  //Don't use the directionAtPoint rather 
+                            //than definition above. 
+                            //i.e((Position of traj point + 1) - (Position of traj point)
+    bool fDebugEVD;
 
   };
 
@@ -79,7 +75,8 @@ namespace ShowerRecoTools {
   }
 
   int ShowerTrackDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
+					     art::Event& Event, 
+					     reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     //Check the Track has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrack")){
@@ -114,12 +111,13 @@ namespace ShowerRecoTools {
       float sumZ=0, sumZ2=0;
       for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
 
+	//Ignore bogus flags.
         auto flags = InitialTrack.FlagsAtPoint(traj);
         if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
             || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
         {continue;}
 
-
+	//Get the direction to the trajectory position.
         geo::Vector_t TrajPosition = (InitialTrack.LocationAtPoint(traj) - StartPosition).Unit();
         sumX += TrajPosition.X(); sumX2 += TrajPosition.X()*TrajPosition.X();
         sumY += TrajPosition.Y(); sumY2 += TrajPosition.Y()*TrajPosition.Y();
@@ -148,15 +146,16 @@ namespace ShowerRecoTools {
       //Remove trajectory points from the mean that are not with one sigma.
       for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
 
+	//Ignore bogus flags.
         auto flags = InitialTrack.FlagsAtPoint(traj);
-        if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+        if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
         {continue;}
 
-
+	//Get the direction of the trajectory point.
         geo::Point_t TrajPosition = InitialTrack.LocationAtPoint(traj);
         geo::Vector_t Direction   = (TrajPosition - StartPosition).Unit();
 
+	//Remove points not within 1RMS.
         if((TMath::Abs((Direction-Mean).X()) < 1*RMSX) &&
             (TMath::Abs((Direction-Mean).Y()) < 1*RMSY) &&
             (TMath::Abs((Direction-Mean).Z()) < 1*RMSZ)){
@@ -184,18 +183,20 @@ namespace ShowerRecoTools {
       }
       return 0;
 
-    }else{ // if(fUsePositionInfo)
+    }
+    else{ // if(fUsePositionInfo)
+
       float sumX=0, sumX2=0;
       float sumY=0, sumY2=0;
       float sumZ=0, sumZ2=0;
       for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
 
+	//Ignore bogus points
         auto flags = InitialTrack.FlagsAtPoint(traj);
-        if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+        if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
         {continue;}
 
-
+	//Get the direction.
         geo::Vector_t  Direction = InitialTrack.DirectionAtPoint(traj);
         sumX += Direction.X(); sumX2 += Direction.X()*Direction.X();
         sumY += Direction.Y(); sumY2 += Direction.Y()*Direction.Y();
@@ -225,8 +226,7 @@ namespace ShowerRecoTools {
       for(unsigned int traj=0; traj<InitialTrack.NumberTrajectoryPoints(); ++traj){
 
         auto flags = InitialTrack.FlagsAtPoint(traj);
-        if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+        if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
         {continue;}
 
 

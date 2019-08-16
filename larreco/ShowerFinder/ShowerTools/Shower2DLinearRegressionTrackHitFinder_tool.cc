@@ -16,11 +16,9 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 //LArSoft Includes
-#include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "larreco/RecoAlg/TRACSAlg.h"
@@ -35,37 +33,42 @@
 namespace ShowerRecoTools{
 
   class Shower2DLinearRegressionTrackHitFinder:IShowerTool {
-    public:
+  public:
+    
+    Shower2DLinearRegressionTrackHitFinder(const fhicl::ParameterSet& pset);
+    
+    ~Shower2DLinearRegressionTrackHitFinder();
+    
+    //Calculate the 2D initial track hits
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
+    
+  private:
+    
+    //Function to find the 
+    std::vector<art::Ptr<recob::Hit> > FindInitialTrackHits(std::vector<art::Ptr<recob::Hit> >& hits);
+    
+    //Function to perform a weighted regression fit.
+    Int_t WeightedFit(const Int_t n, const Double_t *x, const Double_t *y,
+		      const Double_t *w,  Double_t *parm);
+    
+    // ALgorithms   
+    shower::TRACSAlg       fTRACSAlg;
 
-      Shower2DLinearRegressionTrackHitFinder(const fhicl::ParameterSet& pset);
-
-      ~Shower2DLinearRegressionTrackHitFinder();
-
-      //Generic Track Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
-
-    private:
-
-      std::vector<art::Ptr<recob::Hit> > FindInitialTrackHits(
-          std::vector<art::Ptr<recob::Hit> >& hits);
-
-      Int_t WeightedFit(const Int_t n, const Double_t *x, const Double_t *y,
-          const Double_t *w,  Double_t *parm);
-
-      // Define standard art tool interface.
-
-      shower::TRACSAlg       fTRACSAlg;
-      unsigned int               fNfitpass;
-      std::vector<unsigned int>  fNfithits;
-      std::vector<double>        fToler;
-      bool                       fApplyChargeWeight;
-      art::InputTag              fPFParticleModuleLabel;
-      art::InputTag              fHitsModuleLabel;
+    //fcl parameters
+    unsigned int               fNfitpass;           //Number of time to fit the straight
+                                                    //line the hits.
+    std::vector<unsigned int>  fNfithits;           //Max number of hits to fit to.
+    std::vector<double>        fToler;              //Tolerance or each interaction. 
+                                                    //Defined as the perpendicualar 
+                                                    //distance from the best fit line.
+    bool                       fApplyChargeWeight;  //Apply charge weighting to the fit.
+    art::InputTag              fPFParticleModuleLabel;
+    art::InputTag              fHitsModuleLabel;
   };
-
+  
 
   Shower2DLinearRegressionTrackHitFinder::Shower2DLinearRegressionTrackHitFinder(
       const fhicl::ParameterSet& pset)
@@ -113,18 +116,16 @@ namespace ShowerRecoTools{
     // Get the assocated pfParicle vertex PFParticles
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, pfpHandle)){
-      throw cet::exception("Shower2DLinearRegressionTrackHitFinder") << "Could not get the pandora pf particles. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
-      recob::Track track;
-      ShowerEleHolder.SetElement(track,"InitialTrack");
+      throw cet::exception("Shower2DLinearRegressionTrackHitFinder") 
+	<< "Could not get the pandora pf particles. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
       return 1;
     }
 
     //Get the clusters
     art::Handle<std::vector<recob::Cluster> > clusHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, clusHandle)){
-      throw cet::exception("Shower2DLinearRegressionTrackHitFinder") << "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
-      recob::Track track;
-      ShowerEleHolder.SetElement(track,"InitialTrack");
+      throw cet::exception("Shower2DLinearRegressionTrackHitFinder") 
+	<< "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
       return 1;
     }
 

@@ -1,5 +1,5 @@
 //############################################################################
-//### Name:        ShowerSmartTrackTrajectoryPointDirection                     ###
+//### Name:        ShowerSmartTrackTrajectoryPointDirection                ###
 //### Author:      Dominic Barker                                          ###
 //### Date:        13.05.19                                                ###
 //### Description: Tool for finding the shower direction using the         ###
@@ -11,64 +11,59 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/FindManyP.h"
 
 //LArSoft Includes
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
-#include <cmath>
 
 //Root Includes
 #include "TVector3.h"
-#include "TMath.h"
-#include "TH1.h"
-
-#include "TFile.h"
 
 namespace ShowerRecoTools {
 
 
   class ShowerSmartTrackTrajectoryPointDirection:IShowerTool {
 
-    public:
+  public:
 
-      ShowerSmartTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset);
+    ShowerSmartTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset);
 
-      ~ShowerSmartTrackTrajectoryPointDirection();
+    ~ShowerSmartTrackTrajectoryPointDirection();
 
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
+    //Calculate the direction from the inital track.
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
 
-    private:
+  private:
 
-      //fcl
-      bool  fUsePandoraVertex;
-      bool  fDebugEVD;
-      bool  fAllowDynamicSliding;
-      bool  fUsePositionInfo;
-      bool  fUseStartPos;
-      float fAngleCut;
+    //fcl
+    bool  fUsePandoraVertex;    //Direction from point defined as 
+                                //(Position of traj point - Vertex) rather than 
+                                //(Position of traj point - Track Start Point). 
+    bool  fAllowDynamicSliding; //Rather than evualte the angle from the start use 
+                                //the previous trajectory point position.
+    bool  fUsePositionInfo;     //Don't use the DirectionAtPoint rather than 
+                                //definition above.
+                                //((Position of traj point + 1)-(Position of traj point)
+    bool  fUseStartPos;         //Rather the using the angles between the directions
+                                //from start position to the trajectory points
+                                //use the angle between the the points themselves
+    float fAngleCut;
   };
 
 
   ShowerSmartTrackTrajectoryPointDirection::ShowerSmartTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset)
   {
     fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
-    fDebugEVD                 = pset.get<bool>("DebugEVD");
     fAllowDynamicSliding      = pset.get<bool>("AllowDynamicSliding");
     fUseStartPos              = pset.get<bool>("UseStartPos");
     fUsePositionInfo          = pset.get<bool>("UsePositionInfo");
@@ -83,7 +78,8 @@ namespace ShowerRecoTools {
 
     //Check the Track has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrack")){
-      mf::LogError("ShowerSmartTrackTrajectoryPointDirection") << "Initial track not set"<< std::endl;
+      mf::LogError("ShowerSmartTrackTrajectoryPointDirection")
+	<< "Initial track not set"<< std::endl;
       return 1;
     }
     recob::Track InitialTrack;
@@ -91,7 +87,8 @@ namespace ShowerRecoTools {
 
     //Smartly choose the which trajectory point to look at by ignoring the smush of hits at the vertex.
     if(InitialTrack.NumberTrajectoryPoints() == 1){
-      mf::LogError("ShowerSmartTrackTrajectoryPointDirectio") << "Not Enough trajectory points."<< std::endl;
+      mf::LogError("ShowerSmartTrackTrajectoryPointDirection") 
+	<< "Not Enough trajectory points."<< std::endl;
       return 1;
     }
 
@@ -106,7 +103,8 @@ namespace ShowerRecoTools {
       if(fUsePandoraVertex){
         //Check the Track has been defined
         if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
-          mf::LogError("ShowerSmartTrackTrajectoryPointDirectio") << "Shower start position not set"<< std::endl;
+          mf::LogError("ShowerSmartTrackTrajectoryPointDirection")
+	    << "Shower start position not set"<< std::endl;
           return 1;
         }
         TVector3 StartPosition_vec = {-999,-999,-999};
@@ -123,8 +121,7 @@ namespace ShowerRecoTools {
 
         //ignore bogus info.
         auto trajflags = InitialTrack.FlagsAtPoint(trajpoint);
-        if(trajflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || trajflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+        if(trajflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
         {continue;}
 
 
@@ -132,15 +129,13 @@ namespace ShowerRecoTools {
 
         //ignore bogus info.
         auto flags = InitialTrack.FlagsAtPoint(traj);
-        if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+        if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
         {continue;}
 
         //find the next non bogus traj point.
         int nexttraj = traj+1;
         auto nextflags = InitialTrack.FlagsAtPoint(nexttraj);
-        while(nextflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || nextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+        while(nextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
           if(nexttraj == (int)InitialTrack.NumberTrajectoryPoints()-2){bail = true;break;}
           ++nexttraj;
           nextflags = InitialTrack.FlagsAtPoint(nexttraj);
@@ -149,8 +144,7 @@ namespace ShowerRecoTools {
         //find the next next non bogus traj point.
         int nextnexttraj = nexttraj+1;
         auto nextnextflags = InitialTrack.FlagsAtPoint(nextnexttraj);
-        while(nextnextflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || nextnextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+        while(nextnextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
           if(nexttraj == (int)InitialTrack.NumberTrajectoryPoints()-1){bail = true;break;}
           ++nextnexttraj;
           nextnextflags = InitialTrack.FlagsAtPoint(nextnexttraj);
@@ -161,6 +155,7 @@ namespace ShowerRecoTools {
           break;
         }
 
+	//Get the directions.
         geo::Vector_t TrajPosition_vec      = InitialTrack.LocationAtPoint(traj) - StartPosition ;
         geo::Vector_t NextTrajPosition_vec;
         geo::Vector_t NextNextTrajPosition_vec;
@@ -173,6 +168,7 @@ namespace ShowerRecoTools {
           NextNextTrajPosition_vec  = InitialTrack.LocationAtPoint(nextnexttraj) - InitialTrack.LocationAtPoint(traj+1);
         }
 
+	//Get the directions.
         TVector3 TrajPosition = {TrajPosition_vec.X(), TrajPosition_vec.Y(),TrajPosition_vec.Z()};
         TVector3 NextTrajPosition = {NextTrajPosition_vec.X(), NextTrajPosition_vec.Y(),NextTrajPosition_vec.Z()};
         TVector3 NextNextTrajPosition = {NextNextTrajPosition_vec.X(), NextNextTrajPosition_vec.Y(),NextNextTrajPosition_vec.Z()};
@@ -182,13 +178,15 @@ namespace ShowerRecoTools {
         if(NextTrajPosition.Mag() == 0){continue;}
         if(NextNextTrajPosition.Mag() == 0){continue;}
 
+	//Check to see if the angle between the directions is small enough.
         if(TrajPosition.Angle(NextTrajPosition) < fAngleCut && TrajPosition.Angle(NextNextTrajPosition) <fAngleCut){break;}
 
+	//Move the start position onwords.
         if(fAllowDynamicSliding){
           StartPosition = {InitialTrack.LocationAtPoint(traj).X(), InitialTrack.LocationAtPoint(traj).Y(), InitialTrack.LocationAtPoint(traj).Z()};
         }
       }
-
+      
       geo::Point_t  TrajPosition   = InitialTrack.LocationAtPoint(trajpoint);
       Direction_vec  = (TrajPosition - StartPosition).Unit();
     }
@@ -199,26 +197,24 @@ namespace ShowerRecoTools {
 
         //ignore bogus info.
         auto trajflags = InitialTrack.FlagsAtPoint(trajpoint);
-        if(trajflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || trajflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+        if(trajflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
         {continue;}
 
 
         //ignore bogus info.
         auto flags = InitialTrack.FlagsAtPoint(traj);
-        if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+        if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
         {continue;}
 
         bool bail = false;
 
         geo::Vector_t TrajDirection_vec;
 
+	//Get the next non bogus trajectory points
         if(fUseStartPos){
           int prevtraj = 0;
           auto prevflags = InitialTrack.FlagsAtPoint(prevtraj);
-          while(prevflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-              || prevflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+          while(prevflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
             if(prevtraj == (int)InitialTrack.NumberTrajectoryPoints()-2){bail = true;break;}
             ++prevtraj;
             prevflags = InitialTrack.FlagsAtPoint(prevtraj);
@@ -228,8 +224,7 @@ namespace ShowerRecoTools {
         else if(fAllowDynamicSliding && traj!=0){
           int prevtraj = traj-1;
           auto prevflags = InitialTrack.FlagsAtPoint(prevtraj);
-          while(prevflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-              || prevflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+          while(prevflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
             if(prevtraj == 0){bail = true;break;}
             --prevtraj;
             prevflags = InitialTrack.FlagsAtPoint(prevtraj);
@@ -243,8 +238,7 @@ namespace ShowerRecoTools {
         //find the next non bogus traj point.
         int nexttraj = traj+1;
         auto nextflags = InitialTrack.FlagsAtPoint(nexttraj);
-        while(nextflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || nextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+        while(nextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
           if(nexttraj == (int)InitialTrack.NumberTrajectoryPoints()-2){bail = true;break;}
           ++nexttraj;
           nextflags = InitialTrack.FlagsAtPoint(nexttraj);
@@ -253,19 +247,19 @@ namespace ShowerRecoTools {
         //find the next next non bogus traj point.
         int nextnexttraj = nexttraj+1;
         auto nextnextflags = InitialTrack.FlagsAtPoint(nextnexttraj);
-        while(nextnextflags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-            || nextnextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
+        while(nextnextflags.isSet(recob::TrajectoryPointFlagTraits::NoPoint)){
           if(nexttraj == (int)InitialTrack.NumberTrajectoryPoints()-1){bail = true;break;}
           ++nextnexttraj;
           nextnextflags = InitialTrack.FlagsAtPoint(nextnexttraj);
         }
 
         if(bail){
-          mf::LogError("ShowerSmartTrackTrajectoryPointDirection") << "Trajectory point not set as rest of the traj points are bogus."<< std::endl;
+          mf::LogError("ShowerSmartTrackTrajectoryPointDirection") 
+	    << "Trajectory point not set as rest of the traj points are bogus."<< std::endl;
           break;
         }
 
-
+	//Get the directions.
         geo::Vector_t NextTrajDirection_vec     = InitialTrack.DirectionAtPoint(nexttraj);
         geo::Vector_t NextNextTrajDirection_vec = InitialTrack.DirectionAtPoint(nextnexttraj);
 
@@ -278,16 +272,21 @@ namespace ShowerRecoTools {
         if(NextTrajDirection.Mag() == 0){continue;}
         if(NextNextTrajDirection.Mag() == 0){continue;}
 
-        if(TrajDirection.Angle(NextTrajDirection) < fAngleCut && TrajDirection.Angle(NextNextTrajDirection) <fAngleCut){mf::LogError("ShowerSmartTrackTrajectoryPointDirection") << "broken" << std::endl;break;}
+	//See if the angle is small enough.
+        if(TrajDirection.Angle(NextTrajDirection) < fAngleCut && TrajDirection.Angle(NextNextTrajDirection) <fAngleCut){
+	  break;
+	}
       }
       Direction_vec  = InitialTrack.DirectionAtPoint(trajpoint).Unit();
     }
 
     if(trajpoint == (int) InitialTrack.NumberTrajectoryPoints() -3){
-      mf::LogError("ShowerSmartTrackTrajectoryPointDirectio") << "Trajectory point not set."<< std::endl;
+      mf::LogError("ShowerSmartTrackTrajectoryPointDirectio") << 
+	"Trajectory point not set."<< std::endl;
       return 1;
     }
 
+    //Set the direction.
     TVector3 Direction = {Direction_vec.X(), Direction_vec.Y(),Direction_vec.Z()};
     TVector3 DirectionErr = {-999,-999,-999};
     ShowerEleHolder.SetElement(Direction,DirectionErr,"ShowerDirection");

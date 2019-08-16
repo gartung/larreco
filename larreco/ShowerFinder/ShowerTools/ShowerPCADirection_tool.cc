@@ -3,7 +3,7 @@
 //### Author:      Dominic Barker (dominic.barker@sheffield.ac.uk          ###
 //### Date:        13.05.19                                                ###
 //### Description: Tool for finding the shower direction using PCA         ###
-//###              methods. Derviced from PandoraShowers Method            ###
+//###              methods. Derived from PandoraShowers Method.            ###
 //############################################################################
 
 //Warning! Currently as pandora gives each hit a spacepoint, rather than
@@ -15,7 +15,6 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
@@ -23,61 +22,64 @@
 
 //LArSoft Includes
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/TRACSAlg.h"
-#include "lardataobj/RecoBase/Wire.h"
+
 //C++ Includes
 #include <iostream>
-#include <cmath>
 
 //Root Includes
 #include "TVector3.h"
 #include "TMath.h"
 #include "TPrincipal.h"
-#include "TVector.h"
 
 namespace ShowerRecoTools {
 
   class ShowerPCADirection: public IShowerTool {
 
-    public:
-
-      ShowerPCADirection(const fhicl::ParameterSet& pset);
-
-      ~ShowerPCADirection();
-
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
-
-    private:
-
-      // Define standard art tool interface
-      TVector3 ShowerPCAVector(std::vector<art::Ptr<recob::SpacePoint> >& spacePoints_pfp, art::FindManyP<recob::Hit>& fmh, TVector3& ShowerCentre);
-      double  RMSShowerGradient(std::vector<art::Ptr<recob::SpacePoint> >& sps, TVector3& ShowerCentre, TVector3& Direction);
-
-      //Algorithm functions
-      shower::TRACSAlg fTRACSAlg;
-
-      //Services
-      detinfo::DetectorProperties const* fDetProp;
-
-      //fcl
-      art::InputTag fPFParticleModuleLabel;
-      float fNSegments;
-      bool fUseStartPosition;
-      bool fChargeWeighted;
+  public:
+    
+    ShowerPCADirection(const fhicl::ParameterSet& pset);
+    
+    ~ShowerPCADirection();
+    
+    //Calculate the direction of the shower.
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
+    
+  private:
+    
+    // Define standard art tool interface
+    TVector3 ShowerPCAVector(std::vector<art::Ptr<recob::SpacePoint> >& spacePoints_pfp, 
+			     art::FindManyP<recob::Hit>& fmh, 
+			     TVector3& ShowerCentre);
+   
+    double  RMSShowerGradient(std::vector<art::Ptr<recob::SpacePoint> >& sps, 
+			      TVector3& ShowerCentre, 
+			      TVector3& Direction);
+    
+    //Algorithm functions
+    shower::TRACSAlg fTRACSAlg;
+    
+    //Services
+    detinfo::DetectorProperties const* fDetProp;
+    
+    //fcl
+    art::InputTag fPFParticleModuleLabel;
+    float fNSegments;        //Used in the RMS gradient. How many segments should we split the shower into.
+    bool fUseStartPosition;  //If we use the start position the drection of the
+                             //PCA vector is decided as (Shower Centre - Shower Start Position). 
+    bool fChargeWeighted;    //Should the PCA axis be charge weighted.
   };
-
+  
 
   ShowerPCADirection::ShowerPCADirection(const fhicl::ParameterSet& pset)
     : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")),
-    fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
+      fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
   {
     fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
     fNSegments              = pset.get<float>        ("NSegments");
@@ -90,8 +92,8 @@ namespace ShowerRecoTools {
   }
 
   int ShowerPCADirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event,
-      reco::shower::ShowerElementHolder& ShowerEleHolder){
+					   art::Event& Event,
+					   reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     // Get the assocated pfParicle vertex PFParticles
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
@@ -117,7 +119,7 @@ namespace ShowerRecoTools {
       throw cet::exception("ShowerPCADirection") << "Spacepoint and hit association not valid. Stopping.";
       return 1;
     }
-
+    
     //Spacepoints
     std::vector<art::Ptr<recob::SpacePoint> > spacePoints_pfp = fmspp.at(pfparticle.key());
 
@@ -140,7 +142,7 @@ namespace ShowerRecoTools {
 
       // Calculate the general direction of the shower
       TVector3 GeneralDir = (ShowerCentre - StartPositionVec).Unit();
-
+      
       //Calculate the dot product between eigenvector and general direction
       double DotProduct = Eigenvector.Dot(GeneralDir);
 
@@ -170,7 +172,7 @@ namespace ShowerRecoTools {
 
     //To do
     TVector3 EigenvectorErr = {-999,-999,-999};
-
+    
     ShowerEleHolder.SetElement(Eigenvector,EigenvectorErr,"ShowerDirection");
 
     return 0;
@@ -191,7 +193,7 @@ namespace ShowerRecoTools {
     double segmentsize = length/fNSegments;
 
     std::map<int, std::vector<float> > len_segment_map;
-
+    
     //Split the the spacepoints into segments.
     for(auto const& sp: sps){
 
@@ -268,7 +270,7 @@ namespace ShowerRecoTools {
         //Charge Weight
         wht *= TMath::Sqrt(Charge/TotalCharge);
       }
-
+      
       double sp_coord[3];
       sp_coord[0] = sp_position.X()*wht;
       sp_coord[1] = sp_position.Y()*wht;
@@ -283,11 +285,6 @@ namespace ShowerRecoTools {
 
     //Get the Eigenvectors.
     const TMatrixD* Eigenvectors = pca->GetEigenVectors();
-
-    // TODO: should be a neater way to get the column
-    //TVectorD Principal = TMatrixDColumn(Eigenvectors,0);
-    //Get the primary vector
-    //const TVectorD EigenvectorD = (*Eigenvectors)[0]; // Gets row not column
 
     TVector3 Eigenvector = { (*Eigenvectors)[0][0], (*Eigenvectors)[1][0], (*Eigenvectors)[2][0] };
 

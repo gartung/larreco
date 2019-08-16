@@ -25,39 +25,38 @@
 
 //C++ Includes
 #include <iostream>
-#include <cmath>
 
 //Root Includes
 #include "TVector3.h"
 #include "TMath.h"
-#include "TH1.h"
 
 namespace ShowerRecoTools {
 
 
   class ShowerTrackHitDirection:IShowerTool {
 
-    public:
+  public:
 
-      ShowerTrackHitDirection(const fhicl::ParameterSet& pset);
+    ShowerTrackHitDirection(const fhicl::ParameterSet& pset);
 
-      ~ShowerTrackHitDirection();
+    ~ShowerTrackHitDirection();
 
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
+    //Calculate the shower direction from the initial track hits.
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
 
-    private:
+  private:
 
-      //fcl
-      bool fUsePandoraVertex;
-      art::InputTag fHitModuleLabel;
-      art::InputTag fPFParticleModuleLabel;
+    //fcl
+    bool fUsePandoraVertex; //Direction from point defined as (Position of Hit - Vertex)
+                            //rather than (Position of Hit - Track Start Point)  
+    art::InputTag fHitModuleLabel;
+    art::InputTag fPFParticleModuleLabel;
 
-      //Algorithm function
-      shower::TRACSAlg fTRACSAlg;
+    //Algorithm function
+    shower::TRACSAlg fTRACSAlg;
   };
 
 
@@ -66,7 +65,7 @@ namespace ShowerRecoTools {
   {
     fUsePandoraVertex       = pset.get<bool>         ("UsePandoraVertex");
     fHitModuleLabel         = pset.get<art::InputTag>("HitModuleLabel");
-    fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
+    fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel");
   }
 
   ShowerTrackHitDirection::~ShowerTrackHitDirection()
@@ -74,8 +73,8 @@ namespace ShowerRecoTools {
   }
 
   int ShowerTrackHitDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event,
-      reco::shower::ShowerElementHolder& ShowerEleHolder){
+						art::Event& Event,
+						reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     //Check the Track Hits has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrackHits")){

@@ -15,63 +15,58 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/FindManyP.h"
 
 //LArSoft Includes
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/TRACSAlg.h"
-#include "lardataobj/RecoBase/Wire.h"
+
 //C++ Includes
 #include <iostream>
-#include <cmath>
 
 //Root Includes
 #include "TVector3.h"
 #include "TMath.h"
 #include "TPrincipal.h"
-#include "TVector.h"
 
 namespace ShowerRecoTools {
 
 
   class ShowerTrackPCADirection:IShowerTool {
 
-    public:
+  public:
 
-      ShowerTrackPCADirection(const fhicl::ParameterSet& pset);
+    ShowerTrackPCADirection(const fhicl::ParameterSet& pset);
 
-      ~ShowerTrackPCADirection();
+    ~ShowerTrackPCADirection();
 
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
+    //Generic Direction Finder
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
 
-    private:
+  private:
 
-      TVector3 ShowerPCAVector(std::vector<art::Ptr<recob::SpacePoint> >& spacePoints_pfp, art::FindManyP<recob::Hit>& fmh, TVector3& ShowerCentre);
+    TVector3 ShowerPCAVector(std::vector<art::Ptr<recob::SpacePoint> >& spacePoints_pfp, art::FindManyP<recob::Hit>& fmh, TVector3& ShowerCentre);
 
-      //Algorithm functions
-      shower::TRACSAlg fTRACSAlg;
+    //Algorithm functions
+    shower::TRACSAlg fTRACSAlg;
 
-      //Services
-      detinfo::DetectorProperties const* fDetProp;
+    //Services
+    detinfo::DetectorProperties const* fDetProp;
 
-      //fcl
-      art::InputTag fPFParticleModuleLabel;
-      art::InputTag fHitModuleLabel;
-      bool fChargeWeighted;
-      bool fDebugEVD;
-      unsigned int  fMinPCAPoints;
+    //fcl
+    art::InputTag fPFParticleModuleLabel;
+    art::InputTag fHitModuleLabel;
+    bool          fChargeWeighted;  //Should we charge weight the PCA.
+    bool          fDebugEVD;
+    unsigned int  fMinPCAPoints;    //Number of spacepoints needed to do the analysis.
   };
 
 
@@ -83,7 +78,7 @@ namespace ShowerRecoTools {
     fHitModuleLabel         = pset.get<art::InputTag>("HitModuleLabel");
     fChargeWeighted         = pset.get<bool>         ("ChargeWeighted");
     fDebugEVD               = pset.get<bool>         ("DebugEVD");
-    fMinPCAPoints           = pset.get<unsigned int>          ("MinPCAPoints");
+    fMinPCAPoints           = pset.get<unsigned int> ("MinPCAPoints");
   }
 
   ShowerTrackPCADirection::~ShowerTrackPCADirection()
@@ -91,9 +86,9 @@ namespace ShowerRecoTools {
   }
 
   int ShowerTrackPCADirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event,
-      reco::shower::ShowerElementHolder& ShowerEleHolder){
-
+						art::Event& Event,
+						reco::shower::ShowerElementHolder& ShowerEleHolder){
+    
     if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
       mf::LogError("ShowerTrackPCA") << "Start Position not set. Stopping" << std::endl;;
       return 1;
@@ -208,12 +203,6 @@ namespace ShowerRecoTools {
 
     //Get the Eigenvectors.
     const TMatrixD* Eigenvectors = pca->GetEigenVectors();
-
-    // TODO: should be a neater way to get the column
-    //TVectorD Principal = TMatrixDColumn(Eigenvectors,0);
-    //std::cout<<Principal[0];
-    //Get the primary vector
-    //const TVectorD EigenvectorD = (*Eigenvectors)[0]; // Gets row not column
 
     TVector3 Eigenvector = { (*Eigenvectors)[0][0], (*Eigenvectors)[1][0], (*Eigenvectors)[2][0] };
 

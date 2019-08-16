@@ -27,12 +27,10 @@
 
 //C++ Includes
 #include <iostream>
-#include <cmath>
 
 //Root Includes
 #include "TMath.h"
 #include "TVector.h"
-#include "TTree.h"
 
 namespace ShowerRecoTools {
 
@@ -46,7 +44,8 @@ namespace ShowerRecoTools {
 
       //Generic Direction Finder
       int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder) override;
+			   art::Event& Event, 
+			   reco::shower::ShowerElementHolder& ShowerEleHolder) override;
 
     private:
 
@@ -73,7 +72,9 @@ namespace ShowerRecoTools {
   {
   }
 
-  int ShowerTrackFinderCheater::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
+  int ShowerTrackFinderCheater::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, 
+						 art::Event& Event, 
+						 reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     const simb::MCParticle* trueParticle;
 

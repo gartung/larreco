@@ -1,4 +1,4 @@
-//##################`##########################################################
+//############################################################################
 //### Name:        ShowerStartPositionCheater                              ###
 //### Author:      Ed Tyley                                                ###
 //### Date:        16.07.19                                                ###
@@ -10,7 +10,6 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
@@ -18,7 +17,6 @@
 
 //LArSoft Includes
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/TRACSAlg.h"
 #include "larreco/RecoAlg/TRACSCheatingAlg.h"
@@ -30,9 +28,6 @@
 #include <cmath>
 
 //Root Includes
-#include "TMath.h"
-#include "TVector.h"
-#include "TTree.h"
 
 namespace ShowerRecoTools {
 
@@ -44,9 +39,10 @@ namespace ShowerRecoTools {
 
       ~ShowerStartPositionCheater();
 
-      //Generic Direction Finder
+      //Calculate Cheating Start Position 
       int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder) override;
+			   art::Event& Event, 
+			   reco::shower::ShowerElementHolder& ShowerEleHolder) override;
 
     private:
 
@@ -70,7 +66,9 @@ namespace ShowerRecoTools {
   {
   }
 
-  int ShowerStartPositionCheater::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
+  int ShowerStartPositionCheater::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, 
+						   art::Event& Event, 
+						   reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     //Could store these in the shower element holder and just calculate once?
     std::map<int,const simb::MCParticle*> trueParticles = fTRACSCheatingAlg.GetTrueParticleMap();

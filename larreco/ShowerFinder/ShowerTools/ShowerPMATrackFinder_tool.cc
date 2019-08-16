@@ -29,7 +29,7 @@
 
 //C++ Includes
 #include <iostream>
-#include <math.h>
+//#include <math.h>
 
 //Root Includes
 #include "TVector3.h"
@@ -37,32 +37,34 @@
 namespace ShowerRecoTools{
 
   class ShowerPMATrackFinder:IShowerTool {
-    public:
+  public:
 
-      ShowerPMATrackFinder(const fhicl::ParameterSet& pset);
+    ShowerPMATrackFinder(const fhicl::ParameterSet& pset);
 
-      ~ShowerPMATrackFinder();
+    ~ShowerPMATrackFinder();
 
-      //Generic Track Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
+    //Generic Track Finder
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
 
-    private:
+  private:
 
-      void InitialiseProducers() override;
+    void InitialiseProducers() override;
 
-      //Function to add the assoctions
-      int AddAssociations(art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder) override;
+    //Function to add the assoctions
+    int AddAssociations(art::Event& Event,
+			reco::shower::ShowerElementHolder& ShowerEleHolder) override;
 
 
 
-      // Define standard art tool interface.
-      pma::ProjectionMatchingAlg fProjectionMatchingAlg;
-      art::ServiceHandle<geo::Geometry> fGeom;
-      float fMinTrajectoryPoints;
+    // Define algoritms and services.
+    pma::ProjectionMatchingAlg        fProjectionMatchingAlg;
+    art::ServiceHandle<geo::Geometry> fGeom;
+
+    //fcl paramters
+    float fMinTrajectoryPoints; //Minimum number of trajectory points returned from the fit to decide the track is good.
   };
 
 
@@ -82,6 +84,7 @@ namespace ShowerRecoTools{
       return;
     }
 
+    //Set up the recob::Track and the Assns so they can be put in the event
     InitialiseProduct<std::vector<recob::Track> >("InitialTrack");
     InitialiseProduct<art::Assns<recob::Shower, recob::Track > >("ShowerTrackAssn");
     InitialiseProduct<art::Assns<recob::Track, recob::Hit > >("ShowerTrackHitAssn");
@@ -219,10 +222,12 @@ namespace ShowerRecoTools{
         spt1 = spts[sp];
       }
 
+      //Make the xyz for the trajectory point
       xyz.emplace_back(recob::tracking::Point_t(spt.X(), spt.Y(), spt.Z()));
 
       TVector3 dir = -(spt - spt1);
 
+      //Make the direction at point ofr the trajectory point
       pxpypz.emplace_back(recob::tracking::Vector_t(dir.X(), dir.Y(), dir.Z()));
 
       if (std::fabs(spt.X()-util::kBogusF)<std::numeric_limits<float>::epsilon() &&
@@ -243,10 +248,10 @@ namespace ShowerRecoTools{
     }
 
     //Actually make the thing.
-    recob::Track track = recob::Track(recob::TrackTrajectory(std::move(xyz), std::move(pxpypz),
-          std::move(flags), false), util::kBogusI, util::kBogusF, util::kBogusI,
-        recob::tracking::SMatrixSym55(), recob::tracking::SMatrixSym55(), pfparticle.key());
-
+    recob::Track track = recob::Track(recob::TrackTrajectory(std::move(xyz), std::move(pxpypz),std::move(flags), false),
+				      util::kBogusI, util::kBogusF, util::kBogusI,
+				      recob::tracking::SMatrixSym55(), recob::tracking::SMatrixSym55(), pfparticle.key());
+    
     ShowerEleHolder.SetElement(track,"InitialTrack");
 
     TVector3 Start = {track.Start().X(), track.Start().Y(), track.Start().Z()};

@@ -40,33 +40,41 @@ namespace ShowerRecoTools{
 
   class ShowerSlidingStandardCalodEdx:IShowerTool {
 
-    public:
+  public:
 
-      ShowerSlidingStandardCalodEdx(const fhicl::ParameterSet& pset);
+    ShowerSlidingStandardCalodEdx(const fhicl::ParameterSet& pset);
 
-      ~ShowerSlidingStandardCalodEdx();
+    ~ShowerSlidingStandardCalodEdx();
 
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder) override;
+    //Physics Function. Calculate the dEdx.
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event, 
+			 reco::shower::ShowerElementHolder& ShowerEleHolder) override;
 
-    private:
+  private:
 
-      // Define standard art tool interface
-      art::ServiceHandle<geo::Geometry> fGeom;
-      calo::CalorimetryAlg fCalorimetryAlg;
-      shower::TRACSAlg fTRACSAlg;
-      detinfo::DetectorProperties const* fDetProp;
+    //Servcies and Algorithms
+    art::ServiceHandle<geo::Geometry> fGeom;
+    calo::CalorimetryAlg fCalorimetryAlg;
+    shower::TRACSAlg fTRACSAlg;
+    detinfo::DetectorProperties const* fDetProp;
 
-      float fMinAngleToWire;
-      float fShapingTime;
-      float fMinDistCutOff;
-      float fMaxDist;
-      float fdEdxTrackLength;
-      bool  fUseMedian;
-      art::InputTag fPFParticleModuleLabel;
-      bool fCutStartPosition;
-
+    //fcl parameters
+    float fMinAngleToWire;  //Minimum angle between the wire direction and the shower
+                            //direction for the spacepoint to be used. Default means 
+                            //the cut has no effect. In radians.
+    float fShapingTime;     //Shaping time of the ASIC defualt so we don't cut on track 
+                            //going too much into the plane. In Microseconds
+    float fMinDistCutOff;   //Distance in wires a hit has to be from the start position
+                            //to be used 
+    float fMaxDist;         //Distance in wires a that a trajectory point can be from a
+                            //spacepoint to match to it.
+    float fdEdxTrackLength; //Max Distance a spacepoint can be away from the start of the
+                            //track. In cm
+    bool fUseMedian;        //Use the median value as the dEdx rather than the mean.
+    bool fCutStartPosition; //Remove hits using MinDistCutOff from the vertex as well. 
+    art::InputTag fPFParticleModuleLabel;
+ 
   };
 
 
@@ -81,7 +89,7 @@ namespace ShowerRecoTools{
     fShapingTime           = pset.get<float>("ShapingTime");
     fdEdxTrackLength       = pset.get<float>("dEdxTrackLength");
     fUseMedian             = pset.get<bool> ("UseMedian");
-    fCutStartPosition = pset.get<bool> ("CutStartPosition");
+    fCutStartPosition      = pset.get<bool> ("CutStartPosition");
     fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel");
   }
 
@@ -90,7 +98,8 @@ namespace ShowerRecoTools{
   }
 
   int ShowerSlidingStandardCalodEdx::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
+						      art::Event& Event, 
+						      reco::shower::ShowerElementHolder& ShowerEleHolder){
 
 
     // Shower dEdx calculation
@@ -172,8 +181,6 @@ namespace ShowerRecoTools{
       //Ignore spacepoints within a few wires of the vertex.
       double dist_from_start = (fTRACSAlg.SpacePointPosition(sp) - ShowerStartPosition).Mag();
 
-      // std::cout << "hit on plane: " << planeid.Plane << " dist_from_start: " << dist_from_start << std::endl;
-
       if(fCutStartPosition){
         if(dist_from_start < fMinDistCutOff*wirepitch){continue;}
 
@@ -227,7 +234,11 @@ namespace ShowerRecoTools{
       //If the direction is in the same direction as the wires within some tolerance the hit finding struggles. Let remove these.
       TVector3 PlaneDirection = fGeom->Plane(planeid).GetIncreasingWireDirection();
 
-      if(TrajDirection.Angle(PlaneDirection) < fMinAngleToWire){ mf::LogWarning("ShowerSlidingStandardCalodEdx") << "remove from angle cut" << std::endl;continue;}
+      if(TrajDirection.Angle(PlaneDirection) < fMinAngleToWire){ 
+	mf::LogWarning("ShowerSlidingStandardCalodEdx") 
+	  << "remove from angle cut" << std::endl;
+	continue;
+      }
 
       //If the direction is too much into the wire plane then the shaping amplifer cuts the charge. Lets remove these events.
       double velocity = fDetProp->DriftVelocity(fDetProp->Efield(), fDetProp->Temperature());
@@ -235,7 +246,11 @@ namespace ShowerRecoTools{
       double time_taken = TMath::Abs(distance_in_x/velocity);
 
       //Shaping time doesn't seem to exist in a global place so add it as a fcl.
-      if(fShapingTime < time_taken){mf::LogWarning("ShowerSlidingStandardCalodEdx") << "move for shaping time" << std::endl; continue;}
+      if(fShapingTime < time_taken){
+	mf::LogWarning("ShowerSlidingStandardCalodEdx")
+	  << "move for shaping time" << std::endl; 
+	continue;
+      }
 
       //If we still exist then we can be used in the calculation. Calculate the 3D pitch
       double trackpitch = (TrajDirection*(wirepitch/TrajDirection.Dot(PlaneDirection))).Mag();

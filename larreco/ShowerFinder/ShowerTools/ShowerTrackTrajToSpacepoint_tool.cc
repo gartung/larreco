@@ -11,15 +11,12 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindOneP.h"
-#include "canvas/Persistency/Common/FindManyP.h"
 
 //LArSoft Includes
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/TRACSAlg.h"
@@ -31,24 +28,25 @@ namespace ShowerRecoTools {
 
   class ShowerTrackTrajToSpacepoint: public IShowerTool {
 
-    public:
+  public:
 
-      ShowerTrackTrajToSpacepoint(const fhicl::ParameterSet& pset);
+    ShowerTrackTrajToSpacepoint(const fhicl::ParameterSet& pset);
 
-      ~ShowerTrackTrajToSpacepoint();
+    ~ShowerTrackTrajToSpacepoint();
 
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
+    //Match trajectory points to the spacepoints
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
 
-    private:
+  private:
 
-      float fMaxDist; //Max distance that a spacepoint can be from a trajecotry point to be matched
-      art::InputTag              fPFParticleModuleLabel;
+    float fMaxDist; //Max distance that a spacepoint can be from a trajectory
+                    //point to be matched
+    art::InputTag fPFParticleModuleLabel;
 
-      shower::TRACSAlg fTRACSAlg;
+    shower::TRACSAlg fTRACSAlg;
   };
 
 
@@ -64,9 +62,9 @@ namespace ShowerRecoTools {
   }
 
   int ShowerTrackTrajToSpacepoint::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event,
-      reco::shower::ShowerElementHolder& ShowerEleHolder){
-
+						    art::Event& Event,
+						    reco::shower::ShowerElementHolder& ShowerEleHolder){
+    
     //Check the Track has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrack")){
       mf::LogError("ShowerTrackTrajToSpacepoint") << "Initial track not set"<< std::endl;

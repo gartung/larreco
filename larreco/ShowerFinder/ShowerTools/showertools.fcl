@@ -8,18 +8,20 @@ BEGIN_PROLOG
 showerpcadirection:{
     tool_type: ShowerPCADirection
     PFParticleModuleLabel: "pandora"
-    NSegments: 6
-    UseStartPosition: true
-    ChargeWeighted:   true
-    TRACSAlg:     @local::standard_tracsalg
-    CalorimetryAlg:   @local::standard_calorimetryalgmc
+    NSegments: 6           #If using the RMS gradient to decide what direction to go in
+                           #this is the number of segements to split the shower into.
+    UseStartPosition: true #The direction of the PCA is in the direction of 
+                           #(Shower Center - Start Position)
+    ChargeWeighted:   true #Apply a charge weighting in the PCA.
+    TRACSAlg:         @local::standard_tracsalg
 }
 
 showerlinearenergy:{
     tool_type:  ShowerLinearEnergy
     PFParticleModuleLabel: "pandora"
-    UGradient:   0.00155644
-    UIntercept:  5.92931
+    UGradient:   0.00155644  #Gradient of the linear graph of the total charge to total
+                             #energy, in the U plane. in MeV/ADC
+    UIntercept:  5.92931     #Intercept of the linear graph of the total charge to total                              #energy in the plane. MeV 
     VGradient:   0.00173915
     VIntercept:  -2.13307
     ZGradient:   0.00153631
@@ -33,102 +35,125 @@ showerlinearenergy:{
 }
 
 shower2Dlinearregressiontrackhitfinder:{
-    tool_type:       Shower2DLinearRegressionTrackHitFinder
-    TRACSAlg:    @local::standard_tracsalg
-    Nfitpass:        4
-    Nfithits:        [83, 50, 33, 33]
-    Toler:           [50., 8.3, 3.3, 3.3 ]
-    ApplyChargeWeight: true
+    tool_type:             Shower2DLinearRegressionTrackHitFinder
+    TRACSAlg:              @local::standard_tracsalg
+    Nfitpass:              4                     #Number of time to fit the straight line
+                                                 #to the hits
+    Nfithits:              [83, 50, 33, 33]      #Max Number of hits to fit to
+    Toler:                 [50., 8.3, 3.3, 3.3 ] #Tolerance or each interaction. Defined
+                                                 #as the perpendicualar distance from 
+                                                 #the best fit line. 
+    ApplyChargeWeight:     true                  #Apply charge weighting to the fit.
     PFParticleModuleLabel: "pandora"
-    HitsModuleLabel: "linecluster"
+    HitsModuleLabel:       "linecluster"
     }
 
 showerpmatrackfinder:{
     tool_type: ShowerPMATrackFinder
-    MinTrajectoryPoints: 2
+    MinTrajectoryPoints: 2 #Max number of trajectory points 
+                           #required to say the fit as good
     ProjectionMatchingAlg: @local::standard_projectionmatchingalg
     }
 
 showerpandoraslidingfittrackfinder:{
     tool_type: ShowerPandoraSlidingFitTrackFinder
-    SlidingFitHalfWindow: 20
-    MinTrajectoryPoints: 2
+    SlidingFitHalfWindow: 20 #Fill definition
+    MinTrajectoryPoints: 2   #Max number of trajectory points 
+                             #required to say the fit as good
     }
 
 shower3Dtrackhitfinder:{
     tool_type: Shower3DTrackHitFinder
     TRACSAlg:          @local::standard_tracsalg
     PFParticleModuleLabel: "pandora"
-    MaxProjectionDist:     10
-    MaxPerpendicularDist:  1
-    ForwardHitsOnly:       true
+    MaxProjectionDist:     10     #Max distance a hit can be in the direction of 
+                                  #the shower in cm
+    MaxPerpendicularDist:  1      #Max distance a hit can be in the perpendicular
+                                  #direction of the shower in cm
+    ForwardHitsOnly:       true   #Don't use hits behind the vertex.
     DebugEVD:              false
-    AllowDyanmicLength:   false
+    AllowDyanmicLength:    false  #If the Track legth is saved use that instead of 
+                                  #MaxProjectionDist
 }
 
 showerstartposition:{
     tool_type: ShowerStartPosition
     PFParticleModuleLabel: "pandora"
-    UseCollectionOnly: false
     TRACSAlg: @local::standard_tracsalg
 }
 
 showerstandardcalodedx:{
     tool_type: ShowerStandardCalodEdx
     CalorimetryAlg:  @local::standard_calorimetryalgmc
-    MaxHitPlane:     true
-    MissFirstPoint:  true
-    dEdxTrackLength: 3
+    MaxHitPlane:     true #Set the best planes as the one with the most hits 
+    MissFirstPoint:  true #Do not use any hits from the first wire
+    dEdxTrackLength: 3    #Max length from a hit can be to the start point in cm.
 }
 
 showertrackhitdirection:{
     tool_type: ShowerTrackHitDirection
     TRACSAlg:          @local::standard_tracsalg
-    UsePandoraVertex: true
-    HitModuleLabel: "linecluster"
+    UsePandoraVertex:      true #Direction from point defined as 
+                                #(Position of Hit - Vertex) rather than 
+                                #(Position of Hit - Track Start Point).
+    HitModuleLabel:        "linecluster"
     PFParticleModuleLabel: "pandora"
 }
 
 showertrackspacepointdirection:{
     tool_type: ShowerTrackSpacePointDirection
     TRACSAlg:          @local::standard_tracsalg
-    UsePandoraVertex: true
+    UsePandoraVertex: true #Direction from point defined as 
+                           #(Position of SP - Vertex) rather than 
+                           #(Position of SP - Track Start Point).
 }
 
 showertrackdirection:{
     tool_type: ShowerTrackDirection
     TRACSAlg:          @local::standard_tracsalg
-    UsePandoraVertex: true
-    UsePositionInfo: true
+    UsePandoraVertex: true #Direction from point defined as 
+                           #(Position of traj point - Vertex) rather than 
+                           #(Position of traj point - Track Start Point).
+    UsePositionInfo:  true #Don't use the directionAt point rather than definition above.
+                           #i.e. ((Position of traj point + 1) - (Position of traj point)
     DebugEVD:         false
 }
 
 showertracktrajectorypointdirection: {
     tool_type: ShowerTrackTrajectoryPointDirection
-    TrajPoint: 1
-    DebugEVD: false
-    UsePandoraVertex: true
-    UsePositonInfo: true
+    TrajPoint:         1   #Trajectory point to get the direction from.    
+    UsePandoraVertex: true #Direction from point defined as 
+                           #(Position of traj point - Vertex) rather than 
+                           #(Position of traj point - Track Start Point).
+    UsePositonInfo:   true #Don't use the directionAt point rather than definition above.
+                           #i.e. ((Position of traj point + 1) - (Position of traj point)
     }
 
 showersmarttracktrajectorypointdirection: {
     tool_type: ShowerSmartTrackTrajectoryPointDirection
-    UsePandoraVertex: false
-    AllowDynamicSliding: false
-    DebugEVD: false
-    UseStartPos: false
-    UsePositionInfo: true
-    AngleCut: 0.01745
+    UsePandoraVertex:    false  #Direction from point defined as 
+                                #(Position of traj point - Vertex) rather than 
+                                #(Position of traj point - Track Start Point).
+    AllowDynamicSliding: true   #Rather than evualte the angle from the start use 
+                                #the previous trajectory point position.
+    UsePositionInfo:     false  #Don't use the DirectionAtPoint rather than 
+                                #definition above.
+                                #((Position of traj point + 1) - (Position of traj point)
+    UseStartPos:         false  #Rather the using the angles between the directions 
+                                #from start position to the trajectory points 
+                                #use the angle between the the points themselves 
+    AngleCut:           0.01745 #Angle between the directions has to be less than
+                                #this value in radians
 }
 
 showertrackpcadirection:{
     tool_type: ShowerTrackPCADirection
-    DebugEVD:         false
-    ChargeWeighted:   true
-    MinPCAPoints:     10
+    DebugEVD:               false
+    ChargeWeighted:         true      #Should the PCA be charge weighted.
+    MinPCAPoints:           10        #Number of spacepoints needed to the anlaysis.
     PFParticleModuleLabel: "pandora"
     HitModuleLabel:        "linecluster"
-    TRACSAlg:     @local::standard_tracsalg
+    TRACSAlg:         @local::standard_tracsalg
     CalorimetryAlg:   @local::standard_calorimetryalgmc
 }
 
@@ -145,9 +170,11 @@ showerdirectioncheater:{
     TRACSAlg:           @local::standard_tracsalg
     TRACSCheatingAlg:   @local::standard_tracscheatingalg
     PFParticleModuleLabel:  "pandora"
-    NSegments:              6
-    RMSFlip:                false
-    VertexFlip:             false
+    NSegments:              6     #Number of segements the shower should be split into
+                                  #for the RMS analysis
+    RMSFlip:                false #Decide to flip the direction on the RMS info
+    VertexFlip:             false #Decide to flip the direction based on the vertex 
+                                  #position relative shower center.
 }
 
 showertrackfindercheater:{
@@ -165,40 +192,28 @@ showertracktrajtospacepoint:{
     tool_type: ShowerTrackTrajToSpacepoint
     TRACSAlg:            @local::standard_tracsalg
     PFParticleModuleLabel: "pandora"
-    MaxDist:               1
+    MaxDist:               1  #Max Distance a trajectory point can be away
+                              #from a spacepoint in cm.
 }
 
 showerslidingstandardcalodedx:{
     tool_type: ShowerSlidingStandardCalodEdx
-    TRACSAlg:          @local::standard_tracsalg
-    CalorimetryAlg:        @local::standard_calorimetryalgmc
-    MinDistCutOff:         2 #Distance in wires a hit has to be from the start position to be used
-    MaxDist:               2 #Distance in wires a that a trajectory point can be from a spacepoint to match to it.
-    MinAngleToWire:        0 #Minimum angle between the wire direction and the shower direction for the spacepoint to be used
-    ShapingTime:           999
-    dEdxTrackLength:       999 #Max Distance a spacepoint can be away from the start of the track.
-    UseMedian:              true
+    TRACSAlg:       @local::standard_tracsalg
+    CalorimetryAlg: @local::standard_calorimetryalgmc
+    MinDistCutOff:         2    #Distance in wires a hit has to be from the start 
+                                #position of the track to be used
+    MaxDist:               2    #Distance in wires a that a trajectory point can
+                                #be from a spacepoint to match to it.
+    MinAngleToWire:        0    #Minimum angle between the wire direction and the shower 
+                                #direction for the spacepoint to be used. in radians 
+                                #Default means the cut has no effect.
+    ShapingTime:           999  #Defualt means the cut has no effect. in microseconds.
+    dEdxTrackLength:       999  #Max Distance a spacepoint can be away 
+                                #from the start of the track. in seconds
+    CutStartPosition:     false #Remove hits using MinDistCutOff from the vertex as well 
+    UseMedian:            true  #Use the median dEdx rather the mean.
     PFParticleModuleLabel: "pandora"
 }
 
-showerlinearenergycheater:{
-    tool_type:               ShowerLinearEnergyCheat
-    TRACSAlg:            @local::standard_tracsalg
-    TRACSCheatingAlg:    @local::standard_tracscheatingalg
-    PFParticleModuleLabel:  "pandora"
-    HitModuleLabel:         "linecluster"
-    UGradient:   0.00155644
-    UIntercept:  5.92931
-    VGradient:   0.00173915
-    VIntercept:  -2.13307
-    ZGradient:   0.00153631
-    ZIntercept:  5.19711
-    XGradient:   0
-    XIntercept:  0
-    YGradient:   0
-    YIntercept:  0
-    ThreeDGradient:  0
-    ThreeDIntercept: 0
-}
 
 END_PROLOG

@@ -9,29 +9,20 @@
 #include "larreco/ShowerFinder/ShowerTools/IShowerTool.h"
 
 //Framework Includes
-#include "fhiclcpp/ParameterSet.h"
-#include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Event.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
 //LArSoft Includes
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "larcore/Geometry/Geometry.h"
-#include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/TRACSAlg.h"
-
 
 //C++ Includes
 #include <iostream>
@@ -46,22 +37,26 @@ namespace ShowerRecoTools{
 
   class ShowerStartPosition: public IShowerTool {
 
-    public:
-
-      ShowerStartPosition(const fhicl::ParameterSet& pset);
-
-      ~ShowerStartPosition();
-
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
-
-      art::InputTag fPFParticleModuleLabel;
-
+  public:
+    
+    ShowerStartPosition(const fhicl::ParameterSet& pset);
+    
+    ~ShowerStartPosition();
+    
+    //Calculate the start position
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
+    
+    
     private:
-      shower::TRACSAlg fTRACSAlg;
+    
+    //algorithms
+    shower::TRACSAlg fTRACSAlg;
+    
+    //fcl parameters
+    art::InputTag fPFParticleModuleLabel; 
 
   };
 
@@ -77,7 +72,8 @@ namespace ShowerRecoTools{
   }
 
   int ShowerStartPosition::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
+					    art::Event& Event, 
+					    reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     //Get the vertices.
     art::Handle<std::vector<recob::Vertex> > vtxHandle;
@@ -88,7 +84,7 @@ namespace ShowerRecoTools{
       throw cet::exception("ShowerStartPosition") << "Could not get the pandora vertices. Something is not configured correctly. Please give the correct pandora module label. Stopping";
       return 1;
     }
-
+    
     //Get the spacepoints handle and the hit assoication
     art::Handle<std::vector<recob::SpacePoint> > spHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, spHandle)){

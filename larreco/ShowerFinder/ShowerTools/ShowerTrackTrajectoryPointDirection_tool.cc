@@ -15,58 +15,53 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/FindManyP.h"
 
 //LArSoft Includes
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
-#include <cmath>
 
 //Root Includes
 #include "TVector3.h"
 #include "TMath.h"
-#include "TH1.h"
-
-#include "TFile.h"
 
 namespace ShowerRecoTools {
 
 
   class ShowerTrackTrajectoryPointDirection:IShowerTool {
 
-    public:
+  public:
 
-      ShowerTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset);
+    ShowerTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset);
 
-      ~ShowerTrackTrajectoryPointDirection();
+    ~ShowerTrackTrajectoryPointDirection();
 
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
+    //Calculate the direction from the inital track
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
 
-    private:
+  private:
 
-      //fcl
-      bool fUsePandoraVertex;
-      bool fDebugEVD;
-      bool fUsePositonInfo;
-      int  fTrajPoint;
+    //fcl
+    bool fUsePandoraVertex; //Direction from point defined as 
+                            //(Position of traj point - Vertex) rather than 
+                            //(Position of traj point - Track Start Point).
+    bool fUsePositonInfo;   //Don't use the direction At point rather than definition 
+                            //above.  
+                            //((Position of traj point + 1) - (Position of traj point).
+    int  fTrajPoint;        //Trajectory point to get the direction from.   
   };
 
 
   ShowerTrackTrajectoryPointDirection::ShowerTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset)
   {
     fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
-    fDebugEVD                 = pset.get<bool>("DebugEVD");
     fUsePositonInfo           = pset.get<bool>("UsePositonInfo");
     fTrajPoint                = pset.get<int>("TrajPoint");
   }
@@ -76,7 +71,9 @@ namespace ShowerRecoTools {
   }
 
 
-  int ShowerTrackTrajectoryPointDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, art::Event& Event, reco::shower::ShowerElementHolder& ShowerEleHolder){
+  int ShowerTrackTrajectoryPointDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle, 
+							    art::Event& Event,
+							    reco::shower::ShowerElementHolder& ShowerEleHolder){
 
     //Check the Track has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrack")){
@@ -93,10 +90,9 @@ namespace ShowerRecoTools {
 
     //ignore bogus info.
     auto flags = InitialTrack.FlagsAtPoint(fTrajPoint);
-    if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-        || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+    if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
     {
-      mf::LogError("ShowerTrackTrajectoryPointDirection") << "Bogus trajectory poitn bailing."<< std::endl;
+      mf::LogError("ShowerTrackTrajectoryPointDirection") << "Bogus trajectory point bailing."<< std::endl;
       return 1;
     }
 

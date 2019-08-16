@@ -12,13 +12,11 @@
 //Framework Includes
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-#include "art_root_io/TFileService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Persistency/Common/Ptr.h"
 
 //LArSoft Includes
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -34,25 +32,28 @@ namespace ShowerRecoTools{
 
   class ShowerStandardCalodEdx:IShowerTool {
 
-    public:
+  public:
 
-      ShowerStandardCalodEdx(const fhicl::ParameterSet& pset);
+    ShowerStandardCalodEdx(const fhicl::ParameterSet& pset);
 
-      ~ShowerStandardCalodEdx();
+    ~ShowerStandardCalodEdx();
 
-      //Generic Direction Finder
-      int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-          art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
-          ) override;
+    //Generic Direction Finder
+    int CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
+			 art::Event& Event,
+			 reco::shower::ShowerElementHolder& ShowerEleHolder
+			 ) override;
+    
+  private:
+    
+    //Define the services and algorithms
+    art::ServiceHandle<geo::Geometry> fGeom;
+    calo::CalorimetryAlg              fCalorimetryAlg;
 
-    private:
-
-      art::ServiceHandle<geo::Geometry> fGeom;
-      calo::CalorimetryAlg fCalorimetryAlg;
-      double fdEdxTrackLength;
-      bool fMaxHitPlane;
-      bool fMissFirstPoint;
+    //fcl parameters.
+    double fdEdxTrackLength; //Max length from a hit can be to the start point in cm.
+    bool   fMaxHitPlane;     //Set the best planes as the one with the most hits
+    bool   fMissFirstPoint;  //Do not use any hits from the first wire.
 
   };
 
@@ -70,10 +71,10 @@ namespace ShowerRecoTools{
   }
 
   int ShowerStandardCalodEdx::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
-      art::Event& Event,
-      reco::shower::ShowerElementHolder& ShowerEleHolder
-      ){
-
+					       art::Event& Event,
+					       reco::shower::ShowerElementHolder& ShowerEleHolder
+					       ){
+    
 
     // Shower dEdx calculation
     if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
@@ -117,7 +118,9 @@ namespace ShowerRecoTools{
       art::Ptr<recob::Hit> hit = trackhits.at(hitIt);
       geo::PlaneID hitWire = hit->WireID();
       geo::TPCID TPC = hitWire.asTPCID();
-      if (TPC==vtxTPC){ // only get hits from the same TPC as the vertex
+
+      //only get hits from the same TPC as the vertex
+      if (TPC==vtxTPC){  
         (trackHits.at(hitWire.Plane)).push_back(hit);
       }
     }
@@ -129,7 +132,7 @@ namespace ShowerRecoTools{
 
     for (unsigned int plane=0; plane<numPlanes; ++plane) {
       std::vector<art::Ptr<recob::Hit> > trackPlaneHits = trackHits.at(plane);
-      // std::cout<<"Plane "<<plane<<" with trackhits "<<trackPlaneHits.size()<<std::endl;
+
       if (trackPlaneHits.size()){
 
         double dEdx = -999;
@@ -137,6 +140,8 @@ namespace ShowerRecoTools{
         double avgT  = 0;
         double pitch = 0;
 
+
+	//Calculate the pitch
         double wirepitch = fGeom->WirePitch(trackPlaneHits.at(0)->WireID().planeID());
         double angleToVert = fGeom->WireAngleToVertical(fGeom->Plane(plane).View(),
 							trackPlaneHits[0]->WireID().planeID()) - 0.5*TMath::Pi();
@@ -152,12 +157,14 @@ namespace ShowerRecoTools{
           int w0 = trackPlaneHits.at(0)->WireID().Wire;
 
           for (auto const& hit: trackPlaneHits){
+
             // Get the wire for each hit
             int w1 = hit->WireID().Wire;
             if (fMissFirstPoint && w0==w1){
               continue;
             }
 
+	    //Ignore hits that are too far away.
             if (std::abs((w1-w0)*pitch)<fdEdxTrackLength){
               vQ.push_back(hit->Integral());
               totQ += hit->Integral();
@@ -173,12 +180,11 @@ namespace ShowerRecoTools{
               bestPlane = plane;
             }
 
+	    //Get the median and calculate the dEdx using the algorithm.
             double dQdx = TMath::Median(vQ.size(), &vQ[0])/pitch;
             dEdx = fCalorimetryAlg.dEdx_AREA(dQdx, avgT/nhits, trackPlaneHits[0]->WireID().Plane);
 
-            // std::cout<<"dQdx: "<<dQdx<<" dEdx: "<<dEdx<<" avgT/nhits: "<< avgT/nhits <<" numHits: "<<nhits<< " pitch: "<<pitch<<" plane: "<<trackPlaneHits[0]->WireID().Plane<<std::endl;
-
-            if (isinf(dEdx)) {
+	    if (isinf(dEdx)) {
               dEdx=-999;
             };
 
