@@ -20,8 +20,9 @@ showerlinearenergy:{
     tool_type:  ShowerLinearEnergy
     PFParticleModuleLabel: "pandora"
     UGradient:   0.00155644  #Gradient of the linear graph of the total charge to total
-                             #energy, in the U plane. in MeV/ADC
-    UIntercept:  5.92931     #Intercept of the linear graph of the total charge to total                              #energy in the plane. MeV 
+                             #energy, in the U plane. in MeV/ADC.
+    UIntercept:  5.92931     #Intercept of the linear graph of the total charge to total                             
+                             #energy in the plane. MeV 
     VGradient:   0.00173915
     VIntercept:  -2.13307
     ZGradient:   0.00153631
