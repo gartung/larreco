@@ -165,7 +165,7 @@ namespace ShowerRecoTools {
         }
 
       } catch(...){
-        mf::LogError("ShowerLinearEnergy") <<"No energy calculation for plane "<<plane<<std::endl;
+        mf::LogWarning("ShowerLinearEnergy") <<"No energy calculation for plane "<<plane<<std::endl;
         Energy = -999;
       }
       ShowerLinearEnergy.push_back(Energy);
@@ -176,7 +176,7 @@ namespace ShowerRecoTools {
       return 1;
     }
 
-    //Tod do
+    //TODO
     std::vector<double> EnergyError = {-999,-999,-999};
 
     ShowerEleHolder.SetElement(ShowerLinearEnergy,EnergyError,"ShowerEnergy");

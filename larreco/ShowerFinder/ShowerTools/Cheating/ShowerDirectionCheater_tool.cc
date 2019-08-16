@@ -138,7 +138,7 @@ namespace ShowerRecoTools {
       std::pair<int,double> ShowerTrackInfo = fTRACSCheatingAlg.TrueParticleIDFromTrueChain(showersMothers,showerHits,2);
 
       if(ShowerTrackInfo.first==-99999) {
-        mf::LogWarning("ShowerStartPosition") << "True shower not found, returning";
+        mf::LogError("ShowerDirectionCheater") << "True shower not found, returning";
         return 1;
       }
       trueParticle = trueParticles[ShowerTrackInfo.first];
