@@ -112,12 +112,12 @@ namespace ShowerRecoTools{
     try{
       vtx_cand = fmv.at(pfparticle.key());
     } catch(...){
-      mf::LogWarning("ShowerStartPosition") << "PFP-Vertex assan not set, returning";
+      mf::LogError("ShowerStartPosition") << "PFP-Vertex assan not set, returning";
       return 1;
     }
     //If there is more than one then fail becuase I don't think that this can be the case
     if(vtx_cand.size() != 1){
-      mf::LogWarning("ShowerStartPosition") << "Wrong number of vertices: "<<vtx_cand.size()<<", returning";
+      mf::LogError("ShowerStartPosition") << "Wrong number of vertices: "<<vtx_cand.size()<<", returning";
       return 1;
     }
 

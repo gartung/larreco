@@ -77,14 +77,14 @@ namespace ShowerRecoTools {
     //Get the hits from the shower:
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, pfpHandle)){
-      throw cet::exception("ShowerLinearEnergy") << "Could not get the pandora pf particles. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
+      throw cet::exception("ShowerStartPositionCheater") << "Could not get the pandora pf particles. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
       return 1;
     }
 
     //Get the clusters
     art::Handle<std::vector<recob::Cluster> > clusHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, clusHandle)){
-      throw cet::exception("ShowerLinearEnergy") << "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
+      throw cet::exception("ShowerStartPositionCheater") << "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
       return 1;
     }
 
@@ -106,7 +106,7 @@ namespace ShowerRecoTools {
     std::pair<int,double> ShowerTrackInfo = fTRACSCheatingAlg.TrueParticleIDFromTrueChain(showersMothers,showerHits,2);
 
     if(ShowerTrackInfo.first==-99999) {
-      mf::LogWarning("ShowerStartPosition") << "True Shower Not Found";
+      mf::LogError("ShowerStartPositionCheater") << "True Shower Not Found";
       return 1;
     }
 

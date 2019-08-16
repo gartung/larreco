@@ -81,7 +81,7 @@ namespace ShowerRecoTools {
     //Get the hits from the shower:
     art::Handle<std::vector<recob::PFParticle> > pfpHandle;
     if (!Event.getByLabel(fPFParticleModuleLabel, pfpHandle)){
-      throw cet::exception("ShowerLinearEnergy") << "Could not get the pandora pf particles. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
+      throw cet::exception("ShowerTrackFinderCheater") << "Could not get the pandora pf particles. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
       return 1;
     }
 
@@ -97,7 +97,7 @@ namespace ShowerRecoTools {
       //Get the clusters
       art::Handle<std::vector<recob::Cluster> > clusHandle;
       if (!Event.getByLabel(fPFParticleModuleLabel, clusHandle)){
-        throw cet::exception("ShowerLinearEnergy") << "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
+        throw cet::exception("ShowerTrackFinderCheater") << "Could not get the pandora clusters. Something is not cofingured coreectly Please give the correct pandoa module label. Stopping";
         return 1;
       }
       art::FindManyP<recob::Cluster> fmc(pfpHandle, Event, fPFParticleModuleLabel);
@@ -118,7 +118,7 @@ namespace ShowerRecoTools {
       std::pair<int,double> ShowerTrackInfo = fTRACSCheatingAlg.TrueParticleIDFromTrueChain(showersMothers,showerHits,2);
 
       if(ShowerTrackInfo.first==-99999) {
-        mf::LogWarning("ShowerStartPosition") << "True Shower Not Found";
+        mf::LogError("ShowerStartPosition") << "True Shower Not Found";
         return 1;
       }
       trueParticle = trueParticles[ShowerTrackInfo.first];
@@ -126,11 +126,11 @@ namespace ShowerRecoTools {
 
     //This is all based on the shower vertex being known. If it is not lets not do the track
     if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
-      mf::LogError("ShowerTrackFinder") << "Start position not set, returning "<< std::endl;
+      mf::LogError("ShowerTrackFinderCheater") << "Start position not set, returning "<< std::endl;
       return 1;
     }
     if(!ShowerEleHolder.CheckElement("ShowerDirection")){
-      mf::LogError("ShowerTrackFinder") << "Direction not set, returning "<< std::endl;
+      mf::LogError("ShowerTrackFinderCheater") << "Direction not set, returning "<< std::endl;
       return 1;
     }
 
