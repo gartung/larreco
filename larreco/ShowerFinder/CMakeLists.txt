@@ -1,57 +1,5 @@
-<<<<<<< HEAD
+add_subdirectory(ShowerReco3D)
 add_subdirectory(ShowerTools)
-add_subdirectory(ShowerReco3D)
-add_subdirectory(job)
-
-art_make( 
-         LIB_LIBRARIES
-			lardataobj_RawData
-			lardataobj_RecoBase 
-                        larcorealg_Geometry
-                        larcore_Geometry_Geometry_service
-			art_Persistency_Common
-			art_Persistency_Provenance
-			art_Utilities
-			canvas
-			${MF_MESSAGELOGGER}
-	                ${FHICLCPP}
-			cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
-			${Boost_SYSTEM_LIBRARY}
-          MODULE_LIBRARIES 
-#	  		larreco_ShowerFinder
-                        larsim_MCCheater_BackTrackerService_service
-	                larsim_MCCheater_ParticleInventoryService_service
-			larreco_RecoAlg
-                        lardataobj_RecoBase
-			lardataobj_MCBase
-                        larcorealg_Geometry
-                        larcore_Geometry_Geometry_service
-                        larreco_Calorimetry
-                        lardataobj_AnalysisBase
-                        lardata_Utilities
-                        larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
-                        nusimdata_SimulationBase
-                        ${ART_FRAMEWORK_CORE}
-			${ART_FRAMEWORK_PRINCIPAL}
-			${ART_FRAMEWORK_SERVICES_REGISTRY}
-			${ART_FRAMEWORK_SERVICES_BASIC}
-			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-			${ART_ROOT_IO_TFILESERVICE_SERVICE}
-                        art_Framework_Services_System_TriggerNamesService_service
-			art_Persistency_Common
-			art_Utilities
-			canvas
-			${MF_MESSAGELOGGER}
-			
-	                ${FHICLCPP}
-			cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
-			larreco_RecoAlg_MCRecoUtils 
-         )
-
-=======
-add_subdirectory(ShowerReco3D)
 add_subdirectory(job)
 
 art_make(MODULE_LIBRARIES
@@ -63,7 +11,6 @@ art_make(MODULE_LIBRARIES
           ${ART_ROOT_IO_TFILESERVICE_SERVICE}
           ${MF_MESSAGELOGGER}
         )
->>>>>>> develop
 
 install_headers()
 install_fhicl()
