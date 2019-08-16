@@ -130,8 +130,6 @@ namespace ShowerRecoTools {
 
     //Check if we are pointing the correct direction or not, First try the start position
     if(fUseStartPosition){
-      bool test = ShowerEleHolder.CheckElement("ShowerStartPosition");
-      std::cout<<"TEST 3: "<<test<<std::endl;
       if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
         throw cet::exception("ShowerPCADirection") << "fUseStartPosition is true but start position is not set. Stopping.";
         return 1;

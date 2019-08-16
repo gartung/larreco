@@ -69,20 +69,20 @@ namespace ShowerRecoTools {
 
     //Check the Track has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrack")){
-      mf::LogError("ShowerTrackDirection") << "Initial track not set"<< std::endl;
+      mf::LogError("ShowerTrackTrajToSpacepoint") << "Initial track not set"<< std::endl;
       return 0;
     }
 
     //Check the start position is set.
     if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
-      mf::LogError("ShowerTrackSpacePointDirection") << "Start position not set, returning "<< std::endl;
+      mf::LogError("ShowerTrackTrajToSpacepoint") << "Start position not set, returning "<< std::endl;
       return 0;
     }
 
 
     //Check the Track Hits has been defined
     if(!ShowerEleHolder.CheckElement("InitialTrackSpacePoints")){
-      mf::LogError("ShowerTrackSpacePointDirection") << "Initial track spacepoints not set"<< std::endl;
+      mf::LogError("ShowerTrackTrajToSpacepoint") << "Initial track spacepoints not set"<< std::endl;
       return 0;
     }
 

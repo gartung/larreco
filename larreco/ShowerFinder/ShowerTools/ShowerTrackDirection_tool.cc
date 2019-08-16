@@ -175,7 +175,7 @@ namespace ShowerRecoTools {
         ShowerEleHolder.SetElement(Direction,DirectionErr,"ShowerDirection");
       }
       else{
-        mf::LogError("ShowerDirection") << "None of the points are within 1 sigma"<< std::endl;
+        mf::LogError("ShowerTrackDirection") << "None of the points are within 1 sigma"<< std::endl;
         return 1;
       }
 

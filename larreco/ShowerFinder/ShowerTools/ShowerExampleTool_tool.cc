@@ -95,7 +95,7 @@ namespace ShowerRecoTools {
     if (Event.getByLabel(fPFParticleModuleLabel, vtxHandle))
       art::fill_ptr_vector(vertices, vtxHandle);
     else {
-      throw cet::exception("ShowerStartPosition") << "Could not get the pandora vertices. Something is not configured correctly. Please give the correct pandora module label. Stopping";
+      throw cet::exception("ShowerExampleTool") << "Could not get the pandora vertices. Something is not configured correctly. Please give the correct pandora module label. Stopping";
       return 1;
     }
 

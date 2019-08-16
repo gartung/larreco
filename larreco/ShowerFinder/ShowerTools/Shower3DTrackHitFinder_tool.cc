@@ -184,7 +184,7 @@ namespace ShowerRecoTools{
     ShowerEleHolder.SetElement(trackSpacePoints,"InitialTrackSpacePoints");
 
     if (fDebugEVD){
-      std::cout<<"Do DebugEVD"<<std::endl;
+      // mf::LogInfo("Shower3DTrackHitFinder") << "Doing DebugEVD";
       fTRACSAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
     }
 

@@ -109,7 +109,7 @@ namespace ShowerRecoTools {
       if(fUsePandoraVertex){
         //Check the Track has been defined
         if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
-          mf::LogError("ShowerDirection") << "Shower start position not set"<< std::endl;
+          mf::LogError("ShowerTrackTrajectoryPointDirection") << "Shower start position not set"<< std::endl;
           return 1;
         }
         TVector3 StartPosition_vec = {-999,-999,-999};

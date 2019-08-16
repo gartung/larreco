@@ -133,9 +133,6 @@ namespace ShowerRecoTools{
       TVector3 ShowerStartPosition = {xyz[0], xyz[1], xyz[2]};
       TVector3 ShowerStartPositionErr = {-999, -999, -999};
       ShowerEleHolder.SetElement(ShowerStartPosition,ShowerStartPositionErr,"ShowerStartPosition");
-      std::cout<<"TEST 1"<<std::endl;
-      bool test = ShowerEleHolder.CheckElement("ShowerStartPosition");
-      std::cout<<"TEST 2: "<<test<<std::endl;
       return 0;
     }
 

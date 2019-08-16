@@ -78,7 +78,7 @@ namespace ShowerRecoTools{
 
   void ShowerPMATrackFinder::InitialiseProducers(){
     if(producerPtr == NULL){
-      mf::LogWarning("ShowerStartPosition") << "The producer ptr has not been set" << std::endl;
+      mf::LogWarning("ShowerPMATrackFinder") << "The producer ptr has not been set" << std::endl;
       return;
     }
 

@@ -75,7 +75,7 @@ namespace ShowerRecoTools{
 
   void ShowerPandoraSlidingFitTrackFinder::InitialiseProducers(){
     if(producerPtr == NULL){
-      mf::LogWarning("ShowerStartPosition") << "The producer ptr has not been set" << std::endl;
+      mf::LogWarning("ShowerPandoraSlidingFitTrackFinder") << "The producer ptr has not been set" << std::endl;
       return;
     }
 
