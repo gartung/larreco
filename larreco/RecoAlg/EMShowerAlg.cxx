@@ -35,28 +35,27 @@ using lar::to_element;
 shower::EMShowerAlg::EMShowerAlg(fhicl::ParameterSet const& pset,
                                  int const debug)
   : fDebug{debug}
+  , fMinTrackLength{pset.get<double>("MinTrackLength")}
+  , fdEdxTrackLength{pset.get<double>("dEdxTrackLength")}
+  , fSpacePointSize{pset.get<double>("SpacePointSize")}
+  , fNfitpass{pset.get<unsigned int>("Nfitpass")}
+  , fNfithits{pset.get<std::vector<unsigned int>>("Nfithits")}
+  , fToler{ pset.get<std::vector<double>>("Toler")}
   , fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
   , fShowerEnergyAlg(pset.get<fhicl::ParameterSet>("ShowerEnergyAlg"))
   , fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg"))
   , fProjectionMatchingAlg(
       pset.get<fhicl::ParameterSet>("ProjectionMatchingAlg"))
+  , fDetector{pset.get<std::string>("Detector", "dune35t")}
+  // tmp
+  , fMakeGradientPlot{pset.get<bool>("MakeGradientPlot", false)}
+  , fMakeRMSGradientPlot{pset.get<bool>("MakeRMSGradientPlot", false)}
+  , fNumShowerSegments{pset.get<int>("NumShowerSegments", 4)}
 {
-  fMinTrackLength = pset.get<double>("MinTrackLength");
-  fdEdxTrackLength = pset.get<double>("dEdxTrackLength");
-  fSpacePointSize = pset.get<double>("SpacePointSize");
-  fNfitpass = pset.get<unsigned int>("Nfitpass");
-  fNfithits = pset.get<std::vector<unsigned int>>("Nfithits");
-  fToler = pset.get<std::vector<double>>("Toler");
   if (fNfitpass != fNfithits.size() || fNfitpass != fToler.size()) {
     throw art::Exception(art::errors::Configuration)
       << "EMShowerAlg: fNfithits and fToler need to have size fNfitpass";
   }
-  fDetector = pset.get<std::string>("Detector", "dune35t");
-
-  // tmp
-  fMakeGradientPlot = pset.get<bool>("MakeGradientPlot", false);
-  fMakeRMSGradientPlot = pset.get<bool>("MakeRMSGradientPlot", false);
-  fNumShowerSegments = pset.get<int>("NumShowerSegments", 4);
 }
 
 void
@@ -67,7 +66,6 @@ shower::EMShowerAlg::AssociateClustersAndTracks(
   std::map<int, std::vector<int>>& clusterToTracks,
   std::map<int, std::vector<int>>& trackToClusters) const
 {
-
   std::vector<int> clustersToIgnore = {-999};
   AssociateClustersAndTracks(
     clusters, fmh, fmt, clustersToIgnore, clusterToTracks, trackToClusters);
@@ -82,7 +80,6 @@ shower::EMShowerAlg::AssociateClustersAndTracks(
   std::map<int, std::vector<int>>& clusterToTracks,
   std::map<int, std::vector<int>>& trackToClusters) const
 {
-
   // Look through all the clusters
   for (auto const& clusterPtr : clusters) {
 
@@ -127,7 +124,6 @@ void
 shower::EMShowerAlg::CheckIsolatedHits_(
   std::map<int, std::vector<art::Ptr<recob::Hit>>>& showerHitsMap) const
 {
-
   std::map<int, std::vector<int>> firstTPC;
   for (auto const& [plane, hits] : showerHitsMap)
     firstTPC[hits.at(0)->WireID().TPC].push_back(plane);
@@ -144,7 +140,7 @@ shower::EMShowerAlg::CheckIsolatedHits_(
 
   // Find the problem plane
   int problemPlane = -1;
-  for (auto const& [tpc, planes] : firstTPC)
+  for (auto const& planes : firstTPC | ranges::view::values)
     if (planes.size() == 1)
       problemPlane = planes[0];
 

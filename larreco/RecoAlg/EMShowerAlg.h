@@ -259,28 +259,30 @@ private:
                     showerHitsMap) const;
 
   // Parameters
-  double fMinTrackLength;
-  double fdEdxTrackLength;
-  double fSpacePointSize;
+  double const fMinTrackLength;
+  double const fdEdxTrackLength;
+  double const fSpacePointSize;
+
   // Parameters to fit wire vs time
-  unsigned int fNfitpass;
-  std::vector<unsigned int> fNfithits;
-  std::vector<double> fToler;
+  unsigned int const fNfitpass;
+  std::vector<unsigned int> const fNfithits;
+  std::vector<double> const fToler;
 
   // Services used by this class
   art::ServiceHandle<geo::Geometry const> fGeom;
   detinfo::DetectorProperties const* fDetProp;
 
   // Algs used by this class
-  shower::ShowerEnergyAlg fShowerEnergyAlg;
-  calo::CalorimetryAlg fCalorimetryAlg;
-  pma::ProjectionMatchingAlg fProjectionMatchingAlg;
+  shower::ShowerEnergyAlg const fShowerEnergyAlg;
+  calo::CalorimetryAlg const fCalorimetryAlg;
+  pma::ProjectionMatchingAlg const fProjectionMatchingAlg;
 
-  std::string fDetector;
+  std::string const fDetector;
 
   // tmp
-  bool fMakeGradientPlot, fMakeRMSGradientPlot;
-  int fNumShowerSegments;
+  bool const fMakeGradientPlot;
+  bool const fMakeRMSGradientPlot;
+  int const fNumShowerSegments;
 };
 
 class shower::HitPosition {
