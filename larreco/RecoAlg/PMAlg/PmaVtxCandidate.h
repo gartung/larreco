@@ -41,28 +41,28 @@ public:
 
 	bool IsAttached(const VtxCandidate& other) const;
 
-	bool HasLoops(void) const;
+	bool HasLoops() const;
 
 	bool Add(const pma::TrkCandidate & trk);
 
-	double ComputeMse2D(void);
+	double ComputeMse2D();
 
 	double Test(const VtxCandidate& other) const;
 
 	double MaxAngle(double minLength = 0.0) const;
 
-	size_t Size(void) const { return fAssigned.size(); }
+	size_t Size() const { return fAssigned.size(); }
 	size_t Size(double minLength) const;
 
 	bool MergeWith(const VtxCandidate& other);
 
-	double Compute(void);
+	double Compute();
 
 	bool JoinTracks(pma::TrkCandidateColl & tracks, pma::TrkCandidateColl & src);
 
-	const TVector3& Center(void) const { return fCenter; }
-	double Mse(void) const { return fMse; }
-	double Mse2D(void) const { return fMse2D; }
+	const TVector3& Center() const { return fCenter; }
+	double Mse() const { return fMse; }
+	double Mse2D() const { return fMse2D; }
 
 	std::pair< pma::Track3D*, size_t > Track(size_t i) const
 	{

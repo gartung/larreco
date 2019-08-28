@@ -97,7 +97,7 @@ public:
 
     DataProviderAlg(const Config& config);
 
-	virtual ~DataProviderAlg(void);
+	virtual ~DataProviderAlg();
 
 	bool setWireDriftData(const std::vector<recob::Wire> & wires, // once per plane: setup ADC buffer, collect & downscale ADC's
 		unsigned int plane, unsigned int tpc, unsigned int cryo);
@@ -141,8 +141,8 @@ public:
         else { return 0; }
     }
 
-    double getAdcSum(void) const { return fAdcSumOverThr; }
-    size_t getAdcArea(void) const { return fAdcAreaOverThr; }
+    double getAdcSum() const { return fAdcSumOverThr; }
+    size_t getAdcArea() const { return fAdcAreaOverThr; }
 
     /// Pool max value in a patch around the wire/drift pixel.
     float poolMax(int wire, int drift, size_t r = 0) const;
@@ -150,17 +150,17 @@ public:
     /// Pool sum of pixels in a patch around the wire/drift pixel.
     float poolSum(int wire, int drift, size_t r = 0) const;
 
-	unsigned int Cryo(void) const { return fCryo; }
-	unsigned int TPC(void) const { return fTPC; }
-	unsigned int Plane(void) const { return fPlane; }
+	unsigned int Cryo() const { return fCryo; }
+	unsigned int TPC() const { return fTPC; }
+	unsigned int Plane() const { return fPlane; }
 
-	unsigned int NWires(void) const { return fNWires; }
-	unsigned int NScaledDrifts(void) const { return fNScaledDrifts; }
-	unsigned int NCachedDrifts(void) const { return fNCachedDrifts; }
-	unsigned int DriftWindow(void) const { return fDriftWindow; }
+	unsigned int NWires() const { return fNWires; }
+	unsigned int NScaledDrifts() const { return fNScaledDrifts; }
+	unsigned int NCachedDrifts() const { return fNCachedDrifts; }
+	unsigned int DriftWindow() const { return fDriftWindow; }
 
     /// Level of zero ADC after scaling.
-    float ZeroLevel(void) const { return fAdcZero; }
+    float ZeroLevel() const { return fAdcZero; }
 
     double LifetimeCorrection(double tick) const { return fCalorimetryAlg.LifetimeCorrection(tick); }
 

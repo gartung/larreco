@@ -41,7 +41,7 @@ namespace keras
 class keras::DataChunk {
 public:
   virtual ~DataChunk() {}
-  virtual size_t get_data_dim(void) const { return 0; }
+  virtual size_t get_data_dim() const { return 0; }
   virtual std::vector<float> const & get_1d() const { throw "not implemented"; };
   virtual std::vector<std::vector<std::vector<float> > > const & get_3d() const { throw "not implemented"; };
   virtual void set_data(std::vector<std::vector<std::vector<float> > > const &) {};
@@ -57,12 +57,12 @@ public:
   DataChunk2D(size_t depth, size_t rows, size_t cols, float init) :
     data(depth, std::vector< std::vector<float> >(rows, std::vector<float>(cols, init)))
   { }
-  DataChunk2D(void) { }
+  DataChunk2D() { }
 
   std::vector< std::vector< std::vector<float> > > & get_3d_rw() { return data; };
   std::vector< std::vector< std::vector<float> > > const & get_3d() const { return data; };
   virtual void set_data(std::vector<std::vector<std::vector<float> > > const & d) { data = d; };
-  size_t get_data_dim(void) const { return 3; }
+  size_t get_data_dim() const { return 3; }
 
   void show_name() {
     std::cout << "DataChunk2D " << data.size() << "x" << data[0].size() << "x" << data[0][0].size() << std::endl;
@@ -96,13 +96,13 @@ class keras::DataChunkFlat : public keras::DataChunk {
 public:
   DataChunkFlat(size_t size) : f(size) { }
   DataChunkFlat(size_t size, float init) : f(size, init) { }
-  DataChunkFlat(void) { }
+  DataChunkFlat() { }
 
   std::vector<float> f;
   std::vector<float> & get_1d_rw() { return f; }
   std::vector<float> const & get_1d() const { return f; }
   void set_data(std::vector<float> const & d) { f = d; };
-  size_t get_data_dim(void) const { return 1; }
+  size_t get_data_dim() const { return 1; }
 
   void show_name() {
     std::cout << "DataChunkFlat " << f.size() << std::endl;

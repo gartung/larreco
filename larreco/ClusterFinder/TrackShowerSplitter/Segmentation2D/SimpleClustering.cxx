@@ -77,7 +77,7 @@ const tss::Hit2D* tss::Cluster2D::outermost(size_t & idx) const
 }
 // ------------------------------------------------------
 
-const TVector2 tss::Cluster2D::min(void) const
+const TVector2 tss::Cluster2D::min() const
 {
 
 	TVector2 minimum = fHits[0]->Point2D();
@@ -95,7 +95,7 @@ const TVector2 tss::Cluster2D::min(void) const
 
 // ------------------------------------------------------
 
-const TVector2 tss::Cluster2D::max(void) const
+const TVector2 tss::Cluster2D::max() const
 {
 
 	TVector2 maximum = fHits[0]->Point2D();

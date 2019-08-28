@@ -61,7 +61,7 @@ bool pma::VtxCandidate::IsAttached(const pma::VtxCandidate& other) const
 	return false;
 }
 
-bool pma::VtxCandidate::HasLoops(void) const
+bool pma::VtxCandidate::HasLoops() const
 {
 	for (size_t t = 0; t < fAssigned.size(); t++)
 	{
@@ -209,7 +209,7 @@ bool pma::VtxCandidate::Add(const pma::TrkCandidate & trk)
 	}
 }
 
-double pma::VtxCandidate::ComputeMse2D(void)
+double pma::VtxCandidate::ComputeMse2D()
 {
 	art::ServiceHandle<geo::Geometry const> geom;
 
@@ -351,7 +351,7 @@ bool pma::VtxCandidate::MergeWith(const pma::VtxCandidate& other)
 	}
 }
 
-double pma::VtxCandidate::Compute(void)
+double pma::VtxCandidate::Compute()
 {
 	std::vector< pma::Segment3D* > segments;
 	std::vector< std::pair<TVector3, TVector3> > lines;

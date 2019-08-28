@@ -42,7 +42,7 @@ size_t pma::Element3D::NEnabledHits(unsigned int view) const
 	return n;
 }
 
-void pma::Element3D::SortHits(void)
+void pma::Element3D::SortHits()
 {
 	std::sort(fAssignedHits.begin(), fAssignedHits.end(), pma::bTrajectory3DOrderLess());
 }
@@ -54,7 +54,7 @@ void pma::Element3D::ClearAssigned(pma::Track3D* trk)
 	fHitsRadius = 0.0;
 }
 
-void pma::Element3D::UpdateHitParams(void)
+void pma::Element3D::UpdateHitParams()
 {
 	std::vector< pma::Hit3D* > hitsColl, hitsInd1, hitsInd2;
 	for (size_t i = 0; i < 3; ++i) fNThisHitsEnabledAll = 0;
@@ -169,7 +169,7 @@ void pma::Element3D::UpdateHitParams(void)
 	}
 }
 
-double pma::Element3D::SumDist2(void) const
+double pma::Element3D::SumDist2() const
 {
 	if (fTPC < 0)
 	{
@@ -294,7 +294,7 @@ bool pma::Element3D::SelectRndHits(size_t nmax_per_view)
 	return changed;
 }
 
-bool pma::Element3D::SelectAllHits(void)
+bool pma::Element3D::SelectAllHits()
 {
 	bool changed = false;
 	for (auto h : fAssignedHits)

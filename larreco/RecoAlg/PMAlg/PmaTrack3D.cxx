@@ -21,7 +21,7 @@
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-pma::Track3D::Track3D(void) :
+pma::Track3D::Track3D() :
 	fMaxHitsPerSeg(70),
 	fPenaltyFactor(1.0F),
 	fMaxSegStopFactor(8.0F),
@@ -74,7 +74,7 @@ pma::Track3D::Track3D(const Track3D& src) :
 	MakeProjection();
 }
 
-pma::Track3D::~Track3D(void)
+pma::Track3D::~Track3D()
 {
 	for (size_t i = 0; i < fHits.size(); i++) delete fHits[i];
 	for (size_t i = 0; i < fAssignedPoints.size(); i++) delete fAssignedPoints[i];
@@ -120,7 +120,7 @@ bool pma::Track3D::Initialize(float initEndSegW)
 	return true;
 }
 
-void pma::Track3D::ClearNodes(void)
+void pma::Track3D::ClearNodes()
 {
 	for (size_t i = 0; i < fNodes.size(); i++) delete fNodes[i];
 	fNodes.clear();
@@ -437,7 +437,7 @@ bool pma::Track3D::HasTwoViews(size_t nmin) const
 	return (nviews > 1);
 }
 
-std::vector< unsigned int > pma::Track3D::TPCs(void) const
+std::vector< unsigned int > pma::Track3D::TPCs() const
 {
 	std::vector< unsigned int > tpc_idxs;
 	for (size_t i = 0; i < size(); i++)
@@ -453,7 +453,7 @@ std::vector< unsigned int > pma::Track3D::TPCs(void) const
 	return tpc_idxs;
 }
 
-std::vector< unsigned int > pma::Track3D::Cryos(void) const
+std::vector< unsigned int > pma::Track3D::Cryos() const
 {
 	std::vector< unsigned int > cryo_idxs;
 	for (size_t i = 0; i < size(); i++)
@@ -596,7 +596,7 @@ void pma::Track3D::InternalFlip(std::vector< pma::Track3D* >& toSort)
 	RebuildSegments();
 }
 
-void pma::Track3D::Flip(void)
+void pma::Track3D::Flip()
 {
 	std::vector< pma::Track3D* > toSort;
 	InternalFlip(toSort);
@@ -615,7 +615,7 @@ void pma::Track3D::Flip(void)
 	}
 }
 
-bool pma::Track3D::CanFlip(void) const
+bool pma::Track3D::CanFlip() const
 {
 	if (!fNodes.size()) { return false; }
 
@@ -1209,7 +1209,7 @@ void pma::Track3D::AddNode(pma::Node3D* node)
 	if (fNodes.size() > 1) RebuildSegments();
 }
 
-bool pma::Track3D::AddNode(void)
+bool pma::Track3D::AddNode()
 {
 	pma::Segment3D* seg;
 	pma::Segment3D* maxSeg = 0;
@@ -1712,7 +1712,7 @@ void pma::Track3D::ExtendWith(pma::Track3D* src)
     delete src;
 }
 
-pma::Track3D* pma::Track3D::GetRoot(void)
+pma::Track3D* pma::Track3D::GetRoot()
 {
 	pma::Track3D* trk = 0;
 
@@ -2359,13 +2359,13 @@ void pma::Track3D::SetT0FromDx(double dx){
   fT0Flag = true;
 }
 
-void pma::Track3D::DeleteSegments(void)
+void pma::Track3D::DeleteSegments()
 {
 	for (size_t i = 0; i < fSegments.size(); i++) delete fSegments[i];
 	fSegments.clear();
 }
 
-void pma::Track3D::RebuildSegments(void)
+void pma::Track3D::RebuildSegments()
 {
 	DeleteSegments();
 
@@ -2376,7 +2376,7 @@ void pma::Track3D::RebuildSegments(void)
 	}
 }
 
-void pma::Track3D::CleanupTails(void)
+void pma::Track3D::CleanupTails()
 {
 	unsigned int nhits = 0;
 	while (!nhits && (fNodes.size() > 2) && !fNodes.front()->IsBranching())
@@ -2422,7 +2422,7 @@ void pma::Track3D::CleanupTails(void)
 }
 
 
-bool pma::Track3D::ShiftEndsToHits(void)
+bool pma::Track3D::ShiftEndsToHits()
 {
 	pma::Element3D* el;
 	pma::Node3D* vtx;
@@ -2670,7 +2670,7 @@ bool pma::Track3D::GetUnconstrainedProj3D(art::Ptr<recob::Hit> hit, TVector3& p3
 	return false;
 }
 
-void pma::Track3D::SortHits(void)
+void pma::Track3D::SortHits()
 {
 	std::vector< pma::Hit3D* > hits_tmp;
 	hits_tmp.reserve(size());
@@ -2711,7 +2711,7 @@ void pma::Track3D::SortHits(void)
 	else mf::LogError("pma::Track3D") << "Hit sorting problem.";
 }
 
-unsigned int pma::Track3D::DisableSingleViewEnds(void)
+unsigned int pma::Track3D::DisableSingleViewEnds()
 {
 	SortHits();
 
@@ -2901,7 +2901,7 @@ bool pma::Track3D::SelectRndHits(size_t segmax, size_t vtxmax)
 	return changed;
 }
 
-bool pma::Track3D::SelectAllHits(void)
+bool pma::Track3D::SelectAllHits()
 {
 	bool changed = false;
 	for (auto h : fHits)
@@ -2912,7 +2912,7 @@ bool pma::Track3D::SelectAllHits(void)
 	return changed;
 }
 
-void pma::Track3D::MakeProjection(void)
+void pma::Track3D::MakeProjection()
 {
 	for (auto n : fNodes) n->ClearAssigned(this);
 	for (auto s : fSegments) s->ClearAssigned(this);
@@ -2950,7 +2950,7 @@ void pma::Track3D::MakeProjection(void)
 	for (auto s : fSegments) s->UpdateHitParams();
 }
 
-void pma::Track3D::MakeFastProjection(void)
+void pma::Track3D::MakeFastProjection()
 {
 	std::vector< std::pair< pma::Hit3D*, pma::Element3D* > > assignments;
 	assignments.reserve(fHits.size());
@@ -3081,13 +3081,13 @@ void pma::Track3D::MakeFastProjection(void)
 	for (auto s : fSegments) s->UpdateHitParams();
 }
 
-void pma::Track3D::UpdateProjection(void)
+void pma::Track3D::UpdateProjection()
 {
 	for (auto n : fNodes) n->UpdateProjection();
 	for (auto s : fSegments) s->UpdateProjection();
 }
 
-double pma::Track3D::AverageDist2(void) const
+double pma::Track3D::AverageDist2() const
 {
 	double sum = 0.0;
 	unsigned int count = 0;
@@ -3112,7 +3112,7 @@ double pma::Track3D::AverageDist2(void) const
 	}
 }
 
-bool pma::Track3D::UpdateParams(void)
+bool pma::Track3D::UpdateParams()
 {
 	size_t n = size();
 	if (n == 0)
@@ -3214,7 +3214,7 @@ bool pma::Track3D::CheckEndSegment(pma::Track3D::ETrackEnd endCode)
 	else return true;
 }
 
-void pma::Track3D::UpdateHitsRadius(void)
+void pma::Track3D::UpdateHitsRadius()
 {
 	std::vector< pma::Hit3D* > hitsColl, hitsInd1, hitsInd2;
 	for (size_t i = 0; i < size(); i++)

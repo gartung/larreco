@@ -55,15 +55,15 @@ public:
         kOutsideDrift_Complete  = 0x020000,
         kBeamIncompatible       = 0x030000
 	};
-	ETag GetTag(void) const { return fTag; }
+	ETag GetTag() const { return fTag; }
 	bool HasTagFlag(ETag value) const { return (fTag & value); }
 	void SetTagFlag(ETag value) { fTag = (ETag)(fTag | value); }
 	void SetTag(ETag value) { fTag = value; }
 
 
-	Track3D(void);
+	Track3D();
 	Track3D(const Track3D& src);
-	~Track3D(void);
+	~Track3D();
 
 	bool Initialize(float initEndSegW = 0.05F);
 
@@ -103,14 +103,14 @@ public:
 	unsigned int NEnabledHits(unsigned int view = geo::kUnknown) const;
 	bool HasTwoViews(size_t nmin = 1) const;
 
-	std::vector< unsigned int > TPCs(void) const;
-	std::vector< unsigned int > Cryos(void) const;
+	std::vector< unsigned int > TPCs() const;
+	std::vector< unsigned int > Cryos() const;
 
-	unsigned int FrontTPC(void) const { return fNodes.front()->TPC(); }
-	unsigned int FrontCryo(void) const { return fNodes.front()->Cryo(); }
+	unsigned int FrontTPC() const { return fNodes.front()->TPC(); }
+	unsigned int FrontCryo() const { return fNodes.front()->Cryo(); }
 
-	unsigned int BackTPC(void) const { return fNodes.back()->TPC(); }
-	unsigned int BackCryo(void) const { return fNodes.back()->Cryo(); }
+	unsigned int BackTPC() const { return fNodes.back()->TPC(); }
+	unsigned int BackCryo() const { return fNodes.back()->Cryo(); }
 
 	bool HasTPC(int tpc) const
 	{
@@ -131,10 +131,10 @@ public:
 
 	/// Invert the order of hits and vertices in the track, will fail on configuration that
 	/// causes breaking another track.
-	void Flip(void);
+	void Flip();
 
 	/// Check if the track can be flipped without breaking any other track.
-	bool CanFlip(void) const;
+	bool CanFlip() const;
 
 	void AutoFlip(pma::Track3D::EDirection dir, double thr = 0.0, unsigned int n = 0);
 	bool AutoFlip(std::vector< pma::Track3D* >& allTracks, pma::Track3D::EDirection dir, double thr = 0.0, unsigned int n = 0);
@@ -217,26 +217,26 @@ public:
 	void ApplyDriftShiftInTree(double dx, bool skipFirst = false);
   /// Function to convert dx into dT0
   void SetT0FromDx(double dx);
-	double GetT0(void) const { return fT0; }
+	double GetT0() const { return fT0; }
   /// Check if the T0 has been set - enables us to distinguish between T0 set very
   /// close to zero or not set.
-  bool HasT0(void) const {return fT0Flag; }
+  bool HasT0() const {return fT0Flag; }
 
 	/// Cut out tails with no hits assigned.
-	void CleanupTails(void);
+	void CleanupTails();
 
 	/// Move the first/last Node3D to the first/last hit in the track;
 	/// returns true if all OK, false if empty segments found.
-	bool ShiftEndsToHits(void);
+	bool ShiftEndsToHits();
 
-	std::vector< pma::Segment3D* > const & Segments(void) const { return fSegments; }
+	std::vector< pma::Segment3D* > const & Segments() const { return fSegments; }
 
 	pma::Segment3D* NextSegment(pma::Node3D* vtx) const;
 	pma::Segment3D* PrevSegment(pma::Node3D* vtx) const;
 
-	std::vector< pma::Node3D* > const & Nodes(void) const { return fNodes; }
-	pma::Node3D* FirstElement(void) const { return fNodes.front(); }
-	pma::Node3D* LastElement(void) const { return fNodes.back(); }
+	std::vector< pma::Node3D* > const & Nodes() const { return fNodes; }
+	pma::Node3D* FirstElement() const { return fNodes.front(); }
+	pma::Node3D* LastElement() const { return fNodes.back(); }
 
 	void AddNode(pma::Node3D* node);
 	void AddNode(TVector3 const & p3d, unsigned int tpc, unsigned int cryo)
@@ -244,7 +244,7 @@ public:
 	    double ds = fNodes.empty() ? 0 : fNodes.back()->GetDriftShift();
 	    AddNode(new pma::Node3D(p3d, tpc, cryo, false, ds));
 	}
-	bool AddNode(void);
+	bool AddNode();
 
 	void InsertNode(
 		TVector3 const & p3d, size_t at_idx,
@@ -260,30 +260,30 @@ public:
     /// Extend the track with everything from src, delete the src;
     void ExtendWith(pma::Track3D* src);
 
-	pma::Track3D* GetRoot(void);
+	pma::Track3D* GetRoot();
 	bool GetBranches(std::vector< pma::Track3D const * >& branches, bool skipFirst = false) const;
 
-	void MakeProjection(void);
-	void UpdateProjection(void);
-	void SortHits(void);
+	void MakeProjection();
+	void UpdateProjection();
+	void SortHits();
 
-	unsigned int DisableSingleViewEnds(void);
+	unsigned int DisableSingleViewEnds();
 	bool SelectHits(float fraction = 1.0F);
 	bool SelectRndHits(size_t segmax, size_t vtxmax);
-	bool SelectAllHits(void);
+	bool SelectAllHits();
 
-	float GetEndSegWeight(void) const { return fEndSegWeight; }
+	float GetEndSegWeight() const { return fEndSegWeight; }
 	void SetEndSegWeight(float value) { fEndSegWeight = value; }
 
-	float GetPenalty(void) const { return fPenaltyFactor; }
+	float GetPenalty() const { return fPenaltyFactor; }
 	void SetPenalty(float value) { fPenaltyFactor = value; }
 
-	unsigned int GetMaxHitsPerSeg(void) const { return fMaxHitsPerSeg; }
+	unsigned int GetMaxHitsPerSeg() const { return fMaxHitsPerSeg; }
 	void SetMaxHitsPerSeg(unsigned int value) { fMaxHitsPerSeg = value; }
 
 private:
-	void ClearNodes(void);
-	void MakeFastProjection(void);
+	void ClearNodes();
+	void MakeFastProjection();
 
 	bool AttachToSameTPC(pma::Node3D* vStart);
 	bool AttachToOtherTPC(pma::Node3D* vStart);
@@ -293,8 +293,8 @@ private:
 
 	void InternalFlip(std::vector< pma::Track3D* >& toSort);
 
-	void UpdateHitsRadius(void);
-	double AverageDist2(void) const;
+	void UpdateHitsRadius();
+	double AverageDist2() const;
 
 	bool InitFromHits(int tpc, int cryo, float initEndSegW = 0.05F);
 	bool InitFromRefPoints(int tpc, int cryo);
@@ -317,10 +317,10 @@ private:
 	/// the function returns true.
 	bool GetUnconstrainedProj3D(art::Ptr<recob::Hit> hit, TVector3& p3d, double& dist2) const;
 
-    void DeleteSegments(void);
-	void RebuildSegments(void);
+    void DeleteSegments();
+	void RebuildSegments();
 	bool SwapVertices(size_t v0, size_t v1);
-	bool UpdateParams(void);
+	bool UpdateParams();
 
 	bool CheckEndSegment(pma::Track3D::ETrackEnd endCode);
 

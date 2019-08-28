@@ -31,9 +31,9 @@ class pma::Element3D
 {
 public:
 	/// TPC index or -1 if out of any TPC.
-	int TPC(void) const { return fTPC; }
+	int TPC() const { return fTPC; }
 	/// Cryostat index or -1 if out of any cryostat.
-	int Cryo(void) const { return fCryo; }
+	int Cryo() const { return fCryo; }
 
 	/// Distance [cm] from the 3D point to the object 3D.
 	virtual double GetDistance2To(const TVector3& p3d) const = 0;
@@ -42,16 +42,16 @@ public:
 	virtual double GetDistance2To(const TVector2& p2d, unsigned int view) const = 0;
 
 	/// Get 3D direction cosines corresponding to this element.
-	virtual pma::Vector3D GetDirection3D(void) const = 0;
+	virtual pma::Vector3D GetDirection3D() const = 0;
 
 	virtual TVector3 GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const = 0;
 
 	virtual void SetProjection(pma::Hit3D& h) const = 0;
 
-	virtual double Length2(void) const = 0;
-	double Length(void) const { return sqrt(Length2()); }
+	virtual double Length2() const = 0;
+	double Length() const { return sqrt(Length2()); }
 
-	const std::vector< pma::Hit3D* > & Hits(void) const { return fAssignedHits; }
+	const std::vector< pma::Hit3D* > & Hits() const { return fAssignedHits; }
 
     bool HasHit(const pma::Hit3D* h) const
     {
@@ -71,23 +71,23 @@ public:
 		SetProjection(*h);
 	}
 
-	size_t NHits(void) const { return fAssignedHits.size(); }
+	size_t NHits() const { return fAssignedHits.size(); }
 	size_t NEnabledHits(unsigned int view = geo::kUnknown) const;
-	size_t NPrecalcEnabledHits(void) const { return fNThisHitsEnabledAll; }
+	size_t NPrecalcEnabledHits() const { return fNThisHitsEnabledAll; }
 
 	TVector3 const & ReferencePoint(size_t index) const { return *(fAssignedPoints[index]); }
-	size_t NPoints(void) const { return fAssignedPoints.size(); }
+	size_t NPoints() const { return fAssignedPoints.size(); }
 	void AddPoint(TVector3* p) { fAssignedPoints.push_back(p); }
 
 	/// Clear hits/points vectors of this element, optionally only
 	/// those which are owned by given track.
 	virtual void ClearAssigned(pma::Track3D* trk = 0);
 
-	void UpdateHitParams(void);
-	void UpdateProjection(void) { for (auto h : fAssignedHits) SetProjection(*h); }
-	void SortHits(void);
+	void UpdateHitParams();
+	void UpdateProjection() { for (auto h : fAssignedHits) SetProjection(*h); }
+	void SortHits();
 
-	double SumDist2(void) const;
+	double SumDist2() const;
 	double SumDist2(unsigned int view) const;
 	double SumHitsQ(unsigned int view) const { return fSumHitsQ[view]; }
 	unsigned int NHits(unsigned int view) const { return fNHits[view]; }
@@ -96,21 +96,21 @@ public:
 	double HitsRadius3D(unsigned int view) const;
 
 	/// Check if the vertex 3D position is fixed.
-	bool IsFrozen(void) const { return fFrozen; }
+	bool IsFrozen() const { return fFrozen; }
 	/// Fix / relese vertex 3D position.
 	void SetFrozen(bool state) { fFrozen = state; }
 
 	bool SelectRndHits(size_t nmax_per_view);
-	bool SelectAllHits(void);
+	bool SelectAllHits();
 
 	static float OptFactor(unsigned int view) { return fOptFactors[view]; }
 	static void SetOptFactor(unsigned int view, float value) { fOptFactors[view] = value; }
 
 protected:
-	Element3D(void); // Element3D is only a common base for nodes and segments
+	Element3D(); // Element3D is only a common base for nodes and segments
 	int fTPC, fCryo; // -1 if out of any TPC or cryostat
 
-    virtual double SumDist2Hits(void) const = 0;
+    virtual double SumDist2Hits() const = 0;
 
 	bool fFrozen;
 	std::vector< pma::Hit3D* > fAssignedHits;  // 2D hits

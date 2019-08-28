@@ -20,7 +20,7 @@
 
 #include "TVector3.h"
 
-pma::TrkCandidate::TrkCandidate(void) :
+pma::TrkCandidate::TrkCandidate() :
 	fParent(-1), fTrack(0), fKey(-1), fTreeId(-1),
 	fMse(0), fValidation(0),
 	fGood(false)
@@ -43,7 +43,7 @@ void pma::TrkCandidate::SetTrack(pma::Track3D* trk)
 }
 // ------------------------------------------------------
 
-void pma::TrkCandidate::DeleteTrack(void)
+void pma::TrkCandidate::DeleteTrack()
 {
 	if (fTrack) delete fTrack;
 	fTrack = 0;
@@ -66,7 +66,7 @@ int pma::TrkCandidateColl::getCandidateTreeId(pma::Track3D const * candidate) co
 	else return -1;
 }
 
-void pma::TrkCandidateColl::setParentDaughterConnections(void)
+void pma::TrkCandidateColl::setParentDaughterConnections()
 {
     fParents.clear();
 
@@ -164,7 +164,7 @@ void pma::TrkCandidateColl::setTreeId(int id, size_t trkIdx, bool isRoot)
 	fCandidates[trkIdx].SetTreeId(id);
 }
 
-int pma::TrkCandidateColl::setTreeIds(void)
+int pma::TrkCandidateColl::setTreeIds()
 {
 	for (auto & t : fCandidates) t.SetTreeId(-1);
 
@@ -289,7 +289,7 @@ bool pma::TrkCandidateColl::setTreeOriginAtBack(pma::Track3D* trk)
 }
 // ------------------------------------------------------
 
-void pma::TrkCandidateColl::flipTreesByDQdx(void)
+void pma::TrkCandidateColl::flipTreesByDQdx()
 {
 	std::map< int, std::vector< pma::Track3D* > > trkMap;
 

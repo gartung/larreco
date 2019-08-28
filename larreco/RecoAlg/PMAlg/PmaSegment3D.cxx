@@ -39,7 +39,7 @@ double pma::Segment3D::GetDistance2To(const TVector2& p2d, unsigned int view) co
 	return GetDist2(p2d, v0->Projection2D(view), v1->Projection2D(view));
 }
 
-double pma::Segment3D::SumDist2Hits(void) const
+double pma::Segment3D::SumDist2Hits() const
 {
 	pma::Node3D* v0 = static_cast< pma::Node3D* >(prev);
 	pma::Node3D* v1 = static_cast< pma::Node3D* >(next);
@@ -58,7 +58,7 @@ double pma::Segment3D::SumDist2Hits(void) const
 	return sum;
 }
 
-pma::Vector3D pma::Segment3D::GetDirection3D(void) const
+pma::Vector3D pma::Segment3D::GetDirection3D() const
 {
 	pma::Node3D* v0 = static_cast< pma::Node3D* >(prev);
 	pma::Node3D* v1 = static_cast< pma::Node3D* >(next);
@@ -206,7 +206,7 @@ void pma::Segment3D::SetProjection(pma::Hit3D& h) const
 	}
 }
 
-double pma::Segment3D::Length2(void) const
+double pma::Segment3D::Length2() const
 {
 	if (prev && next)
 		return pma::Dist2( ((pma::Node3D*)prev)->Point3D(), ((pma::Node3D*)next)->Point3D() );

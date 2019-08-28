@@ -62,9 +62,9 @@ public:
 		PMAlgVertexing(fhicl::Table<Config>(pset, {})())
 	{}
 
-        ~PMAlgVertexing(void); // delete last produced tracks (if not passed to output)
+        ~PMAlgVertexing(); // delete last produced tracks (if not passed to output)
 
-	void reset(void) { cleanTracks(); }
+	void reset() { cleanTracks(); }
 
 	/// Copy input tracks, find 3D vertices, connect tracks, break them or flip if needed,
 	/// reoptimize track structures. Result is returned as a collection of new tracks, that
@@ -92,8 +92,8 @@ private:
 		return false;
 	}
 
-        std::vector< pma::VtxCandidate > firstPassCandidates(void) const;
-        std::vector< pma::VtxCandidate > secondPassCandidates(void) const;
+        std::vector< pma::VtxCandidate > firstPassCandidates() const;
+        std::vector< pma::VtxCandidate > secondPassCandidates() const;
 	size_t makeVertices(std::vector< pma::VtxCandidate >& candidates);
 
 	/// Get dQ/dx sequence to detect various features.
@@ -117,7 +117,7 @@ private:
 
 	pma::TrkCandidateColl fOutTracks, fShortTracks, fEmTracks;
 	pma::TrkCandidateColl fExcludedTracks;
-	void cleanTracks(void);
+	void cleanTracks();
 
 	void sortTracks(const pma::TrkCandidateColl & trk_input);
 	void collectTracks(pma::TrkCandidateColl & result);

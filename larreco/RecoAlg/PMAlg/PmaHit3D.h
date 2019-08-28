@@ -32,38 +32,38 @@ class pma::Hit3D
 	friend struct bTrajectory3DOrderLess;
 
 public:
-	Hit3D(void);
+	Hit3D();
 	Hit3D(art::Ptr< recob::Hit > src);
 	Hit3D(unsigned int wire, unsigned int view, unsigned int tpc, unsigned int cryo,
 		float peaktime, float ampl, float area);
 	Hit3D(const pma::Hit3D& src);
-	virtual ~Hit3D(void) {}
+	virtual ~Hit3D() {}
 
-	art::Ptr< recob::Hit > const & Hit2DPtr(void) const { return fHit; }
+	art::Ptr< recob::Hit > const & Hit2DPtr() const { return fHit; }
 
-	TVector3 const & Point3D(void) const { return fPoint3D; }
+	TVector3 const & Point3D() const { return fPoint3D; }
 
 	void SetPoint3D(const TVector3& p3d) { fPoint3D = p3d; }
 	void SetPoint3D(double x, double y, double z) { fPoint3D.SetXYZ(x, y, z); }
 
-	TVector2 const & Point2D(void) const { return fPoint2D; }
-	TVector2 const & Projection2D(void) const { return fProjection2D; }
+	TVector2 const & Point2D() const { return fPoint2D; }
+	TVector2 const & Projection2D() const { return fProjection2D; }
 
-	unsigned int Cryo(void) const { return fCryo; }
-	unsigned int TPC(void) const { return fTPC; }
-	unsigned int View2D(void) const { return fPlane; }
-	unsigned int Wire(void) const { return fWire; }
-	float PeakTime(void) const { return fPeakTime; }
+	unsigned int Cryo() const { return fCryo; }
+	unsigned int TPC() const { return fTPC; }
+	unsigned int View2D() const { return fPlane; }
+	unsigned int Wire() const { return fWire; }
+	float PeakTime() const { return fPeakTime; }
 
-	float SummedADC(void) const { return fArea; }
-	float GetAmplitude(void) const { return fAmpl; }
-	float GetSigmaFactor(void) const { return fSigmaFactor; }
+	float SummedADC() const { return fArea; }
+	float GetAmplitude() const { return fAmpl; }
+	float GetSigmaFactor() const { return fSigmaFactor; }
 	void SetSigmaFactor(float value) { fSigmaFactor = value; }
 
-	double Dx(void) const { return fDx; }
+	double Dx() const { return fDx; }
 
-	double GetDistToProj(void) const { return sqrt(GetDist2ToProj()); }
-	double GetDist2ToProj(void) const;
+	double GetDistToProj() const { return sqrt(GetDist2ToProj()); }
+	double GetDist2ToProj() const;
 
 	float GetSegFraction() const { return fSegFraction; }
 	void SetProjection(const TVector2& p, float b)
@@ -75,10 +75,10 @@ public:
 		fProjection2D.Set(x, y); fSegFraction = b;
 	}
 
-	bool IsEnabled(void) const { return (fEnabled && !fOutlier); }
+	bool IsEnabled() const { return (fEnabled && !fOutlier); }
 	void SetEnabled(bool state) { fEnabled = state; }
 
-	bool IsOutlier(void) const { return fOutlier; }
+	bool IsOutlier() const { return fOutlier; }
 	virtual void TagOutlier(bool state) { fOutlier = state; }
 
 private:

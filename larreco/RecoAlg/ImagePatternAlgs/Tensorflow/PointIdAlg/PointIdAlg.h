@@ -48,13 +48,13 @@ namespace nnet
 class nnet::ModelInterface
 {
 public:
-	virtual ~ModelInterface(void) { }
+	virtual ~ModelInterface() { }
 
 	virtual std::vector<float> Run(std::vector< std::vector<float> > const & inp2d) = 0;
 	virtual std::vector< std::vector<float> > Run(std::vector< std::vector< std::vector<float> > > const & inps, int samples = -1);
 
 protected:
-	ModelInterface(void) { }
+	ModelInterface() { }
 
 	std::string findFile(const char* fileName) const;
 };
@@ -116,10 +116,10 @@ public:
 
 	PointIdAlg(const Config& config);
 
-	~PointIdAlg(void) override;
+	~PointIdAlg() override;
 
     /// network output labels
-    std::vector< std::string > const & outputLabels(void) const { return fNNetOutputs; }
+    std::vector< std::string > const & outputLabels() const { return fNNetOutputs; }
 
 	/// calculate single-value prediction (2-class probability) for [wire, drift] point
 	float predictIdValue(unsigned int wire, float drift, size_t outIdx = 0) const;
@@ -131,8 +131,8 @@ public:
 
 	static std::vector<float> flattenData2D(std::vector< std::vector<float> > const & patch);
 
-	std::vector< std::vector<float> > const & patchData2D(void) const { return fWireDriftPatch; }
-	std::vector<float> patchData1D(void) const { return flattenData2D(fWireDriftPatch); }  // flat vector made of the patch data, wire after wire
+	std::vector< std::vector<float> > const & patchData2D() const { return fWireDriftPatch; }
+	std::vector<float> patchData1D() const { return flattenData2D(fWireDriftPatch); }  // flat vector made of the patch data, wire after wire
 
     bool isInsideFiducialRegion(unsigned int wire, float drift) const;
 
@@ -175,9 +175,9 @@ private:
 		}
 	}
 	bool bufferPatch(size_t wire, float drift) const { return bufferPatch(wire, drift, fWireDriftPatch); }
-	void resizePatch(void);
+	void resizePatch();
 
-	void deleteNNet(void) { if (fNNet) delete fNNet; fNNet = 0; }
+	void deleteNNet() { if (fNNet) delete fNNet; fNNet = 0; }
 };
 // ------------------------------------------------------
 // ------------------------------------------------------
@@ -256,7 +256,7 @@ public:
 
     TrainingDataAlg(const Config& config);
 
-	~TrainingDataAlg(void) override;
+	~TrainingDataAlg() override;
 
 	void reconfigure(const Config& config);
 
@@ -271,7 +271,7 @@ public:
 
 	bool findCrop(float max_e_cut, unsigned int & w0, unsigned int & w1, unsigned int & d0, unsigned int & d1) const;
 
-	double getEdepTot(void) const { return fEdepTot; } // [GeV]
+	double getEdepTot() const { return fEdepTot; } // [GeV]
 	std::vector<float> const & wireEdep(size_t widx) const { return fWireDriftEdep[widx]; }
 	std::vector<int> const & wirePdg(size_t widx) const { return fWireDriftPdg[widx]; }
 

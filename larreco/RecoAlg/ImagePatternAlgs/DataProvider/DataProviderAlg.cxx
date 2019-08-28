@@ -96,7 +96,7 @@ img::DataProviderAlg::DataProviderAlg(const Config& config) :
 }
 // ------------------------------------------------------
 
-img::DataProviderAlg::~DataProviderAlg(void)
+img::DataProviderAlg::~DataProviderAlg()
 {
 }
 // ------------------------------------------------------

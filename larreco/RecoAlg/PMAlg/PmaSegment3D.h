@@ -28,15 +28,15 @@ namespace pma
 class pma::Segment3D : public pma::Element3D, public pma::SortedObjectBase
 {
 public:
-	Segment3D(void) : fParent(0) {}
+	Segment3D() : fParent(0) {}
 	Segment3D(pma::Track3D* trk, pma::Node3D* vstart, pma::Node3D* vstop);
 
-    Vector3D Start(void) const
+    Vector3D Start() const
     {
         auto const & p = static_cast< Node3D* >(Prev())->Point3D();
         return Vector3D(p.X(), p.Y(), p.Z());
     }
-    Vector3D End(void) const
+    Vector3D End() const
     {
         auto const & p = static_cast< Node3D* >(Next())->Point3D();
         return Vector3D(p.X(), p.Y(), p.Z());
@@ -49,7 +49,7 @@ public:
 	double GetDistance2To(const TVector2& p2d, unsigned int view) const override;
 
 	/// Get 3D direction cosines of this segment.
-	pma::Vector3D GetDirection3D(void) const override;
+	pma::Vector3D GetDirection3D() const override;
 
 	/// Get 3D projection of a 2D point from the view.
 	TVector3 GetProjection(const TVector2& p, unsigned int view) const;
@@ -63,14 +63,14 @@ public:
 
 	/// Squared sum of half-lengths of connected 3D segments
 	/// (used in the vertex position optimization).
-	double Length2(void) const override;
+	double Length2() const override;
 
-	pma::Track3D* Parent(void) const { return fParent; }
+	pma::Track3D* Parent() const { return fParent; }
 
 private:
 	Segment3D(const pma::Segment3D& src);
 
-    double SumDist2Hits(void) const override;
+    double SumDist2Hits() const override;
 
 	pma::Track3D* fParent;
 

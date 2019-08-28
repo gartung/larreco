@@ -29,10 +29,10 @@ class ems::Hit2D
 	public:
 	Hit2D(art::Ptr< recob::Hit > src);
 
-	TVector2 const & GetPointCm(void) const { return fPoint; }
-	double GetCharge(void) const {return fCharge;}
+	TVector2 const & GetPointCm() const { return fPoint; }
+	double GetCharge() const {return fCharge;}
 
-	art::Ptr< recob::Hit > const & GetHitPtr(void) const { return fHit;}
+	art::Ptr< recob::Hit > const & GetHitPtr() const { return fHit;}
 
 	private:
 	double fCharge;
@@ -53,13 +53,13 @@ class ems::Bin2D
 
 	void SortLess();
 
-	double GetTotCharge(void) const { return fTotCharge;}
+	double GetTotCharge() const { return fTotCharge;}
 
 	unsigned int Size() const { return fSize; }
 
-	std::vector< Hit2D* > const & GetHits2D(void) const { return fHits2D; }
+	std::vector< Hit2D* > const & GetHits2D() const { return fHits2D; }
 
-	const TVector2 & GetCenter(void) const { return fCenter2D; }
+	const TVector2 & GetCenter() const { return fCenter2D; }
 
 	std::vector< art::Ptr< recob::Hit > > GetIniHits(const double radius = 10.0, const unsigned int nhits = 10) const;
 
@@ -75,23 +75,23 @@ class ems::EndPoint
 	public:
 	EndPoint(const Hit2D & center, const std::vector< Hit2D* > & hits, unsigned int nbins);
 
-	TVector2 const & GetPosition(void) const { return fCenter2D.GetPointCm(); }
+	TVector2 const & GetPosition() const { return fCenter2D.GetPointCm(); }
 
-	double GetAsymmetry(void) const;
+	double GetAsymmetry() const;
 
-	double GetMaxCharge(void) const { return fMaxCharge; }
+	double GetMaxCharge() const { return fMaxCharge; }
 
-	Bin2D const & MaxChargeBin(void) const { return fBins[fMaxChargeIdBin]; }
+	Bin2D const & MaxChargeBin() const { return fBins[fMaxChargeIdBin]; }
 
-	std::vector< Bin2D > const & GetBins2D(void) const { return fBins;  }
+	std::vector< Bin2D > const & GetBins2D() const { return fBins;  }
 
-	art::Ptr< recob::Hit > const & GetHit(void) const { return fCenter2D.GetHitPtr(); }
+	art::Ptr< recob::Hit > const & GetHit() const { return fCenter2D.GetHitPtr(); }
 
-	const std::vector< art::Ptr< recob::Hit > > GetIniHits(void) const { return MaxChargeBin().GetIniHits(); }
+	const std::vector< art::Ptr< recob::Hit > > GetIniHits() const { return MaxChargeBin().GetIniHits(); }
 
-	size_t const & GetPlane(void) const { return fPlane; }
-	size_t const & GetTPC(void) const { return fTpc; }
-	size_t const & GetCryo(void) const { return fCryo; }
+	size_t const & GetPlane() const { return fPlane; }
+	size_t const & GetTPC() const { return fTpc; }
+	size_t const & GetCryo() const { return fCryo; }
 
 	private:
 	Hit2D fCenter2D;
@@ -120,11 +120,11 @@ class ems::DirOfGamma
 	DirOfGamma(const std::vector< art::Ptr< recob::Hit > > & src, unsigned int nbins, unsigned int idcl);
 	~DirOfGamma() { for (unsigned int i = 0; i < fPoints2D.size(); ++i) delete fPoints2D[i];}
 
-	TVector2 const & GetBaryCenterCm(void) const { return fBaryCenter; }
+	TVector2 const & GetBaryCenterCm() const { return fBaryCenter; }
 
-	std::vector< Hit2D* > const & GetHits2D(void) const { return fPoints2D; }
+	std::vector< Hit2D* > const & GetHits2D() const { return fPoints2D; }
 
-	std::vector< EndPoint > const & GetCandidates(void) const { return fCandidates; }
+	std::vector< EndPoint > const & GetCandidates() const { return fCandidates; }
 
 	void SetIdCandidate(size_t id) {
 
@@ -134,17 +134,17 @@ class ems::DirOfGamma
 		fIniHits  = fCandidates[id].MaxChargeBin().GetIniHits();
 	}
 
-	const size_t GetIdCandidate(void) { return fCandidateID; }
+	const size_t GetIdCandidate() { return fCandidateID; }
 
-	art::Ptr< recob::Hit > const & GetFirstHit(void) const { return fStartHit; }
+	art::Ptr< recob::Hit > const & GetFirstHit() const { return fStartHit; }
 
-	std::vector< art::Ptr< recob::Hit > > const & GetHits(void) { return fHits; }
+	std::vector< art::Ptr< recob::Hit > > const & GetHits() { return fHits; }
 
-	TVector2 const & GetFirstPoint(void) const { return fStartPoint; }
+	TVector2 const & GetFirstPoint() const { return fStartPoint; }
 
-	std::vector< art::Ptr< recob::Hit > > const & GetIniHits(void) const { return fIniHits;}
+	std::vector< art::Ptr< recob::Hit > > const & GetIniHits() const { return fIniHits;}
 
-	size_t const GetIdCl(void) const {return fIdCl;}
+	size_t const GetIdCl() const {return fIdCl;}
 
 	private:
 	size_t fNbins;
@@ -160,15 +160,15 @@ class ems::DirOfGamma
 	std::vector< art::Ptr< recob::Hit > > fIniHits;
 	std::vector< art::Ptr< recob::Hit > > fHits;
 
-	void FindInitialPart(void);
+	void FindInitialPart();
 
-	void FillBins(void);
+	void FillBins();
 
-	bool FindCandidates(void);
-	void ComputeBaryCenter(void);
-	void ComputeMaxDist(void);
-	void ComputeMaxCharge(void);
-	void ComputeFinalValues(void);
+	bool FindCandidates();
+	void ComputeBaryCenter();
+	void ComputeMaxDist();
+	void ComputeMaxCharge();
+	void ComputeFinalValues();
 
 	TVector2 fBaryCenter;
 

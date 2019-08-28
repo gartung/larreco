@@ -27,13 +27,13 @@ void pma::PMAlgVertexing::reconfigure(const pma::PMAlgVertexing::Config& config)
 }
 // ------------------------------------------------------
 
-pma::PMAlgVertexing::~PMAlgVertexing(void)
+pma::PMAlgVertexing::~PMAlgVertexing()
 {
 	cleanTracks();
 }
 // ------------------------------------------------------
 
-void pma::PMAlgVertexing::cleanTracks(void)
+void pma::PMAlgVertexing::cleanTracks()
 {
 	for (auto & t : fOutTracks.tracks()) t.DeleteTrack();
 	fOutTracks.clear();
@@ -108,7 +108,7 @@ void pma::PMAlgVertexing::sortTracks(const pma::TrkCandidateColl & trk_input)
 }
 // ------------------------------------------------------
 
-std::vector< pma::VtxCandidate > pma::PMAlgVertexing::firstPassCandidates(void) const
+std::vector< pma::VtxCandidate > pma::PMAlgVertexing::firstPassCandidates() const
 {
 	std::vector< pma::VtxCandidate > candidates;
 	for (size_t t = 0; t < fOutTracks.size() - 1; t++)
@@ -129,7 +129,7 @@ std::vector< pma::VtxCandidate > pma::PMAlgVertexing::firstPassCandidates(void) 
 	return candidates;
 }
 
-std::vector< pma::VtxCandidate > pma::PMAlgVertexing::secondPassCandidates(void) const
+std::vector< pma::VtxCandidate > pma::PMAlgVertexing::secondPassCandidates() const
 {
 	std::vector< pma::VtxCandidate > candidates;
 	for (size_t t = 0; t < fOutTracks.size(); t++)

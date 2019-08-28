@@ -13,7 +13,7 @@
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 
-pma::Hit3D::Hit3D(void) :
+pma::Hit3D::Hit3D() :
 	fCryo(0), fTPC(0), fPlane(0), fWire(0),
 	fPeakTime(0), fAmpl(0), fArea(0),
 	fPoint3D(0, 0, 0),
@@ -82,7 +82,7 @@ pma::Hit3D::Hit3D(const pma::Hit3D& src) :
 {
 }
 
-double pma::Hit3D::GetDist2ToProj(void) const
+double pma::Hit3D::GetDist2ToProj() const
 {
 	return pma::Dist2(fPoint2D, fProjection2D);
 }

@@ -22,7 +22,7 @@ pma::SortedObjectBase::SortedObjectBase(pma::SortedObjectBase* prevElement, pma:
 	if (nextElement) AddNext(nextElement);
 }
 
-void pma::SortedObjectBase::Disconnect(void)
+void pma::SortedObjectBase::Disconnect()
 {
 	if (prev) prev->RemoveNext(this);
 	if (next) RemoveNext(next);
@@ -61,7 +61,7 @@ int pma::SortedObjectBase::RemoveNext(pma::SortedObjectBase* nextElement)
 //******************************************************************
 
 //***********************  SortedBranchBase  ***********************
-void pma::SortedBranchBase::Disconnect(void)
+void pma::SortedBranchBase::Disconnect()
 {
 	while (next_vector.size()) RemoveNext(next_vector.front());
 	if (prev) prev->RemoveNext(this);

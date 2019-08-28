@@ -30,10 +30,10 @@ namespace pma
 class pma::Node3D : public pma::Element3D, public pma::SortedBranchBase
 {
 public:
-	Node3D(void);
+	Node3D();
 	Node3D(const TVector3& p3d, unsigned int tpc, unsigned int cryo, bool vtx = false, double xshift = 0);
 
-	TVector3 const & Point3D(void) const { return fPoint3D; }
+	TVector3 const & Point3D() const { return fPoint3D; }
 
 	/// Returns true if the new position was accepted; returns false if the new position
 	/// was trimmed to fit insite TPC volume + fMargin.
@@ -41,27 +41,27 @@ public:
 
 	TVector2 const & Projection2D(unsigned int view) const { return fProj2D[view]; }
 
-	double GetDistToWall(void) const;
+	double GetDistToWall() const;
 
 	/// Check if p3d is in the same TPC as the node.
 	bool SameTPC(const TVector3& p3d, float margin = 0.0F) const;
 	bool SameTPC(const pma::Vector3D& p3d, float margin = 0.0F) const;
 
 	/// Belongs to more than one track?
-	bool IsBranching(void) const;
+	bool IsBranching() const;
 
 	/// Is the first/last in this TPC?
-	bool IsTPCEdge(void) const;
+	bool IsTPCEdge() const;
 
 	/// Check fIsVertex flag.
-	bool IsVertex(void) const { return fIsVertex; }
+	bool IsVertex() const { return fIsVertex; }
 	void SetVertex(bool state) { fIsVertex = state; }
 	void SetVertexToBranching(bool setAllNodes)
 	{
 		if (setAllNodes || !fIsVertex) fIsVertex = IsBranching();
 	}
 
-	std::vector< pma::Track3D* > GetBranches(void) const;
+	std::vector< pma::Track3D* > GetBranches() const;
 
 	/// Distance [cm] from the 3D point to the point 3D.
 	double GetDistance2To(const TVector3& p3d) const override;
@@ -70,7 +70,7 @@ public:
 	double GetDistance2To(const TVector2& p2d, unsigned int view) const override;
 
 	/// Get 3D direction cosines of the next segment, or pevious segment if this is the last node.
-	pma::Vector3D GetDirection3D(void) const override;
+	pma::Vector3D GetDirection3D() const override;
 
 	/// In case of a node it is simply 3D position of the node.
 	TVector3 GetUnconstrainedProj3D(const TVector2& p2d, unsigned int view) const override { return fPoint3D; }
@@ -80,16 +80,16 @@ public:
 
 	/// Squared sum of half-lengths of connected 3D segments
 	/// (used in the vertex position optimization).
-	double Length2(void) const override;
+	double Length2() const override;
 
 	/// Cosine of 3D angle between connected segments.
-	double SegmentCos(void) const;
+	double SegmentCos() const;
 	/// Cosine of 2D angle (in plane parallel to wire planes) between connected segments.
 	/// Should be changed / generalized for horizontal wire planes (e.g. 2-phase LAr).
-	double SegmentCosWirePlane(void) const;
+	double SegmentCosWirePlane() const;
 	/// Cosine of 2D angle (in horizontal plane, parallel to drift) between connected segments.
 	/// Should be changed / generalized for horizontal wire planes (e.g. 2-phase LAr).
-	double SegmentCosTransverse(void) const;
+	double SegmentCosTransverse() const;
 
 	/// Objective function minimized during oprimization.
 	double GetObjFunction(float penaltyValue, float endSegWeight) const;
@@ -102,28 +102,28 @@ public:
 	void ClearAssigned(pma::Track3D* trk = 0) override;
 
     void ApplyDriftShift(double dx) { fPoint3D[0] += dx; fDriftOffset += dx; }
-    double GetDriftShift(void) const { return fDriftOffset; }
+    double GetDriftShift() const { return fDriftOffset; }
 
 	/// Set allowed node position margin around TPC.
 	static void SetMargin(double m) { if (m >= 0.0) fMargin = m; }
 
 private:
 	/// Returns true if node position was trimmed to its TPC volume + fMargin
-	bool LimitPoint3D(void);
-	void UpdateProj2D(void);
+	bool LimitPoint3D();
+	void UpdateProj2D();
 
-	double EndPtCos2Transverse(void) const;
-	double PiInWirePlane(void) const;
-	double PenaltyInWirePlane(void) const;
+	double EndPtCos2Transverse() const;
+	double PiInWirePlane() const;
+	double PenaltyInWirePlane() const;
 
 	double Pi(float endSegWeight, bool doAsymm) const;
 	double Penalty(float endSegWeight) const;
-	double Mse(void) const;
+	double Mse() const;
 
 	double MakeGradient(float penaltyValue, float endSegWeight);
 	double StepWithGradient(float alfa, float tol, float penalty, float weight);
 
-    double SumDist2Hits(void) const override;
+    double SumDist2Hits() const override;
 
 	geo::TPCGeo const & fTpcGeo;
 

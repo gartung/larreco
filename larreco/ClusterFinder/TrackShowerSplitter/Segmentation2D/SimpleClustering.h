@@ -38,19 +38,19 @@ class tss::Cluster2D
 {
 public:
 
-	Cluster2D(void) : fTag(false), fDenseStart(false), fDenseEnd(false), fIsEM(false) { }
+	Cluster2D() : fTag(false), fDenseStart(false), fDenseEnd(false), fIsEM(false) { }
 	Cluster2D(const std::vector< const tss::Hit2D* > & hits);
 
-	size_t size(void) const { return fHits.size(); }
+	size_t size() const { return fHits.size(); }
 
 	const Hit2D & operator [] (size_t index) const { return *(fHits[index]); }
 
-	const std::vector< const tss::Hit2D* > & hits(void) const { return fHits; }
-	std::vector< const tss::Hit2D* > & hits(void) { return fHits; }
+	const std::vector< const tss::Hit2D* > & hits() const { return fHits; }
+	std::vector< const tss::Hit2D* > & hits() { return fHits; }
 
 	bool has(const tss::Hit2D* hit) const;
 
-	double length2(void) const
+	double length2() const
 	{
 		if (size() > 1) return pma::Dist2(fHits.front()->Point2D(), fHits.back()->Point2D());
 		else return 0.0;
@@ -75,39 +75,39 @@ public:
 		clu.hits().clear();
 	}
 
-	const tss::Hit2D* start(void) const
+	const tss::Hit2D* start() const
 	{
 		if (fHits.size()) return fHits.front();
 		else return 0;
 	}
-	const tss::Hit2D* end(void) const
+	const tss::Hit2D* end() const
 	{
 		if (fHits.size()) return fHits.back();
 		else return 0;
 	}
-	void sort(void)
+	void sort()
 	{
 		if (fHits.size() > 2)
 			std::sort(fHits.begin() + 1, fHits.end(),
 				tss::bDistToPointLess(fHits.front()->Point2D()));
 	}
 
-	bool isTagged(void) const { return fTag; }
+	bool isTagged() const { return fTag; }
 	void setTag(bool b) { fTag = b; }
 
-	bool isDenseStart(void) const { return fDenseStart; }
+	bool isDenseStart() const { return fDenseStart; }
 	void tagDenseStart(bool b) { fDenseStart = b; }
-	bool isDenseEnd(void) const { return fDenseEnd; }
+	bool isDenseEnd() const { return fDenseEnd; }
 	void tagDenseEnd(bool b) { fDenseEnd = b; }
 
-	bool isEM(void) const { return fIsEM; }
+	bool isEM() const { return fIsEM; }
 	void tagEM(bool b) { fIsEM = b; }
 
 	const Hit2D* closest(const TVector2 & p2d, size_t & idx) const;
 	const Hit2D* outermost(size_t & idx) const;
 
-	const TVector2 min(void) const;
-	const TVector2 max(void) const;
+	const TVector2 min() const;
+	const TVector2 max() const;
 
 private:
 

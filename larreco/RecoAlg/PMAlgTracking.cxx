@@ -72,7 +72,7 @@ pma::PMAlgTrackingBase::PMAlgTrackingBase(
 }
 // ------------------------------------------------------
 
-pma::PMAlgTrackingBase::~PMAlgTrackingBase(void)
+pma::PMAlgTrackingBase::~PMAlgTrackingBase()
 {
   for (auto t : fResult.tracks())
     t.DeleteTrack();
@@ -151,7 +151,7 @@ pma::PMAlgFitter::PMAlgFitter(
 // ------------------------------------------------------
 // ------------------------------------------------------
 int
-pma::PMAlgFitter::build(void)
+pma::PMAlgFitter::build()
 {
   if (!fPfpClusters.empty() && !fCluHits.empty()) {
     // build pm tracks
@@ -176,7 +176,7 @@ pma::PMAlgFitter::build(void)
 // ------------------------------------------------------
 
 void
-pma::PMAlgFitter::buildTracks(void)
+pma::PMAlgFitter::buildTracks()
 {
   bool skipPdg = true;
   if (!fTrackingSkipPdg.empty() && (fTrackingSkipPdg.front() == 0))
@@ -240,7 +240,7 @@ pma::PMAlgFitter::buildTracks(void)
 // ------------------------------------------------------
 
 void
-pma::PMAlgFitter::buildShowers(void)
+pma::PMAlgFitter::buildShowers()
 {
   bool skipPdg = true;
   if (!fTrackingSkipPdg.empty() && (fTrackingSkipPdg.front() == 0))
@@ -1130,7 +1130,7 @@ pma::PMAlgTracker::matchTrack(
 // ------------------------------------------------------
 // ------------------------------------------------------
 int
-pma::PMAlgTracker::build(void)
+pma::PMAlgTracker::build()
 {
   fInitialClusters.clear();
   fTriedClusters.clear();
@@ -1714,7 +1714,7 @@ pma::PMAlgTracker::maxCluster(size_t min_clu_size,
 // ------------------------------------------------------
 
 void
-pma::PMAlgTracker::listUsedClusters(void) const
+pma::PMAlgTracker::listUsedClusters() const
 {
   // std::ofstream hits_file("pma_event_hits.prn");
 

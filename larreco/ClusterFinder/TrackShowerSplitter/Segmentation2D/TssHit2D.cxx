@@ -9,7 +9,7 @@
 #include "TssHit2D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 
-tss::Hit2D::Hit2D(void) :
+tss::Hit2D::Hit2D() :
 	fPlane(0), fWire(0),
 	fPoint2D(0, 0)
 {

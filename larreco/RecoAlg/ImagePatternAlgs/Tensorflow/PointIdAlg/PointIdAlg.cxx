@@ -183,13 +183,13 @@ nnet::PointIdAlg::PointIdAlg(const Config& config) : img::DataProviderAlg(config
 }
 // ------------------------------------------------------
 
-nnet::PointIdAlg::~PointIdAlg(void)
+nnet::PointIdAlg::~PointIdAlg()
 {
 	deleteNNet();
 }
 // ------------------------------------------------------
 
-void nnet::PointIdAlg::resizePatch(void)
+void nnet::PointIdAlg::resizePatch()
 {
 	fWireDriftPatch.resize(fPatchSizeW);
 	for (auto & r : fWireDriftPatch) r.resize(fPatchSizeD);
@@ -355,7 +355,7 @@ nnet::TrainingDataAlg::TrainingDataAlg(const Config& config) : img::DataProvider
 }
 // ------------------------------------------------------
 
-nnet::TrainingDataAlg::~TrainingDataAlg(void)
+nnet::TrainingDataAlg::~TrainingDataAlg()
 {
 }
 // ------------------------------------------------------

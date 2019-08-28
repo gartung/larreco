@@ -57,13 +57,13 @@ class pma::PMAlgTrackingBase
 {
 public:
 
-	const pma::TrkCandidateColl & result(void) { return fResult; }
+	const pma::TrkCandidateColl & result() { return fResult; }
 
 	std::vector< std::pair< TVector3, std::vector< std::pair< size_t, bool > > > >
 	getVertices(bool onlyBranching = false) const
 	{ return fPMAlgVertexing.getVertices(fResult, onlyBranching); }
 
-	std::vector< std::pair< TVector3, size_t > > getKinks(void) const
+	std::vector< std::pair< TVector3, size_t > > getKinks() const
 	{ return fPMAlgVertexing.getKinks(fResult); }
 
 protected:
@@ -71,7 +71,7 @@ protected:
 	PMAlgTrackingBase(const std::vector< art::Ptr<recob::Hit> > & allhitlist,
 		const pma::ProjectionMatchingAlg::Config& pmalgConfig,
 		const pma::PMAlgVertexing::Config& pmvtxConfig);
-	~PMAlgTrackingBase(void);
+	~PMAlgTrackingBase();
 
 	void guideEndpoints(pma::TrkCandidateColl & tracks);
 
@@ -118,12 +118,12 @@ public:
 		const pma::PMAlgFitter::Config& pmalgFitterConfig,
 		const pma::PMAlgVertexing::Config& pmvtxConfig);
 
-	int build(void);
+	int build();
 
 private:
 
-	void buildTracks(void);
-	void buildShowers(void);
+	void buildTracks();
+	void buildShowers();
 
 	bool has(const std::vector<int> & v, int i) const
 	{
@@ -249,7 +249,7 @@ public:
 	void init(const art::FindManyP< recob::Hit > & hitsFromClusters,
 		const art::FindManyP< recob::Hit > & hitsFromEmParts);
 
-	int build(void);
+	int build();
 
 private:
 
@@ -309,7 +309,7 @@ private:
 	int maxCluster(size_t min_clu_size,
 		geo::View_t view, unsigned int tpc, unsigned int cryo) const;
 
-	void listUsedClusters(void) const;
+	void listUsedClusters() const;
 
 	bool has(const std::vector<size_t>& v, size_t idx) const
 	{

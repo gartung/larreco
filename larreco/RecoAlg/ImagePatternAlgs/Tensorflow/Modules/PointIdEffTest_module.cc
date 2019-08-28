@@ -91,7 +91,7 @@ private:
 
     virtual void analyze(art::Event const & e) override;
 
-    void cleanup(void);
+    void cleanup();
 
     void countTruthDep(
         const std::vector< sim::SimChannel > & channels,
@@ -268,7 +268,7 @@ void nnet::PointIdEffTest::endJob()
 	// std::cout << "Total " << fTotal << std::endl;
 }
 
-void nnet::PointIdEffTest::cleanup(void)
+void nnet::PointIdEffTest::cleanup()
 {
     fParticleMap.clear();
 
