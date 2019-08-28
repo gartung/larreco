@@ -13,30 +13,15 @@
 // ### LArSoft Includes ###
 // ########################
 #include "lardataobj/RecoBase/EndPoint2D.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/CryostatGeo.h"
-#include "larcorealg/Geometry/TPCGeo.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
-#include "larcorealg/Geometry/WireGeo.h"
-#include "lardataobj/Simulation/sim.h"
-#include "larsim/Simulation/SimListUtils.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/Utilities/AssociationUtil.h"
 
 // ##########################
 // ### Basic C++ Includes ###
 // ##########################
 #include <string>
-#include <iostream>
-#include <iomanip>
-#include <ios>
-#include <fstream>
-#include <math.h>
-#include <algorithm>
 
 // ##########################
 // ### Framework Includes ###
@@ -50,18 +35,13 @@
 #include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // #####################
 // ### ROOT Includes ###
 // #####################
-#include "TH1D.h"
+#include "TH1F.h"
 #include "TH2D.h"
-#include "TVectorD.h"
-#include "TGeoManager.h"
-#include "TGraph.h"
-#include "TF1.h"
 
 // ====================================================================================
 // ====================================================================================
@@ -70,18 +50,14 @@ namespace vertex{
 
 // Base class for creation of verticies
 class FeatureVertexFinderAna: public art::EDAnalyzer{
-
-
 public:
 	explicit FeatureVertexFinderAna(fhicl::ParameterSet const& pset);
-	virtual ~FeatureVertexFinderAna();
 
+private:
 	// providing read write access to the event
 	void analyze (const art::Event& evt);
 	void beginJob();
-	void reconfigure(fhicl::ParameterSet const& p);
 
-private:
 	std::string fLArG4ModuleLabel; //<---LArG4 Module Label
 	std::string fGenieModuleLabel; //<---Genie Module Label
 	std::string fVertexModuleLabel; //<---Vertex Module Label
@@ -166,23 +142,10 @@ private:
 FeatureVertexFinderAna::FeatureVertexFinderAna(fhicl::ParameterSet const& pset)
   : EDAnalyzer(pset)
 {
-  this->reconfigure(pset);
-}
-
-//------------------------------------------------------------------
-FeatureVertexFinderAna::~FeatureVertexFinderAna()
-{
-}
-
-
-//------------------------------------------------------------------
-void FeatureVertexFinderAna::reconfigure(fhicl::ParameterSet const& p)
-{
-	fLArG4ModuleLabel        = p.get< std::string >("LArGeantModuleLabel");
-	fGenieModuleLabel	 = p.get< std::string >("GenieModuleLabel");
-	fVertexModuleLabel       = p.get< std::string >("VertexModuleLabel");
-	fEndPoint2dModuleLabel   = p.get< std::string >("EndPoint2dModuleLabel");
-    	return;
+        fLArG4ModuleLabel        = pset.get< std::string >("LArGeantModuleLabel");
+        fGenieModuleLabel	 = pset.get< std::string >("GenieModuleLabel");
+        fVertexModuleLabel       = pset.get< std::string >("VertexModuleLabel");
+        fEndPoint2dModuleLabel   = pset.get< std::string >("EndPoint2dModuleLabel");
 }
 
 //-------------------------------------------------

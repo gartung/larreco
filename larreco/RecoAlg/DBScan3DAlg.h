@@ -39,11 +39,13 @@
 #define SUCCESS 0
 #define FAILURE -3
 
-#include "fhiclcpp/ParameterSet.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindManyP.h"
-#include "larcore/Geometry/Geometry.h"
+namespace fhicl { class ParameterSet; }
+
 #include <map>
+
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"  // for WireID
 
 namespace recob {
   class SpacePoint;
@@ -77,7 +79,6 @@ class DBScan3DAlg {
 
 
     DBScan3DAlg(fhicl::ParameterSet const& pset);
-    virtual ~DBScan3DAlg();
 
     std::vector<point_t> points;
 
@@ -103,7 +104,7 @@ class DBScan3DAlg {
     int spread(unsigned int index,
                epsilon_neighbours_t *seeds,
                unsigned int cluster_id);
-    float dist(point_t *a, point_t *b);
+    float dist(point_t *a, point_t *b) const;
 
 
   }; // class DBScan3DAlg

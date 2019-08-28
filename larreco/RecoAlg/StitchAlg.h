@@ -10,7 +10,6 @@
 #include <vector>
 
 // art libraries
-#include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Principal/Handle.h"
 
@@ -30,7 +29,6 @@ class StitchAlg
 
  public:
   StitchAlg (fhicl::ParameterSet const& pset)  ;
-  virtual ~StitchAlg ()  {};
 
   void reconfigure(fhicl::ParameterSet const& pset) ;
 
@@ -39,8 +37,8 @@ class StitchAlg
   void WalkStitch();
   bool CommonComponentStitch();
 
-  void GetTrackComposites(std::vector <art::PtrVector <recob::Track> > & c) { c = fTrackComposite;};
-  void GetTracks(std::vector <recob::Track>& t) { t = fTrackVec ;};
+  void GetTrackComposites(std::vector <art::PtrVector <recob::Track> > & c) const { c = fTrackComposite;}
+  void GetTracks(std::vector <recob::Track>& t) const { t = fTrackVec ;}
 
   art::Handle< std::vector< recob::Track > > ftListHandle;
 

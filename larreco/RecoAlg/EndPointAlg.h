@@ -8,11 +8,10 @@
 #ifndef ENDPOINTALG_H
 #define ENDPOINTALG_H
 
-#include "art/Framework/Principal/Event.h"
-#include "fhiclcpp/ParameterSet.h"
-#include "canvas/Persistency/Common/Ptr.h"
+#include "art/Framework/Principal/fwd.h"
 #include "canvas/Persistency/Common/PtrVector.h"
-#include "TMath.h"
+namespace fhicl { class ParameterSet; }
+
 #include <vector>
 #include <string>
 
@@ -30,7 +29,6 @@ namespace cluster {
   public:
 
     explicit EndPointAlg(fhicl::ParameterSet const& pset);
-    virtual ~EndPointAlg();
 
     void   reconfigure(fhicl::ParameterSet const& pset);
 
@@ -38,14 +36,14 @@ namespace cluster {
 		    std::vector<recob::EndPoint2D>                 & vtxcol,
 		    std::vector< art::PtrVector<recob::Hit> >      & vtxHitsOut,
 		    art::Event                                const& evt,
-		    std::string                               const& label);
+                    std::string                               const& label) const;
 
   private:
 
-    double Gaussian(int x, int y, double sigma);
-    double GaussianDerivativeX(int x, int y);
-    double GaussianDerivativeY(int x, int y);
-    void VSSaveBMPFile(const char *fileName, unsigned char *pix, int dx, int dy);
+    double Gaussian(int x, int y, double sigma) const;
+    double GaussianDerivativeX(int x, int y) const;
+    double GaussianDerivativeY(int x, int y) const;
+    void VSSaveBMPFile(const char *fileName, unsigned char *pix, int dx, int dy) const;
 
 
     int          fTimeBins;

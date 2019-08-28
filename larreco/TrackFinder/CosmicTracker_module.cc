@@ -18,11 +18,9 @@
 ////////////////////////////////////////////////////////////////////////
 
 // C++ includes
-#include <math.h>
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
-#include <fstream>
 #include <string>
 
 // Framework includes
@@ -35,14 +33,10 @@
 #include "canvas/Persistency/Common/Ptr.h" 
 #include "canvas/Persistency/Common/PtrVector.h" 
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h" 
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
-#include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -52,12 +46,8 @@
 #include "larreco/RecoAlg/CosmicTrackerAlg.h"
 
 // ROOT includes
-#include "TVectorD.h"
-#include "TF1.h"
-#include "TGraph.h"
+#include "TVector3.h"
 #include "TMath.h"
-#include "TH1D.h"
-#include "TVirtualFitter.h"
 
 struct trkPoint{
 public:
@@ -193,14 +183,10 @@ namespace trkf {
 
   class CosmicTracker : public art::EDProducer {
   public:
-
     explicit CosmicTracker(fhicl::ParameterSet const& pset);
 
-    //////////////////////////////////////////////////////////
-    void reconfigure(fhicl::ParameterSet const& p);
-    void produce(art::Event& evt);
-
   private:
+    void produce(art::Event& evt);
 
     cluster::ClusterMatchTQ  fClusterMatch;
     trkf::CosmicTrackerAlg   fCTAlg;
@@ -228,7 +214,13 @@ namespace trkf {
     fClusterMatch(pset.get< fhicl::ParameterSet >("ClusterMatch")),
     fCTAlg(pset.get< fhicl::ParameterSet >("CTAlg"))
   {
-    this->reconfigure(pset);
+    fClusterModuleLabel     = pset.get< std::string >("ClusterModuleLabel");
+    fSortDir                = pset.get< std::string >("SortDirection","+z");
+    fStitchTracks           = pset.get< bool   >("StitchTracks");
+    fDisCut                 = pset.get< double >("DisCut");
+    fAngCut                 = pset.get< double >("AngCut");
+    fTrajOnly               = pset.get< bool   >("TrajOnly");
+
     produces< std::vector<recob::Track>                        >();
     produces< std::vector<recob::SpacePoint>                   >();
     produces< art::Assns<recob::Track,      recob::Cluster>    >();
@@ -236,17 +228,6 @@ namespace trkf {
     produces< art::Assns<recob::SpacePoint, recob::Hit>        >();
     produces< art::Assns<recob::Track,      recob::Hit>        >();
 
-  }
-
-  //-------------------------------------------------
-  void CosmicTracker::reconfigure(fhicl::ParameterSet const& pset)
-  {
-    fClusterModuleLabel     = pset.get< std::string >("ClusterModuleLabel");
-    fSortDir                = pset.get< std::string >("SortDirection","+z");
-    fStitchTracks           = pset.get< bool   >("StitchTracks");
-    fDisCut                 = pset.get< double >("DisCut");
-    fAngCut                 = pset.get< double >("AngCut");
-    fTrajOnly               = pset.get< bool   >("TrajOnly");
   }
 
   //------------------------------------------------------------------------------------//

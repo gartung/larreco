@@ -36,18 +36,23 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include <cmath>
-#include <algorithm>
 #include <deque>
 
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDProducer.h"
-#include "canvas/Persistency/Common/FindManyP.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "art_root_io/TFileDirectory.h"
 #include "art_root_io/TFileService.h"
+#include "canvas/Persistency/Common/Assns.h"
+#include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/PtrVector.h"
+#include "canvas/Persistency/Common/FindManyP.h"
+#include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "larcore/Geometry/Geometry.h"
+#include "lardata/RecoObjects/KHit.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
@@ -57,8 +62,7 @@
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "larreco/RecoAlg/Track3DKalmanHitAlg.h"
 #include "larreco/RecoAlg/SpacePointAlg.h"
-#include "lardata/Utilities/AssociationUtil.h"
-
+#include "larreco/RecoAlg/Track3DKalmanHit.h"
 
 #include "TH1F.h"
 
@@ -70,7 +74,6 @@ namespace trkf {
       explicit Track3DKalmanHit(fhicl::ParameterSet const & pset);
 
    private:
-      void reconfigure(fhicl::ParameterSet const & pset) ;
       void produce(art::Event & e) override;
       void beginJob() override;
       void endJob() override;
@@ -135,7 +138,18 @@ fHIncChisq(0),
 fHPull(0),
 fNumEvent(0)
 {
-   reconfigure(pset);
+   fHist = pset.get<bool>("Hist");
+   fUseClusterHits = pset.get<bool>("UseClusterHits");
+   fUsePFParticleHits = pset.get<bool>("UsePFParticleHits");
+   fUsePFParticleSeeds = pset.get<bool>("UsePFParticleSeeds");
+   fHitModuleLabel = pset.get<std::string>("HitModuleLabel");
+   fClusterModuleLabel = pset.get<std::string>("ClusterModuleLabel");
+   fPFParticleModuleLabel = pset.get<std::string>("PFParticleModuleLabel");
+   if(fUseClusterHits && fUsePFParticleHits) {
+      throw cet::exception("Track3DKalmanHit")
+      << "Using input from both clustered and PFParticle hits.\n";
+   }
+
    produces<std::vector<recob::Track> >();
    produces<std::vector<recob::SpacePoint>            >();
    produces<art::Assns<recob::Track, recob::Hit> >(); // ****** REMEMBER to remove when FindMany improved ******
@@ -151,31 +165,6 @@ fNumEvent(0)
    << "  UseClusterHits = " << fUseClusterHits << "\n"
    << "  HitModuleLabel = " << fHitModuleLabel << "\n"
    << "  ClusterModuleLabel = " << fClusterModuleLabel;
-}
-
-//----------------------------------------------------------------------------
-/// Reconfigure method.
-///
-/// Arguments:
-///
-/// p - Fcl parameter set.
-///
-// SS: talk to Kyle about using parameter set validation
-void trkf::Track3DKalmanHit::reconfigure(fhicl::ParameterSet const & pset)
-{
-   fHist = pset.get<bool>("Hist");
-   fTKHAlg.reconfigure(pset.get<fhicl::ParameterSet>("Track3DKalmanHitAlg"));
-   fSpacePointAlg.reconfigure(pset.get<fhicl::ParameterSet>("SpacePointAlg"));
-   fUseClusterHits = pset.get<bool>("UseClusterHits");
-   fUsePFParticleHits = pset.get<bool>("UsePFParticleHits");
-   fUsePFParticleSeeds = pset.get<bool>("UsePFParticleSeeds");
-   fHitModuleLabel = pset.get<std::string>("HitModuleLabel");
-   fClusterModuleLabel = pset.get<std::string>("ClusterModuleLabel");
-   fPFParticleModuleLabel = pset.get<std::string>("PFParticleModuleLabel");
-   if(fUseClusterHits && fUsePFParticleHits) {
-      throw cet::exception("Track3DKalmanHit")
-      << "Using input from both clustered and PFParticle hits.\n";
-   }
 }
 
 //----------------------------------------------------------------------------

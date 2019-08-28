@@ -12,9 +12,6 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
-#include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 
 #include "lardataobj/MCBase/MCHitCollection.h"
@@ -34,10 +31,10 @@ namespace hit {
     explicit MCHitAnaExample(fhicl::ParameterSet const & p);
     virtual ~MCHitAnaExample();
 
+  private:
+
     void analyze(art::Event const & e) override;
 
-
-  private:
 
     //
     // Module names
@@ -355,4 +352,3 @@ namespace hit {
   }
 }
 DEFINE_ART_MODULE(hit::MCHitAnaExample)
-

@@ -9,63 +9,36 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Principal/Event.h"
-#include "art/Framework/Principal/SubRun.h"
-#include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art_root_io/TFileService.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
-#include "larcore/Geometry/Geometry.h"
-#include "lardata/Utilities/AssociationUtil.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
-#include "lardataobj/AnalysisBase/Calorimetry.h"
-#include "lardataobj/AnalysisBase/ParticleID.h"
-#include "lardataobj/MCBase/MCDataHolder.h"
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/Simulation/SimChannel.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
 #include "TTree.h"
-#include "TFile.h"
-#include "TH1.h"
-#include "TH3.h"
-#include "TProfile.h"
-#include "TProfile2D.h"
-#include <TROOT.h>
-#include <TStyle.h>
 
 const int kMaxShowers = 1000;  //maximum number of showers
 
 namespace shower {
 
   class TCShowerAnalysis : public art::EDAnalyzer {
-
   public:
-
     explicit TCShowerAnalysis(fhicl::ParameterSet const& pset);
-    virtual ~TCShowerAnalysis();
 
-    void reconfigure(fhicl::ParameterSet const& pset);
+  private:
     void beginJob();
     void analyze(const art::Event& evt);
-
-  protected:
 
     void reset();
 
     void truthMatcher(std::vector<art::Ptr<recob::Hit>>all_hits, std::vector<art::Ptr<recob::Hit>> shower_hits, const simb::MCParticle *&MCparticle, double &Efrac, double &Ecomplet);
-
-  private:
 
     TTree* fTree;
     int run;
@@ -108,18 +81,7 @@ shower::TCShowerAnalysis::TCShowerAnalysis(fhicl::ParameterSet const& pset) :
   fGenieGenModuleLabel      (pset.get< std::string >("GenieGenModuleLabel", "generator")  ),
   fDigitModuleLabel         (pset.get< std::string >("DigitModuleLabel", "largeant")  ),
   fCalorimetryAlg           (pset.get< fhicl::ParameterSet >("CalorimetryAlg") ) {
-  this->reconfigure(pset);
 } // TCShowerTemplateMaker
-
-// -------------------------------------------------
-
-shower::TCShowerAnalysis::~TCShowerAnalysis() {
-} // ~TCShowerTemplateMaker
-
-// -------------------------------------------------
-
-void shower::TCShowerAnalysis::reconfigure(fhicl::ParameterSet const& pset) {
-} // reconfigure
 
 // -------------------------------------------------
 

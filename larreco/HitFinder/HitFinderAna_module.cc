@@ -9,43 +9,27 @@
 // Framework includes
 #include "art/Framework/Core/ModuleMacros.h"
 
-// ROOT includes
-#include <TMath.h>
-#include <TH1F.h>
-#include <TGraph.h>
-#include <TFile.h>
-
 // C++ includes
-#include <algorithm>
-#include <fstream>
-#include <bitset>
+#include <utility>
+#include <vector>
 
 // Framework includes
 #include "art/Framework/Principal/Event.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/CryostatGeo.h"
-#include "larcorealg/Geometry/TPCGeo.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
-#include "nutools/ParticleNavigation/ParticleList.h"
+#include "nug4/ParticleNavigation/ParticleList.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardata/Utilities/LArFFT.h"
 
-#include "TComplex.h"
-#include "TString.h"
-#include "TGraph.h"
-#include "TH2.h"
 #include "TTree.h"
 
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -59,18 +43,13 @@ namespace hit {
 
   /// Base class for creation of raw signals on wires.
   class HitFinderAna : public art::EDAnalyzer {
-
   public:
-
     explicit HitFinderAna(fhicl::ParameterSet const& pset);
-    virtual ~HitFinderAna();
 
+  private:
     /// read/write access to event
     void analyze (const art::Event& evt);
     void beginJob();
-    void reconfigure(fhicl::ParameterSet const& p);
-
-  private:
 
     std::string            fFFTHitFinderModuleLabel;
     std::string            fLArG4ModuleLabel;
@@ -117,20 +96,10 @@ namespace hit{
   HitFinderAna::HitFinderAna(fhicl::ParameterSet const& pset)
     : EDAnalyzer(pset)
   {
-    this->reconfigure(pset);
+    fFFTHitFinderModuleLabel = pset.get< std::string >("HitsModuleLabel");
+    fLArG4ModuleLabel        = pset.get< std::string >("LArGeantModuleLabel");
   }
 
-  //-------------------------------------------------
-  HitFinderAna::~HitFinderAna()
-  {
-  }
-
-  void HitFinderAna::reconfigure(fhicl::ParameterSet const& p)
-  {
-    fFFTHitFinderModuleLabel = p.get< std::string >("HitsModuleLabel");
-    fLArG4ModuleLabel        = p.get< std::string >("LArGeantModuleLabel");
-    return;
-  }
   //-------------------------------------------------
   void HitFinderAna::beginJob()
   {

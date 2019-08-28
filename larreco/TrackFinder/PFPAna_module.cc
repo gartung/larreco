@@ -22,31 +22,22 @@
 #include "canvas/Persistency/Common/PtrVector.h" 
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
 #include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h" 
 
 //LArSoft includes
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "nutools/ParticleNavigation/ParticleList.h"
-#include "nutools/ParticleNavigation/EmEveIdCalculator.h"
+#include "nug4/ParticleNavigation/ParticleList.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
-#include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
-#include "lardata/Utilities/AssociationUtil.h"
 
 
 #include "art/Framework/Core/EDAnalyzer.h"
-
-
-
-class TH1F;
-class TH2F;
 
 namespace pfpf {
 
@@ -58,11 +49,11 @@ namespace pfpf {
     explicit PFPAna(fhicl::ParameterSet const& pset);
     virtual ~PFPAna();
 
+  private:
     /// read access to event
     void analyze(const art::Event& evt);
     void beginJob();
 
-  private:
     TH1F* fNClusters;
     TH1F* fNHitInCluster;
     // Cosmic Rays

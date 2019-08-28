@@ -2,11 +2,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
 #include "canvas/Utilities/InputTag.h"
-#include "fhiclcpp/ParameterSet.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "fhiclcpp/types/Atom.h"
 #include "fhiclcpp/types/Table.h"
@@ -81,9 +77,9 @@ namespace trkf {
     VertexFitter & operator = (VertexFitter const &) = delete;
     VertexFitter & operator = (VertexFitter &&) = delete;
 
+  private:
     void produce(art::Event & e) override;
 
-  private:
     art::InputTag pfParticleInputTag;
     art::InputTag trackInputTag;
     Geometric3DVertexFitter fitter;

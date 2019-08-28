@@ -14,7 +14,9 @@
 
 // std includes
 #include <list>
-#include <algorithm>
+#include <tuple>
+#include <utility>
+
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 namespace lar_cluster3d
@@ -43,7 +45,7 @@ public:
     /**
      *  @brief  Destructor
      */
-    virtual ~ConvexHull();
+    ~ConvexHull();
 
     /**
      *  @brief recover the list of points used to build convex hull

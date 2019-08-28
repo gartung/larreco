@@ -16,16 +16,6 @@
 ///arXiv:1006.3012v1 [physics.ins-det]
 //Thanks to B. Morgan of U. of Warwick for comments and suggestions
 
-
-
-extern "C" {
-#include <sys/types.h>
-#include <sys/stat.h>
-}
-
-#include <fstream>
-#include <math.h>
-#include <algorithm>
 #include <string>
 
 // Framework includes
@@ -36,9 +26,6 @@ extern "C" {
 #include "art/Framework/Principal/Handle.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/PtrVector.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft includes
@@ -58,10 +45,9 @@ namespace cluster {
 
     explicit EndPointModule(fhicl::ParameterSet const& pset);
 
-    void reconfigure(fhicl::ParameterSet const& p);
-    void produce(art::Event& evt);
-
   private:
+
+    void produce(art::Event& evt);
 
     std::string fDBScanModuleLabel;
 
@@ -80,16 +66,10 @@ namespace cluster {
     : EDProducer{pset}
     , fEPAlg(pset.get< fhicl::ParameterSet >("EndPointAlg"))
   {
-    this->reconfigure(pset);
+    fDBScanModuleLabel = pset.get<std::string>("DBScanModuleLabel");
+
     produces< std::vector<recob::EndPoint2D> >();
     produces< art::Assns<recob::EndPoint2D, recob::Hit> >();
-  }
-
-  //-----------------------------------------------------------------------------
-  void EndPointModule::reconfigure(fhicl::ParameterSet const& p)
-  {
-    fDBScanModuleLabel = p.get<std::string>("DBScanModuleLabel");
-    fEPAlg.reconfigure(p.get< fhicl::ParameterSet >("EndPointAlg"));
   }
 
   //-----------------------------------------------------------------------------

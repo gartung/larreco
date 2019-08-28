@@ -14,8 +14,9 @@
 #ifndef CMERGEHELPER_H
 #define CMERGEHELPER_H
 
-#include <iostream>
+#include "larreco/RecoAlg/CMTool/CMToolBase/CMergeBookKeeper.h"
 #include "larreco/RecoAlg/CMTool/CMToolBase/CMergeManager.h"
+class TFile;
 
 namespace cmtool {
   /**
@@ -26,12 +27,6 @@ namespace cmtool {
   class CMergeHelper{
 
   public:
-
-    /// Default constructor
-    CMergeHelper(){}
-
-    /// Default destructor
-    virtual ~CMergeHelper(){}
 
     CMergeManager& GetManager(size_t mgr_id);
 
@@ -56,4 +51,3 @@ namespace cmtool {
 
 #endif
 /** @} */ // end of doxygen group
-

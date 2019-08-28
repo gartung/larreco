@@ -24,14 +24,10 @@
 #include "canvas/Persistency/Common/Ptr.h" 
 #include "canvas/Persistency/Common/PtrVector.h" 
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h" 
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/CryostatGeo.h"
-#include "larcorealg/Geometry/TPCGeo.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/RecoBase/EndPoint2D.h"
@@ -43,7 +39,8 @@
 #include "lardata/Utilities/AssociationUtil.h"
 
 // ROOT includes
-#include "TVectorD.h"
+#include "TVector2.h"
+#include "TVector3.h"
 #include "TMath.h"
 #include "TGraph.h"
 #include "TF1.h"
@@ -51,28 +48,17 @@
 namespace trkf {
 
   class SpacePts : public art::EDProducer {
-
   public:
-
     explicit SpacePts(fhicl::ParameterSet const& pset);
-    ~SpacePts();
-
-    //////////////////////////////////////////////////////////
-    void reconfigure(fhicl::ParameterSet const& p);
-    void produce(art::Event& evt);
-    void beginJob();
-    void endJob();
 
   private:
+    void produce(art::Event& evt);
 
     int             ftmatch; // tolerance for time matching (in time samples)
     double          fPreSamplings; // in ticks
     double fvertexclusterWindow;
     std::string     fClusterModuleLabel;// label for input cluster collection
     std::string     fEndPoint2DModuleLabel;//label for input EndPoint2D collection
-  protected:
-
-
   }; // class SpacePts
 
 
@@ -90,7 +76,11 @@ namespace trkf {
 SpacePts::SpacePts(fhicl::ParameterSet const& pset)
   : EDProducer{pset}
 {
-  this->reconfigure(pset);
+  fPreSamplings           = pset.get< double >("TicksOffset");
+  ftmatch                 = pset.get< int    >("TMatch");
+  fClusterModuleLabel     = pset.get< std::string >("ClusterModuleLabel");
+  fEndPoint2DModuleLabel  = pset.get< std::string >("EndPoint2DModuleLabel");
+  fvertexclusterWindow    = pset.get< double >("vertexclusterWindow");
 
   produces< std::vector<recob::Track>                   >();
   produces< std::vector<recob::SpacePoint>              >();
@@ -98,29 +88,6 @@ SpacePts::SpacePts(fhicl::ParameterSet const& pset)
   produces< art::Assns<recob::Track, recob::Cluster>    >();
   produces< art::Assns<recob::Track, recob::Hit>        >();
   produces< art::Assns<recob::SpacePoint, recob::Hit>   >();
-}
-
-//-------------------------------------------------
-SpacePts::~SpacePts()
-{
-}
-
-void SpacePts::reconfigure(fhicl::ParameterSet const& pset)
-{
-  fPreSamplings           = pset.get< double >("TicksOffset");
-  ftmatch                 = pset.get< int    >("TMatch");
-  fClusterModuleLabel     = pset.get< std::string >("ClusterModuleLabel");
-  fEndPoint2DModuleLabel  = pset.get< std::string >("EndPoint2DModuleLabel");
-  fvertexclusterWindow    = pset.get< double >("vertexclusterWindow");
-}
-
-//-------------------------------------------------
-void SpacePts::beginJob()
-{
-}
-
-void SpacePts::endJob()
-{
 }
 
 //------------------------------------------------------------------------------------//

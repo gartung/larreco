@@ -10,33 +10,23 @@
 #ifndef TRACKLINEFITALG_H
 #define TRACKLINEFITALG_H
 
-#include <math.h>
-#include <algorithm>
 #include <vector>
+
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/TPCGeo.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
-#include "larcorealg/Geometry/WireGeo.h"
+namespace geo { struct WireID; }
 
-// ROOT includes
-#include "TMath.h"
-#include "TVectorD.h"
-#include "TDecompSVD.h"
-#include "TMatrixD.h"
+class TVector3;
 
 namespace trkf {
 
   class TrackLineFitAlg {
     public:
 
-    TrackLineFitAlg();
-
-    virtual ~TrackLineFitAlg();
-
     void TrkLineFit(std::vector<geo::WireID>& hitWID, std::vector<double>& hitX, std::vector<double>& hitXErr,
-                    double XOrigin, TVector3& Pos, TVector3& Dir, float& ChiDOF);
+                    double XOrigin, TVector3& Pos, TVector3& Dir, float& ChiDOF) const;
 
     private:
 

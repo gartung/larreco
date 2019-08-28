@@ -9,37 +9,28 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
 #include "canvas/Utilities/InputTag.h"
+#include "canvas/Persistency/Common/FindManyP.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
 #include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "lardata/Utilities/AssociationUtil.h"
-
+#include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 
-#include "larreco/RecoAlg/ProjectionMatchingAlg.h"
-#include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 
 #include <memory>
 
-#include "larreco/DirOfGamma/DirOfGamma.h"
-
 // ROOT includes
 #include "TTree.h"
 #include "TLorentzVector.h"
-#include "TMathBase.h"
 
 namespace ems {
 	class MCinfo;
@@ -244,14 +235,12 @@ public:
   MultiEMShowers & operator = (MultiEMShowers const &) = delete;
   MultiEMShowers & operator = (MultiEMShowers &&) = delete;
 
+private:
 	void beginJob() override;
 	void endJob() override;
 
   void analyze(art::Event const & e) override;
 
-	void reconfigure(fhicl::ParameterSet const& p);
-
-private:
 	bool convCluster(art::Event const & evt);
 	double getMinDist(std::vector< art::Ptr<recob::Hit> > const & v,
 								TVector3 const & convmc,
@@ -320,18 +309,11 @@ ems::MultiEMShowers::MultiEMShowers(fhicl::ParameterSet const & p)
 	fEvInput = 0;
 	fEv2Groups = 0;
 	fEv2Good = 0;
-	reconfigure(p);
-}
-
-void ems::MultiEMShowers::reconfigure(fhicl::ParameterSet const& p)
-{
   fHitsModuleLabel = p.get< art::InputTag >("HitsModuleLabel");
   fCluModuleLabel = p.get< art::InputTag >("ClustersModuleLabel");
   fTrk3DModuleLabel = p.get< art::InputTag >("Trk3DModuleLabel");
   fVtxModuleLabel = p.get< art::InputTag >("VtxModuleLabel");
   fShsModuleLabel = p.get< art::InputTag >("ShsModuleLabel");
-
-  return;
 }
 
 void ems::MultiEMShowers::beginJob()
@@ -686,4 +668,3 @@ double ems::MultiEMShowers::getMinDist(std::vector< art::Ptr<recob::Hit> > const
 }
 
 DEFINE_ART_MODULE(ems::MultiEMShowers)
-

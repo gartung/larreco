@@ -1,11 +1,6 @@
 // LArSoft includes
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/Utilities/GeometryUtilities.h"
-#include "larsim/Simulation/LArG4Parameters.h"
-#include "lardataobj/RecoBase/Track.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "lardataobj/RecoBase/Shower.h"
@@ -21,14 +16,11 @@
 #include "art_root_io/TFileService.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "canvas/Persistency/Common/FindManyP.h"
-#include "canvas/Persistency/Common/PtrVector.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "fhiclcpp/ParameterSet.h"
 
 // ROOT includes
-#include "TFile.h"
 #include "TTree.h"
-#include "TDirectory.h"
 #include "TH1.h"
 #include "TEfficiency.h"
 #include "TGraphAsymmErrors.h"
@@ -45,14 +37,13 @@ namespace DUNE{
   public:
 
     explicit NeutrinoShowerEff(fhicl::ParameterSet const& pset);
-    virtual ~NeutrinoShowerEff();
+
+  private:
 
     void beginJob();
     void endJob();
     void beginRun(const art::Run& run);
     void analyze(const art::Event& evt);
-
-    void reconfigure(fhicl::ParameterSet const& pset);
 
     void processEff(const art::Event& evt, bool &isFiducial);
     void truthMatcher(std::vector<art::Ptr<recob::Hit>>all_hits, std::vector<art::Ptr<recob::Hit>> shower_hits, const simb::MCParticle *&MCparticle, double &Efrac, double &Ecomplet);
@@ -60,8 +51,6 @@ namespace DUNE{
     bool insideFV(double vertex[4]);
     void doEfficiencies();
     void reset();
-
-  private:
 
     // the parameters we'll read from the .fcl
 
@@ -268,20 +257,9 @@ namespace DUNE{
 
 
   //========================================================================
-  NeutrinoShowerEff::NeutrinoShowerEff(fhicl::ParameterSet const& parameterSet)
-    : EDAnalyzer(parameterSet)
+  NeutrinoShowerEff::NeutrinoShowerEff(fhicl::ParameterSet const& p)
+    : EDAnalyzer(p)
   {
-    reconfigure(parameterSet);
-
-  }
-  //========================================================================
-  NeutrinoShowerEff::~NeutrinoShowerEff(){
-    //destructor
-  }
-  //========================================================================
-  void NeutrinoShowerEff::reconfigure(fhicl::ParameterSet const& p){
-
-
     fMCTruthModuleLabel  = p.get<art::InputTag>("MCTruthModuleLabel");
     fHitModuleLabel      = p.get<art::InputTag>("HitModuleLabel");
     fShowerModuleLabel   = p.get<art::InputTag>("ShowerModuleLabel");
@@ -294,7 +272,8 @@ namespace DUNE{
     fSaveMCTree		 = p.get<bool>("SaveMCTree");
     fFidVolCutX          = p.get<float>("FidVolCutX");
     fFidVolCutY          = p.get<float>("FidVolCutY");
-    fFidVolCutZ          = p.get<float>("FidVolCutZ");}
+    fFidVolCutZ          = p.get<float>("FidVolCutZ");
+  }
   //========================================================================
   //========================================================================
   void NeutrinoShowerEff::beginJob(){

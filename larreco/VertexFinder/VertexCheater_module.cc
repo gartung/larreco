@@ -16,18 +16,15 @@
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Vertex.h"
-#include "nutools/ParticleNavigation/ParticleList.h"
+#include "nug4/ParticleNavigation/ParticleList.h"
 
 // Framework includes
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDProducer.h"
-#include "canvas/Persistency/Common/FindManyP.h"
 #include "art/Framework/Principal/Event.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -37,8 +34,6 @@ namespace vertex {
     explicit VertexCheater(fhicl::ParameterSet const& pset);
 
     void produce(art::Event& evt);
-
-    void reconfigure(fhicl::ParameterSet const& pset);
 
  private:
 
@@ -55,21 +50,15 @@ namespace vertex{
   VertexCheater::VertexCheater(fhicl::ParameterSet const& pset)
     : EDProducer{pset}
   {
-    this->reconfigure(pset);
+    fCheatedTrackLabel  = pset.get< std::string >("CheatedTrackLabel",  "track"   );
+    fCheatedShowerLabel = pset.get< std::string >("CheatedShowerLabel", "shower"  );
+    fG4ModuleLabel      = pset.get< std::string >("G4ModuleLabel",      "largeant");
 
     produces< std::vector<recob::Vertex> >();
     produces< art::Assns<recob::Vertex, recob::Shower> >();
     produces< art::Assns<recob::Vertex, recob::Track>  >();
     produces< art::Assns<recob::Vertex, recob::Hit>    >();
 
-  }
-
-  //--------------------------------------------------------------------
-  void VertexCheater::reconfigure(fhicl::ParameterSet const& pset)
-  {
-    fCheatedTrackLabel  = pset.get< std::string >("CheatedTrackLabel",  "track"   );
-    fCheatedShowerLabel = pset.get< std::string >("CheatedShowerLabel", "shower"  );
-    fG4ModuleLabel      = pset.get< std::string >("G4ModuleLabel",      "largeant");
   }
 
   //--------------------------------------------------------------------

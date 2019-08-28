@@ -12,8 +12,6 @@
 
 // LArSoft includes
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/Utilities/GeometryUtilities.h"
-#include "larsim/Simulation/LArG4Parameters.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
@@ -22,7 +20,6 @@
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
-#include "lardataobj/RawData/ExternalTrigger.h"
 
 // Framework includes
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -32,13 +29,10 @@
 #include "art_root_io/TFileService.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "canvas/Persistency/Common/FindManyP.h"
-#include "canvas/Persistency/Common/PtrVector.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "fhiclcpp/ParameterSet.h"
 
 // ROOT includes
-#include "TFile.h"
-#include "TDirectory.h"
 #include "TH1.h"
 #include "TEfficiency.h"
 #include "TGraphAsymmErrors.h"
@@ -56,22 +50,19 @@ class NeutrinoTrackingEff : public art::EDAnalyzer {
 public:
 
     explicit NeutrinoTrackingEff(fhicl::ParameterSet const& pset);
-    virtual ~NeutrinoTrackingEff();
+
+private:
 
     void beginJob();
     void endJob();
     void beginRun(const art::Run& run);
     void analyze(const art::Event& evt);
 
-    void reconfigure(fhicl::ParameterSet const& pset);
-
     void processEff(const art::Event& evt, bool &isFiducial);
     void truthMatcher( std::vector<art::Ptr<recob::Hit>> all_hits, std::vector<art::Ptr<recob::Hit>> track_hits, const simb::MCParticle *&MCparticle, double &Efrac, double &Ecomplet);
     double truthLength( const simb::MCParticle *MCparticle );
     bool insideFV(double vertex[4]);
     void doEfficiencies();
-
-private:
 
     // the parameters we'll read from the .fcl
     std::string fMCTruthModuleLabel;
@@ -192,18 +183,9 @@ private:
 
 
 //========================================================================
-NeutrinoTrackingEff::NeutrinoTrackingEff(fhicl::ParameterSet const& parameterSet)
-    : EDAnalyzer(parameterSet)
+NeutrinoTrackingEff::NeutrinoTrackingEff(fhicl::ParameterSet const& p)
+    : EDAnalyzer(p)
 {
-    reconfigure(parameterSet);
-}
-//========================================================================
-NeutrinoTrackingEff::~NeutrinoTrackingEff(){
-  //destructor
-}
-//========================================================================
-void NeutrinoTrackingEff::reconfigure(fhicl::ParameterSet const& p){
-
     fMCTruthModuleLabel  = p.get<std::string>("MCTruthModuleLabel");
     fTrackModuleLabel    = p.get<std::string>("TrackModuleLabel");
     fisNeutrinoInt	 = p.get<bool>("isNeutrinoInt");
@@ -633,7 +615,10 @@ void NeutrinoTrackingEff::processEff( const art::Event& event, bool &isFiducial)
     std::vector<art::Ptr<recob::Hit>> tmp_all_trackHits = track_hits.at(0);
     std::vector<art::Ptr<recob::Hit>> all_hits;
     art::Handle<std::vector<recob::Hit>> hithandle;
-    if(event.get(tmp_all_trackHits[0].id(), hithandle))  art::fill_ptr_vector(all_hits, hithandle);
+    auto const pd = event.getProductDescription(tmp_all_trackHits[0].id());
+    if (pd && event.getByLabel(pd->inputTag(), hithandle)) {
+      art::fill_ptr_vector(all_hits, hithandle);
+    }
 
     for(int i=0; i<n_recoTrack; i++) {
        art::Ptr<recob::Track> track = tracklist[i];

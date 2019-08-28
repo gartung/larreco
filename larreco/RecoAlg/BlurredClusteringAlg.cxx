@@ -10,7 +10,25 @@
 ////////////////////////////////////////////////////////////////////
 
 #include "cetlib/pow.h"
+#include "larcore/CoreUtils/ServiceUtil.h"
+#include "larcorealg/Geometry/WireGeo.h"
+#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardataalg/DetectorInfo/DetectorProperties.h"
 #include "larreco/RecoAlg/BlurredClusteringAlg.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+
+#include "RtypesCore.h"
+#include "TCanvas.h"
+#include "TColor.h"
+#include "TH2.h"
+#include "TLatex.h"
+#include "TMarker.h"
+#include "TString.h"
+#include "TStyle.h"
+#include "TVector2.h"
+#include "TVirtualPad.h"
 
 #include <cassert>
 #include <cmath>
@@ -161,7 +179,7 @@ cluster::BlurredClusteringAlg::ConvertRecobHitsToVector(std::vector<art::Ptr<rec
 
 int
 cluster::BlurredClusteringAlg::FindClusters(std::vector<std::vector<double>> const& blurred,
-                                            std::vector<std::vector<int>>& allcluster)
+                                            std::vector<std::vector<int>>& allcluster) const
 {
   // Size of image in x and y
   int const nbinsx = blurred.size();
@@ -355,7 +373,7 @@ cluster::BlurredClusteringAlg::FindClusters(std::vector<std::vector<double>> con
 }
 
 int
-cluster::BlurredClusteringAlg::GlobalWire(const geo::WireID& wireID)
+cluster::BlurredClusteringAlg::GlobalWire(const geo::WireID& wireID) const
 {
   double globalWire = -999;
 
@@ -397,7 +415,7 @@ cluster::BlurredClusteringAlg::GlobalWire(const geo::WireID& wireID)
 }
 
 std::vector<std::vector<double>>
-cluster::BlurredClusteringAlg::GaussianBlur(std::vector<std::vector<double>> const& image)
+cluster::BlurredClusteringAlg::GaussianBlur(std::vector<std::vector<double>> const& image) const
 {
   if (fSigmaWire == 0 and fSigmaTick == 0)
     return image;
@@ -463,7 +481,7 @@ cluster::BlurredClusteringAlg::GaussianBlur(std::vector<std::vector<double>> con
 
 TH2F*
 cluster::BlurredClusteringAlg::MakeHistogram(std::vector<std::vector<double>> const& image,
-                                             TString const name)
+                                             TString const name) const
 {
   auto hist = new TH2F(name, name,
                        fUpperWire-fLowerWire, fLowerWire-0.5, fUpperWire-0.5,

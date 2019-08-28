@@ -9,19 +9,12 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
-#include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/TPCGeo.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
-#include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
-#include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "lardata/Utilities/AssociationUtil.h"
 
 #include "larreco/ClusterFinder/TrackShowerSplitter/Segmentation2D/Segmentation2D.h"
@@ -43,11 +36,9 @@ public:
 	TrackShowerHits & operator = (TrackShowerHits const &) = delete;
 	TrackShowerHits & operator = (TrackShowerHits &&) = delete;
 
-	void reconfigure(fhicl::ParameterSet const& p);
-
-	void produce(art::Event & e) override;
-
 private:
+
+        void produce(art::Event & e) override;
 
 	cryo_tpc_view_hitmap fHitMap;
 	bool sortHits(const art::Event& evt);
@@ -68,20 +59,12 @@ TrackShowerHits::TrackShowerHits(fhicl::ParameterSet const & p) :
         EDProducer{p},
 	fSegmentation2D(p.get< fhicl::ParameterSet >("Segmentation2DAlg"))
 {
-	this->reconfigure(p);
+        fHitModuleLabel = p.get< std::string >("HitModuleLabel");
+        fHugeShowers = p.get< bool >("FindHugeShowers");
+        fShowersBySeg2D = p.get< bool >("FindMoreShowers");
 
 	produces< std::vector<recob::Cluster> >();
 	produces< art::Assns<recob::Cluster, recob::Hit> >();
-}
-// ------------------------------------------------------
-
-void TrackShowerHits::reconfigure(fhicl::ParameterSet const& pset)
-{
-        fHitModuleLabel = pset.get< std::string >("HitModuleLabel");
-		fHugeShowers = pset.get< bool >("FindHugeShowers");
-		fShowersBySeg2D = pset.get< bool >("FindMoreShowers");
-
-		fSegmentation2D.reconfigure(pset.get< fhicl::ParameterSet >("Segmentation2DAlg"));
 }
 // ------------------------------------------------------
 

@@ -9,52 +9,34 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Principal/Event.h"
-#include "art/Framework/Principal/SubRun.h"
-#include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
 #include "larcore/Geometry/Geometry.h"
-#include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "larsim/MCCheater/BackTrackerService.h"
-#include "larsim/MCCheater/ParticleInventoryService.h"
+#include "nusimdata/SimulationBase/MCNeutrino.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
-#include "lardataobj/AnalysisBase/Calorimetry.h"
-#include "lardataobj/AnalysisBase/ParticleID.h"
-#include "lardataobj/MCBase/MCDataHolder.h"
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/Simulation/SimChannel.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "TTree.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH3.h"
 #include "TProfile.h"
 #include "TProfile2D.h"
-#include <TROOT.h>
-#include <TStyle.h>
 
 namespace shower {
 
   class TCShowerElectronLikelihood : public art::EDAnalyzer {
-
   public:
-
     explicit TCShowerElectronLikelihood(fhicl::ParameterSet const& pset);
-    virtual ~TCShowerElectronLikelihood();
 
-    void reconfigure(fhicl::ParameterSet const& pset);
+  private:
     void beginJob();
     void analyze(const art::Event& evt);
 
@@ -63,9 +45,6 @@ namespace shower {
     void getLongLikelihood();
     void getTranLikelihood();
 
-  protected:
-
-  private:
     void resetProfiles();
 
     std::string fTemplateFile;
@@ -158,17 +137,6 @@ shower::TCShowerElectronLikelihood::TCShowerElectronLikelihood(fhicl::ParameterS
   fShowerModuleLabel        (pset.get< std::string >("ShowerModuleLabel", "tcshower" ) ),
   fGenieGenModuleLabel      (pset.get< std::string >("GenieGenModuleLabel", "generator") ),
   fCalorimetryAlg           (pset.get< fhicl::ParameterSet >("CalorimetryAlg") ) {
-  this->reconfigure(pset);
-} // TCShowerElectronLikelihood
-
-// -------------------------------------------------
-
-shower::TCShowerElectronLikelihood::~TCShowerElectronLikelihood() {
-} // ~TCShowerElectronLikelihood
-
-// -------------------------------------------------
-
-void shower::TCShowerElectronLikelihood::reconfigure(fhicl::ParameterSet const& pset) {
   fTemplateFile           = pset.get< std::string >("TemplateFile");
   cet::search_path sp("FW_SEARCH_PATH");
   if( !sp.find_file(fTemplateFile, fROOTfile) )
@@ -202,8 +170,7 @@ void shower::TCShowerElectronLikelihood::reconfigure(fhicl::ParameterSet const& 
   tranProfile_3 = new TH1F("tranProfile_3", "transverse shower profile [2 <= t < 3];dist (cm);Q", TBINS, TMIN, TMAX);;
   tranProfile_4 = new TH1F("tranProfile_4", "transverse shower profile [3 <= t < 4];dist (cm);Q", TBINS, TMIN, TMAX);;
   tranProfile_5 = new TH1F("tranProfile_5", "transverse shower profile [4 <= t < 5];dist (cm);Q", TBINS, TMIN, TMAX);;
-
-} // reconfigure
+} // TCShowerElectronLikelihood
 
 // -------------------------------------------------
 

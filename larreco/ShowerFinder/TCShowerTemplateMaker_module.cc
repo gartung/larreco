@@ -9,59 +9,40 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Principal/Event.h"
-#include "art/Framework/Principal/SubRun.h"
-#include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art_root_io/TFileService.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
 #include "larcore/Geometry/Geometry.h"
-#include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
-#include "lardataobj/AnalysisBase/Calorimetry.h"
-#include "lardataobj/AnalysisBase/ParticleID.h"
 #include "lardataobj/MCBase/MCDataHolder.h"
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/Simulation/SimChannel.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "TTree.h"
-#include "TFile.h"
 #include "TH1.h"
 #include "TH3.h"
 #include "TProfile.h"
 #include "TProfile2D.h"
-#include <TROOT.h>
-#include <TStyle.h>
 
 namespace shower {
 
   class TCShowerTemplateMaker : public art::EDAnalyzer {
-
   public:
-
     explicit TCShowerTemplateMaker(fhicl::ParameterSet const& pset);
-    virtual ~TCShowerTemplateMaker();
 
-    void reconfigure(fhicl::ParameterSet const& pset);
+  private:
     void beginJob();
     void analyze(const art::Event& evt);
 
     void showerProfile(std::vector< art::Ptr<recob::Hit> > showerhits, TVector3 shwvtx, TVector3 shwdir, double elep);
     void showerProfileTrue(std::vector< art::Ptr<recob::Hit> > allhits, double elep);
     void showerProfileTrue(std::vector< art::Ptr<sim::SimChannel> > allchan, simb::MCParticle electron);
-
-  protected:
 
     //    TTree* fTree;
     TProfile* fShowerProfileSimLong;
@@ -170,18 +151,9 @@ shower::TCShowerTemplateMaker::TCShowerTemplateMaker(fhicl::ParameterSet const& 
   fGenieGenModuleLabel      (pset.get< std::string >("GenieGenModuleLabel", "generator")  ),
   fDigitModuleLabel         (pset.get< std::string >("DigitModuleLabel", "largeant")  ),
   fCalorimetryAlg           (pset.get< fhicl::ParameterSet >("CalorimetryAlg") ) {
-  this->reconfigure(pset);
 } // TCShowerTemplateMaker
 
 // -------------------------------------------------
-
-shower::TCShowerTemplateMaker::~TCShowerTemplateMaker() {
-} // ~TCShowerTemplateMaker
-
-// -------------------------------------------------
-
-void shower::TCShowerTemplateMaker::reconfigure(fhicl::ParameterSet const& pset) {
-} // reconfigure
 
 // -------------------------------------------------
 

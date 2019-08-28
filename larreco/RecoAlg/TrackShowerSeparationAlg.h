@@ -13,31 +13,18 @@
 #define TrackShowerSeparationAlg_hxx
 
 // Framework
-#include "fhiclcpp/ParameterSet.h"
-#include "art/Framework/Principal/Handle.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/PtrVector.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "canvas/Persistency/Common/FindManyP.h"
+namespace fhicl { class ParameterSet; }
 
 // larsoft
-#include "larsim/MCCheater/BackTracker.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/RecoBase/PFParticle.h"
 
 // ROOT
-#include "TTree.h"
 #include "TMath.h"
-#include "TPrincipal.h"
-#include "TGraph2D.h"
-#include "TPolyLine3D.h"
-#include "TCanvas.h"
+#include "TVector3.h"
 
 namespace shower {
   class TrackShowerSeparationAlg;
@@ -132,7 +119,6 @@ class shower::ReconTrack {
   int NumCylinderSpacePoints() const { return fCylinderSpacePoints.size(); }
   double CylinderSpacePointRatio() const { return (double)fCylinderSpacePoints.size()/(double)fSpacePoints.size(); }
   int NumSphereSpacePoints() const { return fSphereSpacePoints.size(); }
-  //double SphereSpacePointDensity() const { return (double)fSphereSpacePoints.size()/((double)fSpacePoints.size()); }
   double SphereSpacePointDensity(double scale) const { return (double)fSphereSpacePoints.size()/(4*TMath::Pi()*TMath::Power((scale*fLength/2.),3)/3.); }
   double IsolationSpacePointDistance() const { std::vector<double> distances;
     std::transform(fIsolationSpacePoints.begin(), fIsolationSpacePoints.end(), std::back_inserter(distances), [](const std::pair<int,double>& p){return p.second;});
@@ -181,31 +167,31 @@ class shower::TrackShowerSeparationAlg {
 						      const art::FindManyP<recob::Hit>& fmht,
 						      const art::FindManyP<recob::Track>& fmth,
 						      const art::FindManyP<recob::SpacePoint>& fmspt,
-						      const art::FindManyP<recob::Track>& fmtsp);
+                                                      const art::FindManyP<recob::Track>& fmtsp) const;
 
  private:
 
   ///
-  std::vector<int> InitialTrackLikeSegment(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks);
+  std::vector<int> InitialTrackLikeSegment(std::map<int,std::unique_ptr<ReconTrack> >& reconTracks) const;
 
   ///
-  TVector3 Gradient(const std::vector<TVector3>& points, const std::unique_ptr<TVector3>& dir);
+  TVector3 Gradient(const std::vector<TVector3>& points, const std::unique_ptr<TVector3>& dir) const;
 
   ///
-  TVector3 Gradient(const art::Ptr<recob::Track>& track);
+  TVector3 Gradient(const art::Ptr<recob::Track>& track) const;
 
   ///
-  TVector3 Gradient(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints);
+  TVector3 Gradient(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints) const;
 
   /// Projects the 3D point given along the line defined by the specified direction
   /// Coordinate system is assumed to be centred at the origin unless a difference point is specified
-  TVector3 ProjPoint(const TVector3& point, const TVector3& direction, const TVector3& origin = TVector3(0,0,0));
+  TVector3 ProjPoint(const TVector3& point, const TVector3& direction, const TVector3& origin = TVector3(0,0,0)) const;
 
   /// Return 3D point of this space point
-  TVector3 SpacePointPos(const art::Ptr<recob::SpacePoint>& spacePoint);
+  TVector3 SpacePointPos(const art::Ptr<recob::SpacePoint>& spacePoint) const;
 
   ///
-  double SpacePointsRMS(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints);
+  double SpacePointsRMS(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints) const;
 
   // Parameters
   int fDebug;
@@ -222,95 +208,3 @@ class shower::TrackShowerSeparationAlg {
 };
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
- /*  // --------------------------- OLD (late 2015) ------------------------------- */
-
- /* public: */
-
- /*  /// Takes specific previously reconstructed quantites and removes hits which are considered track-like */
- /*  /// Returns a vector of hits which are determined to be shower-like */
- /*  std::vector<art::Ptr<recob::Hit> > RemoveTrackHits(const std::vector<art::Ptr<recob::Hit> >& initialHits, */
- /* 						     const std::vector<art::Ptr<recob::Track> >& tracks, */
- /* 						     const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, */
- /* 						     const std::vector<art::Ptr<recob::Vertex> >& vertices, */
- /* 						     const art::FindManyP<recob::Track>& fmth, */
- /* 						     const art::FindManyP<recob::Track>& fmtsp, */
- /* 						     const art::FindManyP<recob::Hit>& fmh, */
- /* 						     int event, */
- /* 						     int run); */
-
- /*  /// Uses information from Pandora reconstruction to separate track-like and shower-like hits */
- /*  /// Returns a vector of hits which are determined to be shower-like */
- /*  std::vector<art::Ptr<recob::Hit> > RemoveTrackHits(const std::vector<art::Ptr<recob::Hit> >& hits, */
- /* 						     const std::vector<art::Ptr<recob::PFParticle> > pfParticles, */
- /* 						     const art::FindManyP<recob::Cluster>& fmc, */
- /* 						     const art::FindManyP<recob::Hit>& fmh); */
-
-
- /* private: */
-
- /*  /// Fill the output container with all the hits not associated with track-like objects */
- /*  std::vector<art::Ptr<recob::Hit> > FillHitsToCluster(const std::vector<art::Ptr<recob::Hit> >& initialHits, */
- /* 						       const art::FindManyP<recob::Track>& fmt); */
-
- /*  /// Find the true track most likely associated with this hit */
- /*  int FindTrackID(const art::Ptr<recob::Hit>& hit); */
-
- /*  /// Find the true track most likely associated with this set of hits */
- /*  int FindTrueTrack(const std::vector<art::Ptr<recob::Hit> >& trackHits); */
-
- /*  /// Finds the space points surrounding the track but not part of it */
- /*  std::vector<art::Ptr<recob::SpacePoint> > GetSurroundingSpacePoints(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, */
- /* 								      const art::FindManyP<recob::Track>& fmt, */
- /* 								      unsigned int trackID); */
-
- /*  /// Look for space points near the track and within a narrow cone */
- /*  std::vector<art::Ptr<recob::SpacePoint> > GetSpacePointsInCone(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, */
- /* 								 const TVector3& trackEnd, */
- /* 								 const TVector3& trackDirection); */
-
- /*  /// Determines whether or not a track is actually the start of a shower */
- /*  bool IdentifyShowerLikeTrack(const TVector3& end, */
- /* 			       const TVector3& direction, */
- /* 			       const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints); */
-
- /*  /// Attempt to identify tracks in the event by using the centre of the event */
- /*  void IdentifyTracksFromEventCentre(const std::vector<art::Ptr<recob::Track> >& tracks, */
- /* 				     const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, */
- /* 				     const art::FindManyP<recob::Track>& fmtsp); */
-
- /*  /// Identifies tracks which start just after previously identified tracks end */
- /*  void IdentifyTracksNearTracks(const std::vector<art::Ptr<recob::Track> >& tracks); */
-
- /*  /// Identifies hadron-like tracks which originate from near the interaction vertex */
- /*  void IdentifyTracksNearVertex(const art::Ptr<recob::Vertex>& vertex, */
- /* 				const std::vector<art::Ptr<recob::Track> >& tracks, */
- /* 				const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints, */
- /* 				const art::FindManyP<recob::Track>& fmtsp); */
-
- /*  /// Finds the spread of a set of space points about their central axis */
- /*  double SpacePointSpread(const std::vector<art::Ptr<recob::SpacePoint> >& spacePoints); */
-
- /*  std::vector<int> fTrackLikeIDs, fShowerLikeIDs; */
-
- /*  // Configurable parameters */
- /*  double fAngleCut, fDistanceCut, fVertexProximityCut, fTrackProximityCut, fAvTrackHitDistance; */
-
- /*  art::ServiceHandle<cheat::BackTracker const> backtracker; */
- /*  art::ServiceHandle<art::TFileService const> tfs; */
-
- /*  TTree* ftree; */
- /*  double Distance, Angle, Length, AvDistance; */
- /*  int Event, Run, TrackID, pdg, NSpacePoints; */

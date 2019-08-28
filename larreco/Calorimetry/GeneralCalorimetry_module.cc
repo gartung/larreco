@@ -8,37 +8,21 @@
 //
 // brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
-extern "C" {
-#include <sys/types.h>
-#include <sys/stat.h>
-}
+
 #include <string>
-#include <algorithm>
 
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/TPCGeo.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
-#include "lardata/Utilities/AssociationUtil.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
-#include "lardata/ArtDataHelper/TrackUtils.h" // lar::util::TrackPitchInView()
+#include "lardataobj/RecoBase/Track.h"
 
 // Framework includes
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Core/ModuleMacros.h"
-#include "canvas/Persistency/Common/FindMany.h"
-#include "art/Framework/Principal/Event.h" 
+#include "art/Framework/Principal/fwd.h"
 #include "fhiclcpp/ParameterSet.h" 
-#include "art/Framework/Principal/Handle.h" 
-#include "canvas/Persistency/Common/Ptr.h" 
-#include "canvas/Persistency/Common/PtrVector.h" 
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
-#include "messagefacility/MessageLogger/MessageLogger.h" 
 
 ///calorimetry
 namespace calo {
@@ -49,10 +33,9 @@ namespace calo {
 
       explicit GeneralCalorimetry(fhicl::ParameterSet const& pset);
 
-      void reconfigure(fhicl::ParameterSet const& pset);
-      void produce(art::Event& evt);
-
     private:
+
+      void produce(art::Event& evt);
 
       std::string    fTrackModuleLabel; ///< module creating the track objects and assns to hits
       double         fADCToElectrons;   ///< filled using the detinfo::DetectorPropertiesService service
@@ -89,17 +72,10 @@ calo::GeneralCalorimetry::GeneralCalorimetry(fhicl::ParameterSet const& pset)
     }
   }
 
-  this->reconfigure(pset);
+  fTrackModuleLabel = pset.get< std::string >("TrackModuleLabel");
 
   produces< std::vector<anab::Calorimetry>              >();
   produces< art::Assns<recob::Track, anab::Calorimetry> >();
-}
-
-//------------------------------------------------------------------------------------//
-void calo::GeneralCalorimetry::reconfigure(fhicl::ParameterSet const& pset)
-{
-  fTrackModuleLabel = pset.get< std::string >("TrackModuleLabel");
-  return;
 }
 
 //------------------------------------------------------------------------------------//

@@ -14,6 +14,7 @@
 #include "art/Framework/Principal/Event.h"
 
 #include "larcore/Geometry/Geometry.h"
+#include "larcorealg/Geometry/Exceptions.h"
 #include "larcorealg/Geometry/TPCGeo.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "lardataobj/Simulation/SimChannel.h"
@@ -34,7 +35,6 @@ namespace hit{
     private:
       void produce(art::Event & e) override;
       void endJob() override;
-      void reconfigure(fhicl::ParameterSet const & p);
 
       art::ServiceHandle<geo::Geometry const> geom;
       art::ServiceHandle<cheat::BackTrackerService const> bt_serv;
@@ -64,7 +64,7 @@ namespace hit{
   DisambigCheater::DisambigCheater(fhicl::ParameterSet const & p)
     : EDProducer{p}
   {
-    this->reconfigure(p);
+    fChanHitLabel =  p.get< std::string >("ChanHitLabel");
 
     // let HitCollectionCreator declare that we are going to produce
     // hits and associations with wires and raw digits
@@ -307,11 +307,6 @@ namespace hit{
   }
 
 
-  //-------------------------------------------------------------------
-  void DisambigCheater::reconfigure(fhicl::ParameterSet const & p)
-  {
-    fChanHitLabel =  p.get< std::string >("ChanHitLabel");
-  }
 
   DEFINE_ART_MODULE(DisambigCheater)
 

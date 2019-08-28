@@ -17,14 +17,6 @@
 #include <vector>
 #include <string>
 #include <cmath> // std::tan() ...
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-#include <stdint.h>
-extern "C" {
-#include <sys/types.h>
-#include <sys/stat.h>
-}
 
 // ### Framework includes ###
 #include "art/Framework/Core/ModuleMacros.h"
@@ -37,27 +29,16 @@ extern "C" {
 #include "canvas/Persistency/Common/PtrVector.h" 
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
 #include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h" 
 
 // ### ROOT includes ###
-#include "TMatrixD.h"
-#include "TVectorD.h"
-#include "TDecompSVD.h"
-#include "TH1.h"
-#include "TH2.h"
-#include "TF1.h"
-#include "TFile.h"
 #include "TMath.h"
 #include "TTree.h"
 
 // ### LArSoft includes ###
 
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/CryostatGeo.h"
-#include "larcorealg/Geometry/TPCGeo.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
-#include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Shower.h"
@@ -67,21 +48,18 @@ extern "C" {
 #include "lardata/Utilities/GeometryUtilities.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
 
 
 namespace shwf {
 
   class ShowerReco : public art::EDProducer {
-
   public:
+    explicit ShowerReco(fhicl::ParameterSet const& pset);
 
-    /**METHODS global*/
-    explicit ShowerReco(fhicl::ParameterSet const& pset);/**Constructor*/
-    virtual ~ShowerReco();                               /**Destructor*/
+  private:
+
     void beginJob();
     void beginRun(art::Run& run);
-    void reconfigure(fhicl::ParameterSet const& pset);
     void produce(art::Event& evt);                       /**Actual routine that reconstruct the shower*/
 
      void   GetVertexAndAnglesFromCluster(art::Ptr< recob::Cluster > clust,unsigned int plane); // Get shower vertex and slopes.
@@ -91,8 +69,6 @@ namespace shwf {
     void   LongTransEnergy(unsigned int set, std::vector< art::Ptr<recob::Hit> > hitlist, bool isData=false); //Longtudinal
 
 
-
- private:
 
   void ClearandResizeVectors(unsigned int nPlanes);
 
@@ -208,17 +184,6 @@ namespace shwf {
 ShowerReco::ShowerReco(fhicl::ParameterSet const& pset) :
     EDProducer{pset}
 {
-  this->reconfigure(pset);
-  produces< std::vector<recob::Shower>                >();
-  produces< art::Assns<recob::Shower, recob::Cluster> >();
-  produces< art::Assns<recob::Shower, recob::Hit>     >();
-  produces< std::vector<anab::Calorimetry>              >();
-  produces< art::Assns<recob::Shower, anab::Calorimetry> >();
-}
-
-//------------------------------------------------------------------------------
-void ShowerReco::reconfigure(fhicl::ParameterSet const& pset)
-{
   fClusterModuleLabel = pset.get< std::string >("ClusterModuleLabel");
 //  fVertexCLusterModuleLabel=pset.get<std::string > ("VertexClusterModuleLabel");
   fCaloPSet=pset.get< fhicl::ParameterSet >("CaloAlg");
@@ -227,12 +192,11 @@ void ShowerReco::reconfigure(fhicl::ParameterSet const& pset)
   fcalodEdxlength= pset.get< double >("calodEdxlength");  // cutoff distance for hits saved to the calo object.
   fUseArea= pset.get< bool >("UseArea");
 
-  return;
-}
-
-//------------------------------------------------------------------------------
-ShowerReco::~ShowerReco()
-{
+  produces< std::vector<recob::Shower>                >();
+  produces< art::Assns<recob::Shower, recob::Cluster> >();
+  produces< art::Assns<recob::Shower, recob::Hit>     >();
+  produces< std::vector<anab::Calorimetry>              >();
+  produces< art::Assns<recob::Shower, anab::Calorimetry> >();
 }
 
 // struct SortByWire

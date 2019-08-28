@@ -9,17 +9,13 @@
 ////////////////////////////////////////////////////////////////////////
 
 // C++ includes
-#include <math.h>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <tuple>
+#include <ostream>
+#include <utility>
 
 // Framework includes
 #include "art/Framework/Principal/Event.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/View.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -27,20 +23,15 @@
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
-#include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "larreco/RecoAlg/StitchAlg.h"
-#include "lardataobj/Simulation/sim.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
 #include "lardata/Utilities/AssociationUtil.h"
 
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDProducer.h"
 #include "canvas/Persistency/Common/FindManyP.h"
-#include "art/Framework/Services/Optional/RandomNumberGenerator.h"
 
 #include <vector>
 #include <string>
@@ -53,7 +44,6 @@ namespace trkf {
 
    private:
       void produce(art::Event& evt) override;
-      void reconfigure(fhicl::ParameterSet const& p);
 
       art::PtrVector<recob::Hit> GetHitsFromComponentTracks(const art::PtrVector<recob::Track> &, const art::Event& evt);
       art::PtrVector<recob::SpacePoint> GetSpacePointsFromComponentTracks(const art::PtrVector<recob::Track> &, const art::Event& evt);
@@ -74,8 +64,9 @@ namespace trkf {
      EDProducer{pset},
    fStitchAlg(pset.get< fhicl::ParameterSet >("StitchAlg"))
    {
-
-      this->reconfigure(pset);
+      fTrackModuleLabel    = pset.get< std::string >("TrackModuleLabel");
+      fSpptModuleLabel     = pset.get< std::string >("SpptModuleLabel");
+      fStizatch            = pset.get< bool >       ("CommonComponentStitch",true);
 
       produces< std::vector<recob::Track>                  >();
       produces<std::vector<art::PtrVector<recob::Track> >  >();
@@ -83,15 +74,6 @@ namespace trkf {
       produces<art::Assns<recob::Track, recob::SpacePoint> >();
       produces<art::Assns<recob::SpacePoint, recob::Hit>   >();
 
-   }
-
-   //-------------------------------------------------
-   void TrackStitcher::reconfigure(fhicl::ParameterSet const& pset)
-   {
-      fTrackModuleLabel    = pset.get< std::string >("TrackModuleLabel");
-      fSpptModuleLabel     = pset.get< std::string >("SpptModuleLabel");
-      fStizatch            = pset.get< bool >       ("CommonComponentStitch",true);
-      fStitchAlg.reconfigure(pset.get< fhicl::ParameterSet >("StitchAlg"));
    }
 
    //------------------------------------------------------------------------------------//

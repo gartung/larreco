@@ -9,7 +9,15 @@
 ///
 ////////////////////////////////////////////////////////////////////////
 
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "larreco/RecoAlg/TCAlg/DebugStruct.h"
+#include "larreco/RecoAlg/TCAlg/PFPUtils.h"
+#include "larreco/RecoAlg/TCAlg/StepUtils.h"
+#include "larreco/RecoAlg/TCAlg/TCShower.h"
+#include "larreco/RecoAlg/TCAlg/Utils.h"
 #include "larreco/RecoAlg/TrajClusterAlg.h"
+
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 namespace tca {
 
@@ -944,7 +952,7 @@ namespace tca {
 
   //////////////////////////////////////////
   void TrajClusterAlg::MergeTPHits(std::vector<unsigned int>& tpHits, std::vector<recob::Hit>& newHitCol,
-                                   std::vector<unsigned int>& newHitAssns)
+                                   std::vector<unsigned int>& newHitAssns) const
   {
     // merge the hits indexed by tpHits into one or more hits with the requirement that the hits
     // are on different wires
@@ -995,7 +1003,7 @@ namespace tca {
   } // MergeTPHits
 
   //////////////////////////////////////////
-  recob::Hit TrajClusterAlg::MergeTPHitsOnWire(std::vector<unsigned int>& tpHits)
+  recob::Hit TrajClusterAlg::MergeTPHitsOnWire(std::vector<unsigned int>& tpHits) const
   {
     // merge the hits indexed by tpHits into one hit
 

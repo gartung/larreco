@@ -17,9 +17,6 @@
 // Created: 2-Aug-2011  H. Greenlee
 //
 
-#include <map>
-#include <algorithm>
-
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "canvas/Persistency/Common/FindManyP.h"
@@ -33,16 +30,13 @@
 #include "larcorealg/Geometry/TPCGeo.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "larsim/MCCheater/BackTrackerService.h"
-#include "larsim/MCCheater/ParticleInventoryService.h"
 
 #include "TH1F.h"
 #include "TH2F.h"
-
 
 namespace trkf {
 
@@ -55,6 +49,8 @@ namespace trkf {
     explicit SpacePointAna(fhicl::ParameterSet const& pset);
     virtual ~SpacePointAna();
 
+  private:
+
     // Book histograms.
 
     void bookHistograms(bool mc);
@@ -62,8 +58,6 @@ namespace trkf {
     // Overrides.
 
     void analyze(const art::Event& evt);
-
-  private:
 
     // Fcl Attributes.
 

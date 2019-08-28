@@ -20,22 +20,11 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 // ROOT includes
-#include <TMath.h>
-#include <TH1F.h>
-#include <TGraph.h>
-#include <TFile.h>
-#include "TComplex.h"
-#include "TString.h"
 #include "TH1.h"
 #include "TH2.h"
-#include "TProfile.h"
 #include "TTree.h"
 
 // C++ includes
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <bitset>
 #include <string>
 
 // Framework includes
@@ -43,35 +32,25 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 
 constexpr int kMaxHits       = 20000; //maximum number of hits;
 
-namespace geo { class Geometry;   }
-namespace sim { class SimChannel; }
-
 namespace hit{
 
   /// Base class for creation of raw signals on wires.
   class GausHitFinderAna : public art::EDAnalyzer {
-
   public:
-
     explicit GausHitFinderAna(fhicl::ParameterSet const& pset);
-    virtual ~GausHitFinderAna();
 
+  private:
     /// read/write access to event
     void analyze (const art::Event& evt);
     void beginJob();
-    void reconfigure(fhicl::ParameterSet const& p);
-
-  private:
 
     std::string            fHitFinderModuleLabel; ///
     std::string            fLArG4ModuleLabel;
@@ -128,21 +107,11 @@ namespace hit{
   GausHitFinderAna::GausHitFinderAna(fhicl::ParameterSet const& pset)
     : EDAnalyzer(pset)
   {
-    this->reconfigure(pset);
+    fHitFinderModuleLabel       = pset.get< std::string >("HitsModuleLabel");
+    fLArG4ModuleLabel           = pset.get< std::string >("LArGeantModuleLabel");
+    fCalDataModuleLabel         = pset.get< std::string  >("CalDataModuleLabel");
   }
 
-  //-------------------------------------------------
-  GausHitFinderAna::~GausHitFinderAna()
-  {
-  }
-
-  void GausHitFinderAna::reconfigure(fhicl::ParameterSet const& p)
-  {
-    fHitFinderModuleLabel 	= p.get< std::string >("HitsModuleLabel");
-    fLArG4ModuleLabel        	= p.get< std::string >("LArGeantModuleLabel");
-    fCalDataModuleLabel	 	= p.get< std::string  >("CalDataModuleLabel");
-    return;
-  }
   //-------------------------------------------------
   void GausHitFinderAna::beginJob()
   {

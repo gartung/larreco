@@ -29,8 +29,6 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/ArtDataHelper/HitCreator.h"
 #include "larreco/RecoAlg/DisambigAlg.h"
-#include "lardata/Utilities/AssociationUtil.h"
-
 
 namespace apa{
   class APAHitFinder : public art::EDProducer {
@@ -41,7 +39,6 @@ namespace apa{
 
   private:
     void produce(art::Event& evt) override;
-    void reconfigure(fhicl::ParameterSet const& p);
 
     apa::DisambigAlg    fDisambigAlg;
     art::ServiceHandle<geo::Geometry const> fGeom;
@@ -57,7 +54,7 @@ APAHitFinder::APAHitFinder(fhicl::ParameterSet const& pset)
   : EDProducer{pset}
   , fDisambigAlg(pset.get< fhicl::ParameterSet >("DisambigAlg"))
 {
-  this->reconfigure(pset);
+  fChanHitLabel =  pset.get< std::string >("ChanHitLabel");
 
   // let HitCollectionCreator declare that we are going to produce
   // hits and associations with wires and raw digits
@@ -65,15 +62,6 @@ APAHitFinder::APAHitFinder(fhicl::ParameterSet const& pset)
   recob::HitCollectionCreator::declare_products(*this);
 }
 
-
-//-------------------------------------------------
-//-------------------------------------------------
-void APAHitFinder::reconfigure(fhicl::ParameterSet const& p)
-{
-
-  fChanHitLabel =  p.get< std::string >("ChanHitLabel");
-
-}
 
 //-------------------------------------------------
 void APAHitFinder::produce(art::Event& evt)

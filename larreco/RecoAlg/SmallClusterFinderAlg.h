@@ -36,8 +36,11 @@
 #ifndef SMALLCLUSTERFINDERALG_H
 #define SMALLCLUSTERFINDERALG_H
 
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "canvas/Persistency/Common/Ptr.h"
+namespace fhicl { class ParameterSet; }
 
-#include "lardataobj/RecoBase/Cluster.h"
+#include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/Utilities/GeometryUtilities.h"
 
@@ -55,20 +58,20 @@ namespace cluster {
   //  void produce(art::Event& evt);                       /**Routine that finds the cluster and sets the dTdW of the 2D shower*/
 
 
-    void SelectLocalHitlist(std::vector< art::Ptr < recob::Hit> > hitlist, std::vector < art::Ptr<recob::Hit> > &hitlistlocal, double  wire_start,double time_start, double radlimit);
+    void SelectLocalHitlist(std::vector< art::Ptr < recob::Hit> > hitlist, std::vector < art::Ptr<recob::Hit> > &hitlistlocal, double  wire_start,double time_start, double radlimit) const;
     void SelectLocalHitlist(std::vector< art::Ptr < recob::Hit> > hitlist, std::vector < art::Ptr<recob::Hit> > &hitlistlocal,
-    				 double  wire_start,double time_start, double radlimit, std::vector<int> &);
+                                 double  wire_start,double time_start, double radlimit, std::vector<int> &) const;
 
 	//pass in a hit, all the others are filled in the function.
     int GetPlaneAndTPC(	art::Ptr<recob::Hit> a, //a hit
     					unsigned int &p, //the plane
     					unsigned int &cs, //cryostat
     					unsigned int &t, //time
-    					unsigned int &w); //wire
+                                        unsigned int &w) const; //wire
 
     //passes in a hitlist, returns a list of gammas and puts everything else in hitlistleftover
     std::vector< art::Ptr<recob::Hit> > CreateHighHitlist(std::vector< art::Ptr<recob::Hit> > hitlist,
-    													  std::vector< art::Ptr<recob::Hit> > &hitlistleftover);
+                                                                                                          std::vector< art::Ptr<recob::Hit> > &hitlistleftover) const;
     void FindSmallClusters(std::vector<art::Ptr<recob::Hit> > allHits); //this routine actually finds the clusters
     	//It stores them in smallClustList
     	//It puts the leftover hits in hitlistleftover

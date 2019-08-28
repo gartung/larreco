@@ -13,7 +13,6 @@
 // ART includes
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Framework/Services/Registry/ServiceMacros.h"
 #include "art_root_io/TFileService.h"
 #include "art_root_io/TFileDirectory.h"
@@ -93,10 +92,6 @@ namespace cluster
 
     /// Default constructor with fhicl parameters
     ClusterMergeAlg(fhicl::ParameterSet const& pset);
-    //ClusterMergeAlg(fhicl::ParameterSet const& pset, art::ActivityRegistry& reg);
-
-    /// Default destructor
-    virtual ~ClusterMergeAlg(){};
 
     /// Method to set verbose mode
     void VerboseMode(bool on) { _verbose = on; }

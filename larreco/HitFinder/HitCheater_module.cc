@@ -24,10 +24,7 @@
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/TPCGeo.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
 #include "lardataobj/Simulation/SimChannel.h"
-#include "larsim/Simulation/LArG4Parameters.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -45,8 +42,6 @@ public:
 
 private:
   void produce(art::Event & e) override;
-
-  void reconfigure(fhicl::ParameterSet const & p);
 
   void FindHitsOnChannel(
     const sim::SimChannel*   sc,
@@ -71,7 +66,25 @@ private:
 hit::HitCheater::HitCheater(fhicl::ParameterSet const & p)
   : EDProducer{p}
 {
-  this->reconfigure(p);
+  fG4ModuleLabel   = p.get< std::string >("G4ModuleLabel",   "largeant");
+  fWireModuleLabel = p.get< std::string >("WireModuleLabel", "caldata" );
+  fMinCharge       = p.get< double      >("MinimumCharge",   5.        );
+  fNewHitTDCGap    = p.get< int         >("NewHitTDCGap",    1         );
+
+  const detinfo::DetectorProperties* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
+  fElectronsToADC = detprop->ElectronsToADC();
+  fSamplingRate   = detprop->SamplingRate();
+  fTriggerOffset  = detprop->TriggerOffset();
+
+   fCalDataProductInstanceName="";
+   size_t pos = fWireModuleLabel.find(":");
+   if( pos!=std::string::npos ) {
+     fCalDataProductInstanceName = fWireModuleLabel.substr( pos+1 );
+     fWireModuleLabel = fWireModuleLabel.substr( 0, pos );
+   }
+
+   fReadOutWindowSize  = detprop->ReadOutWindowSize();
+   fNumberTimeSamples  = detprop->NumberTimeSamples();
 
   // let HitCollectionCreator declare that we are going to produce
   // hits and associations with wires and raw digits
@@ -306,32 +319,6 @@ void hit::HitCheater::FindHitsOnChannel(const sim::SimChannel*   sc,
 
   }// end loop over map of geo::WireID to map<tdc,electrons>
 
-
-  return;
-}
-
-//-------------------------------------------------------------------
-void hit::HitCheater::reconfigure(fhicl::ParameterSet const & p)
-{
-  fG4ModuleLabel   = p.get< std::string >("G4ModuleLabel",   "largeant");
-  fWireModuleLabel = p.get< std::string >("WireModuleLabel", "caldata" );
-  fMinCharge       = p.get< double      >("MinimumCharge",   5.        );
-  fNewHitTDCGap    = p.get< int         >("NewHitTDCGap",    1         );
-
-  const detinfo::DetectorProperties* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
-  fElectronsToADC = detprop->ElectronsToADC();
-  fSamplingRate   = detprop->SamplingRate();
-  fTriggerOffset  = detprop->TriggerOffset();
-
-   fCalDataProductInstanceName="";
-   size_t pos = fWireModuleLabel.find(":");
-   if( pos!=std::string::npos ) {
-     fCalDataProductInstanceName = fWireModuleLabel.substr( pos+1 );
-     fWireModuleLabel = fWireModuleLabel.substr( 0, pos );
-   }
-
-   fReadOutWindowSize  = detprop->ReadOutWindowSize();
-   fNumberTimeSamples  = detprop->NumberTimeSamples();
 
   return;
 }

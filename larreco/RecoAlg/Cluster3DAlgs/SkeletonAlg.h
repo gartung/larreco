@@ -11,16 +11,10 @@
 #include "fhiclcpp/ParameterSet.h"
 
 // LArSoft includes
-#include "larcore/Geometry/Geometry.h"
-
-// Algorithm includes
 #include "larreco/RecoAlg/Cluster3DAlgs/Cluster3D.h"
 
 // std includes
-#include <string>
-#include <functional>
-#include <iostream>
-#include <memory>
+#include <vector>
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -43,7 +37,7 @@ public:
     /**
      *  @brief  Destructor
      */
-    virtual ~SkeletonAlg();
+    ~SkeletonAlg();
 
     /**
      *  @brief a handler for the case where the algorithm control parameters are to be reset

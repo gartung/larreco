@@ -18,11 +18,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
-#include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include <memory>
 
@@ -31,6 +27,8 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/LArPropertiesService.h"
 #include "lardata/DetectorInfoServices/ServicePack.h" // lar::extractProviders()
+#include "lardataobj/AnalysisBase/Calorimetry.h"
+#include "lardataobj/RecoBase/Track.h"
 #include "TrackCalorimetryAlg.h"
 
 namespace calo{
@@ -49,13 +47,10 @@ public:
   TrackCalorimetry & operator = (TrackCalorimetry const &) = delete;
   TrackCalorimetry & operator = (TrackCalorimetry &&) = delete;
 
+private:
+
   // Required functions.
   void produce(art::Event & e) override;
-
-  // Selected optional functions.
-  void reconfigure(fhicl::ParameterSet const & p) ;
-
-private:
 
   std::string    fTrackModuleLabel;
   std::string    fHitModuleLabel;
@@ -70,18 +65,11 @@ calo::TrackCalorimetry::TrackCalorimetry(fhicl::ParameterSet const & p):
   fHitModuleLabel(p.get<std::string>("HitModuleLabel")),
   fTrackCaloAlg(p.get<fhicl::ParameterSet>("TrackCalorimetryAlg"))
 {
-  this->reconfigure(p);
-
-  produces< std::vector<anab::Calorimetry>              >();
-  produces< art::Assns<recob::Track, anab::Calorimetry> >();
-}
-
-void calo::TrackCalorimetry::reconfigure(fhicl::ParameterSet const & p)
-{
   fTrackModuleLabel = p.get<std::string>("TrackModuleLabel");
   fHitModuleLabel = p.get<std::string>("HitModuleLabel");
 
-  fTrackCaloAlg.reconfigure(p.get<fhicl::ParameterSet>("TrackCalorimetryAlg"));
+  produces< std::vector<anab::Calorimetry>              >();
+  produces< art::Assns<recob::Track, anab::Calorimetry> >();
 }
 
 void calo::TrackCalorimetry::produce(art::Event & e)

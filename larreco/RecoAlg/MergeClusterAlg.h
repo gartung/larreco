@@ -14,39 +14,23 @@
 #define MergeCluster_h
 
 // Framework includes
-#include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/PtrVector.h"
+namespace fhicl { class ParameterSet; }
 
 // LArSoft includes
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
-#include "larcorealg/Geometry/WireGeo.h"
 #include "larcore/Geometry/Geometry.h"
+namespace geo { struct WireID; }
 
 //tmp
-#include "art/Framework/Principal/Event.h"
-#include "canvas/Persistency/Common/FindManyP.h"
-//The backtracker is not actually used, so it is commented out.
-//#include "larsim/MCCheater/BackTrackerService.h"
-#include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/CryostatGeo.h"
-#include "larcorealg/Geometry/TPCGeo.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
-#include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/SpacePoint.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/RecoBase/Shower.h"
-#include "lardata/Utilities/AssociationUtil.h"
 
-#include "TTree.h"
-#include "TPrincipal.h"
 #include "TVector2.h"
+class TTree;
 
 #include <vector>
 #include <map>
@@ -60,16 +44,16 @@ public:
 
   MergeClusterAlg(fhicl::ParameterSet const& pset);
 
-  void     FindClusterEndPoints(art::PtrVector<recob::Hit> const& cluster, TVector2 const& centre, TVector2 const& direction, TVector2& start, TVector2& end);
-  double   FindClusterOverlap(TVector2 const& direction, TVector2 const& centre, TVector2 const& start1, TVector2 const& end1, TVector2 const& start2, TVector2 const& end2);
-  double   FindCrossingDistance(TVector2 const &direction1, TVector2 const &centre1, TVector2 const&direction2, TVector2 const &centre2);
-  double   FindMinSeparation(art::PtrVector<recob::Hit> const &cluster1, art::PtrVector<recob::Hit> const &cluster2);
-  double   FindProjectedWidth(TVector2 const& centre1, TVector2 const& start1, TVector2 const& end1, TVector2 const& centre2, TVector2 const& start2, TVector2 const& end2);
-  double   GlobalWire(geo::WireID const& wireID);
-  TVector2 HitCoordinates(art::Ptr<recob::Hit> const& hit);
-  int      MergeClusters(std::vector<art::PtrVector<recob::Hit> > const &planeClusters, std::vector<art::PtrVector<recob::Hit> > &clusters);
+  void     FindClusterEndPoints(art::PtrVector<recob::Hit> const& cluster, TVector2 const& centre, TVector2 const& direction, TVector2& start, TVector2& end) const;
+  double   FindClusterOverlap(TVector2 const& direction, TVector2 const& centre, TVector2 const& start1, TVector2 const& end1, TVector2 const& start2, TVector2 const& end2) const;
+  double   FindCrossingDistance(TVector2 const &direction1, TVector2 const &centre1, TVector2 const&direction2, TVector2 const &centre2) const;
+  double   FindMinSeparation(art::PtrVector<recob::Hit> const &cluster1, art::PtrVector<recob::Hit> const &cluster2) const;
+  double   FindProjectedWidth(TVector2 const& centre1, TVector2 const& start1, TVector2 const& end1, TVector2 const& centre2, TVector2 const& start2, TVector2 const& end2) const;
+  double   GlobalWire(geo::WireID const& wireID) const;
+  TVector2 HitCoordinates(art::Ptr<recob::Hit> const& hit) const;
+  int      MergeClusters(std::vector<art::PtrVector<recob::Hit> > const &planeClusters, std::vector<art::PtrVector<recob::Hit> > &clusters) const;
   void     reconfigure(fhicl::ParameterSet const& p);
-  bool     PassCuts(double const& angle, double const& crossingDistance, double const& projectedWidth, double const& separation, double const& overlap, double const& longLength);
+  bool     PassCuts(double const& angle, double const& crossingDistance, double const& projectedWidth, double const& separation, double const& overlap, double const& longLength) const;
 
 private:
 
@@ -80,9 +64,7 @@ private:
 
   // Create geometry and detector property handle
   art::ServiceHandle<geo::Geometry const> fGeom;
-//  const detinfo::DetectorProperties* fDetProp;
   art::ServiceHandle<art::TFileService const> tfs;
-//  art::ServiceHandle<cheat::BackTracker const> backtracker;
 
   std::map<int,int> trueClusterMap;
 

@@ -9,21 +9,15 @@
 
 #include "art/Framework/Core/EDProducer.h"
 #include "canvas/Persistency/Common/PtrVector.h"
-#include "larreco/RecoAlg/SeedFinderAlgorithm.h"
 #include "TVector3.h"
 #include "larcorealg/Geometry/CryostatGeo.h"
 #include "lardataobj/RecoBase/EndPoint2D.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Seed.h"
 #include "lardataobj/RecoBase/Wire.h"
 
 #include "larreco/RecoAlg/CornerFinderAlg.h"
 #include "larreco/RecoAlg/SpacePointAlg.h"
-
-namespace recob
-{
-  class Seed;
-  class Hit;
-}
-
 
 namespace trkf {
 
@@ -32,7 +26,6 @@ namespace trkf {
     explicit FeatureTracker(fhicl::ParameterSet const& pset);
 
   private:
-    void reconfigure(fhicl::ParameterSet const& pset);
     void produce(art::Event& evt) override;
 
     // Fcl Attributes.
@@ -83,10 +76,7 @@ namespace trkf {
 
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Seed.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
-#include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 
@@ -98,18 +88,13 @@ namespace trkf {
     fSP(pset.get<fhicl::ParameterSet>("SpacepointPset")),
     fCorner(pset.get<fhicl::ParameterSet>("CornerPset"))
   {
-    reconfigure(pset);
-    produces< std::vector<recob::Seed> >();
-  }
-
-  void FeatureTracker::reconfigure(fhicl::ParameterSet const& pset)
-  {
     fHitModuleLabel    = pset.get<std::string>("HitModuleLabel");
     fLineIntFraction   = pset.get<double>("LineIntFraction");
     fLineIntThreshold  = pset.get<double>("LineIntThreshold");
     fhicl::ParameterSet CornerPset = pset.get<fhicl::ParameterSet>("CornerPset");
     fCalDataModuleLabel = CornerPset.get<std::string>("CalDataModuleLabel");
 
+    produces< std::vector<recob::Seed> >();
   }
 
   void FeatureTracker::produce(art::Event& evt)

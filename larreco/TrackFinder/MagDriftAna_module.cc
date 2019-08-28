@@ -9,13 +9,6 @@
 // C++ std library includes
 #include <string>
 #include <algorithm>
-#include <fstream>
-#include <bitset>
-// POSIX includes
-extern "C" {
-#include <sys/types.h>
-#include <sys/stat.h>
-}
 // Framework includes
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -23,32 +16,21 @@ extern "C" {
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 // Root Includes
-#include "TGraph.h"
-#include "TFile.h"
 #include "TLine.h"
-#include "TComplex.h"
-#include "TString.h"
-#include "TGraph.h"
 #include "TH2.h"
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/TPCGeo.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "larcorealg/Geometry/WireGeo.h"
-#include "nutools/MagneticField/MagneticField.h"
+#include "nug4/MagneticField/MagneticField.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larsim/MCCheater/BackTrackerService.h"
-#include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Hit.h"
-
-
-namespace geo { class Geometry; }
 
 ///Detector simulation of raw signals on wires
 namespace hit {
@@ -60,10 +42,11 @@ namespace hit {
 
     explicit MagDriftAna(fhicl::ParameterSet const& pset);
 
+  private:
+
     /// read/write access to event
     void analyze (const art::Event& evt);
     void endJob();
-    void reconfigure(fhicl::ParameterSet const& p);
 
     // intilize the histograms
     //
@@ -71,8 +54,6 @@ namespace hit {
     // which used the database, so I test and run on each
     // event. Wasteful and silly, but at least it *works*.
     void ensureHists();
-
-  private:
 
     std::string            fFFTHitFinderModuleLabel;
     std::string            fTrackFinderModuleLabel;
@@ -121,16 +102,11 @@ namespace hit {
     , fDriftDeltaZAway()
     , fDeltaZoverXAway()
   {
-    this->reconfigure(pset);
+    fFFTHitFinderModuleLabel  = pset.get< std::string >("HitsModuleLabel");
+//     fTrackFinderModuleLabel   = pset.get< std::string >("TracksModuleLabel");
+    fLArG4ModuleLabel         = pset.get< std::string >("LArGeantModuleLabel");
   }
 
-  void MagDriftAna::reconfigure(fhicl::ParameterSet const& p)
-  {
-    fFFTHitFinderModuleLabel  = p.get< std::string >("HitsModuleLabel");
-//     fTrackFinderModuleLabel   = p.get< std::string >("TracksModuleLabel");
-    fLArG4ModuleLabel         = p.get< std::string >("LArGeantModuleLabel");
-    return;
-  }
   //-------------------------------------------------
   void MagDriftAna::ensureHists() {
     if (initDone) return; // Bail if we've already done this.

@@ -8,21 +8,16 @@
 ///
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" {
-#include <sys/types.h>
-#include <sys/stat.h>
-}
-#include <stdint.h>
+#include <algorithm>
 #include <iomanip>
 
+#include "TVector3.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larreco/RecoAlg/TrackTrajectoryAlg.h"
-//#include "messagefacility/MessageLogger/MessageLogger.h"
 
 namespace trkf{
-
-  TrackTrajectoryAlg::TrackTrajectoryAlg()  { }
-
-  TrackTrajectoryAlg::~TrackTrajectoryAlg() { }
 
   //------------------------------------------------------------------------------
   void TrackTrajectoryAlg::TrackTrajectory(std::array<std::vector<geo::WireID>,3> trkWID,

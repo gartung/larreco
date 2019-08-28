@@ -31,11 +31,10 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-// nutools
+// nurandom
 #include "nurandom/RandomUtils/NuRandomService.h"
 
 // LArSoft includes
-#include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/Utilities/AssociationUtil.h"
@@ -73,7 +72,6 @@ namespace cluster {
     , fEngine(art::ServiceHandle<rndm::NuRandomService>{}
               ->createEngine(*this, pset, "Seed"))
   {
-    fHLAlg.reconfigure(pset.get< fhicl::ParameterSet >("HoughBaseAlg"));
     produces< std::vector<recob::Cluster> >();
     produces< art::Assns<recob::Cluster, recob::Hit> >();
   }

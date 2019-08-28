@@ -9,34 +9,26 @@
 #ifndef TRAJCLUSTERALG_H
 #define TRAJCLUSTERALG_H
 
-#include "larreco/RecoAlg/TCAlg/StepUtils.h"
-#include "larreco/RecoAlg/TCAlg/Utils.h"
-#include "larreco/RecoAlg/TCAlg/TCTruth.h"
-#include "larreco/RecoAlg/TCAlg/TCCR.h"
-
 // C/C++ standard libraries
-#include <array>
+#include <string>
 #include <vector>
 #include <utility> // std::pair<>
-#include <cmath>
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <algorithm>
 
 // framework libraries
-#include "fhiclcpp/ParameterSet.h"
-#include "art/Framework/Core/EDProducer.h"
-#include "art/Framework/Core/ModuleMacros.h"
-#include "canvas/Utilities/InputTag.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
-#include "canvas/Utilities/Exception.h"
+namespace fhicl { class ParameterSet; }
 
 // LArSoft libraries
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
+#include "larreco/RecoAlg/TCAlg/DataStructs.h"
+#include "larreco/RecoAlg/TCAlg/TCTruth.h"
+#include "larreco/RecoAlg/TCAlg/TCVertex.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
 
-#include "TTree.h"
+// ROOT libraries
+#include "TMVA/Reader.h"
+class TTree;
 
 namespace tca {
 
@@ -49,7 +41,7 @@ namespace tca {
 
     TrajClusterAlg(fhicl::ParameterSet const& pset);
 
-    virtual void reconfigure(fhicl::ParameterSet const& pset);
+    void reconfigure(fhicl::ParameterSet const& pset);
 
     void SetMCPHandle(std::vector<simb::MCParticle> const& mcpHandle) { evt.mcpHandle = &mcpHandle; }
     bool SetInputHits(std::vector<recob::Hit> const& inputHits, unsigned int run, unsigned int event);
@@ -64,10 +56,10 @@ namespace tca {
 
 //    void DefineCRTree(TTree* t);
 
-    unsigned short GetSlicesSize() { return slices.size(); }
+    unsigned short GetSlicesSize() const { return slices.size(); }
     TCSlice const& GetSlice(unsigned short sliceIndex) const {return slices[sliceIndex]; }
     void MergeTPHits(std::vector<unsigned int>& tpHits, std::vector<recob::Hit>& newHitCol,
-                     std::vector<unsigned int>& newHitAssns);
+                     std::vector<unsigned int>& newHitAssns) const;
 
     std::vector<unsigned int> const& GetAlgModCount() const {return fAlgModCount; }
     std::vector<std::string> const& GetAlgBitNames() const {return AlgBitNames; }
@@ -78,7 +70,7 @@ namespace tca {
 
     private:
 
-    recob::Hit MergeTPHitsOnWire(std::vector<unsigned int>& tpHits);
+    recob::Hit MergeTPHitsOnWire(std::vector<unsigned int>& tpHits) const;
 
     // SHOWER VARIABLE TREE
     TTree* showertree;

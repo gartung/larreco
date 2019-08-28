@@ -12,12 +12,7 @@
 #include "art/Framework/Core/EDProducer.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
-extern "C" {
-#include <sys/types.h>
-#include <sys/stat.h>
-}
 #include <math.h>
-#include <algorithm>
 
 // Framework includes
 #include "art/Framework/Principal/Event.h" 
@@ -26,14 +21,10 @@ extern "C" {
 #include "canvas/Persistency/Common/Ptr.h" 
 #include "canvas/Persistency/Common/PtrVector.h" 
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h" 
 
 // LArSoft Includes
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/CryostatGeo.h"
-#include "larcorealg/Geometry/TPCGeo.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
@@ -43,24 +34,17 @@ extern "C" {
 
 // ROOT
 #include "TMath.h"
-#include "TF1.h"
-#include "TH1D.h"
 
 
 ///shower finding
 namespace shwf {
 
   class ShowerFinder : public art::EDProducer {
-
   public:
-
     explicit ShowerFinder(fhicl::ParameterSet const&);
-    virtual ~ShowerFinder();
-
-    void reconfigure(fhicl::ParameterSet const& p);
-    void produce(art::Event& evt);
 
   private:
+    void produce(art::Event& evt);
 
     std::string fVertexModuleLabel;         ///< label of module finding 2D endpoint
     std::string fClusterModuleLabel;        ///< label of module finding clusters
@@ -68,10 +52,6 @@ namespace shwf {
     std::string fVertexStrengthModuleLabel; ///< label of module finding 2D endpoint
     double      fRcone;                     ///< radious of cone for method
     double      fLcone;                     ///< length of the cone
-
-  protected:
-
-
   }; // class ShowerFinder
 
 
@@ -83,22 +63,6 @@ namespace shwf{
   ShowerFinder::ShowerFinder(fhicl::ParameterSet const& pset)  :
     EDProducer{pset}
   {
-    this->reconfigure(pset);
-
-    produces< std::vector<recob::Shower>                >();
-    produces< art::Assns<recob::Shower, recob::Cluster> >();
-    produces< art::Assns<recob::Shower, recob::Hit>     >();
-  }
-
-
-  //-------------------------------------------------
-  ShowerFinder::~ShowerFinder()
-  {
-  }
-
-  //-------------------------------------------------
-  void ShowerFinder::reconfigure(fhicl::ParameterSet const& pset)
-  {
     fVertexModuleLabel        = pset.get<std::string > ("VertexModuleLabel");
     fClusterModuleLabel       = pset.get<std::string > ("ClusterModuleLabel");
     fHoughLineModuleLabel     = pset.get<std::string > ("HoughLineModuleLabel");
@@ -106,8 +70,11 @@ namespace shwf{
     fRcone                    = pset.get<double      > ("Rcone");
     fLcone                    = pset.get<double      > ("Lcone");
 
-    return;
+    produces< std::vector<recob::Shower>                >();
+    produces< art::Assns<recob::Shower, recob::Cluster> >();
+    produces< art::Assns<recob::Shower, recob::Hit>     >();
   }
+
 
   //
   //-------------------------------------------------

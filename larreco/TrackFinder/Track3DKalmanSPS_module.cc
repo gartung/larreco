@@ -17,8 +17,7 @@
 #include <algorithm> // std::sort()
 
 // ROOT includes
-#include "TVectorD.h" // TVector3
-#include "TFile.h"
+#include "TVector3.h"
 #include "TMath.h"
 #include "TPrincipal.h"
 #include "TDatabasePDG.h"
@@ -60,11 +59,6 @@
 //\todo Reconstruction Producers should never include SimulationBase objects
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "lardata/Utilities/AssociationUtil.h"
-#include "larreco/RecoAlg/SpacePointAlg.h"
-
-
-
-
 
 static bool sp_sort_3dz(const art::Ptr<recob::SpacePoint>& h1, const art::Ptr<recob::SpacePoint>& h2)
 {
@@ -96,21 +90,16 @@ static bool sp_sort_nsppts(const art::PtrVector<recob::SpacePoint>& h1, const ar
 namespace trkf {
 
   class Track3DKalmanSPS : public art::EDProducer {
-
   public:
-
     explicit Track3DKalmanSPS(fhicl::ParameterSet const& pset);
-    virtual ~Track3DKalmanSPS();
 
-    //////////////////////////////////////////////////////////
+  private:
     void produce(art::Event& evt);
     void beginJob();
     void endJob();
-    void reconfigure(fhicl::ParameterSet const& p);
     double energyLossBetheBloch(const double& mass,
 				const double p
 				);
-  private:
 
     void rotationCov(TMatrixT<Double_t>  &cov, const TVector3 &u, const TVector3 &v);
     std::vector <double> dQdxCalc(const art::FindManyP<recob::Hit> &h, const art::PtrVector<recob::SpacePoint> &s, const TVector3 &p, const TVector3 &d );
@@ -194,9 +183,6 @@ namespace trkf {
     genf::GFAbsTrackRep *repMC;
     genf::GFAbsTrackRep *rep;
 
-  protected:
-
-
   }; // class Track3DKalmanSPS
 
 }
@@ -222,20 +208,6 @@ namespace trkf {
     , fChi2Thresh(12.0E12)
     , fMaxPass (1)
   {
-
-    this->reconfigure(pset);
-
-    produces< std::vector<recob::Track>                  >();
-    produces<art::Assns<recob::Track, recob::Cluster>    >();
-    produces<art::Assns<recob::Track, recob::SpacePoint> >();
-    produces<art::Assns<recob::Track, recob::Hit>        >();
-
-  }
-
-//-------------------------------------------------
-  void Track3DKalmanSPS::reconfigure(fhicl::ParameterSet const& pset)
-  {
-
     fClusterModuleLabel    = pset.get< std::string >("ClusterModuleLabel");
     fSpptModuleLabel       = pset.get< std::string >("SpptModuleLabel");
     fGenieGenModuleLabel   = pset.get< std::string >("GenieGenModuleLabel");
@@ -274,12 +246,14 @@ namespace trkf {
       //   (assuming there is a LogDebugFile destination already; for example
       //   see the settings in uboonecode/uboone/Utilities/services_microboone.fcl )
     }
+
+    produces< std::vector<recob::Track>                  >();
+    produces<art::Assns<recob::Track, recob::Cluster>    >();
+    produces<art::Assns<recob::Track, recob::SpacePoint> >();
+    produces<art::Assns<recob::Track, recob::Hit>        >();
+
   }
 
-//-------------------------------------------------
-  Track3DKalmanSPS::~Track3DKalmanSPS()
-  {
-  }
 
 //-------------------------------------------------
 // stolen, mostly, from GFMaterialEffects.

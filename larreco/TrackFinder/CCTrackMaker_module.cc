@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
-#include <fstream>
 #include <string>
 
 // Framework includes
@@ -24,23 +23,18 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/TPCGeo.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
-#include "larcorealg/Geometry/WireGeo.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Seed.h"
-#include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
-#include "larevt/CalibrationDBI/Interface/ChannelStatusProvider.h"
 
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
@@ -63,7 +57,6 @@ namespace trkf {
     explicit CCTrackMaker(fhicl::ParameterSet const& pset);
 
   private:
-    void reconfigure(fhicl::ParameterSet const& p);
     void produce(art::Event& evt) override;
 
     std::string     fHitModuleLabel;
@@ -298,22 +291,6 @@ namespace trkf {
   CCTrackMaker::CCTrackMaker(fhicl::ParameterSet const& pset)
     : EDProducer{pset}
   {
-    this->reconfigure(pset);
-    produces< std::vector<recob::PFParticle>                   >();
-    produces< art::Assns<recob::PFParticle, recob::Track>      >();
-    produces< art::Assns<recob::PFParticle, recob::Cluster>    >();
-    produces< art::Assns<recob::PFParticle, recob::Seed>       >();
-    produces< art::Assns<recob::PFParticle, recob::Vertex>     >();
-    produces< std::vector<recob::Vertex>                       >();
-    produces< std::vector<recob::Track>                        >();
-    produces< art::Assns<recob::Track,      recob::Hit>        >();
-    produces<std::vector<recob::Seed>                          >();
-    //produces< art::Assns<recob::Seed,       recob::Hit>        >();
-  }
-
-  //-------------------------------------------------
-  void CCTrackMaker::reconfigure(fhicl::ParameterSet const& pset)
-  {
     fHitModuleLabel         = pset.get< std::string >("HitModuleLabel");
     fClusterModuleLabel     = pset.get< std::string >("ClusterModuleLabel");
     fVertexModuleLabel      = pset.get< std::string >("VertexModuleLabel");
@@ -360,7 +337,17 @@ namespace trkf {
       }
     } // ii
 
-  } // reconfigure
+    produces< std::vector<recob::PFParticle>                   >();
+    produces< art::Assns<recob::PFParticle, recob::Track>      >();
+    produces< art::Assns<recob::PFParticle, recob::Cluster>    >();
+    produces< art::Assns<recob::PFParticle, recob::Seed>       >();
+    produces< art::Assns<recob::PFParticle, recob::Vertex>     >();
+    produces< std::vector<recob::Vertex>                       >();
+    produces< std::vector<recob::Track>                        >();
+    produces< art::Assns<recob::Track,      recob::Hit>        >();
+    produces<std::vector<recob::Seed>                          >();
+    //produces< art::Assns<recob::Seed,       recob::Hit>        >();
+  }
 
   //------------------------------------------------------------------------------------//
   void CCTrackMaker::produce(art::Event& evt)

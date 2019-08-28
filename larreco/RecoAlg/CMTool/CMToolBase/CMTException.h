@@ -14,8 +14,8 @@
 #ifndef RECOTOOL_CMTEXCEPTION_H
 #define RECOTOOL_CMTEXCEPTION_H
 
-#include <iostream>
 #include <exception>
+#include <string>
 
 namespace cmtool {
   /**
@@ -26,11 +26,10 @@ namespace cmtool {
 
   public:
 
-    CMTException(std::string msg="") : std::exception(), _msg(msg)
+    CMTException(std::string msg="") : _msg(msg)
     {}
 
-    virtual ~CMTException() throw(){};
-    virtual const char* what() const throw()
+    const char* what() const noexcept override
     {return _msg.c_str(); }
 
   private:
@@ -41,4 +40,3 @@ namespace cmtool {
 }
 #endif
 /** @} */ // end of doxygen group
-

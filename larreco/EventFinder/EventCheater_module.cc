@@ -10,14 +10,12 @@
 // ROOT includes
 
 // LArSoft includes
-#include "larsim/MCCheater/BackTracker.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Event.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "nutools/ParticleNavigation/ParticleList.h"
-#include "lardata/Utilities/AssociationUtil.h"
 
 // Framework includes
 #include "art/Framework/Core/ModuleMacros.h"
@@ -26,9 +24,6 @@
 #include "art/Framework/Principal/View.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "canvas/Persistency/Common/FindOneP.h"
 #include "art/Framework/Core/EDProducer.h"
@@ -39,11 +34,9 @@ namespace event {
   public:
     explicit EventCheater(fhicl::ParameterSet const& pset);
 
-    void produce(art::Event& evt);
-
-    void reconfigure(fhicl::ParameterSet const& pset);
-
   private:
+
+    void produce(art::Event& evt);
 
     std::string fCheatedVertexLabel; ///< label for module creating recob::Vertex objects
     std::string fG4ModuleLabel;      ///< label for module running G4 and making particles, etc
@@ -57,18 +50,12 @@ namespace event{
   EventCheater::EventCheater(fhicl::ParameterSet const& pset)
     : EDProducer{pset}
   {
-    this->reconfigure(pset);
+    fCheatedVertexLabel = pset.get< std::string >("CheatedVertexLabel", "prong" );
+    fG4ModuleLabel      = pset.get< std::string >("G4ModuleLabel",      "largeant");
 
     produces< std::vector<recob::Event> >();
     produces< art::Assns<recob::Event, recob::Vertex> >();
     produces< art::Assns<recob::Event, recob::Hit> >();
-  }
-
-  //--------------------------------------------------------------------
-  void EventCheater::reconfigure(fhicl::ParameterSet const& pset)
-  {
-    fCheatedVertexLabel = pset.get< std::string >("CheatedVertexLabel", "prong" );
-    fG4ModuleLabel      = pset.get< std::string >("G4ModuleLabel",      "largeant");
   }
 
   //--------------------------------------------------------------------

@@ -1,12 +1,17 @@
 #include "larreco/RecoAlg/DBScan3DAlg.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "larcore/Geometry/Geometry.h"
+#include "larcorealg/Geometry/GeometryCore.h"
 #include "larcorealg/CoreUtils/NumericUtils.h" // util::absDiff()
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusProvider.h"
-#include "cetlib/pow.h"
 
-#include <math.h>
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "cetlib/pow.h"
+#include "fhiclcpp/ParameterSet.h"
+
+#include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -18,11 +23,6 @@ cluster::DBScan3DAlg::DBScan3DAlg(fhicl::ParameterSet const& pset)
 {
   // square epsilon to eliminate the use of sqrt later on
   epsilon *= epsilon;
-}
-
-//----------------------------------------------------------
-cluster::DBScan3DAlg::~DBScan3DAlg()
-{
 }
 
 //----------------------------------------------------------
@@ -204,7 +204,7 @@ int cluster::DBScan3DAlg::spread(unsigned int index,
   return SUCCESS;
 }
 
-float cluster::DBScan3DAlg::dist(point_t *a, point_t *b)
+float cluster::DBScan3DAlg::dist(point_t *a, point_t *b) const
 {
   Double32_t const* a_xyz = a->sp->XYZ();
   Double32_t const* b_xyz = b->sp->XYZ();

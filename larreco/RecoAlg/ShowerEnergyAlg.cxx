@@ -6,7 +6,16 @@
 // Shower energy finding class
 ////////////////////////////////////////////////////////////////////////
 
+#include "canvas/Persistency/Common/PtrVector.h"
+
+#include "larcore/CoreUtils/ServiceUtil.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardataalg/DetectorInfo/DetectorProperties.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "larreco/RecoAlg/ShowerEnergyAlg.h"
+
+#include "TMath.h"
 
 shower::ShowerEnergyAlg::ShowerEnergyAlg(fhicl::ParameterSet const& pset)
   : detprop(lar::providerFrom<detinfo::DetectorPropertiesService>())
@@ -19,7 +28,7 @@ shower::ShowerEnergyAlg::ShowerEnergyAlg(fhicl::ParameterSet const& pset)
   fZIntercept = pset.get<double>("ZIntercept");
 }
 
-double shower::ShowerEnergyAlg::ShowerEnergy(std::vector<art::Ptr<recob::Hit> > const& hits, int plane) {
+double shower::ShowerEnergyAlg::ShowerEnergy(std::vector<art::Ptr<recob::Hit> > const& hits, int plane) const {
 
   double totalCharge = 0, totalEnergy = 0;
 

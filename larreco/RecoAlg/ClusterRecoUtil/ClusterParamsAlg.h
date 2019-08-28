@@ -11,29 +11,12 @@
 
 //--- std/stl include ---//
 #include <vector>
-//--- ROOT include ---//
-#include <TMath.h>
-#include <TH2F.h>
-#include <TF1.h>
-#include <TH1F.h>
-#include <TPrincipal.h>
-#include <TCanvas.h>
-#include <TLegend.h>
+#include <string>
 
 //--- LArSoft include ---//
-#include "lardata/Utilities/GeometryUtilities.h"
 #include "ClusterParams.h"
-#include "CRUException.h"
-
-//#include "LArUtilManager.hh"
-//#include "FANNService.hh"
-
-//#include "DataFormat-TypeDef.hh"
-//#include "LArUtil-TypeDef.hh"
-//#include "HoughBaseAlg.hh"
-
-#include "TPrincipal.h"
-#include "TStopwatch.h"
+#include "lardata/Utilities/PxUtils.h"
+namespace util { class GeometryUtilities; }
 
 // ... more #include in tempimplementation below
 
@@ -46,13 +29,8 @@ namespace cluster {
     /// Default constructor
     ClusterParamsAlg();
 
-//    /// Alternative constructor with larlight's hits
-//    ClusterParamsAlg(const std::vector<const ::larlite::hit*>&);
-
     /// Alternative constructor with larutil::PxHit vector
     ClusterParamsAlg(const std::vector<util::PxHit>&);
-
-    ~ClusterParamsAlg(){}
 
     void Initialize();
 

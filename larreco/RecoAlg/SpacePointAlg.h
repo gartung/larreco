@@ -55,15 +55,12 @@
 #ifndef SPACEPOINTALG_H
 #define SPACEPOINTALG_H
 
+#include <map>
 #include <vector>
-#include <string>
-#include "fhiclcpp/ParameterSet.h"
-#include "canvas/Persistency/Common/PtrVector.h"
 
-class TH1F;
-namespace sim {
-  struct IDE;
-}
+#include "canvas/Persistency/Common/PtrVector.h"
+namespace fhicl { class ParameterSet; }
+
 namespace trkf{
   class KHitTrack;
 }
@@ -79,9 +76,6 @@ namespace trkf {
 
     // Constructor.
     SpacePointAlg(const fhicl::ParameterSet& pset);
-
-    // Destructor.
-    ~SpacePointAlg();
 
     // Configuration Accessors.
 

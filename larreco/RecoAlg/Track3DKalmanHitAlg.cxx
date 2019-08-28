@@ -8,6 +8,39 @@
 ///
 ////////////////////////////////////////////////////////////////////////
 
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+
+#include "TMath.h"
+
+#include "larreco/RecoAlg/Track3DKalmanHitAlg.h"
+
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "canvas/Persistency/Common/PtrVector.h"
+#include "cetlib_except/exception.h"
+#include "fhiclcpp/ParameterSet.h"
+
+#include "larcore/CoreUtils/ServiceUtil.h"
+#include "larcore/Geometry/Geometry.h"
+#include "larcorealg/Geometry/WireGeo.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/RecoObjects/KETrack.h"
+#include "lardata/RecoObjects/KHitContainerWireLine.h"
+#include "lardata/RecoObjects/KHitContainerWireX.h"
+#include "lardata/RecoObjects/KHitTrack.h"
+#include "lardata/RecoObjects/KTrack.h"
+#include "lardata/RecoObjects/KalmanLinearAlgebra.h"
+#include "lardata/RecoObjects/PropAny.h"
+#include "lardata/RecoObjects/SurfXYZPlane.h"
+#include "lardataalg/DetectorInfo/DetectorProperties.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "type_traits"
+#include "utility"
+#include "vector"
+
 #include "larreco/RecoAlg/Track3DKalmanHitAlg.h"
 
 // Local functions.
@@ -156,7 +189,7 @@ std::vector<trkf::KalmanOutput> trkf::Track3DKalmanHitAlg::makeTracks(KalmanInpu
 bool trkf::Track3DKalmanHitAlg::fetchPFParticleSeeds(const art::PtrVector<recob::Seed> &pfseeds,
                                                      const std::vector<Hits> &pfseedhits,
                                                      std::vector<recob::Seed>& seeds,
-                                                     std::vector<Hits>& hitsperseed){
+                                                     std::vector<Hits>& hitsperseed) const{
    for(const auto& pseed : pfseeds) {
       seeds.push_back(*pseed);
    }
@@ -436,7 +469,7 @@ bool trkf::Track3DKalmanHitAlg::smoothandextendTrack(KGTrack &trg0,
 
 bool trkf::Track3DKalmanHitAlg::extendandsmoothLoop(KGTrack &trg1,
                                                     unsigned int prefplane,
-                                                    Hits &trackhits){
+                                                    Hits &trackhits) const {
    bool ok = true;
    const int niter = 6;
    int nfail = 0;  // Number of consecutive extend fails.
@@ -478,7 +511,7 @@ bool trkf::Track3DKalmanHitAlg::extendandsmoothLoop(KGTrack &trg1,
 }
 //----------------------------------------------------------------------------
 /// fit and update method, used twice.
-void trkf::Track3DKalmanHitAlg::fitnupdateMomentum(KGTrack& trg1, KGTrack& trg2) {
+void trkf::Track3DKalmanHitAlg::fitnupdateMomentum(KGTrack& trg1, KGTrack& trg2) const {
    KETrack tremom;
    if(fKFAlg.fitMomentum(trg1, fProp.get(), tremom)) {
       fKFAlg.updateMomentum(tremom, fProp.get(), trg2);
@@ -601,4 +634,3 @@ recob::Seed trkf::Track3DKalmanHitAlg::makeSeed(const Hits& hits) const
    return result;
 
 }
-

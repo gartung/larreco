@@ -5,18 +5,15 @@
 #ifndef DBSCANALG_H
 #define DBSCANALG_H
 
-#include <vector>
-#include <cmath>
-#include <iostream>
+#include <set>
 #include <stdint.h>
+#include <vector>
 
-#include "fhiclcpp/ParameterSet.h"
 #include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/PtrVector.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"  // for WireID
 #include "larreco/ClusterFinder/RStarTree/RStarTree.h"
-#include "larcore/Geometry/Geometry.h"
 
-class TH1F;
+namespace fhicl { class ParameterSet; }
 
 namespace recob { class Hit; }
 
@@ -36,7 +33,7 @@ namespace cluster{
 
 
     DBScanAlg(fhicl::ParameterSet const& pset);
-    virtual ~DBScanAlg();
+    ~DBScanAlg();
 
     void reconfigure(fhicl::ParameterSet const& p);
     void InitScan(const std::vector< art::Ptr<recob::Hit> >& allhits,

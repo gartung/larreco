@@ -9,7 +9,6 @@
 
 // C/C++ standard libraries
 #include <string>
-#include <utility> // std::unique_ptr<>
 
 // Framework libraries
 #include "fhiclcpp/ParameterSet.h"
@@ -23,9 +22,6 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/EndPoint2D.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "larreco/RecoAlg/SpacePointAlg.h"
 #include "lardata/Utilities/AssociationUtil.h"
@@ -39,10 +35,9 @@ namespace trkf {
   public:
     explicit TCTrack(fhicl::ParameterSet const & pset);
 
-    void reconfigure(fhicl::ParameterSet const & pset) ;
-    void produce(art::Event & evt) override;
-
   private:
+
+    void produce(art::Event & evt) override;
 
     SpacePointAlg fSptalg;
 
@@ -53,22 +48,12 @@ namespace trkf {
   }; // class TCTrack
 
   //----------------------------------------------------------------------------
-  void TCTrack::reconfigure(fhicl::ParameterSet const & pset)
-  {
-//    fHitModuleLabel         = pset.get< std::string >("HitModuleLabel");
-    fPFPModuleLabel     = pset.get< std::string >("PFPModuleLabel");
-
-    fSptalg.reconfigure(pset.get<fhicl::ParameterSet>("SpacePointAlg"));
-
-  }
-
-  //----------------------------------------------------------------------------
   TCTrack::TCTrack(fhicl::ParameterSet const& pset)
     : EDProducer{pset}
     , fSptalg(pset.get<fhicl::ParameterSet>("SpacePointAlg"))
   {
-
-    reconfigure(pset);
+//    fHitModuleLabel         = pset.get< std::string >("HitModuleLabel");
+    fPFPModuleLabel     = pset.get< std::string >("PFPModuleLabel");
 
     produces<std::vector<recob::SpacePoint> >();
     produces<art::Assns<recob::SpacePoint, recob::Hit>       >();

@@ -14,10 +14,7 @@
 #ifndef RECOTOOL_CMERGEBOOKKEEPER_H
 #define RECOTOOL_CMERGEBOOKKEEPER_H
 
-#include <iostream>
 #include <vector>
-#include <TString.h>
-#include "CMTException.h"
 
 namespace cmtool {
 
@@ -38,9 +35,6 @@ namespace cmtool {
 
     /// Default constructor
     CMergeBookKeeper(unsigned short nclusters=0);
-
-    /// Default destructor
-    virtual ~CMergeBookKeeper(){};
 
     /// Reset method
     void Reset(unsigned short nclusters=0);
@@ -107,4 +101,3 @@ namespace cmtool {
 
 #endif
 /** @} */ // end of doxygen group
-

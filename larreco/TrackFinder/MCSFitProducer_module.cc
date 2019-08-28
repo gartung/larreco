@@ -2,16 +2,10 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
 
-#include "messagefacility/MessageLogger/MessageLogger.h"
-
-#include "fhiclcpp/ParameterSet.h"
 #include "fhiclcpp/types/Atom.h"
 #include "fhiclcpp/types/Table.h"
 #include "canvas/Utilities/InputTag.h"
-#include "canvas/Persistency/Common/FindManyP.h"
 
 #include "lardataobj/RecoBase/MCSFitResult.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -68,9 +62,9 @@ namespace trkf {
     MCSFitProducer & operator = (MCSFitProducer const &) = delete;
     MCSFitProducer & operator = (MCSFitProducer &&) = delete;
 
+  private:
     void produce(art::Event & e) override;
 
-  private:
     Parameters p_;
     art::InputTag inputTag;
     TrajectoryMCSFitter mcsfitter;

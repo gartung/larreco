@@ -7,10 +7,6 @@
  * from cetpkgsupport v1_02_00.
  */
 
-
-// C/C++ standard libraries
-#include <utility> // std::unique_ptr<>
-
 // Framework libraries
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Core/EDProducer.h"
@@ -19,7 +15,6 @@
 #include "canvas/Utilities/InputTag.h"
 
 //LArSoft includes
-#include "larreco/RecoAlg/CCHitFinderAlg.h"
 #include "larreco/RecoAlg/ClusterCrawlerAlg.h"
 
 // ... more includes in the implementation section
@@ -42,11 +37,10 @@ namespace cluster {
     public:
       explicit LineCluster(fhicl::ParameterSet const & pset);
 
-      void reconfigure(fhicl::ParameterSet const & pset) ;
+    private:
       void produce(art::Event & evt) override;
 
-    private:
-      std::unique_ptr<ClusterCrawlerAlg> fCCAlg; // define ClusterCrawlerAlg object
+      ClusterCrawlerAlg fCCAlg; // define ClusterCrawlerAlg object
 
       art::InputTag fHitFinderLabel; ///< label of module producing input hits
 
@@ -77,17 +71,17 @@ namespace cluster {
 #include "lardataobj/RecoBase/EndPoint2D.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardata/ArtDataHelper/HitCreator.h" // recob::HitCollectionAssociator
-#include "larreco/RecoAlg/ClusterRecoUtil/StandardClusterParamsAlg.h"
-#include "larreco/RecoAlg/ClusterParamsImportWrapper.h"
-
 
 namespace cluster {
 
   //----------------------------------------------------------------------------
   LineCluster::LineCluster(fhicl::ParameterSet const& pset)
     : EDProducer{pset}
+    , fCCAlg{pset.get< fhicl::ParameterSet >("ClusterCrawlerAlg")}
   {
-    reconfigure(pset);
+    fHitFinderLabel = pset.get<art::InputTag>("HitFinderModuleLabel");
+    fDoWireAssns = pset.get<bool>("DoWireAssns",true);
+    fDoRawDigitAssns = pset.get<bool>("DoRawDigitAssns",false);
 
     // let HitCollectionAssociator declare that we are going to produce
     // hits and associations with wires and raw digits
@@ -104,22 +98,6 @@ namespace cluster {
 
 
   //----------------------------------------------------------------------------
-  void LineCluster::reconfigure(fhicl::ParameterSet const & pset)
-  {
-    fHitFinderLabel = pset.get<art::InputTag>("HitFinderModuleLabel");
-    fDoWireAssns = pset.get<bool>("DoWireAssns",true);
-    fDoRawDigitAssns = pset.get<bool>("DoRawDigitAssns",false);
-
-    // this trick avoids double configuration on construction
-    if (fCCAlg)
-      fCCAlg->reconfigure(pset.get< fhicl::ParameterSet >("ClusterCrawlerAlg"));
-    else {
-      fCCAlg.reset(new ClusterCrawlerAlg
-        (pset.get< fhicl::ParameterSet >("ClusterCrawlerAlg")));
-    }
-  } // LineCluster::reconfigure()
-
-  //----------------------------------------------------------------------------
   void LineCluster::produce(art::Event & evt)
   {
     // fetch the wires needed by CCHitFinder
@@ -129,10 +107,10 @@ namespace cluster {
      = evt.getValidHandle<std::vector<recob::Hit>>(fHitFinderLabel);
 
     // look for clusters in all planes
-    fCCAlg->RunCrawler(*hitVecHandle);
+    fCCAlg.RunCrawler(*hitVecHandle);
 
     std::unique_ptr<std::vector<recob::Hit>> FinalHits
-      (new std::vector<recob::Hit>(std::move(fCCAlg->YieldHits())));
+      (new std::vector<recob::Hit>(std::move(fCCAlg.YieldHits())));
 
     // shcol contains the hit collection
     // and its associations to wires and raw digits;
@@ -149,12 +127,12 @@ namespace cluster {
     std::unique_ptr<art::Assns<recob::Cluster, recob::EndPoint2D, unsigned short>>
        cep_assn(new art::Assns<recob::Cluster, recob::EndPoint2D, unsigned short>);
 
-    std::vector<ClusterCrawlerAlg::ClusterStore> const& Clusters = fCCAlg->GetClusters();
+    std::vector<ClusterCrawlerAlg::ClusterStore> const& Clusters = fCCAlg.GetClusters();
 
 
 // Consistency check
 /*
-    std::vector<short> const& inClus = fCCAlg->GetinClus();
+    std::vector<short> const& inClus = fCCAlg.GetinClus();
     for(unsigned int icl = 0; icl < Clusters.size(); ++icl) {
         ClusterCrawlerAlg::ClusterStore const& clstr = Clusters[icl];
         if(clstr.ID < 0) continue;
@@ -177,7 +155,7 @@ namespace cluster {
       } // icl
 */
     // make EndPoints (aka 2D vertices)
-    std::vector<ClusterCrawlerAlg::VtxStore> const& EndPts = fCCAlg->GetEndPoints();
+    std::vector<ClusterCrawlerAlg::VtxStore> const& EndPts = fCCAlg.GetEndPoints();
     std::vector<unsigned int> indxToIndx(EndPts.size());
     art::ServiceHandle<geo::Geometry const> geom;
     unsigned short vtxID = 0, end, wire, ivx;
@@ -201,7 +179,7 @@ namespace cluster {
     std::unique_ptr<std::vector<recob::EndPoint2D> > v2col(new std::vector<recob::EndPoint2D>(std::move(sv2col)));
 
     // make 3D vertices
-    std::vector<ClusterCrawlerAlg::Vtx3Store> const& Vertices = fCCAlg->GetVertices();
+    std::vector<ClusterCrawlerAlg::Vtx3Store> const& Vertices = fCCAlg.GetVertices();
     double xyz[3] = {0, 0, 0};
     vtxID = 0;
     for(ClusterCrawlerAlg::Vtx3Store const& vtx3: Vertices) {
@@ -336,7 +314,7 @@ namespace cluster {
     shcol.use_hits(std::move(FinalHits));
 
     // clean up
-    fCCAlg->ClearResults();
+    fCCAlg.ClearResults();
 
     // move the hit collection and the associations into the event:
     shcol.put_into(evt);

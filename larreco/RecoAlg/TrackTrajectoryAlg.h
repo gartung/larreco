@@ -10,27 +10,21 @@
 #ifndef TRACKTRAJECTORYALG_H
 #define TRACKTRAJECTORYALG_H
 
-#include <math.h>
-#include <algorithm>
+#include <array>
 #include <vector>
 
-#include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/TPCGeo.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
-#include "larcorealg/Geometry/WireGeo.h"
-#include "larreco/RecoAlg/TrackLineFitAlg.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 
-#include "TVectorD.h"
+#include "larcore/Geometry/Geometry.h"
+#include "larreco/RecoAlg/TrackLineFitAlg.h"
+namespace geo { struct WireID; }
+
+class TVector3;
 
 namespace trkf {
 
   class TrackTrajectoryAlg {
     public:
-
-    TrackTrajectoryAlg();
-
-    virtual ~TrackTrajectoryAlg();
 
     void TrackTrajectory(std::array<std::vector<geo::WireID>,3> trkWID,
                          std::array<std::vector<double>,3> trkX,

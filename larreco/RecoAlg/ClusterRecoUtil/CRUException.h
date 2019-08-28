@@ -14,7 +14,7 @@
 #ifndef CRUEXCEPTION_H
 #define CRUEXCEPTION_H
 
-#include <iostream>
+#include <string>
 #include <exception>
 
 namespace cluster {
@@ -26,11 +26,10 @@ namespace cluster {
 
   public:
 
-    CRUException(std::string msg="") : std::exception(), _msg(msg)
+    CRUException(std::string msg="") : _msg(msg)
     {}
 
-    virtual ~CRUException() throw(){};
-    virtual const char* what() const throw()
+    const char* what() const noexcept override
     {return _msg.c_str(); }
 
   private:
@@ -41,4 +40,3 @@ namespace cluster {
 }
 #endif
 /** @} */ // end of doxygen group
-

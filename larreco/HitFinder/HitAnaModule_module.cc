@@ -23,10 +23,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
 #include "canvas/Persistency/Common/Assns.h"
-#include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 
 #include "art_root_io/TFileService.h"
@@ -39,6 +36,8 @@
 #include "larreco/HitFinder/HitAnaAlg.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
+#include "TTree.h"
+
 namespace hit {
   class HitAnaModule;
 }
@@ -46,14 +45,12 @@ namespace hit {
 class hit::HitAnaModule : public art::EDAnalyzer {
 public:
   explicit HitAnaModule(fhicl::ParameterSet const & p);
-  virtual ~HitAnaModule();
 
+private:
   void analyze(art::Event const & e) override;
 
   void beginJob() override;
-  void reconfigure(fhicl::ParameterSet const & p) ;
 
-private:
   using HitWireAssns_t = art::Assns<recob::Hit, recob::Wire>;
 
   void createAssocVector(
@@ -86,11 +83,10 @@ hit::HitAnaModule::HitAnaModule(fhicl::ParameterSet const & p)
   :
   EDAnalyzer(p)  // ,
  // More initializers here.
-{ this->reconfigure(p); }
-
-hit::HitAnaModule::~HitAnaModule()
 {
-  // Clean up dynamic memory and other resources here.
+  fHitModuleLabels  = p.get< std::vector<std::string> >("HitModuleLabels");
+  fWireModuleLabel  = p.get< std::string              >("WireModuleLabel");
+  fMCHitModuleLabel = p.get< std::string              >("MCHitModuleLabel");
 }
 
 void hit::HitAnaModule::createAssocVector(
@@ -220,16 +216,6 @@ void hit::HitAnaModule::beginJob()
     hitDataTree.push_back(intermediateTree);
   }
   analysisAlg.SetHitDataTree(hitDataTree);
-}
-
-void hit::HitAnaModule::reconfigure(fhicl::ParameterSet const & p)
-{
-  // Implementation of optional member function here.
-
-  fHitModuleLabels  = p.get< std::vector<std::string> >("HitModuleLabels");
-  fWireModuleLabel  = p.get< std::string              >("WireModuleLabel");
-  fMCHitModuleLabel = p.get< std::string              >("MCHitModuleLabel");
-
 }
 
 DEFINE_ART_MODULE(hit::HitAnaModule)

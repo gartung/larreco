@@ -8,9 +8,6 @@
 #include <string>
 #include <algorithm>
 
-// ROOT includes
-#include "TStopwatch.h"
-
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/CryostatGeo.h"
@@ -22,17 +19,13 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardata/Utilities/AssociationUtil.h"
-#include "nutools/ParticleNavigation/EmEveIdCalculator.h"
-#include "lardata/Utilities/GeometryUtilities.h"
-
+#include "nug4/ParticleNavigation/EmEveIdCalculator.h"
 
 // Framework includes
 #include "art/Framework/Principal/Event.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Core/ModuleMacros.h"
@@ -45,11 +38,9 @@ namespace cluster {
   public:
     explicit ClusterCheater(fhicl::ParameterSet const& pset);
 
+ private:
     void produce(art::Event& evt);
 
-    void reconfigure(fhicl::ParameterSet const& pset);
-
- private:
 
     std::string  fMCGeneratorLabel;  ///< label for module to get MC truth information
     std::string  fHitModuleLabel;    ///< label for module creating recob::Hit objects
@@ -89,19 +80,13 @@ namespace cluster{
   ClusterCheater::ClusterCheater(fhicl::ParameterSet const& pset)
     : EDProducer{pset}
   {
-    this->reconfigure(pset);
-
-    produces< std::vector<recob::Cluster> >();
-    produces< art::Assns<recob::Cluster, recob::Hit> >();
-  }
-
-  //--------------------------------------------------------------------
-  void ClusterCheater::reconfigure(fhicl::ParameterSet const& pset)
-  {
     fMCGeneratorLabel  = pset.get< std::string  >("MCGeneratorLabel",  "generator");
     fHitModuleLabel    = pset.get< std::string  >("HitModuleLabel",    "hit"      );
     fG4ModuleLabel     = pset.get< std::string  >("G4ModuleLabel",     "largeant" );
     fMinHits           = pset.get< unsigned int >("MinHits",           1          );
+
+    produces< std::vector<recob::Cluster> >();
+    produces< art::Assns<recob::Cluster, recob::Hit> >();
   }
 
   //--------------------------------------------------------------------

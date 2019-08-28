@@ -19,8 +19,6 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/EDProducer.h"
 #include "canvas/Persistency/Common/FindManyP.h"
@@ -28,10 +26,8 @@
 // LArSoft includes
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
+#include "larcore/CoreUtils/ServiceUtil.h"
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/CryostatGeo.h"
-#include "larcorealg/Geometry/TPCGeo.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -43,13 +39,21 @@
 #include "lardata/ArtDataHelper/MVAReader.h"
 
 // ROOT includes
-#include "TPrincipal.h"
+#include "RtypesCore.h"
 #include "TVector3.h"
-#include "TCanvas.h"
-#include "TH2D.h"
-#include "TStyle.h"
-#include "TGraph2D.h"
-#include "TF2.h"
+
+// C++ STL includes
+#include <algorithm>
+#include <array>
+#include <float.h>
+#include <iostream>
+#include <map>
+#include <math.h>
+#include <memory>
+#include <stddef.h>
+#include <string>
+#include <vector>
+
 
 namespace shower {
   class EMShower;
@@ -60,10 +64,9 @@ public:
 
   EMShower(fhicl::ParameterSet const& pset);
 
-  void produce(art::Event& evt);
-  void reconfigure(fhicl::ParameterSet const& p);
-
 private:
+  void produce(art::Event& evt);
+
 
   art::InputTag fHitsModuleLabel, fClusterModuleLabel, fTrackModuleLabel, fPFParticleModuleLabel, fVertexModuleLabel, fCNNEMModuleLabel;
   EMShowerAlg fEMShowerAlg;
@@ -88,7 +91,23 @@ shower::EMShower::EMShower(fhicl::ParameterSet const& pset) :
   EDProducer{pset},
   fEMShowerAlg(pset.get<fhicl::ParameterSet>("EMShowerAlg"))
 {
-  this->reconfigure(pset);
+  fHitsModuleLabel        = pset.get<art::InputTag>("HitsModuleLabel");
+  fClusterModuleLabel     = pset.get<art::InputTag>("ClusterModuleLabel");
+  fTrackModuleLabel       = pset.get<art::InputTag>("TrackModuleLabel");
+  fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
+  fVertexModuleLabel      = pset.get<art::InputTag>("VertexModuleLabel","");
+  fCNNEMModuleLabel       = pset.get<art::InputTag>("CNNEMModuleLabel","");
+  fFindBadPlanes          = pset.get<bool>         ("FindBadPlanes");
+  fSaveNonCompleteShowers = pset.get<bool>         ("SaveNonCompleteShowers");
+  fMakeSpacePoints        = pset.get<bool>         ("MakeSpacePoints");
+  fUseCNNtoIDEMPFP        = pset.get<bool>         ("UseCNNtoIDEMPFP");
+  fUseCNNtoIDEMHit        = pset.get<bool>         ("UseCNNtoIDEMHit");
+  fMinTrackLikeScore      = pset.get<double>       ("MinTrackLikeScore");
+  fShower = pset.get<int>("Shower",-1);
+  fPlane = pset.get<int>("Plane",-1);
+  fDebug = pset.get<int>("Debug",0);
+  fEMShowerAlg.fDebug = fDebug;
+
   produces<std::vector<recob::Shower> >();
   produces<std::vector<recob::SpacePoint> >();
   produces<art::Assns<recob::Shower, recob::Hit> >();
@@ -96,25 +115,6 @@ shower::EMShower::EMShower(fhicl::ParameterSet const& pset) :
   produces<art::Assns<recob::Shower, recob::Track> >();
   produces<art::Assns<recob::Shower, recob::SpacePoint> >();
   produces<art::Assns<recob::SpacePoint, recob::Hit> >();
-}
-
-void shower::EMShower::reconfigure(fhicl::ParameterSet const& p) {
-  fHitsModuleLabel        = p.get<art::InputTag>("HitsModuleLabel");
-  fClusterModuleLabel     = p.get<art::InputTag>("ClusterModuleLabel");
-  fTrackModuleLabel       = p.get<art::InputTag>("TrackModuleLabel");
-  fPFParticleModuleLabel  = p.get<art::InputTag>("PFParticleModuleLabel","");
-  fVertexModuleLabel      = p.get<art::InputTag>("VertexModuleLabel","");
-  fCNNEMModuleLabel       = p.get<art::InputTag>("CNNEMModuleLabel","");
-  fFindBadPlanes          = p.get<bool>         ("FindBadPlanes");
-  fSaveNonCompleteShowers = p.get<bool>         ("SaveNonCompleteShowers");
-  fMakeSpacePoints        = p.get<bool>         ("MakeSpacePoints");
-  fUseCNNtoIDEMPFP        = p.get<bool>         ("UseCNNtoIDEMPFP");
-  fUseCNNtoIDEMHit        = p.get<bool>         ("UseCNNtoIDEMHit");
-  fMinTrackLikeScore      = p.get<double>       ("MinTrackLikeScore");
-  fShower = p.get<int>("Shower",-1);
-  fPlane = p.get<int>("Plane",-1);
-  fDebug = p.get<int>("Debug",0);
-  fEMShowerAlg.fDebug = fDebug;
 }
 
 void shower::EMShower::produce(art::Event& evt) {
@@ -404,7 +404,7 @@ void shower::EMShower::produce(art::Event& evt) {
         TVector3 shwvtx(0,0,0);
         double mindis = DBL_MAX;
         for (auto &sp : showerSpacePoints_p){
-          double dis = sqrt(pow(nuvtx.X()-sp->XYZ()[0],2)+pow(nuvtx.X()-sp->XYZ()[1],2)+pow(nuvtx.X()-sp->XYZ()[2],2));
+          double dis = sqrt(pow(nuvtx.X()-sp->XYZ()[0],2)+pow(nuvtx.Y()-sp->XYZ()[1],2)+pow(nuvtx.Z()-sp->XYZ()[2],2));
           if (dis<mindis){
             mindis = dis;
             shwvtx.SetXYZ(sp->XYZ()[0], sp->XYZ()[1], sp->XYZ()[2]);

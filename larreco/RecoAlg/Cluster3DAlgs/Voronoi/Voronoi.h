@@ -10,7 +10,6 @@
 #define VoronoiDiagram_h
 
 // std includes
-#include <algorithm>
 #include <queue>
 
 // LArSoft includes
@@ -21,7 +20,7 @@
 #include <boost/polygon/voronoi.hpp>
 
 // Algorithm includes
-#include "larreco/RecoAlg/Cluster3DAlgs/Cluster3D.h"
+#include "larreco/RecoAlg/Cluster3DAlgs/Voronoi/DCEL.h"
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 namespace voronoi2d
@@ -45,7 +44,7 @@ public:
     /**
      *  @brief  Destructor
      */
-    virtual ~VoronoiDiagram();
+    ~VoronoiDiagram();
 
     /**
      *  @brief Given an input set of 2D points construct a 2D voronoi diagram

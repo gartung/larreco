@@ -10,10 +10,7 @@
 // This is Preliminary Work and needs modifications
 // ////////////////////////////////////////////////////////////////////////
 #include <string>
-#include <iostream>
 #include <iomanip>
-#include <ios>
-#include <fstream>
 #include <cmath>
 #include <algorithm>
 
@@ -28,7 +25,6 @@
 #include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "lardataobj/RecoBase/EndPoint2D.h"
@@ -38,17 +34,12 @@
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/CryostatGeo.h"
-#include "larcorealg/Geometry/TPCGeo.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "larcorealg/Geometry/WireGeo.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 
-#include "TMath.h"
 #include "TH1D.h"
-#include "TVectorD.h"
-#include "TGeoManager.h"
 #include "TMath.h"
 #include "TGraph.h"
 #include "TF1.h"
@@ -70,17 +61,12 @@ struct SortByWire {
 namespace vertex {
 
  class VertexFinder2D :  public art::EDProducer {
-
   public:
-
     explicit VertexFinder2D(fhicl::ParameterSet const& pset);
-    void beginJob();
-    void reconfigure(fhicl::ParameterSet const& p);
-
-
-    void produce(art::Event& evt);
 
   private:
+    void beginJob();
+    void produce(art::Event& evt);
 
     TH1D *dtIC;
 
@@ -96,7 +82,7 @@ namespace vertex{
   VertexFinder2D::VertexFinder2D(fhicl::ParameterSet const& pset)
     : EDProducer{pset}
   {
-    this->reconfigure(pset);
+    fClusterModuleLabel  = pset.get< std::string >("ClusterModuleLabel");
     produces< std::vector<recob::Vertex> >();
     produces< std::vector<recob::EndPoint2D> >();
     produces< art::Assns<recob::EndPoint2D, recob::Hit> >();
@@ -105,11 +91,6 @@ namespace vertex{
     produces< art::Assns<recob::Vertex, recob::Track> >();
   }
 
-  //---------------------------------------------------------------------------
-  void VertexFinder2D::reconfigure(fhicl::ParameterSet const& p)
-  {
-    fClusterModuleLabel  = p.get< std::string >("ClusterModuleLabel");
-  }
   //-------------------------------------------------------------------------
   void VertexFinder2D::beginJob(){
     // get access to the TFile service

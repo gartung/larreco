@@ -18,19 +18,14 @@
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardata/Utilities/AssociationUtil.h"
-#include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h"
-
 
 // Framework includes
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDProducer.h"
-#include "canvas/Persistency/Common/FindManyP.h"
 #include "art/Framework/Principal/Event.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
@@ -39,11 +34,9 @@ namespace shwf {
   public:
     explicit ShowerCheater(fhicl::ParameterSet const& pset);
 
+ private:
     void produce(art::Event& evt);
 
-    void reconfigure(fhicl::ParameterSet const& pset);
-
- private:
 
     std::string fCheatedClusterLabel; ///< label for module creating recob::Cluster objects
     std::string fG4ModuleLabel;       ///< label for module running G4 and making particles, etc
@@ -57,7 +50,8 @@ namespace shwf{
   ShowerCheater::ShowerCheater(fhicl::ParameterSet const& pset)
     : EDProducer{pset}
   {
-    this->reconfigure(pset);
+    fCheatedClusterLabel = pset.get< std::string >("CheatedClusterLabel", "cluster" );
+    fG4ModuleLabel       = pset.get< std::string >("G4ModuleLabel",       "largeant");
 
     produces< std::vector<recob::Shower> >();
     produces< std::vector<recob::SpacePoint> >();
@@ -65,13 +59,6 @@ namespace shwf{
     produces< art::Assns<recob::Shower, recob::SpacePoint> >();
     produces< art::Assns<recob::Shower, recob::Hit> >();
     produces< art::Assns<recob::Hit, recob::SpacePoint> >();
-  }
-
-  //--------------------------------------------------------------------
-  void ShowerCheater::reconfigure(fhicl::ParameterSet const& pset)
-  {
-    fCheatedClusterLabel = pset.get< std::string >("CheatedClusterLabel", "cluster" );
-    fG4ModuleLabel       = pset.get< std::string >("G4ModuleLabel",       "largeant");
   }
 
   //--------------------------------------------------------------------
