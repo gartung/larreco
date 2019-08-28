@@ -27,10 +27,8 @@
 #define ProjectionMatchingAlg_h
 
 // Framework includes
+#include "fhiclcpp/fwd.h"
 #include "fhiclcpp/types/Atom.h"
-namespace fhicl {
-  class ParameterSet;
-}
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
@@ -172,9 +170,9 @@ public:
   /// from at least two
   /// wire planes; number of segments used to create the track depends on the
   /// number of hits.
-  pma::Track3D* buildTrack(const std::vector<art::Ptr<recob::Hit>>& hits_1,
-                           const std::vector<art::Ptr<recob::Hit>>& hits_2 =
-                             std::vector<art::Ptr<recob::Hit>>()) const;
+  pma::Track3D* buildTrack(
+    const std::vector<art::Ptr<recob::Hit>>& hits_1,
+    const std::vector<art::Ptr<recob::Hit>>& hits_2 = {}) const;
 
   /// Build a track from sets of hits, multiple TPCs are OK (like taken from
   /// PFParticles),
@@ -191,9 +189,9 @@ public:
   /// two wire planes); method is intendet for short tracks or shower initial
   /// parts, where only a few hits per plane are available and there is no
   /// chance to see a curvature or any other features.
-  pma::Track3D* buildSegment(const std::vector<art::Ptr<recob::Hit>>& hits_1,
-                             const std::vector<art::Ptr<recob::Hit>>& hits_2 =
-                               std::vector<art::Ptr<recob::Hit>>()) const;
+  pma::Track3D* buildSegment(
+    const std::vector<art::Ptr<recob::Hit>>& hits_1,
+    const std::vector<art::Ptr<recob::Hit>>& hits_2 = {}) const;
 
   /// Build a straight segment from two sets of hits (they should origin from
   /// two wire planes), starting from a given point (like vertex known from

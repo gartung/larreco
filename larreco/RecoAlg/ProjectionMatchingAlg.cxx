@@ -5,7 +5,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
-#include "larcore/CoreUtils/ServiceUtil.h"     // lar::providerFrom<>()
+#include "larreco/RecoAlg/PMAlg/PmaSegment3D.h"
+#include "larcore/CoreUtils/ServiceUtil.h" // lar::providerFrom<>()
+#include "lardata/ArtDataHelper/ToElement.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcorealg/CoreUtils/NumericUtils.h" // util::absDiff()
 #include "lardata/ArtDataHelper/ToElement.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -16,6 +19,11 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "TH1F.h"
+
+#include "range/v3/view.hpp"
+
+using lar::to_element;
+using namespace ranges;
 
 pma::ProjectionMatchingAlg::ProjectionMatchingAlg(
   const pma::ProjectionMatchingAlg::Config& config)
@@ -35,8 +43,6 @@ pma::ProjectionMatchingAlg::ProjectionMatchingAlg(
   pma::Element3D::SetOptFactor(geo::kU, config.HitWeightU());
   pma::Element3D::SetOptFactor(geo::kV, config.HitWeightV());
   pma::Element3D::SetOptFactor(geo::kZ, config.HitWeightZ());
-
-  fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
 }
 // ------------------------------------------------------
 
@@ -139,23 +145,17 @@ pma::ProjectionMatchingAlg::validate_on_adc_test(
   std::map<std::pair<unsigned int, unsigned int>, std::pair<TVector2, TVector2>>
     ranges;
   std::map<std::pair<unsigned int, unsigned int>, double> wirePitch;
-  for (auto c : trkCryos)
-    for (auto t : trkTPCs) {
-      ranges[std::pair<unsigned int, unsigned int>(t, c)] =
-        trk.WireDriftRange(testPlane, t, c);
-      wirePitch[std::pair<unsigned int, unsigned int>(t, c)] =
-        fGeom->TPC(t, c).Plane(testPlane).WirePitch();
-    }
+  for (auto const& [t, c] : view::cartesian_product(trkTPCs, trkCryos)) {
+    ranges[{t, c}] = trk.WireDriftRange(testPlane, t, c);
+    wirePitch[{t, c}] = fGeom->TPC(t, c).Plane(testPlane).WirePitch();
+  }
 
   unsigned int tpc, cryo;
   std::map<std::pair<unsigned int, unsigned int>, std::vector<pma::Vector2D>>
     all_close_points;
 
-  auto hits_on_test_plane = [testPlane](auto const& hit) {
-    return hit.WireID().Plane == testPlane;
-  };
-  for (auto const& h :
-       hits | view::transform(to_element) | view::filter(hits_on_test_plane)) {
+  auto hits_on_test_plane = [testPlane](auto const& hit){ return hit.WireID().Plane == testPlane; };
+  for (auto const& h : hits | view::transform(to_element) | view::filter(hits_on_test_plane)) {
     tpc = h.WireID().TPC;
     cryo = h.WireID().Cryostat;
     std::pair<unsigned int, unsigned int> tpc_cryo(tpc, cryo);
@@ -178,6 +178,7 @@ pma::ProjectionMatchingAlg::validate_on_adc_test(
         all_close_points[tpc_cryo].emplace_back(p2d.X(), p2d.Y());
       }
     }
+  }
 
   auto const& channelStatus =
     art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider();
@@ -206,8 +207,7 @@ pma::ProjectionMatchingAlg::validate_on_adc_test(
 
     pma::Vector3D dc = step * seg->GetDirection3D();
 
-    auto const& points =
-      all_close_points[std::pair<unsigned int, unsigned int>(tpc, cryo)];
+    auto const& points = all_close_points[{tpc, cryo}];
 
     double f = pma::GetSegmentProjVector(p, p0, p1);
 
@@ -266,6 +266,7 @@ pma::ProjectionMatchingAlg::validate_on_adc_test(
   } else
     return 1.0;
 }
+
 // ------------------------------------------------------
 
 double
@@ -287,35 +288,32 @@ pma::ProjectionMatchingAlg::validate(
   std::map<std::pair<unsigned int, unsigned int>, std::pair<TVector2, TVector2>>
     ranges;
   std::map<std::pair<unsigned int, unsigned int>, double> wirePitch;
-  for (auto c : trkCryos)
-    for (auto t : trkTPCs) {
-      ranges[std::pair<unsigned int, unsigned int>(t, c)] =
-        trk.WireDriftRange(testPlane, t, c);
-      wirePitch[std::pair<unsigned int, unsigned int>(t, c)] =
-        fGeom->TPC(t, c).Plane(testPlane).WirePitch();
-    }
+  for (auto const& [t, c] : view::cartesian_product(trkTPCs, trkCryos)) {
+    ranges[{t, c}] = trk.WireDriftRange(testPlane, t, c);
+    wirePitch[{t, c}] = fGeom->TPC(t, c).Plane(testPlane).WirePitch();
+  }
 
   unsigned int tpc, cryo;
   std::map<std::pair<unsigned int, unsigned int>, std::vector<pma::Vector2D>>
     all_close_points;
 
-  for (const auto h : hits)
-    if (h->WireID().Plane == testPlane) {
-      tpc = h->WireID().TPC;
-      cryo = h->WireID().Cryostat;
+  for (auto const& h : hits | view::transform(to_element))
+    if (h.WireID().Plane == testPlane) {
+      tpc = h.WireID().TPC;
+      cryo = h.WireID().Cryostat;
       std::pair<unsigned int, unsigned int> tpc_cryo(tpc, cryo);
       std::pair<TVector2, TVector2> rect = ranges[tpc_cryo];
 
-      if ((h->WireID().Wire >
+      if ((h.WireID().Wire >
            rect.first.X() - 10) && // chceck only hits in the rectangle around
-          (h->WireID().Wire <
+          (h.WireID().Wire <
            rect.second.X() + 10) && // the track projection, it is faster than
-          (h->PeakTime() >
+          (h.PeakTime() >
            rect.first.Y() - 100) && // calculation of trk.Dist2(p2d, testPlane)
-          (h->PeakTime() < rect.second.Y() + 100)) {
+          (h.PeakTime() < rect.second.Y() + 100)) {
         TVector2 p2d(
-          wirePitch[tpc_cryo] * h->WireID().Wire,
-          fDetProp->ConvertTicksToX(h->PeakTime(), testPlane, tpc, cryo));
+          wirePitch[tpc_cryo] * h.WireID().Wire,
+          fDetProp->ConvertTicksToX(h.PeakTime(), testPlane, tpc, cryo));
 
         d2 = trk.Dist2(p2d, testPlane, tpc, cryo);
 
@@ -351,8 +349,7 @@ pma::ProjectionMatchingAlg::validate(
 
     pma::Vector3D dc = step * seg->GetDirection3D();
 
-    auto const& points =
-      all_close_points[std::pair<unsigned int, unsigned int>(tpc, cryo)];
+    auto const& points = all_close_points[{tpc, cryo}];
 
     double f = pma::GetSegmentProjVector(p, p0, p1);
 
@@ -442,9 +439,6 @@ pma::ProjectionMatchingAlg::validate(
           }
         nAll++;
       }
-      // else mf::LogVerbatim("ProjectionMatchingAlg")
-      //	<< "crossing BAD CHANNEL (wire #" << (int)p2d.X() << ")" <<
-      //std::endl;
     }
 
     p += dc;
@@ -1136,7 +1130,7 @@ pma::ProjectionMatchingAlg::addEndpointRef(
                             trk,
                             hiter->second)) {
           x += xPos[i];
-          wire_view.push_back(std::pair<int, unsigned int>(wires[i].first, i));
+          wire_view.emplace_back(wires[i].first, i);
         }
       }
     }
@@ -1376,13 +1370,11 @@ pma::ProjectionMatchingAlg::guideEndpoints(
 // ------------------------------------------------------
 
 std::vector<pma::Hit3D*>
-pma::ProjectionMatchingAlg::trimTrackToVolume(pma::Track3D& trk,
-                                              TVector3 p0,
-                                              TVector3 p1) const
+pma::ProjectionMatchingAlg::trimTrackToVolume(pma::Track3D&,
+                                              TVector3,
+                                              TVector3) const
 {
-  std::vector<pma::Hit3D*> trimmedHits;
-
-  return trimmedHits;
+  return {};
 }
 // ------------------------------------------------------
 
