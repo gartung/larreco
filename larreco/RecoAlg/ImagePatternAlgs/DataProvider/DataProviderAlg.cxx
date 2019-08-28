@@ -30,7 +30,6 @@ img::DataProviderAlg::DataProviderAlg(const Config& config) :
 	fAdcAreaOverThr(0),
 	fNoiseSigma(0), fCoherentSigma(0)
 {
-	fCalorimetryAlg.reconfigure(config.CalorimetryAlg());
 	fCalibrateLifetime = config.CalibrateLifetime();
 	fCalibrateAmpl = config.CalibrateAmpl();
 

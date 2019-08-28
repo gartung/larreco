@@ -26,7 +26,6 @@ calo::TrackCalorimetryAlg::TrackCalorimetryAlg(fhicl::ParameterSet const& p):
 }
 
 void calo::TrackCalorimetryAlg::reconfigure(fhicl::ParameterSet const& p){
-  caloAlg.reconfigure(p.get<fhicl::ParameterSet>("CalorimetryAlg"));
   fNHitsToDetermineStart = p.get<unsigned int>("NHitsToDetermineStart",3);
 }
 
