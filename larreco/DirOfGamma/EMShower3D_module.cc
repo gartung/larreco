@@ -20,7 +20,7 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Vertex.h"
-
+#include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
@@ -920,7 +920,11 @@ ems::EMShower3D::Validate(art::Event const& e,
       hitscl.push_back(hits[i]);
   }
 
-  if (fProjectionMatchingAlg.validate(src, hitscl) > 0.2)
+  if (fProjectionMatchingAlg.validate(
+        art::ServiceHandle<lariov::ChannelStatusService const> {}
+          ->GetProvider(),
+        src,
+        hitscl) > 0.2)
     result = true;
 
   return result;

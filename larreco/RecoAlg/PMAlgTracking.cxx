@@ -10,6 +10,7 @@
 #include "larreco/RecoAlg/PMAlgStitching.h"
 
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -516,19 +517,24 @@ pma::PMAlgTracker::validate(pma::Track3D& trk, unsigned int testView)
   }
 
   double v = 0;
+  auto const& channelStatus =
+    art::ServiceHandle<lariov::ChannelStatusService const>
+  {}
+  ->GetProvider();
   switch (fValidation) {
     case pma::PMAlgTracker::kAdc:
       v = fProjectionMatchingAlg.validate_on_adc(
-        trk, fAdcImages[testView], fAdcValidationThr[testView]);
+        channelStatus, trk, fAdcImages[testView], fAdcValidationThr[testView]);
       break;
 
     case pma::PMAlgTracker::kHits:
       v = fProjectionMatchingAlg.validate(
-        trk, fHitMap[trk.FrontCryo()][trk.FrontTPC()][testView]);
+        channelStatus, trk, fHitMap[trk.FrontCryo()][trk.FrontTPC()][testView]);
       break;
 
     case pma::PMAlgTracker::kCalib:
       v = fProjectionMatchingAlg.validate_on_adc_test(
+        channelStatus,
         trk,
         fAdcImages[testView],
         fHitMap[trk.FrontCryo()][trk.FrontTPC()][testView],

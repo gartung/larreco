@@ -43,6 +43,9 @@ namespace geo {
   class GeometryCore;
   class TPCGeo;
 }
+namespace lariov {
+  class ChannelStatusProvider;
+}
 
 // ROOT & C++
 #include <memory>
@@ -106,7 +109,8 @@ public:
   /// Calculate the fraction of the track that is close to non-empty pixel
   /// (above thr value) in the ADC image of the testView (a view that was not
   /// used to build the track).
-  double validate_on_adc(const pma::Track3D& trk,
+  double validate_on_adc(const lariov::ChannelStatusProvider& channelStatus,
+                         const pma::Track3D& trk,
                          const img::DataProviderAlg& adcImage,
                          float thr) const;
 
@@ -115,24 +119,28 @@ public:
   /// not used to build the track). Creates also histograms of values in pixels
   /// for the passing and rejected points on the track, so the threshold value
   /// for the ADC-based calibration can be estimated.
-  double validate_on_adc_test(const pma::Track3D& trk,
-                              const img::DataProviderAlg& adcImage,
-                              const std::vector<art::Ptr<recob::Hit>>& hits,
-                              TH1F* histoPassing,
-                              TH1F* histoRejected) const;
+  double validate_on_adc_test(
+    const lariov::ChannelStatusProvider& channelStatus,
+    const pma::Track3D& trk,
+    const img::DataProviderAlg& adcImage,
+    const std::vector<art::Ptr<recob::Hit>>& hits,
+    TH1F* histoPassing,
+    TH1F* histoRejected) const;
 
   /// Calculate the fraction of the track that is closer than
   /// fTrkValidationDist2D to any hit from hits in their plane (a plane that was
   /// not used to build the track). Hits should be preselected, so all belong to
   /// the same plane.
-  double validate(const pma::Track3D& trk,
+  double validate(const lariov::ChannelStatusProvider& channelStatus,
+                  const pma::Track3D& trk,
                   const std::vector<art::Ptr<recob::Hit>>& hits) const;
 
   /// Calculate the fraction of the 3D segment that is closer than
   /// fTrkValidationDist2D to any hit from hits in the testPlane of TPC/Cryo.
   /// Hits from the testPlane are preselected by this function among all
   /// provided (so a bit slower than fn above).
-  double validate(const TVector3& p0,
+  double validate(const lariov::ChannelStatusProvider& channelStatus,
+                  const TVector3& p0,
                   const TVector3& p1,
                   const std::vector<art::Ptr<recob::Hit>>& hits,
                   unsigned int testView,
@@ -271,15 +279,15 @@ public:
 
 private:
   // Helpers for guideEndpoints
-  bool chkEndpointHits(int wire,
-                       int wdir,
-                       double drift_x,
-                       int view,
-                       unsigned int tpc,
-                       unsigned int cryo,
-                       const pma::Track3D& trk,
-                       const std::vector<art::Ptr<recob::Hit>>& hits) const;
-  bool addEndpointRef(
+  bool chkEndpointHits_(int wire,
+                        int wdir,
+                        double drift_x,
+                        int view,
+                        unsigned int tpc,
+                        unsigned int cryo,
+                        const pma::Track3D& trk,
+                        const std::vector<art::Ptr<recob::Hit>>& hits) const;
+  bool addEndpointRef_(
     pma::Track3D& trk,
     const std::map<unsigned int, std::vector<art::Ptr<recob::Hit>>>& hits,
     std::pair<int, int> const* wires,
@@ -288,38 +296,39 @@ private:
     unsigned int cryo) const;
 
   // Helpers for FilterOutSmallParts
-  bool GetCloseHits(double r2d,
-                    const std::vector<art::Ptr<recob::Hit>>& hits_in,
-                    std::vector<size_t>& used,
-                    std::vector<art::Ptr<recob::Hit>>& hits_out) const;
+  bool GetCloseHits_(double r2d,
+                     const std::vector<art::Ptr<recob::Hit>>& hits_in,
+                     std::vector<size_t>& used,
+                     std::vector<art::Ptr<recob::Hit>>& hits_out) const;
 
-  bool Has(const std::vector<size_t>& v, size_t idx) const;
+  bool Has_(const std::vector<size_t>& v, size_t idx) const;
 
   // Make segment shorter depending on mse
-  void ShortenSeg(pma::Track3D& trk, const geo::TPCGeo& tpcgeom) const;
+  void ShortenSeg_(pma::Track3D& trk, const geo::TPCGeo& tpcgeom) const;
 
   // Control length of the track and number of hits which are still enabled
-  bool TestTrk(pma::Track3D& trk, const geo::TPCGeo& tpcgeom) const;
+  bool TestTrk_(pma::Track3D& trk, const geo::TPCGeo& tpcgeom) const;
 
   // Calculate good number of segments depending on the number of hits.
-  static size_t getSegCount(size_t trk_size);
+  static size_t getSegCount_(size_t trk_size);
 
   // Parameters used in the algorithm
 
-  double fOptimizationEps; // relative change in the obj.function that ends
-                           // optimization, then next nodes are added or track
-                           // building is finished
+  double const fOptimizationEps; // relative change in the obj.function that
+                                 // ends optimization, then next nodes are added
+                                 // or track building is finished
 
-  double fFineTuningEps; // relative change in the obj.function that ends final
-                         // tuning
+  double const fFineTuningEps; // relative change in the obj.function that ends
+                               // final tuning
 
-  double fTrkValidationDist2D; // max. distance [cm] used in the track
-                               // validation in the "third" plane
-  double fHitTestingDist2D; // max. distance [cm] used in testing comp. of hits
-                            // with the track
+  double const fTrkValidationDist2D; // max. distance [cm] used in the track
+                                     // validation in the "third" plane
+  double const fHitTestingDist2D; // max. distance [cm] used in testing comp. of
+                                  // hits with the track
 
-  double fMinTwoViewFraction; // min. length fraction covered with multiple 2D
-                              // view hits intertwinted with each other
+  double const
+    fMinTwoViewFraction; // min. length fraction covered with multiple 2D
+                         // view hits intertwinted with each other
 
   // Geometry and detector properties
   geo::GeometryCore const* fGeom;
