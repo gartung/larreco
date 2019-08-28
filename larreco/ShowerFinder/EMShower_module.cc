@@ -414,7 +414,7 @@ shower::EMShower::produce(art::Event& evt)
 
       // Save space points
       art::PtrMaker<recob::SpacePoint> const make_space_point_ptr{evt};
-      int firstSpacePoint = spacePoints->size(), nSpacePoint = 0;
+      size_t firstSpacePoint = spacePoints->size(), nSpacePoint = 0;
       for (auto const& ssp : showerSpacePoints) {
         spacePoints->emplace_back(
           ssp.XYZ(), ssp.ErrXYZ(), ssp.Chisq(), spacePoints->size());
@@ -422,7 +422,7 @@ shower::EMShower::produce(art::Event& evt)
         auto const space_point_ptr = make_space_point_ptr(index);
         cet::for_all(hitAssns.at(nSpacePoint), AddMany{space_point_ptr, *hitSpAssociations});
       }
-      int lastSpacePoint = spacePoints->size();
+      auto const lastSpacePoint = spacePoints->size();
 
       // Make shower object and associations
       recob::Shower shower =
