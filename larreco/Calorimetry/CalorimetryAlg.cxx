@@ -28,7 +28,7 @@ namespace calo {
     , fLifeTimeForm{config.CaloLifeTimeForm()}
     , fDoLifeTimeCorrection{config.CaloDoLifeTimeCorrection()}
   {
-    if (fLifeTimeForm != 0 || fLifeTimeForm != 1) {
+    if (fLifeTimeForm != 0 and fLifeTimeForm != 1) {
       throw cet::exception("CalorimetryAlg")
         << "Unknow CaloLifeTimeForm " << fLifeTimeForm << '\n'
         << "Must select either '0' for exponential or '1' for exponential + constant.\n";
