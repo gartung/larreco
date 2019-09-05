@@ -52,9 +52,6 @@ namespace ShowerRecoTools{
     
     private:
     
-    //algorithms
-    shower::TRACSAlg fTRACSAlg;
-    
     //fcl parameters
     art::InputTag fPFParticleModuleLabel; 
 
@@ -63,8 +60,7 @@ namespace ShowerRecoTools{
 
   ShowerStartPosition::ShowerStartPosition(const fhicl::ParameterSet& pset)
     : 
-      IShowerTool(pset),
-      fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
+      IShowerTool(pset)
   {
     fPFParticleModuleLabel      = pset.get<art::InputTag>("PFParticleModuleLabel","");
   }
@@ -154,13 +150,13 @@ namespace ShowerRecoTools{
       if(spacePoints_pfp.size() == 0){return 0;}
 
       //Get the Shower Center
-      TVector3 ShowerCentre = fTRACSAlg.ShowerCentre(spacePoints_pfp,fmh);
+      TVector3 ShowerCentre = IShowerTool::GetTRACSAlg().ShowerCentre(spacePoints_pfp,fmh);
 
       //Order the Hits from the shower centre. The most negative will be the start position.
-      fTRACSAlg.OrderShowerSpacePoints(spacePoints_pfp,ShowerCentre,ShowerDirection);
+      IShowerTool::GetTRACSAlg().OrderShowerSpacePoints(spacePoints_pfp,ShowerCentre,ShowerDirection);
 
       //Set the start position.
-      TVector3 ShowerStartPosition = fTRACSAlg.SpacePointPosition(spacePoints_pfp[0]);
+      TVector3 ShowerStartPosition = IShowerTool::GetTRACSAlg().SpacePointPosition(spacePoints_pfp[0]);
       TVector3 ShowerStartPositionErr = {-999,-999,-999};
       ShowerEleHolder.SetElement(ShowerStartPosition,ShowerStartPositionErr,"ShowerStartPosition");
       return 0;

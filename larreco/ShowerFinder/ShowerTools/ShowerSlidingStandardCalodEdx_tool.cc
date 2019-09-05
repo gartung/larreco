@@ -56,7 +56,6 @@ namespace ShowerRecoTools{
     //Servcies and Algorithms
     art::ServiceHandle<geo::Geometry> fGeom;
     calo::CalorimetryAlg fCalorimetryAlg;
-    shower::TRACSAlg fTRACSAlg;
     detinfo::DetectorProperties const* fDetProp;
 
     //fcl parameters
@@ -81,7 +80,6 @@ namespace ShowerRecoTools{
   ShowerSlidingStandardCalodEdx::ShowerSlidingStandardCalodEdx(const fhicl::ParameterSet& pset):
     IShowerTool(pset),
     fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
-    fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")),
     fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
   {
     fMinDistCutOff         = pset.get<float>("MinDistCutOff");
@@ -180,7 +178,7 @@ namespace ShowerRecoTools{
       if (TPC !=vtxTPC){continue;}
 
       //Ignore spacepoints within a few wires of the vertex.
-      double dist_from_start = (fTRACSAlg.SpacePointPosition(sp) - ShowerStartPosition).Mag();
+      double dist_from_start = (IShowerTool::GetTRACSAlg().SpacePointPosition(sp) - ShowerStartPosition).Mag();
 
       if(fCutStartPosition){
         if(dist_from_start < fMinDistCutOff*wirepitch){continue;}
@@ -202,7 +200,7 @@ namespace ShowerRecoTools{
         if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
         {continue;}
 
-        TVector3 pos = fTRACSAlg.SpacePointPosition(sp) - TrajPosition;
+        TVector3 pos = IShowerTool::GetTRACSAlg().SpacePointPosition(sp) - TrajPosition;
 
         if(pos.Mag() < MinDist && pos.Mag()< fMaxDist*wirepitch){
           MinDist = pos.Mag();
