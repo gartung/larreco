@@ -69,7 +69,7 @@ namespace ShowerRecoTools{
 
 
   ShowerPMATrackFinder::ShowerPMATrackFinder(const fhicl::ParameterSet& pset) :
-    IShowerTool(pset),
+    IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
     fProjectionMatchingAlg(pset.get<fhicl::ParameterSet>("ProjectionMatchingAlg")),
     fMinTrajectoryPoints(pset.get<float>("MinTrajectoryPoints"))
   {

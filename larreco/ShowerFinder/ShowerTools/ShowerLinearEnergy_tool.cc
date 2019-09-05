@@ -73,7 +73,7 @@ namespace ShowerRecoTools {
 
 
   ShowerLinearEnergy::ShowerLinearEnergy(const fhicl::ParameterSet& pset) :
-    IShowerTool(pset),
+    IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
     fUGradient(pset.get<double>("UGradient")),
     fUIntercept(pset.get<double>("UIntercept")),
     fVGradient(pset.get<double>("VGradient")),

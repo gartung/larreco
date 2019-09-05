@@ -73,7 +73,7 @@ namespace ShowerRecoTools {
 
 
   ShowerDirectionCheater::ShowerDirectionCheater(const fhicl::ParameterSet& pset) :
-    IShowerTool(pset),
+    IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
     fTRACSCheatingAlg(pset.get<fhicl::ParameterSet>("TRACSCheatingAlg")),
     fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel","")),
     fNSegments(pset.get<float>("NSegments")),

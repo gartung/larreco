@@ -69,7 +69,7 @@ namespace ShowerRecoTools{
 
   Shower2DLinearRegressionTrackHitFinder::Shower2DLinearRegressionTrackHitFinder(
       const fhicl::ParameterSet& pset) :
-    IShowerTool(pset),
+    IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
     fNfitpass(pset.get<unsigned int>("Nfitpass")),
     fNfithits(pset.get<std::vector<unsigned int> >("Nfithits")),
     fToler(pset.get<std::vector<double> >("Toler")),

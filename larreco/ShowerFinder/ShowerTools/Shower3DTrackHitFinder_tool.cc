@@ -66,7 +66,7 @@ namespace ShowerRecoTools{
 
 
   Shower3DTrackHitFinder::Shower3DTrackHitFinder(const fhicl::ParameterSet& pset) :
-    IShowerTool(pset),
+    IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
     fMaxProjectionDist(pset.get<float>("MaxProjectionDist")),
     fMaxPerpendicularDist(pset.get<float>("MaxPerpendicularDist")),
     fForwardHitsOnly(pset.get<bool>("ForwardHitsOnly")),

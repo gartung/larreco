@@ -59,7 +59,7 @@ namespace ShowerRecoTools{
 
 
   ShowerStartPosition::ShowerStartPosition(const fhicl::ParameterSet& pset) :
-    IShowerTool(pset),
+    IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
     fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel",""))
   {
   }

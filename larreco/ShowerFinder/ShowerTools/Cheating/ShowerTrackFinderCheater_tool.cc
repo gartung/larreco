@@ -61,7 +61,7 @@ namespace ShowerRecoTools {
 
 
   ShowerTrackFinderCheater::ShowerTrackFinderCheater(const fhicl::ParameterSet& pset) :
-    IShowerTool(pset),
+    IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
     fTRACSCheatingAlg(pset.get<fhicl::ParameterSet>("TRACSCheatingAlg")),
     fDebugEVD(pset.get<bool>("DebugEVD")),
     fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel","")),
