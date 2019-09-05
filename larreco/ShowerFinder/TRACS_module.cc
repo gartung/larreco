@@ -220,7 +220,7 @@ void reco::shower::TRACS::produce(art::Event& evt) {
     for(auto const& fShowerTool: fShowerTools){
 
       //Calculate the metric
-      err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
+      err = fShowerTool->RunShowerTool(pfp,evt,selement_holder);
       if(err){
 	mf::LogError("TRACS") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
 	break;
@@ -233,7 +233,7 @@ void reco::shower::TRACS::produce(art::Event& evt) {
 
       for(auto const& fShowerTool: fShowerTools){
 	//Calculate the metric
-	err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
+	err = fShowerTool->RunShowerTool(pfp,evt,selement_holder);
       
 	if(err){
 	  mf::LogError("TRACS") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;

@@ -41,6 +41,16 @@ namespace ShowerRecoTools{
           reco::shower::ShowerElementHolder& ShowerEleHolder
           ) = 0;
 
+      //Main function that runs the shower tool.  This includes running the derived function
+      //that calculates the shower element and also runs the event display if requested
+      int RunShowerTool(const art::Ptr<recob::PFParticle>& pfparticle,
+          art::Event& Event,
+          reco::shower::ShowerElementHolder& ShowerEleHolder
+          ){
+        int calculation_status = CalculateElement(pfparticle, Event, ShowerEleHolder);
+        return calculation_status;
+      }
+
       //Function to initialise the producer i.e produces<std::vector<recob::Vertex> >(); commands go here.
       virtual void InitialiseProducers(){return;}
 
