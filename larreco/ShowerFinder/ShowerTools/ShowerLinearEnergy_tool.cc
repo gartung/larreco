@@ -73,6 +73,7 @@ namespace ShowerRecoTools {
 
 
   ShowerLinearEnergy::ShowerLinearEnergy(const fhicl::ParameterSet& pset):
+    IShowerTool(pset),
     detprop(lar::providerFrom<detinfo::DetectorPropertiesService>())
   {
     fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");

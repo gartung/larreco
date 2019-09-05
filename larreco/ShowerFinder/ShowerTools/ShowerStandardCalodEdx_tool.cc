@@ -59,6 +59,7 @@ namespace ShowerRecoTools{
 
 
   ShowerStandardCalodEdx::ShowerStandardCalodEdx(const fhicl::ParameterSet& pset):
+    IShowerTool(pset),
     fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg"))
   {
     fdEdxTrackLength = pset.get<float>("dEdxTrackLength");

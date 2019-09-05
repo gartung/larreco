@@ -79,6 +79,7 @@ namespace ShowerRecoTools{
 
 
   ShowerSlidingStandardCalodEdx::ShowerSlidingStandardCalodEdx(const fhicl::ParameterSet& pset):
+    IShowerTool(pset),
     fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
     fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")),
     fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())

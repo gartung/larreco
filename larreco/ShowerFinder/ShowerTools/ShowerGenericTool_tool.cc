@@ -47,7 +47,8 @@ namespace ShowerRecoTools {
   };
 
 
-  ShowerGenericTool::ShowerGenericTool(const fhicl::ParameterSet& pset)
+  ShowerGenericTool::ShowerGenericTool(const fhicl::ParameterSet& pset) :
+    IShowerTool(pset)
   {
   }
 

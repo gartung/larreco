@@ -56,7 +56,9 @@ namespace ShowerRecoTools {
 
 
   ShowerStartPositionCheater::ShowerStartPositionCheater(const fhicl::ParameterSet& pset)
-    : fTRACSCheatingAlg(pset.get<fhicl::ParameterSet>("TRACSCheatingAlg"))
+    : 
+      IShowerTool(pset),
+      fTRACSCheatingAlg(pset.get<fhicl::ParameterSet>("TRACSCheatingAlg"))
   {
     fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","");
     fHitModuleLabel        = pset.get<art::InputTag>("HitModuleLabel");

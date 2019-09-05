@@ -68,7 +68,9 @@ namespace ShowerRecoTools{
 
 
   Shower3DTrackHitFinder::Shower3DTrackHitFinder(const fhicl::ParameterSet& pset)
-    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
+    : 
+      IShowerTool(pset),
+      fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
     fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel");
 

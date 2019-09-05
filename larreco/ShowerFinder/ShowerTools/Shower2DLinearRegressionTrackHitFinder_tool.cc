@@ -72,7 +72,9 @@ namespace ShowerRecoTools{
 
   Shower2DLinearRegressionTrackHitFinder::Shower2DLinearRegressionTrackHitFinder(
       const fhicl::ParameterSet& pset)
-    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
+    : 
+      IShowerTool(pset),
+      fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
   {
     fApplyChargeWeight      = pset.get<bool>                      ("ApplyChargeWeight");
     fNfitpass               = pset.get<unsigned int>              ("Nfitpass");

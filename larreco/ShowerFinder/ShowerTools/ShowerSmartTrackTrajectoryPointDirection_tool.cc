@@ -61,7 +61,8 @@ namespace ShowerRecoTools {
   };
 
 
-  ShowerSmartTrackTrajectoryPointDirection::ShowerSmartTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset)
+  ShowerSmartTrackTrajectoryPointDirection::ShowerSmartTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset) :
+    IShowerTool(pset)
   {
     fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
     fAllowDynamicSliding      = pset.get<bool>("AllowDynamicSliding");

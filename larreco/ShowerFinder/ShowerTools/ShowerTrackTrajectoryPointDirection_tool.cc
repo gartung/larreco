@@ -59,7 +59,8 @@ namespace ShowerRecoTools {
   };
 
 
-  ShowerTrackTrajectoryPointDirection::ShowerTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset)
+  ShowerTrackTrajectoryPointDirection::ShowerTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset) :
+    IShowerTool(pset)
   {
     fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
     fUsePositonInfo           = pset.get<bool>("UsePositonInfo");
