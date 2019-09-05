@@ -17,7 +17,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // Impact factors on the objective function:  U     V     Z
-float pma::Element3D::fOptFactors[3] = {0.2F, 0.8F, 1.0F};
+std::array<float, 3> pma::Element3D::fOptFactors{{0.2F, 0.8F, 1.0F}};
 
 pma::Element3D::Element3D()
   : fTPC(-1), fCryo(-1), fFrozen(false), fHitsRadius(0)

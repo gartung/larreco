@@ -12,6 +12,7 @@
 #ifndef PmaElement3D_h
 #define PmaElement3D_h
 
+#include <array>
 #include <math.h>
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
@@ -196,13 +197,13 @@ protected:
   std::vector<pma::Hit3D*> fAssignedHits; // 2D hits
   std::vector<TVector3*>
     fAssignedPoints; // 3D peculiar points reconstructed elsewhere
-  size_t fNThisHits[3];
+  std::array<size_t, 3> fNThisHits;
   size_t fNThisHitsEnabledAll;
-  size_t fNHits[3];
-  double fSumHitsQ[3];
+  std::array<size_t, 3> fNHits;
+  std::array<double, 3> fSumHitsQ;
   double fHitsRadius;
 
-  static float fOptFactors[3]; // impact factors of data from various 2D views
+  static std::array<float, 3> fOptFactors; // impact factors of data from various 2D views
 };
 
 #endif

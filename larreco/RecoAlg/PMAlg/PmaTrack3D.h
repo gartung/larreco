@@ -307,7 +307,7 @@ public:
 
   void SortHitsInTree(bool skipFirst = false);
   void MakeProjectionInTree(bool skipFirst = false);
-  bool UpdateParamsInTree(bool skipFirst = false);
+  bool UpdateParamsInTree(bool skipFirst, size_t& depth);
   double GetObjFnInTree(bool skipFirst = false);
   double TuneSinglePass(bool skipFirst = false);
   double TuneFullTree(double eps = 0.001, double gmax = 50.0);
@@ -501,23 +501,23 @@ private:
   std::vector<pma::Node3D*> fNodes;
   std::vector<pma::Segment3D*> fSegments;
 
-  unsigned int fMaxHitsPerSeg;
-  float fPenaltyFactor;
-  float fMaxSegStopFactor;
+  unsigned int fMaxHitsPerSeg{70};
+  float fPenaltyFactor{1.0F};
+  float fMaxSegStopFactor{8.0F};
 
-  unsigned int fSegStopValue;
-  unsigned int fMinSegStop;
-  unsigned int fMaxSegStop;
+  unsigned int fSegStopValue{2};
+  unsigned int fMinSegStop{2};
+  unsigned int fMaxSegStop{2};
 
-  float fSegStopFactor;
-  float fPenaltyValue;
-  float fEndSegWeight;
-  float fHitsRadius;
+  float fSegStopFactor{0.2F};
+  float fPenaltyValue{0.1F};
+  float fEndSegWeight{0.05F};
+  float fHitsRadius{1.0F};
 
-  double fT0;
-  bool fT0Flag;
+  double fT0{};
+  bool fT0Flag{false};
 
-  ETag fTag;
+  ETag fTag{kNotTagged};
 };
 
 #endif
