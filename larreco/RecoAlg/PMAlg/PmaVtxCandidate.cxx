@@ -22,9 +22,6 @@
 
 #include "TMath.h"
 
-const double pma::VtxCandidate::kMaxDistToTrack = 4.0; // max. dist. track to center to create vtx
-const double pma::VtxCandidate::kMinDistToNode = 2.0;  // min. dist. to node needed to split segment
-
 bool pma::VtxCandidate::Has(pma::Track3D* trk) const
 {
 	for (const auto & t : fAssigned)

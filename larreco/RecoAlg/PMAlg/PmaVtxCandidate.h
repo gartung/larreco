@@ -22,8 +22,8 @@ namespace pma
 class pma::VtxCandidate
 {
 public:
-	static const double kMaxDistToTrack;
-	static const double kMinDistToNode;
+        static constexpr double kMaxDistToTrack{4.0}; // max. dist. track to center to create vtx
+        static constexpr double kMinDistToNode{2.0};  // min. dist. to node needed to split segment
 
 	VtxCandidate(double segMinLength = 0.5) :
 		tracksJoined(false),
@@ -83,4 +83,3 @@ private:
 };
 
 #endif
-
