@@ -251,8 +251,7 @@ private:
 
   /// Returns the gradient of the RMS vs shower segment graph
   double ShowerHitRMSGradient_(
-    const std::vector<art::Ptr<recob::Hit>>& showerHits,
-    TVector2 trueStart = TVector2(0, 0)) const;
+    const std::vector<art::Ptr<recob::Hit>>& showerHits) const;
 
   /// Returns the plane which is determined to be the least likely to be correct
   int WorstPlane_(const std::map<int, std::vector<art::Ptr<recob::Hit>>>&

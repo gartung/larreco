@@ -31,6 +31,7 @@
 #include "range/v3/view.hpp"
 
 using lar::to_element;
+using namespace ranges;
 
 shower::EMShowerAlg::EMShowerAlg(fhicl::ParameterSet const& pset,
                                  int const debug)
@@ -40,14 +41,13 @@ shower::EMShowerAlg::EMShowerAlg(fhicl::ParameterSet const& pset,
   , fSpacePointSize{pset.get<double>("SpacePointSize")}
   , fNfitpass{pset.get<unsigned int>("Nfitpass")}
   , fNfithits{pset.get<std::vector<unsigned int>>("Nfithits")}
-  , fToler{ pset.get<std::vector<double>>("Toler")}
+  , fToler{pset.get<std::vector<double>>("Toler")}
   , fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
   , fShowerEnergyAlg(pset.get<fhicl::ParameterSet>("ShowerEnergyAlg"))
   , fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg"))
   , fProjectionMatchingAlg(
       pset.get<fhicl::ParameterSet>("ProjectionMatchingAlg"))
-  , fDetector{pset.get<std::string>("Detector", "dune35t")}
-  // tmp
+  , fDetector{pset.get<std::string>("Detector", "dune35t")} // tmp
   , fMakeGradientPlot{pset.get<bool>("MakeGradientPlot", false)}
   , fMakeRMSGradientPlot{pset.get<bool>("MakeRMSGradientPlot", false)}
   , fNumShowerSegments{pset.get<int>("NumShowerSegments", 4)}
@@ -84,7 +84,7 @@ shower::EMShowerAlg::AssociateClustersAndTracks(
   for (auto const& clusterPtr : clusters) {
 
     // Get the hits in this cluster
-    auto const&clusterHits = fmh.at(clusterPtr.key());
+    auto const& clusterHits = fmh.at(clusterPtr.key());
 
     // Look at all these hits and find the associated tracks
     for (auto const& clusterHitPtr : clusterHits) {
@@ -140,7 +140,7 @@ shower::EMShowerAlg::CheckIsolatedHits_(
 
   // Find the problem plane
   int problemPlane = -1;
-  for (auto const& planes : firstTPC | ranges::view::values)
+  for (auto const& planes : firstTPC | view::values)
     if (planes.size() == 1)
       problemPlane = planes[0];
 
@@ -189,13 +189,11 @@ shower::EMShowerAlg::CheckIsolatedHits_(
   // If we get this far, we can move the problem hits from the front of the
   // shower to the back
   std::map<int, int> tpcCount;
-  for (std::vector<int>::iterator otherPlaneIt = otherPlanes.begin();
-       otherPlaneIt != otherPlanes.end();
-       ++otherPlaneIt)
+  for (int const otherPlane : otherPlanes)
     for (std::vector<art::Ptr<recob::Hit>>::iterator hitIt =
-           std::next(showerHitsMap.at(*otherPlaneIt).begin());
-         hitIt != showerHitsMap.at(*otherPlaneIt).end() and
-         hitIt != std::next(showerHitsMap.at(*otherPlaneIt).begin(), 2);
+           std::next(showerHitsMap.at(otherPlane).begin());
+         hitIt != showerHitsMap.at(otherPlane).end() and
+         hitIt != std::next(showerHitsMap.at(otherPlane).begin(), 2);
          ++hitIt)
       ++tpcCount[(*hitIt)->WireID().TPC];
 
@@ -364,7 +362,7 @@ shower::EMShowerAlg::CheckShowerPlanes(
                    0,
                    1000);
         auto const& hits = fmh.at(clusterPtr.key());
-        for (auto const& hit : hits | ranges::view::transform(to_element)) {
+        for (auto const& hit : hits | view::transform(to_element)) {
           chargeDist[plane]->Fill(hit.Integral());
         }
         outFile->cd();
@@ -399,7 +397,8 @@ shower::EMShowerAlg::CheckShowerPlanes(
     // Find the average hit fraction across all clusters in the plane
     std::map<int, double> planeClustersAvSizes;
     for (auto const& [plane, cluster_sizes] : planeClusterSizes) {
-      double const average = ranges::accumulate(cluster_sizes, 0.) / cluster_sizes.size();
+      double const average =
+        accumulate(cluster_sizes, 0.) / cluster_sizes.size();
       planeClustersAvSizes[plane] = average;
     }
 
@@ -415,9 +414,10 @@ shower::EMShowerAlg::CheckShowerPlanes(
         if (plane != other_plane)
           otherAverages.push_back(other_avg);
 
-      double const sumSquareAvgsOtherPlanes = ranges::accumulate(otherAverages,
-                                                                 0.,
-                                                                 [](double sum, double avg) { return sum + cet::square(avg); });
+      double const sumSquareAvgsOtherPlanes =
+        accumulate(otherAverages, 0., [](double sum, double avg) {
+          return sum + cet::square(avg);
+        });
       double const quadOtherPlanes = std::sqrt(sumSquareAvgsOtherPlanes);
 
       // If this plane has an average higher than the quadratic sum of the
@@ -476,14 +476,10 @@ shower::EMShowerAlg::ConstructTrack(
 
   // Check for tracks crossing TPC boundaries
   std::map<int, int> tpcMap;
-  for (std::vector<art::Ptr<recob::Hit>>::const_iterator hitIt = hits1.begin();
-       hitIt != hits1.end();
-       ++hitIt)
-    ++tpcMap[(*hitIt)->WireID().TPC];
-  for (std::vector<art::Ptr<recob::Hit>>::const_iterator hitIt = hits2.begin();
-       hitIt != hits2.end();
-       ++hitIt)
-    ++tpcMap[(*hitIt)->WireID().TPC];
+  for (auto const& hit : hits1)
+    ++tpcMap[hit->WireID().TPC];
+  for (auto const& hit : hits2)
+    ++tpcMap[hit->WireID().TPC];
   if (tpcMap.size() > 1) {
     mf::LogWarning("EMShowerAlg")
       << "Warning: attempting to construct a track which crosses more than one "
@@ -491,18 +487,12 @@ shower::EMShowerAlg::ConstructTrack(
          "just from hits in the first TPC it traverses.";
     unsigned int firstTPC1 = hits1.at(0)->WireID().TPC,
                  firstTPC2 = hits2.at(0)->WireID().TPC;
-    for (std::vector<art::Ptr<recob::Hit>>::const_iterator hitIt =
-           hits1.begin();
-         hitIt != hits1.end();
-         ++hitIt)
-      if ((*hitIt)->WireID().TPC == firstTPC1)
-        track1.push_back(*hitIt);
-    for (std::vector<art::Ptr<recob::Hit>>::const_iterator hitIt =
-           hits2.begin();
-         hitIt != hits2.end();
-         ++hitIt)
-      if ((*hitIt)->WireID().TPC == firstTPC2)
-        track2.push_back(*hitIt);
+    for (auto const& hit : hits1)
+      if (hit->WireID().TPC == firstTPC1)
+        track1.push_back(hit);
+    for (auto const& hit : hits2)
+      if (hit->WireID().TPC == firstTPC2)
+        track2.push_back(hit);
   } else {
     track1 = hits1;
     track2 = hits2;
@@ -510,22 +500,16 @@ shower::EMShowerAlg::ConstructTrack(
 
   if (fDebug > 1) {
     std::cout << "About to make a track from these hits:\n";
-    for (std::vector<art::Ptr<recob::Hit>>::const_iterator hit1 =
-           track1.begin();
-         hit1 != track1.end();
-         ++hit1)
-      std::cout << "Hit (" << HitCoordinates_(**hit1).X() << ", "
-                << HitCoordinates_(**hit1).Y() << ") (real wire "
-                << (*hit1)->WireID().Wire << ") in TPC "
-                << (*hit1)->WireID().TPC << '\n';
-    for (std::vector<art::Ptr<recob::Hit>>::const_iterator hit2 =
-           track2.begin();
-         hit2 != track2.end();
-         ++hit2)
-      std::cout << "Hit (" << HitCoordinates_(**hit2).X() << ", "
-                << HitCoordinates_(**hit2).Y() << ") (real wire "
-                << (*hit2)->WireID().Wire << ") in TPC "
-                << (*hit2)->WireID().TPC << '\n';
+    auto print_hits = [this](auto const& track) {
+      for (auto const& hit : track | view::transform(to_element)) {
+        std::cout << "Hit (" << HitCoordinates_(hit).X() << ", "
+                  << HitCoordinates_(hit).Y() << ") (real wire "
+                  << hit.WireID().Wire << ") in TPC " << hit.WireID().TPC
+                  << '\n';
+      }
+    };
+    print_hits(track1);
+    print_hits(track2);
   }
 
   TVector3 trackStart = Construct3DPoint_(track1.at(0), track2.at(0));
@@ -661,14 +645,15 @@ shower::EMShowerAlg::FinddEdx_(
   try {
     pitch = lar::util::TrackPitchInView(*track, trackHits.at(0)->View());
   }
-  catch (...) {}
+  catch (...) {
+  }
 
   // Deal with large pitches
   if (pitch > fdEdxTrackLength) {
     return fCalorimetryAlg.dEdx_AREA(*trackHits.begin(), pitch);
   }
 
-  for (auto const& hit : trackHits | ranges::view::transform(to_element)) {
+  for (auto const& hit : trackHits | view::transform(to_element)) {
     if (totalDistance + pitch < fdEdxTrackLength) {
       totalDistance += pitch;
       totalCharge += hit.Integral();
@@ -680,8 +665,8 @@ shower::EMShowerAlg::FinddEdx_(
   avHitTime /= (double)nHits;
 
   double const dQdx = totalCharge / totalDistance;
-  return
-    fCalorimetryAlg.dEdx_AREA(dQdx, avHitTime, trackHits.at(0)->WireID().Plane);
+  return fCalorimetryAlg.dEdx_AREA(
+    dQdx, avHitTime, trackHits.at(0)->WireID().Plane);
 }
 
 void
@@ -705,10 +690,9 @@ shower::EMShowerAlg::FindInitialTrack(
     std::cout << "Here are the initial shower hits... \n";
     for (auto const& [plane, hitPtrs] : initialTrackHits) {
       std::cout << "  Plane " << plane << '\n';
-      for (auto const& hit : hitPtrs | ranges::view::transform(to_element)) {
-        std::cout << "    Hit is (" << HitCoordinates_(hit).X()
-                  << " (real hit " << hit.WireID() << "), "
-                  << HitCoordinates_(hit).Y() << ")\n";
+      for (auto const& hit : hitPtrs | view::transform(to_element)) {
+        std::cout << "    Hit is (" << HitCoordinates_(hit).X() << " (real hit "
+                  << hit.WireID() << "), " << HitCoordinates_(hit).Y() << ")\n";
       }
     }
   }
@@ -761,20 +745,17 @@ shower::EMShowerAlg::FindOrderOfHits_(
   std::vector<art::Ptr<recob::Hit>> showerHits;
   cet::transform_all(hitProjection,
                      std::back_inserter(showerHits),
-                     [](auto const& pr) {
-                       return pr.second;
-                     });
+                     [](auto const& pr) { return pr.second; });
 
   // Make gradient plot
   if (fMakeGradientPlot) {
     std::map<int, TGraph*> graphs;
-    for (auto const& hit : showerHits | ranges::view::transform(to_element)) {
+    for (auto const& hit : showerHits | view::transform(to_element)) {
       int tpc = hit.WireID().TPC;
       if (graphs[tpc] == nullptr)
         graphs[tpc] = new TGraph();
-      graphs[tpc]->SetPoint(graphs[tpc]->GetN(),
-                            HitPosition_(hit).X(),
-                            HitPosition_(hit).Y());
+      graphs[tpc]->SetPoint(
+        graphs[tpc]->GetN(), HitPosition_(hit).X(), HitPosition_(hit).Y());
     }
     TMultiGraph* multigraph = new TMultiGraph();
     for (auto const [color, graph] : graphs) {
@@ -807,7 +788,7 @@ shower::EMShowerAlg::FindShowers(
   std::vector<std::vector<int>> showers;
 
   // Loop over all tracks
-  for (auto const& clusters : trackToClusters | ranges::view::values) {
+  for (auto const& clusters : trackToClusters | view::values) {
 
     // Find which showers already made are associated with this track
     std::vector<int> matchingShowers;
@@ -856,7 +837,7 @@ shower::EMShowerAlg::FindShowerStart_(
     // Find if the shower is traveling along ticks or wires
     bool wireDirection = true;
     std::vector<int> wires;
-    for (auto const& hit : orderedShower | ranges::view::transform(to_element))
+    for (auto const& hit : orderedShower | view::transform(to_element))
       wires.push_back(std::round(HitCoordinates_(hit).X()));
 
     cet::sort_all(wires);
@@ -946,7 +927,7 @@ shower::EMShowerAlg::FindShowerStart_(
     std::vector<art::Ptr<recob::Hit>> newInitialHits;
     std::map<int, int> tpcHitMap;
     std::vector<int> singleHitTPCs;
-    for (auto const& hit : initialHits | ranges::view::transform(to_element))
+    for (auto const& hit : initialHits | view::transform(to_element))
       ++tpcHitMap[hit.WireID().TPC];
 
     for (auto const [tpc, count] : tpcHitMap)
@@ -996,16 +977,15 @@ shower::EMShowerAlg::GetPlanePermutations_(
 
   // Order these backwards so they can be used to discriminate between planes
   std::map<double, int> gradientMap;
-  for (int const plane : showerHitsMap | ranges::view::keys)
+  for (int const plane : showerHitsMap | view::keys)
     gradientMap[std::abs(planeRMSGradients.at(plane))] = plane;
 
   std::map<double, int> wireWidthMap = RelativeWireWidth_(showerHitsMap);
 
   if (fDebug > 1)
     for (auto const [gradient, plane] : wireWidthMap)
-      std::cout << "Plane " << plane
-                << " has relative width in wire of " << gradient
-                << "; and an RMS gradient of "
+      std::cout << "Plane " << plane << " has relative width in wire of "
+                << gradient << "; and an RMS gradient of "
                 << planeRMSGradients[plane] << '\n';
 
   // Find the correct permutations
@@ -1013,15 +993,15 @@ shower::EMShowerAlg::GetPlanePermutations_(
   std::vector<std::map<int, bool>> usedPermutations;
 
   // Most likely is to not change anything
-  for (int const plane : showerHitsMap | ranges::view::keys)
+  for (int const plane : showerHitsMap | view::keys)
     permutations[perm][plane] = 0;
   ++perm;
 
   // Use properties of the shower to determine the middle cases
-  for (int const plane : wireWidthMap | ranges::view::values) {
+  for (int const plane : wireWidthMap | view::values) {
     std::map<int, bool> permutation;
     permutation[plane] = true;
-    for (int const plane2 : wireWidthMap | ranges::view::values)
+    for (int const plane2 : wireWidthMap | view::values)
       if (plane != plane2)
         permutation[plane2] = false;
 
@@ -1031,10 +1011,10 @@ shower::EMShowerAlg::GetPlanePermutations_(
       ++perm;
     }
   }
-  for (int const plane : wireWidthMap | ranges::view::reverse | ranges::view::values) {
+  for (int const plane : wireWidthMap | view::reverse | view::values) {
     std::map<int, bool> permutation;
     permutation[plane] = false;
-    for (int const plane2 : wireWidthMap | ranges::view::values)
+    for (int const plane2 : wireWidthMap | view::values)
       if (plane != plane2)
         permutation[plane2] = true;
 
@@ -1046,7 +1026,7 @@ shower::EMShowerAlg::GetPlanePermutations_(
   }
 
   // Least likely is to change everything
-  for (int const plane : showerHitsMap | ranges::view::keys)
+  for (int const plane : showerHitsMap | view::keys)
     permutations[perm][plane] = 1;
   ++perm;
 
@@ -1055,8 +1035,7 @@ shower::EMShowerAlg::GetPlanePermutations_(
     for (auto const& [index, permutation] : permutations) {
       std::cout << "Permutation " << index << '\n';
       for (auto const [plane, value] : permutation)
-        std::cout << "  Plane " << plane << " has value "
-                  << value << '\n';
+        std::cout << "  Plane " << plane << " has value " << value << '\n';
     }
   }
 
@@ -1545,7 +1524,7 @@ shower::EMShowerAlg::OrderShowerHits(art::PtrVector<recob::Hit> const& shower,
     std::cout << "\nHits in order; after ordering, before reversing...\n";
     for (auto const& [plane, hitPtrs] : showerHitsMap) {
       std::cout << "  Plane " << plane << '\n';
-      for (auto const& hit : hitPtrs | ranges::view::transform(to_element)) {
+      for (auto const& hit : hitPtrs | view::transform(to_element)) {
         std::cout << "    Hit at (" << HitCoordinates_(hit).X() << ", "
                   << HitCoordinates_(hit).Y() << ") -- real wire "
                   << hit.WireID() << ", hit position (" << HitPosition_(hit).X()
@@ -1683,8 +1662,8 @@ shower::EMShowerAlg::OrderShowerHits(art::PtrVector<recob::Hit> const& shower,
     std::cout << "Here are the relative wire widths... \n";
   for (auto const [relative_wire_width, plane] : wireWidths) {
     if (fDebug > 1)
-      std::cout << "Plane " << plane
-                << " has relative wire width " << relative_wire_width << '\n';
+      std::cout << "Plane " << plane << " has relative wire width "
+                << relative_wire_width << '\n';
     if (relative_wire_width < 1 / (double)wireWidths.size())
       badPlanes.push_back(plane);
   }
@@ -1711,7 +1690,7 @@ shower::EMShowerAlg::OrderShowerHits(art::PtrVector<recob::Hit> const& shower,
          n < TMath::Power(2, (int)showerHitsMap.size())) {
     if (fDebug > 1)
       std::cout << "Permutation " << n << '\n';
-    for (int const plane : showerHitsMap | ranges::view::keys) {
+    for (int const plane : showerHitsMap | view::keys) {
       auto hits = originalShowerHitsMap.at(plane);
       if (permutations[n][plane] == 1) {
         std::reverse(hits.begin(), hits.end());
@@ -1729,7 +1708,7 @@ shower::EMShowerAlg::OrderShowerHits(art::PtrVector<recob::Hit> const& shower,
     std::cout << "End of OrderShowerHits: here are the order of hits:\n";
     for (auto const& [plane, hitPtrs] : showerHitsMap) {
       std::cout << "  Plane " << plane << '\n';
-      for (auto const& hit : hitPtrs | ranges::view::transform(to_element)) {
+      for (auto const& hit : hitPtrs | view::transform(to_element)) {
         std::cout << "    Hit (" << HitCoordinates_(hit).X() << " (real wire "
                   << hit.WireID() << "), " << HitCoordinates_(hit).Y()
                   << ") -- pos (" << HitPosition_(hit).X() << ", "
@@ -2046,11 +2025,8 @@ shower::EMShowerAlg::ShowerHitRMS_(
 
 double
 shower::EMShowerAlg::ShowerHitRMSGradient_(
-  const std::vector<art::Ptr<recob::Hit>>& showerHits,
-  TVector2 trueStart) const
+  const std::vector<art::Ptr<recob::Hit>>& showerHits) const
 {
-  // Don't forget to clean up the header file!
-
   // Find a rough shower 'direction' and center
   TVector2 direction = ShowerDirection_(showerHits);
 
@@ -2062,19 +2038,13 @@ shower::EMShowerAlg::ShowerHitRMSGradient_(
   double lengthOfSegment = lengthOfShower / (double)nShowerSegments;
   std::map<int, std::vector<art::Ptr<recob::Hit>>> showerSegments;
   std::map<int, double> segmentCharge;
-  for (std::vector<art::Ptr<recob::Hit>>::const_iterator showerHitsIt =
-         showerHits.begin();
-       showerHitsIt != showerHits.end();
-       ++showerHitsIt) {
-    showerSegments[(int)(HitPosition_(**showerHitsIt) -
-                         HitPosition_(*showerHits.front()))
-                     .Mod() /
-                   lengthOfSegment]
-      .push_back(*showerHitsIt);
-    segmentCharge[(int)(HitPosition_(**showerHitsIt) -
-                        HitPosition_(*showerHits.front()))
-                    .Mod() /
-                  lengthOfSegment] += (*showerHitsIt)->Integral();
+  for (auto const& hitPtr : showerHits) {
+    auto const& hit = *hitPtr;
+    int const segment =
+      (HitPosition_(hit) - HitPosition_(*showerHits.front())).Mod() /
+      lengthOfSegment;
+    showerSegments[segment].push_back(hitPtr);
+    segmentCharge[segment] += hit.Integral();
   }
 
   TGraph* graph = new TGraph();
@@ -2082,52 +2052,38 @@ shower::EMShowerAlg::ShowerHitRMSGradient_(
 
   // Loop over the bins to find the distribution of hits as the shower
   // progresses
-  for (std::map<int, std::vector<art::Ptr<recob::Hit>>>::iterator
-         showerSegmentIt = showerSegments.begin();
-       showerSegmentIt != showerSegments.end();
-       ++showerSegmentIt) {
+  for (auto const& [segment, hitPtrs] : showerSegments) {
 
     // Get the mean position of the hits in this bin
     TVector2 meanPosition(0, 0);
-    for (std::vector<art::Ptr<recob::Hit>>::iterator hitInSegmentIt =
-           showerSegmentIt->second.begin();
-         hitInSegmentIt != showerSegmentIt->second.end();
-         ++hitInSegmentIt)
-      meanPosition += HitPosition_(**hitInSegmentIt);
-    meanPosition /= (double)showerSegmentIt->second.size();
+    for (auto const& hit : hitPtrs | view::transform(to_element))
+      meanPosition += HitPosition_(hit);
+    meanPosition /= (double)hitPtrs.size();
 
     // Get the RMS of this bin
     std::vector<double> distanceToAxisBin;
-    for (std::vector<art::Ptr<recob::Hit>>::iterator hitInSegmentIt =
-           showerSegmentIt->second.begin();
-         hitInSegmentIt != showerSegmentIt->second.end();
-         ++hitInSegmentIt) {
+    for (auto const& hit : hitPtrs | view::transform(to_element)) {
       TVector2 proj =
-        (HitPosition_(**hitInSegmentIt) - meanPosition).Proj(direction) +
-        meanPosition;
-      distanceToAxisBin.push_back(
-        (HitPosition_(**hitInSegmentIt) - proj).Mod());
+        (HitPosition_(hit) - meanPosition).Proj(direction) + meanPosition;
+      distanceToAxisBin.push_back((HitPosition_(hit) - proj).Mod());
     }
 
     double RMSBin =
       TMath::RMS(distanceToAxisBin.begin(), distanceToAxisBin.end());
-    binVsRMS.push_back(std::make_pair(showerSegmentIt->first, RMSBin));
+    binVsRMS.emplace_back(segment, RMSBin);
     if (fMakeRMSGradientPlot)
-      graph->SetPoint(graph->GetN(), showerSegmentIt->first, RMSBin);
+      graph->SetPoint(graph->GetN(), segment, RMSBin);
   }
 
   // Get the gradient of the RMS-bin plot
   double sumx = 0., sumy = 0., sumx2 = 0., sumxy = 0., sumweight = 0.;
-  for (std::vector<std::pair<int, double>>::iterator binVsRMSIt =
-         binVsRMS.begin();
-       binVsRMSIt != binVsRMS.end();
-       ++binVsRMSIt) {
-    double weight = segmentCharge.at(binVsRMSIt->first);
+  for (auto const [bin, RMSBin] : binVsRMS) {
+    double weight = segmentCharge.at(bin);
     sumweight += weight;
-    sumx += weight * binVsRMSIt->first;
-    sumy += weight * binVsRMSIt->second;
-    sumx2 += weight * binVsRMSIt->first * binVsRMSIt->first;
-    sumxy += weight * binVsRMSIt->first * binVsRMSIt->second;
+    sumx += weight * bin;
+    sumy += weight * RMSBin;
+    sumx2 += weight * bin * bin;
+    sumxy += weight * bin * RMSBin;
   }
   double RMSgradient =
     (sumweight * sumxy - sumx * sumy) / (sumweight * sumx2 - sumx * sumx);
@@ -2193,13 +2149,9 @@ shower::EMShowerAlg::WorstPlane_(
   // Get the width of the shower in wire coordinate
   std::map<int, int> planeWireLength;
   std::map<int, double> planeOtherWireLengths;
-  for (std::map<int, std::vector<art::Ptr<recob::Hit>>>::const_iterator
-         showerHitsIt = showerHitsMap.begin();
-       showerHitsIt != showerHitsMap.end();
-       ++showerHitsIt)
-    planeWireLength[showerHitsIt->first] =
-      std::abs(HitCoordinates_(*showerHitsIt->second.front()).X() -
-               HitCoordinates_(*showerHitsIt->second.back()).X());
+  for (auto const& [plane, hits] : showerHitsMap)
+    planeWireLength[plane] = std::abs(HitCoordinates_(*hits.front()).X() -
+                                      HitCoordinates_(*hits.back()).X());
   for (std::map<int, int>::iterator planeWireLengthIt = planeWireLength.begin();
        planeWireLengthIt != planeWireLength.end();
        ++planeWireLengthIt) {
@@ -2220,12 +2172,9 @@ shower::EMShowerAlg::WorstPlane_(
     }
 
   std::map<double, int> wireWidthMap;
-  for (std::map<int, std::vector<art::Ptr<recob::Hit>>>::const_iterator
-         showerHitsIt = showerHitsMap.begin();
-       showerHitsIt != showerHitsMap.end();
-       ++showerHitsIt) {
-    double wireWidth = planeWireLength.at(showerHitsIt->first);
-    wireWidthMap[wireWidth] = showerHitsIt->first;
+  for (int const plane : showerHitsMap | view::keys) {
+    double wireWidth = planeWireLength.at(plane);
+    wireWidthMap[wireWidth] = plane;
   }
 
   return wireWidthMap.begin()->second;
@@ -2294,7 +2243,7 @@ shower::EMShowerAlg::isCleanShower(
 
   std::map<int, int> hitmap;
   unsigned nhits = 0;
-  for (auto const& hit : hits | ranges::view::transform(to_element)) {
+  for (auto const& hit : hits | view::transform(to_element)) {
     ++nhits;
     if (nhits > 2)
       ++hitmap[hit.WireID().Wire];
