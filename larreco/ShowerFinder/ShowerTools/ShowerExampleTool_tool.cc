@@ -54,12 +54,11 @@ namespace ShowerRecoTools {
   };
 
 
-  ShowerExampleTool::ShowerExampleTool(const fhicl::ParameterSet& pset)
+  ShowerExampleTool::ShowerExampleTool(const fhicl::ParameterSet& pset) :
     //Setup the algs and others here
-    : 
-      IShowerTool(pset)
+    IShowerTool(pset),
+    fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel",""))
   {
-    fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","");
   }
 
   ShowerExampleTool::~ShowerExampleTool()

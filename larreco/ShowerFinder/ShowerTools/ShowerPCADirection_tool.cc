@@ -76,12 +76,12 @@ namespace ShowerRecoTools {
 
   ShowerPCADirection::ShowerPCADirection(const fhicl::ParameterSet& pset) :
     IShowerTool(pset),
-    fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
+    fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()),
+    fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel","")),
+    fNSegments(pset.get<float>("NSegments")),
+    fUseStartPosition(pset.get<bool>("UseStartPosition")),
+    fChargeWeighted(pset.get<bool>("ChargeWeighted"))
   {
-    fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
-    fNSegments              = pset.get<float>        ("NSegments");
-    fUseStartPosition       = pset.get<bool>         ("UseStartPosition");
-    fChargeWeighted         = pset.get<bool>         ("ChargeWeighted");
   }
 
   ShowerPCADirection::~ShowerPCADirection()

@@ -62,13 +62,13 @@ namespace ShowerRecoTools {
 
 
   ShowerSmartTrackTrajectoryPointDirection::ShowerSmartTrackTrajectoryPointDirection(const fhicl::ParameterSet& pset) :
-    IShowerTool(pset)
+    IShowerTool(pset),
+    fUsePandoraVertex(pset.get<bool>("UsePandoraVertex")),
+    fAllowDynamicSliding(pset.get<bool>("AllowDynamicSliding")),
+    fUsePositionInfo(pset.get<bool>("UsePositionInfo")),
+    fUseStartPos(pset.get<bool>("UseStartPos")),
+    fAngleCut(pset.get<float>("AngleCut"))
   {
-    fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
-    fAllowDynamicSliding      = pset.get<bool>("AllowDynamicSliding");
-    fUseStartPos              = pset.get<bool>("UseStartPos");
-    fUsePositionInfo          = pset.get<bool>("UsePositionInfo");
-    fAngleCut                 = pset.get<float>("AngleCut");
   }
 
   ShowerSmartTrackTrajectoryPointDirection::~ShowerSmartTrackTrajectoryPointDirection()

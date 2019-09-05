@@ -20,7 +20,6 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/TRACSAlg.h"
 #include "larreco/RecoAlg/TRACSCheatingAlg.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
@@ -55,7 +54,6 @@ namespace ShowerRecoTools {
     double CalculateRMS(std::vector<float> perps);
 
     //Algorithm functions
-    shower::TRACSAlg         fTRACSAlg;
     shower::TRACSCheatingAlg fTRACSCheatingAlg;
 
     //Services
@@ -74,16 +72,14 @@ namespace ShowerRecoTools {
   };
 
 
-  ShowerDirectionCheater::ShowerDirectionCheater(const fhicl::ParameterSet& pset)
-    : 
-      IShowerTool(pset),
-      fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")),
-      fTRACSCheatingAlg(pset.get<fhicl::ParameterSet>("TRACSCheatingAlg"))
+  ShowerDirectionCheater::ShowerDirectionCheater(const fhicl::ParameterSet& pset) :
+    IShowerTool(pset),
+    fTRACSCheatingAlg(pset.get<fhicl::ParameterSet>("TRACSCheatingAlg")),
+    fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel","")),
+    fNSegments(pset.get<float>("NSegments")),
+    fRMSFlip(pset.get<bool>("RMSFlip")),
+    fVertexFlip(pset.get<bool>("VertexFlip"))
   {
-    fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
-    fNSegments              = pset.get<float>        ("NSegments");
-    fRMSFlip                = pset.get<bool>         ("RMSFlip");
-    fVertexFlip             = pset.get<bool>         ("VertexFlip");
     if (vertexDotProduct||rmsGradient){
       Tree = tfs->make<TTree>("DebugTreeDirCheater", "DebugTree from shower direction cheater");
       if (fVertexFlip) Tree->Branch("vertexDotProduct",&vertexDotProduct);
@@ -179,7 +175,7 @@ namespace ShowerRecoTools {
 
       //Get Shower Centre
       float TotalCharge;
-      TVector3 ShowerCentre = fTRACSAlg.ShowerCentre(spacePoints, fmh, TotalCharge);
+      TVector3 ShowerCentre = IShowerTool::GetTRACSAlg().ShowerCentre(spacePoints, fmh, TotalCharge);
 
 
       //Check if we are pointing the correct direction or not, First try the start position
@@ -227,11 +223,11 @@ namespace ShowerRecoTools {
   double ShowerDirectionCheater::RMSShowerGradient(std::vector<art::Ptr<recob::SpacePoint> >& sps, TVector3& ShowerCentre, TVector3& Direction){
 
     //Order the spacepoints
-    fTRACSAlg.OrderShowerSpacePoints(sps,ShowerCentre,Direction);
+    IShowerTool::GetTRACSAlg().OrderShowerSpacePoints(sps,ShowerCentre,Direction);
 
     //Get the length of the shower.
-    double minProj =fTRACSAlg.SpacePointProjection(sps[0],ShowerCentre,Direction);
-    double maxProj =fTRACSAlg.SpacePointProjection(sps[sps.size()-1],ShowerCentre,Direction);
+    double minProj =IShowerTool::GetTRACSAlg().SpacePointProjection(sps[0],ShowerCentre,Direction);
+    double maxProj =IShowerTool::GetTRACSAlg().SpacePointProjection(sps[sps.size()-1],ShowerCentre,Direction);
 
     double length = (maxProj-minProj);
     double segmentsize = length/fNSegments;
@@ -242,10 +238,10 @@ namespace ShowerRecoTools {
     for(auto const& sp: sps){
 
       //Get the the projected length
-      double len = fTRACSAlg.SpacePointProjection(sp,ShowerCentre,Direction);
+      double len = IShowerTool::GetTRACSAlg().SpacePointProjection(sp,ShowerCentre,Direction);
 
       //Get the length to the projection
-      double  len_perp = fTRACSAlg.SpacePointPerpendiular(sp,ShowerCentre,Direction,len);
+      double  len_perp = IShowerTool::GetTRACSAlg().SpacePointPerpendiular(sp,ShowerCentre,Direction,len);
 
       int sg_len = round(len/segmentsize);
       //TODO: look at this:

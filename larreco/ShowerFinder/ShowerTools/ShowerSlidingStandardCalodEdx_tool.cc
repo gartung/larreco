@@ -77,19 +77,19 @@ namespace ShowerRecoTools{
   };
 
 
-  ShowerSlidingStandardCalodEdx::ShowerSlidingStandardCalodEdx(const fhicl::ParameterSet& pset):
+  ShowerSlidingStandardCalodEdx::ShowerSlidingStandardCalodEdx(const fhicl::ParameterSet& pset) :
     IShowerTool(pset),
     fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
-    fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
+    fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()),
+    fMinAngleToWire(pset.get<float>("MinAngleToWire")),
+    fShapingTime(pset.get<float>("ShapingTime")),
+    fMinDistCutOff(pset.get<float>("MinDistCutOff")),
+    fMaxDist(pset.get<float>("MaxDist")),
+    fdEdxTrackLength(pset.get<float>("dEdxTrackLength")),
+    fUseMedian(pset.get<bool>("UseMedian")),
+    fCutStartPosition(pset.get<bool>("CutStartPosition")),
+    fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel"))
   {
-    fMinDistCutOff         = pset.get<float>("MinDistCutOff");
-    fMaxDist               = pset.get<float>("MaxDist");
-    fMinAngleToWire        = pset.get<float>("MinAngleToWire");
-    fShapingTime           = pset.get<float>("ShapingTime");
-    fdEdxTrackLength       = pset.get<float>("dEdxTrackLength");
-    fUseMedian             = pset.get<bool> ("UseMedian");
-    fCutStartPosition      = pset.get<bool> ("CutStartPosition");
-    fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel");
   }
 
   ShowerSlidingStandardCalodEdx::~ShowerSlidingStandardCalodEdx()

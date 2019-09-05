@@ -58,13 +58,13 @@ namespace ShowerRecoTools{
   };
 
 
-  ShowerStandardCalodEdx::ShowerStandardCalodEdx(const fhicl::ParameterSet& pset):
+  ShowerStandardCalodEdx::ShowerStandardCalodEdx(const fhicl::ParameterSet& pset) :
     IShowerTool(pset),
-    fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg"))
+    fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
+    fdEdxTrackLength(pset.get<float>("dEdxTrackLength")),
+    fMaxHitPlane(pset.get<bool>("MaxHitPlane")),
+    fMissFirstPoint(pset.get<bool>("MissFirstPoint"))
   {
-    fdEdxTrackLength = pset.get<float>("dEdxTrackLength");
-    fMaxHitPlane     = pset.get<bool> ("MaxHitPlane");
-    fMissFirstPoint  = pset.get<bool> ("MissFirstPoint");
   }
 
   ShowerStandardCalodEdx::~ShowerStandardCalodEdx()
