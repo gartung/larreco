@@ -59,12 +59,12 @@ public:
     kBeamIncompatible = 0x030000
   };
   ETag
-  GetTag() const
+  GetTag() const noexcept
   {
     return fTag;
   }
   bool
-  HasTagFlag(ETag value) const
+  HasTagFlag(ETag value) const noexcept
   {
     return (fTag & value);
   }
@@ -74,7 +74,7 @@ public:
     fTag = (ETag)(fTag | value);
   }
   void
-  SetTag(ETag value)
+  SetTag(ETag value) noexcept
   {
     fTag = value;
   }
@@ -95,24 +95,24 @@ public:
   bool push_back(const art::Ptr<recob::Hit>& hit);
   bool erase(const art::Ptr<recob::Hit>& hit);
 
-  pma::Hit3D*& operator[](size_t index) { return fHits[index]; }
-  pma::Hit3D* const& operator[](size_t index) const { return fHits[index]; }
-  pma::Hit3D*&
+  pma::Hit3D* operator[](size_t index) { return fHits[index]; }
+  pma::Hit3D const* operator[](size_t index) const { return fHits[index]; }
+  pma::Hit3D*
   front()
   {
     return fHits.front();
   }
-  pma::Hit3D* const&
+  pma::Hit3D const*
   front() const
   {
     return fHits.front();
   }
-  pma::Hit3D*&
+  pma::Hit3D*
   back()
   {
     return fHits.back();
   }
-  pma::Hit3D* const&
+  pma::Hit3D const*
   back() const
   {
     return fHits.back();
@@ -325,7 +325,7 @@ public:
   /// Check if the T0 has been set - enables us to distinguish between T0 set
   /// very close to zero or not set.
   bool
-  HasT0() const
+  HasT0() const noexcept
   {
     return fT0Flag;
   }
@@ -338,7 +338,7 @@ public:
   bool ShiftEndsToHits();
 
   std::vector<pma::Segment3D*> const&
-  Segments() const
+  Segments() const noexcept
   {
     return fSegments;
   }
@@ -347,7 +347,7 @@ public:
   pma::Segment3D* PrevSegment(pma::Node3D* vtx) const;
 
   std::vector<pma::Node3D*> const&
-  Nodes() const
+  Nodes() const noexcept
   {
     return fNodes;
   }
@@ -400,34 +400,34 @@ public:
   bool SelectAllHits();
 
   float
-  GetEndSegWeight() const
+  GetEndSegWeight() const noexcept
   {
     return fEndSegWeight;
   }
   void
-  SetEndSegWeight(float value)
+  SetEndSegWeight(float value) noexcept
   {
     fEndSegWeight = value;
   }
 
   float
-  GetPenalty() const
+  GetPenalty() const noexcept
   {
     return fPenaltyFactor;
   }
   void
-  SetPenalty(float value)
+  SetPenalty(float value) noexcept
   {
     fPenaltyFactor = value;
   }
 
   unsigned int
-  GetMaxHitsPerSeg() const
+  GetMaxHitsPerSeg() const noexcept
   {
     return fMaxHitsPerSeg;
   }
   void
-  SetMaxHitsPerSeg(unsigned int value)
+  SetMaxHitsPerSeg(unsigned int value) noexcept
   {
     fMaxHitsPerSeg = value;
   }
@@ -460,7 +460,7 @@ private:
                                     unsigned int cryo,
                                     double& dist,
                                     bool skipFirst = false);
-  void ReassignHitsInTree(pma::Track3D* plRoot = 0);
+  void ReassignHitsInTree(pma::Track3D* plRoot = nullptr);
 
   /// Distance to the nearest subsequent (dir = Track3D::kForward) or preceeding
   /// (dir = Track3D::kBackward) hit in given view. In case of last (first) hit
