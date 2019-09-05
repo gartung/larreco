@@ -20,6 +20,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/ShowerElementHolder.hh"
 #include "larreco/ShowerFinder/ShowerProduedPtrsHolder.hh"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <string>
@@ -28,6 +29,9 @@ namespace ShowerRecoTools{
   class IShowerTool{
 
     public:
+
+      IShowerTool(const fhicl::ParameterSet& pset) : 
+        fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")) {};
 
       virtual ~IShowerTool() noexcept = default;
 
@@ -54,10 +58,17 @@ namespace ShowerRecoTools{
       virtual int  AddAssociations(art::Event& Event,
           reco::shower::ShowerElementHolder& ShowerEleHolder){return 0;}
 
+    protected:
+      const shower::TRACSAlg& GetTRACSAlg() { return fTRACSAlg; };
+
+
     private:
 
       //ptr to the holder of all the unique ptrs.
       reco::shower::ShowerProduedPtrsHolder* UniquePtrs;
+
+      //Algorithm functions
+      shower::TRACSAlg fTRACSAlg;
 
 
     protected:
