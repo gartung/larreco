@@ -3,6 +3,8 @@
 #include "clusteralgorithms.fcl"
 #include "calorimetry.fcl"
 
+#There are more tools on DomBarker_ShowerBranch
+
 BEGIN_PROLOG
 
 showerpcadirection:{
@@ -62,6 +64,7 @@ showerpandoraslidingfittrackfinder:{
     MinTrajectoryPoints: 2   #Max number of trajectory points 
                              #required to say the fit as good
     }
+
 
 shower3Dtrackhitfinder:{
     tool_type: Shower3DTrackHitFinder
@@ -157,6 +160,7 @@ showertrackpcadirection:{
     TRACSAlg:         @local::standard_tracsalg
     CalorimetryAlg:   @local::standard_calorimetryalgmc
 }
+
 
 showerstartpositioncheater:{
     tool_type:               ShowerStartPositionCheater

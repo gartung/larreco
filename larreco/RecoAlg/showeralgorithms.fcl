@@ -93,4 +93,19 @@ TRACSAlg:            @local::standard_tracsalg
                        PFParticleModuleLabel: "pandora"
 }
 
+standard_tracsalg:
+{
+UseCollectionOnly: false #Only use the collection charge infromation.
+HitModuleLabel:        "linecluster"
+PFParticleModuleLabel: "pandora"
+}
+
+standard_tracscheatingalg:
+{
+TRACSAlg:              @local::standard_tracsalg
+HitModuleLabel:        "linecluster"
+PFParticleModuleLabel: "pandora"
+}
+
+
 END_PROLOG
