@@ -7,19 +7,26 @@
 
 BEGIN_PROLOG
 
+showerbasetools:{
+    TRACSAlg:         @local::standard_tracsalg
+    EnableEventDisplay: false                    
+}
+
 showerpcadirection:{
     tool_type: ShowerPCADirection
+    BaseTools: @local::showerbasetools
     PFParticleModuleLabel: "pandora"
     NSegments: 6           #If using the RMS gradient to decide what direction to go in
                            #this is the number of segements to split the shower into.
     UseStartPosition: true #The direction of the PCA is in the direction of 
                            #(Shower Center - Start Position)
     ChargeWeighted:   true #Apply a charge weighting in the PCA.
-    TRACSAlg:         @local::standard_tracsalg
 }
 
 showerlinearenergy:{
     tool_type:  ShowerLinearEnergy
+    BaseTools: @local::showerbasetools
+
     PFParticleModuleLabel: "pandora"
     UGradient:   0.00155644  #Gradient of the linear graph of the total charge to total
                              #energy, in the U plane. in MeV/ADC.
@@ -39,7 +46,7 @@ showerlinearenergy:{
 
 shower2Dlinearregressiontrackhitfinder:{
     tool_type:             Shower2DLinearRegressionTrackHitFinder
-    TRACSAlg:              @local::standard_tracsalg
+    BaseTools:             @local::showerbasetools
     Nfitpass:              4                     #Number of time to fit the straight line
                                                  #to the hits
     Nfithits:              [83, 50, 33, 33]      #Max Number of hits to fit to
@@ -53,6 +60,8 @@ shower2Dlinearregressiontrackhitfinder:{
 
 showerpmatrackfinder:{
     tool_type: ShowerPMATrackFinder
+    BaseTools: @local::showerbasetools
+
     MinTrajectoryPoints: 2 #Max number of trajectory points 
                            #required to say the fit as good
     ProjectionMatchingAlg: @local::standard_projectionmatchingalg
@@ -60,7 +69,7 @@ showerpmatrackfinder:{
 
 shower3Dtrackhitfinder:{
     tool_type: Shower3DTrackHitFinder
-    TRACSAlg:          @local::standard_tracsalg
+    BaseTools: @local::showerbasetools
     PFParticleModuleLabel: "pandora"
     MaxProjectionDist:     10     #Max distance a hit can be in the direction of 
                                   #the shower in cm
@@ -74,12 +83,14 @@ shower3Dtrackhitfinder:{
 
 showerstartposition:{
     tool_type: ShowerStartPosition
+    BaseTools: @local::showerbasetools
     PFParticleModuleLabel: "pandora"
-    TRACSAlg: @local::standard_tracsalg
 }
 
 showerstandardcalodedx:{
     tool_type: ShowerStandardCalodEdx
+    BaseTools: @local::showerbasetools
+
     CalorimetryAlg:  @local::standard_calorimetryalgmc
     MaxHitPlane:     true #Set the best planes as the one with the most hits 
     MissFirstPoint:  true #Do not use any hits from the first wire
@@ -88,6 +99,8 @@ showerstandardcalodedx:{
 
 showertracktrajectorypointdirection: {
     tool_type: ShowerTrackTrajectoryPointDirection
+    BaseTools: @local::showerbasetools
+
     TrajPoint:         1   #Trajectory point to get the direction from.    
     UsePandoraVertex: true #Direction from point defined as 
                            #(Position of traj point - Vertex) rather than 
@@ -98,6 +111,8 @@ showertracktrajectorypointdirection: {
 
 showersmarttracktrajectorypointdirection: {
     tool_type: ShowerSmartTrackTrajectoryPointDirection
+    BaseTools: @local::showerbasetools
+
     UsePandoraVertex:    false  #Direction from point defined as 
                                 #(Position of traj point - Vertex) rather than 
                                 #(Position of traj point - Track Start Point).
@@ -115,7 +130,7 @@ showersmarttracktrajectorypointdirection: {
 
 showerstartpositioncheater:{
     tool_type:               ShowerStartPositionCheater
-    TRACSAlg:            @local::standard_tracsalg
+    BaseTools:           @local::showerbasetools
     TRACSCheatingAlg:    @local::standard_tracscheatingalg
     PFParticleModuleLabel:  "pandora"
     HitModuleLabel:         "linecluster"
@@ -123,7 +138,7 @@ showerstartpositioncheater:{
 
 showerdirectioncheater:{
     tool_type:              ShowerDirectionCheater
-    TRACSAlg:           @local::standard_tracsalg
+    BaseTools:          @local::showerbasetools
     TRACSCheatingAlg:   @local::standard_tracscheatingalg
     PFParticleModuleLabel:  "pandora"
     NSegments:              6     #Number of segements the shower should be split into
@@ -135,7 +150,7 @@ showerdirectioncheater:{
 
 showertrackfindercheater:{
     tool_type:               ShowerTrackFinderCheater
-    TRACSAlg:            @local::standard_tracsalg
+    BaseTools:           @local::showerbasetools
     TRACSCheatingAlg:    @local::standard_tracscheatingalg
     PFParticleModuleLabel:  "pandora"
     HitModuleLabel:         "linecluster"
@@ -146,7 +161,7 @@ showertrackfindercheater:{
 
 showerslidingstandardcalodedx:{
     tool_type: ShowerSlidingStandardCalodEdx
-    TRACSAlg:       @local::standard_tracsalg
+    BaseTools: @local::showerbasetools
     CalorimetryAlg: @local::standard_calorimetryalgmc
     MinDistCutOff:         2    #Distance in wires a hit has to be from the start 
                                 #position of the track to be used
