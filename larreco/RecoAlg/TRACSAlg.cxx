@@ -294,7 +294,8 @@ double shower::TRACSAlg::SpacePointPerpendiular(art::Ptr<recob::SpacePoint> cons
 
 void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
     art::Event const& Event,
-    reco::shower::ShowerElementHolder& ShowerEleHolder) const {
+    reco::shower::ShowerElementHolder& ShowerEleHolder,
+    std::string evd_disp_name_append) const {
 
   std::cout<<"Making Debug Event Display"<<std::endl;
 
@@ -308,6 +309,7 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
 
   // Create the canvas
   TString canvasName = Form("canvas_%i_%i_%i_%i",run,subRun,event,PFPID);
+  if (evd_disp_name_append.length() > 0) canvasName+="_"+evd_disp_name_append;
   TCanvas* canvas = tfs->make<TCanvas>(canvasName, canvasName);
 
   std::cout << "canvasName: " << canvasName << std::endl;

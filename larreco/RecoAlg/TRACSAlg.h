@@ -75,7 +75,8 @@ class shower::TRACSAlg {
 
     void DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
         art::Event const& Event,
-        reco::shower::ShowerElementHolder& ShowerEleHolder) const;
+        reco::shower::ShowerElementHolder& ShowerEleHolder,
+        std::string evd_disp_name_append="") const;
 
   private:
 

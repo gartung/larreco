@@ -31,7 +31,8 @@ namespace ShowerRecoTools{
     public:
 
       IShowerTool(const fhicl::ParameterSet& pset) : 
-        fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")) {};
+        fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")),
+        fRunEventDisplay(pset.get<bool>("EnableEventDisplay")) {};
 
       virtual ~IShowerTool() noexcept = default;
 
@@ -45,9 +46,15 @@ namespace ShowerRecoTools{
       //that calculates the shower element and also runs the event display if requested
       int RunShowerTool(const art::Ptr<recob::PFParticle>& pfparticle,
           art::Event& Event,
-          reco::shower::ShowerElementHolder& ShowerEleHolder
+          reco::shower::ShowerElementHolder& ShowerEleHolder,
+          std::string evd_display_name_append=""
           ){
+
         int calculation_status = CalculateElement(pfparticle, Event, ShowerEleHolder);
+        if (calculation_status != 0) return calculation_status;
+        if (fRunEventDisplay){
+          IShowerTool::GetTRACSAlg().DebugEVD(pfparticle,Event,ShowerEleHolder,evd_display_name_append);
+        } 
         return calculation_status;
       }
 
@@ -79,6 +86,9 @@ namespace ShowerRecoTools{
 
       //Algorithm functions
       shower::TRACSAlg fTRACSAlg;
+
+      //Flags
+      bool fRunEventDisplay;
 
 
     protected:
