@@ -220,7 +220,7 @@ void reco::shower::TRACS::produce(art::Event& evt) {
     for(auto const& fShowerTool: fShowerTools){
 
       //Calculate the metric
-      std::string evd_disp_append = fShowerToolNames[i]+"_iteration"+std::to_string(i);
+      std::string evd_disp_append = fShowerToolNames[i]+"_iteration"+std::to_string(0);
 
       err = fShowerTool->RunShowerTool(pfp,evt,selement_holder,evd_disp_append);
       if(err){
@@ -235,7 +235,7 @@ void reco::shower::TRACS::produce(art::Event& evt) {
 
       for(auto const& fShowerTool: fShowerTools){
 	//Calculate the metric
- std::string evd_disp_append = fShowerToolNames[i]+"_iteration"+std::to_string(i);
+ std::string evd_disp_append = fShowerToolNames[i]+"_iteration"+std::to_string(1);
 	err = fShowerTool->RunShowerTool(pfp,evt,selement_holder,evd_disp_append);
       
 	if(err){
