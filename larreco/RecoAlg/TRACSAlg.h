@@ -23,6 +23,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 //Root Includes
 #include "TVector3.h"
@@ -33,6 +34,8 @@
 #include "TPolyMarker3D.h"
 #include "TPolyLine3D.h"
 #include "TString.h"
+#include "TH3F.h"
+#include "TStyle.h"
 
 namespace shower {
   class TRACSAlg;
