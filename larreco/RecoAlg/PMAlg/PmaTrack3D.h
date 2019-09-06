@@ -73,11 +73,6 @@ public:
   {
     fTag = (ETag)(fTag | value);
   }
-  void
-  SetTag(ETag value) noexcept
-  {
-    fTag = value;
-  }
 
   Track3D();
   Track3D(const Track3D& src);
@@ -97,20 +92,10 @@ public:
 
   pma::Hit3D* operator[](size_t index) { return fHits[index]; }
   pma::Hit3D const* operator[](size_t index) const { return fHits[index]; }
-  pma::Hit3D*
-  front()
-  {
-    return fHits.front();
-  }
   pma::Hit3D const*
   front() const
   {
     return fHits.front();
-  }
-  pma::Hit3D*
-  back()
-  {
-    return fHits.back();
   }
   pma::Hit3D const*
   back() const

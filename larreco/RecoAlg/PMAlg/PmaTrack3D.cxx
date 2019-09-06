@@ -22,6 +22,9 @@
 
 #include <array>
 
+#include "range/v3/algorithm.hpp"
+#include "range/v3/view.hpp"
+
 pma::Track3D::Track3D() = default;
 
 pma::Track3D::Track3D(const Track3D& src)
@@ -138,11 +141,8 @@ pma::Track3D::InitFromHits(int tpc, int cryo, float initEndSegW)
   // endpoints for the first combination:
   TVector3 v3d_1(0., 0., 0.), v3d_2(0., 0., 0.);
 
-  pma::Hit3D* hit0_a = front();
-  pma::Hit3D* hit0_b = nullptr;
-
-  pma::Hit3D* hit1_a = front();
-  pma::Hit3D* hit1_b = nullptr;
+  pma::Hit3D* hit0_a = fHits.front();
+  pma::Hit3D* hit1_a = fHits.front();
 
   float minX =
     detprop->ConvertTicksToX(hit0_a->PeakTime(), hit0_a->View2D(), tpc, cryo);
@@ -159,6 +159,9 @@ pma::Track3D::InitFromHits(int tpc, int cryo, float initEndSegW)
       hit1_a = hit;
     }
   }
+
+  pma::Hit3D* hit0_b = nullptr;
+  pma::Hit3D* hit1_b = nullptr;
 
   float minDiff0 = 5000, minDiff1 = 5000;
   for (auto hit : fHits) {
@@ -2757,13 +2760,9 @@ pma::Track3D::Dist2(const TVector2& p2d,
 double
 pma::Track3D::Dist2(const TVector3& p3d) const
 {
-  double dist, min_dist = fSegments.front()->GetDistance2To(p3d);
-  for (size_t i = 1; i < fSegments.size(); i++) {
-    dist = fSegments[i]->GetDistance2To(p3d);
-    if (dist < min_dist)
-      min_dist = dist;
-  }
-  return min_dist;
+  using namespace ranges;
+  auto to_distance2 = [&p3d](auto seg){ return seg->GetDistance2To(p3d); };
+  return min(fSegments | view::transform(to_distance2));
 }
 
 pma::Element3D*
@@ -3486,8 +3485,7 @@ void
 pma::Track3D::UpdateHitsRadius()
 {
   std::vector<pma::Hit3D*> hitsColl, hitsInd1, hitsInd2;
-  for (size_t i = 0; i < size(); i++) {
-    pma::Hit3D* hit = (*this)[i];
+  for (auto hit : fHits) {
     switch (hit->View2D()) {
       case geo::kZ:
         hitsColl.push_back(hit);
