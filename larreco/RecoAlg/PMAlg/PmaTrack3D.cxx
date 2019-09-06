@@ -141,6 +141,8 @@ pma::Track3D::InitFromHits(int tpc, int cryo, float initEndSegW)
   // endpoints for the first combination:
   TVector3 v3d_1(0., 0., 0.), v3d_2(0., 0., 0.);
 
+  assert(!fHits.empty());
+
   pma::Hit3D* hit0_a = fHits.front();
   pma::Hit3D* hit1_a = fHits.front();
 
@@ -2786,25 +2788,25 @@ pma::Track3D::GetNearestElement(const TVector2& p2d,
   if (skipBackVtx)
     --v1;
 
-  pma::Element3D* pe_min = 0;
-  double dist, min_dist = 1.0e9;
+  pma::Element3D* pe_min = nullptr;
+  auto min_dist = std::numeric_limits<double>::max();
   for (size_t i = v0; i < v1; i++)
     if (fNodes[i]->TPC() == tpc) {
-      dist = fNodes[i]->GetDistance2To(p2d, view);
+      double dist = fNodes[i]->GetDistance2To(p2d, view);
       if (dist < min_dist) {
         min_dist = dist;
         pe_min = fNodes[i];
       }
     }
-  for (size_t i = 0; i < fSegments.size(); i++)
-    if (fSegments[i]->TPC() == tpc) {
-      if (fSegments[i]->TPC() < 0)
+  for (auto segment : fSegments)
+    if (segment->TPC() == tpc) {
+      if (segment->TPC() < 0)
         continue; // segment between TPC's
 
-      dist = fSegments[i]->GetDistance2To(p2d, view);
+      double const dist = segment->GetDistance2To(p2d, view);
       if (dist < min_dist) {
         min_dist = dist;
-        pe_min = fSegments[i];
+        pe_min = segment;
       }
     }
   if (!pe_min)
@@ -3498,11 +3500,7 @@ pma::Track3D::UpdateHitsRadius()
         break;
     }
   }
-  fHitsRadius = pma::GetHitsRadius2D(hitsColl, true);
-  float r = pma::GetHitsRadius2D(hitsInd2, true);
-  if (r > fHitsRadius)
-    fHitsRadius = r;
-  r = pma::GetHitsRadius2D(hitsInd1, true);
-  if (r > fHitsRadius)
-    fHitsRadius = r;
+  fHitsRadius = std::max({pma::GetHitsRadius2D(hitsColl, true),
+                          pma::GetHitsRadius2D(hitsInd2, true),
+                          pma::GetHitsRadius2D(hitsInd1, true)});
 }
