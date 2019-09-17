@@ -19,7 +19,6 @@
 //LArSoft Includes
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/TRACSAlg.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
@@ -46,15 +45,14 @@ namespace ShowerRecoTools {
                     //point to be matched
     art::InputTag fPFParticleModuleLabel;
 
-    shower::TRACSAlg fTRACSAlg;
   };
 
 
   ShowerTrackTrajToSpacepoint::ShowerTrackTrajToSpacepoint(const fhicl::ParameterSet& pset)
-    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
+    : IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
+      fMaxDist(pset.get<float>("MaxDist")),
+      fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel"))
   {
-    fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel");
-    fMaxDist               = pset.get<float>         ("MaxDist");
   }
 
   ShowerTrackTrajToSpacepoint::~ShowerTrackTrajToSpacepoint()
@@ -103,8 +101,7 @@ namespace ShowerRecoTools {
 
       //ignore bogus info.
       auto flags = InitialTrack.FlagsAtPoint(traj);
-      if(flags.isSet(recob::TrajectoryPointFlags::InvalidHitIndex)
-          || flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+      if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
       {continue;}
 
       geo::Point_t TrajPositionPoint = InitialTrack.LocationAtPoint(traj);
@@ -123,7 +120,7 @@ namespace ShowerRecoTools {
       for(unsigned int sp=0; sp<intitaltrack_sp.size();++sp){
         //Find the spacepoint closest to the trajectory point.
         art::Ptr<recob::SpacePoint> spacepoint = intitaltrack_sp[sp];
-        TVector3 pos = fTRACSAlg.SpacePointPosition(spacepoint) - TrajPosition;
+        TVector3 pos = IShowerTool::GetTRACSAlg().SpacePointPosition(spacepoint) - TrajPosition;
         if(pos.Mag() < MinDist && pos.Mag()< fMaxDist){
           MinDist = pos.Mag();
           index = sp;

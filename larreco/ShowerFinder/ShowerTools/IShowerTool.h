@@ -20,6 +20,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larreco/RecoAlg/ShowerElementHolder.hh"
 #include "larreco/ShowerFinder/ShowerProduedPtrsHolder.hh"
+#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <string>
@@ -29,6 +30,10 @@ namespace ShowerRecoTools{
 
     public:
 
+      IShowerTool(const fhicl::ParameterSet& pset) : 
+        fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")),
+        fRunEventDisplay(pset.get<bool>("EnableEventDisplay")) {};
+
       virtual ~IShowerTool() noexcept = default;
 
       //Generic Elemnt Finder. Used to calculate thing about the shower.
@@ -36,6 +41,24 @@ namespace ShowerRecoTools{
           art::Event& Event,
           reco::shower::ShowerElementHolder& ShowerEleHolder
           ) = 0;
+
+
+      //Main function that runs the shower tool.  This includes running the derived function
+      //that calculates the shower element and also runs the event display if requested
+      int RunShowerTool(const art::Ptr<recob::PFParticle>& pfparticle,
+          art::Event& Event,
+          reco::shower::ShowerElementHolder& ShowerEleHolder,
+          std::string evd_display_name_append=""
+          ){
+
+        int calculation_status = CalculateElement(pfparticle, Event, ShowerEleHolder);
+        if (calculation_status != 0) return calculation_status;
+        if (fRunEventDisplay){
+	  evd_display_name_append += "_" + producerPtr->moduleDescription().moduleLabel();
+          IShowerTool::GetTRACSAlg().DebugEVD(pfparticle,Event,ShowerEleHolder,evd_display_name_append);
+        } 
+        return calculation_status;
+      }
 
       //Function to initialise the producer i.e produces<std::vector<recob::Vertex> >(); commands go here.
       virtual void InitialiseProducers(){return;}
@@ -54,10 +77,19 @@ namespace ShowerRecoTools{
       virtual int  AddAssociations(art::Event& Event,
           reco::shower::ShowerElementHolder& ShowerEleHolder){return 0;}
 
+    protected:
+      const shower::TRACSAlg& GetTRACSAlg() { return fTRACSAlg; };
+
     private:
 
       //ptr to the holder of all the unique ptrs.
       reco::shower::ShowerProduedPtrsHolder* UniquePtrs;
+
+      //Algorithm functions
+      shower::TRACSAlg fTRACSAlg;
+
+      //Flags
+      bool fRunEventDisplay;
 
 
     protected:

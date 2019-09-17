@@ -21,7 +21,6 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
@@ -55,17 +54,15 @@ namespace ShowerRecoTools {
     art::InputTag fHitModuleLabel;
     art::InputTag fPFParticleModuleLabel;
 
-    //Algorithm function
-    shower::TRACSAlg fTRACSAlg;
   };
 
 
   ShowerTrackHitDirection::ShowerTrackHitDirection(const fhicl::ParameterSet& pset)
-    :  fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
+    :  IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
+       fUsePandoraVertex(pset.get<bool>         ("UsePandoraVertex")),
+       fHitModuleLabel(pset.get<art::InputTag>("HitModuleLabel")),
+       fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel"))
   {
-    fUsePandoraVertex       = pset.get<bool>         ("UsePandoraVertex");
-    fHitModuleLabel         = pset.get<art::InputTag>("HitModuleLabel");
-    fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel");
   }
 
   ShowerTrackHitDirection::~ShowerTrackHitDirection()
@@ -138,7 +135,7 @@ namespace ShowerRecoTools {
         intitaltrack_sp.push_back(sp);
 
         //Get the direction relative to the start positon
-        TVector3 pos = fTRACSAlg.SpacePointPosition(sp) - StartPosition;
+        TVector3 pos = IShowerTool::GetTRACSAlg().SpacePointPosition(sp) - StartPosition;
         if(pos.Mag() == 0){continue;}
 
         sumX = pos.X(); sumX2 += pos.X()*pos.X();
@@ -169,7 +166,7 @@ namespace ShowerRecoTools {
     TVector3 Direction_Mean = {0,0,0};
     int N = 0;
     for(auto const sp: intitaltrack_sp){
-      TVector3 Direction = fTRACSAlg.SpacePointPosition(sp) - StartPosition;
+      TVector3 Direction = IShowerTool::GetTRACSAlg().SpacePointPosition(sp) - StartPosition;
       if((TMath::Abs((Direction-Mean).X()) < 1*RMSX) &&
           (TMath::Abs((Direction-Mean).Y())< 1*RMSY) &&
           (TMath::Abs((Direction-Mean).Z()) < 1*RMSZ)){

@@ -125,11 +125,13 @@ class ana::ShowerValidation : public art::EDAnalyzer {
     bool  fFillOnlyClosestShower;
     bool  fRemoveNonContainedParticles;
     bool  fPFPValidation;
+    bool  fUseNeutrinoShowers;
     int   fVerbose;
     int   fMinHitSize;
     float fSimEnergyCut;
     float fDensityCut;
     float fMaxSimEnergy;
+    float fMinRecoEnergy;
 
     std::vector<std::string> fShowerModuleLabels;
     std::vector<std::string> fHitModuleLabels;
@@ -244,11 +246,13 @@ ana::ShowerValidation::ShowerValidation(const fhicl::ParameterSet& pset) : EDAna
   fFillOnlyClosestShower       = pset.get<bool>("FillOnlyClosestShower");
   fRemoveNonContainedParticles = pset.get<bool>("RemoveNonContainedParticles");
   fPFPValidation               = pset.get<bool>("PFPValidation");
+  fUseNeutrinoShowers          = pset.get<bool>("UseNeutrinoShowers");
   fVerbose                     = pset.get<int>("Verbose");
   fMinHitSize                  = pset.get<int>("MinHitSize");
   fSimEnergyCut                = pset.get<float>("SimEnergyCut");
   fDensityCut                  = pset.get<float>("DensityCut");
   fMaxSimEnergy                = pset.get<float>("MaxSimEnergy");
+  fMinRecoEnergy               = pset.get<float>("MinRecoEnergy");
 }
 
 void ana::ShowerValidation::initTree(TTree* Tree, std::string branchName, std::map<std::string,std::vector<float> >& Metric,   std::vector<std::string> fShowerModuleLabels){
@@ -975,6 +979,13 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       MinEvaluateShowerStart[showermother->first] = 0;
     }
 
+    std::map<int, art::Ptr<recob::PFParticle> > pfpsMap;
+    for (unsigned int i=0; i<pfps.size();++i){
+      art::Ptr<recob::PFParticle>& pfp = pfps.at(i);
+      std::cout << "pfp: " << pfp->Self() << " pdg: " << pfp->PdgCode() << " mother: " << pfp->Parent() << std::endl;
+      pfpsMap[pfp->Self()] = pfp;
+    }
+
     //Loop over the showers in the event
     for(unsigned int shower_iter = 0; shower_iter < showers.size(); ++shower_iter){
 
@@ -985,6 +996,26 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       //Get the shower
       art::Ptr<recob::Shower>& shower = showers.at(shower_iter);
 
+      //Get the information for the shower
+      TVector3  ShowerDirection                  = shower->Direction();
+      TVector3  ShowerStart                      = shower->ShowerStart();//cm
+      double ShowerTrackLength                   = shower->Length();//cm
+      std::vector< double >  ShowerEnergyPlanes  = shower->Energy();//MeV
+      std::vector< double >  ShowerdEdX_vec      = shower->dEdx();//MeV/cm
+
+      //Check the energy is above the limit
+      auto max_energy = *max_element(std::begin(ShowerEnergyPlanes), std::end(ShowerEnergyPlanes));
+      if(max_energy < fMinRecoEnergy){continue;}
+
+      //Check if user wants neutrino showers.
+      if(fmpf.isValid() && fUseNeutrinoShowers){
+	if(fmpf.at(shower.key()).size() > 0){
+	  if(pfpsMap.find(fmpf.at(shower.key()).at(0)->Parent()) != pfpsMap.end()){
+	      if(pfpsMap[fmpf.at(shower.key()).at(0)->Parent()]->PdgCode() == 13){continue;}
+	  }
+	}
+      }
+      	  
 
       //#########################
       //### Shower Validation ###
@@ -1128,13 +1159,6 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       //Initial track lentgh of the shower.
       double TrueTrackLength = TrueShowerDirection.Mag();
 
-      //Get the information for the shower
-      TVector3  ShowerDirection                  = shower->Direction();
-      TVector3  ShowerStart                      = shower->ShowerStart();//cm
-      double ShowerTrackLength                   = shower->Length();//cm
-      std::vector< double >  ShowerEnergyPlanes  = shower->Energy();//MeV
-      std::vector< double >  ShowerdEdX_vec      = shower->dEdx();//MeV/cm
-
       //Remove this
       //ShowerEnergyPlanes[2] = (ShowerEnergyPlanes[2] - 0.00155171)*0.00155171/4.39964 + 4.39964;
 
@@ -1258,14 +1282,14 @@ void ana::ShowerValidation::analyze(const art::Event& evt) {
       sNumHits_TreeVal[fShowerModuleLabel].push_back(showerhits.size());
 
       if(EvaluatesdEdx){
-        std::cout<<"Shower dEdx: size: "<<ShowerdEdX_vec.size()<<" Plane 0: "<<ShowerdEdX_vec.at(0)<<" Plane 1: "<<ShowerdEdX_vec.at(1)<<" Plane 2: "<<ShowerdEdX_vec.at(2)<<" and best plane: "<<ShowerBest_Plane<<std::endl;
+        std::cout<<" ValShower dEdx: size: "<<ShowerdEdX_vec.size()<<" Plane 0: "<<ShowerdEdX_vec.at(0)<<" Plane 1: "<<ShowerdEdX_vec.at(1)<<" Plane 2: "<<ShowerdEdX_vec.at(2)<<" and best plane: "<<ShowerBest_Plane<<std::endl;
 
         sdEdx_TreeVal[fShowerModuleLabel].push_back((ShowerdEdX_vec[ShowerBest_Plane]));
       }
       else{
         sdEdx_TreeVal[fShowerModuleLabel].push_back(-99999);
       }
-
+    
       //Fill the 2D histograms
 
       if(fVerbose > 0){

@@ -25,7 +25,6 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
@@ -62,9 +61,6 @@ namespace ShowerRecoTools {
 			      TVector3& ShowerCentre, 
 			      TVector3& Direction);
     
-    //Algorithm functions
-    shower::TRACSAlg fTRACSAlg;
-    
     //Services
     detinfo::DetectorProperties const* fDetProp;
     
@@ -76,15 +72,14 @@ namespace ShowerRecoTools {
     bool fChargeWeighted;    //Should the PCA axis be charge weighted.
   };
   
-
-  ShowerPCADirection::ShowerPCADirection(const fhicl::ParameterSet& pset)
-    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg")),
-      fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
+  ShowerPCADirection::ShowerPCADirection(const fhicl::ParameterSet& pset) :
+    IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
+    fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()),
+    fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel","")),
+    fNSegments(pset.get<float>("NSegments")),
+    fUseStartPosition(pset.get<bool>("UseStartPosition")),
+    fChargeWeighted(pset.get<bool>("ChargeWeighted"))
   {
-    fPFParticleModuleLabel  = pset.get<art::InputTag>("PFParticleModuleLabel","");
-    fNSegments              = pset.get<float>        ("NSegments");
-    fUseStartPosition       = pset.get<bool>         ("UseStartPosition");
-    fChargeWeighted         = pset.get<bool>         ("ChargeWeighted");
   }
 
   ShowerPCADirection::~ShowerPCADirection()
@@ -183,11 +178,11 @@ namespace ShowerRecoTools {
       TVector3& ShowerCentre, TVector3& Direction){
 
     //Order the spacepoints
-    fTRACSAlg.OrderShowerSpacePoints(sps,ShowerCentre,Direction);
+    IShowerTool::GetTRACSAlg().OrderShowerSpacePoints(sps,ShowerCentre,Direction);
 
     //Get the length of the shower.
-    TVector3 firstpoint = fTRACSAlg.SpacePointPosition(sps[0]);
-    TVector3 lastpoint  = fTRACSAlg.SpacePointPosition(sps[sps.size()-1]);
+    TVector3 firstpoint = IShowerTool::GetTRACSAlg().SpacePointPosition(sps[0]);
+    TVector3 lastpoint  = IShowerTool::GetTRACSAlg().SpacePointPosition(sps[sps.size()-1]);
 
     double length = (firstpoint-lastpoint).Mag();
     double segmentsize = length/fNSegments;
@@ -198,7 +193,7 @@ namespace ShowerRecoTools {
     for(auto const& sp: sps){
 
       //Get the position of the spacepoint
-      TVector3 pos = fTRACSAlg.SpacePointPosition(sp) - ShowerCentre;
+      TVector3 pos = IShowerTool::GetTRACSAlg().SpacePointPosition(sp) - ShowerCentre;
 
       //Get the the projected length
       double len = pos.Dot(Direction);
@@ -244,12 +239,12 @@ namespace ShowerRecoTools {
     float TotalCharge = 0;
 
     //Get the Shower Centre
-    ShowerCentre = fTRACSAlg.ShowerCentre(sps, fmh, TotalCharge);
+    ShowerCentre = IShowerTool::GetTRACSAlg().ShowerCentre(sps, fmh, TotalCharge);
 
     //Normalise the spacepoints, charge weight and add to the PCA.
     for(auto& sp: sps){
 
-      TVector3 sp_position = fTRACSAlg.SpacePointPosition(sp);
+      TVector3 sp_position = IShowerTool::GetTRACSAlg().SpacePointPosition(sp);
 
       float wht = 1;
 
@@ -259,10 +254,10 @@ namespace ShowerRecoTools {
       if(fChargeWeighted){
 
         //Get the charge.
-        float Charge = fTRACSAlg.SpacePointCharge(sp,fmh);
+        float Charge = IShowerTool::GetTRACSAlg().SpacePointCharge(sp,fmh);
 
         //Get the time of the spacepoint
-        float Time = fTRACSAlg.SpacePointTime(sp,fmh);
+        float Time = IShowerTool::GetTRACSAlg().SpacePointTime(sp,fmh);
 
         //Correct for the lifetime at the moment.
         Charge *= TMath::Exp((fDetProp->SamplingRate() * Time ) / (fDetProp->ElectronLifetime()*1e3));

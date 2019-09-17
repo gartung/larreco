@@ -49,8 +49,6 @@ namespace ShowerRecoTools{
     std::vector<art::Ptr<recob::SpacePoint> > FindTrackSpacePoints(std::vector<art::Ptr<recob::SpacePoint> >& spacePoints,
 								   TVector3& showerStartPosition,TVector3& showerDirection);
     
-    //Algorithms
-    shower::TRACSAlg       fTRACSAlg;
     
     //Fcl paramters
     float fMaxProjectionDist;    //Maximum projection along shower direction.
@@ -67,16 +65,15 @@ namespace ShowerRecoTools{
   };
 
 
-  Shower3DTrackHitFinder::Shower3DTrackHitFinder(const fhicl::ParameterSet& pset)
-    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
+  Shower3DTrackHitFinder::Shower3DTrackHitFinder(const fhicl::ParameterSet& pset) :
+    IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
+    fMaxProjectionDist(pset.get<float>("MaxProjectionDist")),
+    fMaxPerpendicularDist(pset.get<float>("MaxPerpendicularDist")),
+    fForwardHitsOnly(pset.get<bool>("ForwardHitsOnly")),
+    fDebugEVD(pset.get<bool>("DebugEVD")),
+    fAllowDyanmicLength(pset.get<bool>("AllowDyanmicLength")),
+    fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel"))
   {
-    fPFParticleModuleLabel = pset.get<art::InputTag> ("PFParticleModuleLabel");
-
-    fMaxProjectionDist     = pset.get<float> ("MaxProjectionDist");
-    fMaxPerpendicularDist  = pset.get<float> ("MaxPerpendicularDist");
-    fForwardHitsOnly       = pset.get<bool>  ("ForwardHitsOnly");
-    fDebugEVD              = pset.get<bool>  ("DebugEVD");
-    fAllowDyanmicLength    = pset.get<bool>  ("AllowDyanmicLength");
   }
 
   Shower3DTrackHitFinder::~Shower3DTrackHitFinder()
@@ -93,6 +90,8 @@ namespace ShowerRecoTools{
         ShowerEleHolder.GetElement("InitialTrackLength",fMaxProjectionDist);
       }
     }
+
+    std::cout << "fMaxProjectionDist: " << fMaxProjectionDist <<  std::endl; 
 
     //This is all based on the shower vertex being known. If it is not lets not do the track
     if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
@@ -148,7 +147,7 @@ namespace ShowerRecoTools{
     }
 
     // Order the spacepoints
-    fTRACSAlg.OrderShowerSpacePoints(spacePoints,ShowerStartPosition,ShowerDirection);
+    IShowerTool::GetTRACSAlg().OrderShowerSpacePoints(spacePoints,ShowerStartPosition,ShowerDirection);
 
     // Get only the space points from the track
     std::vector<art::Ptr<recob::SpacePoint> > trackSpacePoints;
@@ -165,7 +164,7 @@ namespace ShowerRecoTools{
     ShowerEleHolder.SetElement(trackSpacePoints,"InitialTrackSpacePoints");
 
     if (fDebugEVD){
-      fTRACSAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
+      IShowerTool::GetTRACSAlg().DebugEVD(pfparticle,Event,ShowerEleHolder);
     }
 
     return 0;
@@ -181,9 +180,9 @@ namespace ShowerRecoTools{
     for (auto spacePoint : spacePoints){
       // Calculate the projection along direction and perpendicular distance
       // from "axis" of shower
-      double proj = fTRACSAlg.SpacePointProjection(spacePoint,
+      double proj = IShowerTool::GetTRACSAlg().SpacePointProjection(spacePoint,
           showerStartPosition, showerDirection);
-      double perp = fTRACSAlg.SpacePointPerpendiular(spacePoint,
+      double perp = IShowerTool::GetTRACSAlg().SpacePointPerpendiular(spacePoint,
           showerStartPosition, showerDirection, proj);
 
       if (fForwardHitsOnly){

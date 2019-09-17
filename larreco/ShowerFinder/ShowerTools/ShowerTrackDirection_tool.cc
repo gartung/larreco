@@ -19,7 +19,6 @@
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "larreco/RecoAlg/TRACSAlg.h"
 
 //C++ Includes
 #include <iostream>
@@ -47,9 +46,6 @@ namespace ShowerRecoTools {
     
   private:
 
-    //Algoritms
-    shower::TRACSAlg       fTRACSAlg;
-
     //fcl
     bool fUsePandoraVertex; //Direction from point defined as 
                             //(Position of traj point - Vertex) rather than
@@ -57,17 +53,15 @@ namespace ShowerRecoTools {
     bool fUsePositionInfo;  //Don't use the directionAtPoint rather 
                             //than definition above. 
                             //i.e((Position of traj point + 1) - (Position of traj point)
-    bool fDebugEVD;
 
   };
 
 
   ShowerTrackDirection::ShowerTrackDirection(const fhicl::ParameterSet& pset)
-    :fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
+    :IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
+     fUsePandoraVertex(pset.get<bool>("UsePandoraVertex")),
+     fUsePositionInfo(pset.get<bool>("UsePositionInfo"))
   {
-    fUsePandoraVertex         = pset.get<bool>("UsePandoraVertex");
-    fUsePositionInfo          = pset.get<bool>("UsePositionInfo");
-    fDebugEVD                 = pset.get<bool>("DebugEVD");
   }
 
   ShowerTrackDirection::~ShowerTrackDirection()
@@ -178,11 +172,7 @@ namespace ShowerRecoTools {
         return 1;
       }
 
-      if (fDebugEVD){
-        fTRACSAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
-      }
       return 0;
-
     }
     else{ // if(fUsePositionInfo)
 
@@ -251,11 +241,6 @@ namespace ShowerRecoTools {
         mf::LogError("ShowerTrackDirection") << "None of the points are within 1 sigma"<< std::endl;
         return 1;
       }
-
-      if (fDebugEVD){
-        fTRACSAlg.DebugEVD(pfparticle,Event,ShowerEleHolder);
-      }
-
 
     }
     return 0;

@@ -140,31 +140,15 @@ standard_showervalidation: {
  DrawCanvases:              false
  FillOnlyClosestShower:     true
  RemoveNonContainedParticles: true
+ UseNeutrinoShowers: true
  Verbose:                   0
  MinHitSize:                20
  SimEnergyCut:              0.1
  DensityCut:                1.2
  MaxSimEnergy:              1500
+ MinRecoEnergy:             0 
 }
 
-standard_tracs_shower: {
-
-    module_type: "TRACS"
-
-    ShowerFinderTools: [
-         @local::showerstartposition,
-         @local::showerpcadirection,
-         @local::showerlinearenergy,
-         @local::shower3Dtrackhitfinder,
-         @local::showerpandoraslidingfittrackfinder,
-         @local::showerstandardcalodedx
-          ]
-
-    PFParticleModuleLabel:      "pandora"
-    SecondInteration:           false
-    AllowPartialShowers:        false
-    Verbose:                    false
-}
 
 standard_tracs_shower: {
 
@@ -184,6 +168,7 @@ standard_tracs_shower: {
     AllowPartialShowers:        false
     Verbose:                    false
 }
+
 
 
 END_PROLOG

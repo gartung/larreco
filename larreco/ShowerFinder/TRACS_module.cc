@@ -119,10 +119,9 @@ reco::shower::TRACS::TRACS(fhicl::ParameterSet const& pset) :
   auto const tool_psets = pset.get<std::vector<fhicl::ParameterSet>>("ShowerFinderTools");
   for (auto const& tool_pset : tool_psets) {
     fShowerTools.push_back(art::make_tool<ShowerRecoTools::IShowerTool>(tool_pset));
-    std::string paramset = tool_pset.to_compact_string();
-    std::size_t pos = paramset.find("tool_type:");
-    fShowerToolNames.push_back(paramset.substr(pos+10));
-    std::cout << "Tools List: " << paramset.substr(pos) << std::endl;
+    std::string tool_name = tool_pset.get<std::string>("tool_type");
+    fShowerToolNames.push_back(tool_name);
+    std::cout<< "Tools List: " << tool_name << std::endl;
   }
 
   //  Initialise the EDProducer ptr in the tools 
@@ -220,7 +219,10 @@ void reco::shower::TRACS::produce(art::Event& evt) {
     for(auto const& fShowerTool: fShowerTools){
 
       //Calculate the metric
-      err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
+      std::string evd_disp_append = fShowerToolNames[i]+"_iteration"+std::to_string(0);
+
+      err = fShowerTool->RunShowerTool(pfp,evt,selement_holder,evd_disp_append);
+
       if(err){
 	mf::LogError("TRACS") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;
 	break;
@@ -233,7 +235,8 @@ void reco::shower::TRACS::produce(art::Event& evt) {
 
       for(auto const& fShowerTool: fShowerTools){
 	//Calculate the metric
-	err = fShowerTool->CalculateElement(pfp,evt,selement_holder);
+	std::string evd_disp_append = fShowerToolNames[i]+"_iteration"+std::to_string(1);
+	err = fShowerTool->RunShowerTool(pfp,evt,selement_holder,evd_disp_append);
       
 	if(err){
 	  mf::LogError("TRACS") << "Error in shower tool: " << fShowerToolNames[i]  << " with code: " << err << std::endl;

@@ -59,10 +59,12 @@ namespace ShowerRecoTools{
   };
 
 
-  ShowerPandoraSlidingFitTrackFinder::ShowerPandoraSlidingFitTrackFinder(const fhicl::ParameterSet& pset)
+  ShowerPandoraSlidingFitTrackFinder::ShowerPandoraSlidingFitTrackFinder(const fhicl::ParameterSet& pset):
+  IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
+  fSlidingFitHalfWindow(pset.get<float> ("SlidingFitHalfWindow")),
+  fMinTrajectoryPoints(pset.get<float> ("MinTrajectoryPoints"))
+
   {
-    fSlidingFitHalfWindow = pset.get<float> ("SlidingFitHalfWindow");
-    fMinTrajectoryPoints  = pset.get<float> ("MinTrajectoryPoints");
   }
 
   ShowerPandoraSlidingFitTrackFinder::~ShowerPandoraSlidingFitTrackFinder()

@@ -52,17 +52,14 @@ namespace ShowerRecoTools {
       //prehaps you want a fcl parameter.
       art::InputTag fPFParticleModuleLabel;
 
-      //Maybe an alg
-      shower::TRACSAlg fTRACSAlg;
   };
 
 
-  ShowerExampleTool::ShowerExampleTool(const fhicl::ParameterSet& pset)
+  ShowerExampleTool::ShowerExampleTool(const fhicl::ParameterSet& pset) :
     //Setup the algs and others here
-    : fTRACSAlg(pset.get<fhicl::ParameterSet>("TRACSAlg"))
-
+    IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools")),
+    fPFParticleModuleLabel(pset.get<art::InputTag>("PFParticleModuleLabel",""))
   {
-    fPFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel","");
   }
 
   ShowerExampleTool::~ShowerExampleTool()
