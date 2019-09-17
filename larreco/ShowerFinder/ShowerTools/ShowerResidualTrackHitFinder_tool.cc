@@ -183,7 +183,7 @@ namespace ShowerRecoTools {
     for(unsigned int sp=0; sp<spacePoints.size(); ++sp){
 
       //No more spacepoints to do the analysis with bail.
-      if(sp+3 > spacePoints.size()){std::cout << "breaking at the start" << std::endl;break;}
+      if(sp+3 > spacePoints.size()-1){std::cout << "breaking at the start" << std::endl;break;}
 
 
       //Add the first 3 spacepoints
@@ -191,7 +191,7 @@ namespace ShowerRecoTools {
       spacePoints_fit.push_back(spacePoints.at(sp));
       spacePoints_fit.push_back(spacePoints.at(sp+1));
       spacePoints_fit.push_back(spacePoints.at(sp+2));
-      sp += 2;
+      sp += 3;
 
       //Calculate PCA
       TVector3 Eigenvector = ShowerPCAVector(spacePoints_fit,fmh,ShowerStartPosition);
@@ -284,7 +284,7 @@ namespace ShowerRecoTools {
   }
 
   //Function to calculate the shower direction using a charge weight 3D PCA calculation.
-    TVector3 ShowerResidualTrackHitFinder::ShowerPCAVector(std::vector<art::Ptr<recob::SpacePoint> >& sps, art::FindManyP<recob::Hit>& fmh, TVector3& ShowerStartPosition){
+  TVector3 ShowerResidualTrackHitFinder::ShowerPCAVector(std::vector<art::Ptr<recob::SpacePoint> >& sps, art::FindManyP<recob::Hit>& fmh, TVector3& ShowerStartPosition){
 
     //Initialise the the PCA.
     TPrincipal *pca = new TPrincipal(3,"");

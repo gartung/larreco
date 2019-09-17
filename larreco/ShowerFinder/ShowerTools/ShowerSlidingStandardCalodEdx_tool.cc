@@ -305,6 +305,7 @@ namespace ShowerRecoTools{
 	
 	//Protect from silly starting values
 	if(dEdx_iter == 0 && dEdx > 8){continue;}
+	if(dEdx_iter == 0 && dEdx < 0.5){continue;}
 
 	if(dEdx_iter == 0 ){
 	  dEdx_vec_cut[dEdx_plane.first].push_back(dEdx);
@@ -335,6 +336,7 @@ namespace ShowerRecoTools{
 	  
 	  //Protect against silly values
 	  if(dEdx > 20){continue;}
+	  if(dEdx < 0.3){continue;}
 
 	  dEdx_vec_cut[dEdx_plane.first].pop_back();
 	  dEdx_vec_cut[dEdx_plane.first].push_back(dEdx);
