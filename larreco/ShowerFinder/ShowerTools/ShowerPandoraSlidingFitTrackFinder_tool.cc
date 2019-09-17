@@ -79,7 +79,7 @@ namespace ShowerRecoTools{
 
     InitialiseProduct<std::vector<recob::Track> >("InitialTrack");
     InitialiseProduct<art::Assns<recob::Shower, recob::Track > >("ShowerTrackAssn");
-    InitialiseProduct<art::Assns<recob::Track, recob::SpacePoint > >("ShowerTrackSpacepointAssn");
+    InitialiseProduct<art::Assns<recob::Track, recob::Hit > >("ShowerTrackHitAssn");
 
   }
 
@@ -199,16 +199,16 @@ namespace ShowerRecoTools{
 
     AddSingle<art::Assns<recob::Shower, recob::Track> >(showerptr,trackptr,"ShowerTrackAssn");
 
-    std::vector<art::Ptr<recob::SpacePoint> >  TrackSpacepoints;
-    ShowerEleHolder.GetElement("InitialTrackSpacePoints",TrackSpacepoints);
+    std::vector<art::Ptr<recob::Hit> > TrackHits;
+    ShowerEleHolder.GetElement("InitialTrackHits",TrackHits);
 
-    for(auto const& TrackSpacepoint: TrackSpacepoints){
-      AddSingle<art::Assns<recob::Track, recob::SpacePoint> >
-        (trackptr,TrackSpacepoint,"ShowerTrackSpacepointAssn");
+    for(auto const& TrackHit: TrackHits){
+      AddSingle<art::Assns<recob::Track, recob::Hit> >(trackptr,TrackHit,"ShowerTrackHitAssn");
     }
 
     return 0;
   }
+
 }
 
 DEFINE_ART_CLASS_TOOL(ShowerRecoTools::ShowerPandoraSlidingFitTrackFinder)
