@@ -91,6 +91,8 @@ namespace ShowerRecoTools{
       }
     }
 
+    std::cout << "fMaxProjectionDist: " << fMaxProjectionDist <<  std::endl; 
+
     //This is all based on the shower vertex being known. If it is not lets not do the track
     if(!ShowerEleHolder.CheckElement("ShowerStartPosition")){
       mf::LogError("Shower3DTrackHitFinder") << "Start position not set, returning "<< std::endl;

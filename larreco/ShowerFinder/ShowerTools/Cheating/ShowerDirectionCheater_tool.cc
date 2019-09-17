@@ -177,7 +177,6 @@ namespace ShowerRecoTools {
       float TotalCharge;
       TVector3 ShowerCentre = IShowerTool::GetTRACSAlg().ShowerCentre(spacePoints, fmh, TotalCharge);
 
-
       //Check if we are pointing the correct direction or not, First try the start position
       if(ShowerEleHolder.CheckElement("ShowerStartPosition") && fVertexFlip){
 

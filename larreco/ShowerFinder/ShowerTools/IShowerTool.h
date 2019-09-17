@@ -42,6 +42,7 @@ namespace ShowerRecoTools{
           reco::shower::ShowerElementHolder& ShowerEleHolder
           ) = 0;
 
+
       //Main function that runs the shower tool.  This includes running the derived function
       //that calculates the shower element and also runs the event display if requested
       int RunShowerTool(const art::Ptr<recob::PFParticle>& pfparticle,
@@ -53,6 +54,7 @@ namespace ShowerRecoTools{
         int calculation_status = CalculateElement(pfparticle, Event, ShowerEleHolder);
         if (calculation_status != 0) return calculation_status;
         if (fRunEventDisplay){
+	  evd_display_name_append += "_" + producerPtr->moduleDescription().moduleLabel();
           IShowerTool::GetTRACSAlg().DebugEVD(pfparticle,Event,ShowerEleHolder,evd_display_name_append);
         } 
         return calculation_status;
@@ -77,7 +79,6 @@ namespace ShowerRecoTools{
 
     protected:
       const shower::TRACSAlg& GetTRACSAlg() { return fTRACSAlg; };
-
 
     private:
 

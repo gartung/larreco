@@ -51,6 +51,7 @@ namespace ShowerRecoTools {
 
       //prehaps you want a fcl parameter.
       art::InputTag fPFParticleModuleLabel;
+
   };
 
 

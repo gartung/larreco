@@ -5,6 +5,7 @@ art_make(LIB_LIBRARIES
            larreco_RecoAlg_ClusterRecoUtil
            larreco_RecoAlg_CMTool_CMToolBase
            larreco_RecoAlg_ImagePatternAlgs_DataProvider
+	   larreco_RecoAlg_MCRecoUtils	
            ${ROOT_CORE}
            ${ROOT_PHYSICS}
            ${ROOT_MATRIX}
@@ -21,6 +22,7 @@ add_subdirectory(ImagePatternAlgs)
 add_subdirectory(PMAlg)
 add_subdirectory(TCAlg)
 add_subdirectory(xml)
+add_subdirectory(MCRecoUtils)
 
 install_headers()
 install_fhicl()

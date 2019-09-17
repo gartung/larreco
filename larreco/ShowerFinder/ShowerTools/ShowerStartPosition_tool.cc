@@ -156,6 +156,7 @@ namespace ShowerRecoTools{
 
       //Set the start position.
       TVector3 ShowerStartPosition = IShowerTool::GetTRACSAlg().SpacePointPosition(spacePoints_pfp[0]);
+
       TVector3 ShowerStartPositionErr = {-999,-999,-999};
       ShowerEleHolder.SetElement(ShowerStartPosition,ShowerStartPositionErr,"ShowerStartPosition");
       return 0;
