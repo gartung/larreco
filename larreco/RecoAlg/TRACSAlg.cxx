@@ -339,9 +339,15 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
   std::cout << "canvasName: " << canvasName << std::endl;
 
   // Initialise variables
-  float x;
-  float y;
-  float z;
+  double x;
+  double y;
+  double z;
+
+  double x_min=999999999., x_max=-999999999.;
+  double y_min=999999999., y_max=-999999999.;
+  double z_min=999999999., z_max=-999999999.;
+
+
 
   // Get a bunch of associations (again)
   // N.B. this is a horribly inefficient way of doing things but as this is only
@@ -394,20 +400,22 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
   ShowerEleHolder.GetElement("InitialTrackSpacePoints",trackSpacePoints);
 
   // Create 3D point at vertex, chosed to be origin for ease of use of display
-  double startXYZ[3] = {0,0,0};
-  TPolyMarker3D* startPoly = new TPolyMarker3D(1,startXYZ);
+  double startXYZ[3] = {showerStartPosition.X(),showerStartPosition.Y(),showerStartPosition.Z()};
+  std::unique_ptr<TPolyMarker3D> startPoly = std::unique_ptr<TPolyMarker3D>(new TPolyMarker3D(1,startXYZ));
 
   // Get the min and max projections along the direction to know how long to draw
   // the direction line
-  double minProj=-1;
-  double maxProj=1;
+  double minProj=9999999;
+  double maxProj=-99999999;
 
   //initialise counter point
   int point = 0;
   // Make 3D points for each spacepoint in the shower
-  TPolyMarker3D* allPoly = new TPolyMarker3D(spacePoints.size());
+  std::unique_ptr<TPolyMarker3D> allPoly = std::unique_ptr<TPolyMarker3D>(new TPolyMarker3D(spacePoints.size()));
   for (auto spacePoint : spacePoints){
-    TVector3 pos = shower::TRACSAlg::SpacePointPosition(spacePoint) - showerStartPosition;
+    //TVector3 pos = shower::TRACSAlg::SpacePointPosition(spacePoint) - showerStartPosition;
+    TVector3 pos = shower::TRACSAlg::SpacePointPosition(spacePoint);
+
 
     x = pos.X();
     y = pos.Y();
@@ -415,9 +423,19 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
     allPoly->SetPoint(point,x,y,z);
     ++point;
 
+    x_min = std::min(x,x_min);
+    x_max = std::max(x,x_max);
+    y_min = std::min(y,y_min);
+    y_max = std::max(y,y_max);
+    z_min = std::min(z,z_min);
+    z_max = std::max(z,z_max);
+
+
     // Calculate the projection of (point-startpoint) along the direction
     double proj = shower::TRACSAlg::SpacePointProjection(spacePoint, showerStartPosition,
         showerDirection);
+    //double proj = shower::TRACSAlg::SpacePointProjection(spacePoint, TVector3(0,0,0),
+    //    showerDirection);
     if (proj>maxProj) {
       maxProj = proj;
     } else if (proj<minProj) {
@@ -426,23 +444,36 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
 
   } // loop over spacepoints
 
-  
-  // Create TPolyLine3D arrays
-  double xDirPoints[3] = {minProj*showerDirection.X(), 0, maxProj*showerDirection.X()};
-  double yDirPoints[3] = {minProj*showerDirection.Y(), 0, maxProj*showerDirection.Y()};
-  double zDirPoints[3] = {minProj*showerDirection.Z(), 0, maxProj*showerDirection.Z()};
 
-  TPolyLine3D* dirPoly = new TPolyLine3D(3,xDirPoints,yDirPoints,zDirPoints);
+  // Create TPolyLine3D arrays
+  //minProj = -99999;
+  //maxProj = 999999;
+  double xDirPoints[2] = {(showerStartPosition.X()+minProj*showerDirection.X()), (showerStartPosition.X()+maxProj*showerDirection.X())};
+  double yDirPoints[2] = {(showerStartPosition.Y()+minProj*showerDirection.Y()), (showerStartPosition.Y()+maxProj*showerDirection.Y())};
+  double zDirPoints[2] = {(showerStartPosition.Z()+minProj*showerDirection.Z()), (showerStartPosition.Z()+maxProj*showerDirection.Z())};
+
+  TPolyLine3D* dirPoly = new TPolyLine3D(2,xDirPoints,yDirPoints,zDirPoints);
 
   point = 0; // re-initialise counter
-  TPolyMarker3D* trackPoly = new TPolyMarker3D(trackSpacePoints.size());
+  std::unique_ptr<TPolyMarker3D> trackPoly = std::unique_ptr<TPolyMarker3D>(new TPolyMarker3D(trackSpacePoints.size()));
   for (auto spacePoint : trackSpacePoints){
-    TVector3 pos = shower::TRACSAlg::SpacePointPosition(spacePoint) - showerStartPosition;
+    //TVector3 pos = shower::TRACSAlg::SpacePointPosition(spacePoint) - showerStartPosition;
+    TVector3 pos = shower::TRACSAlg::SpacePointPosition(spacePoint);
+
     x = pos.X();
     y = pos.Y();
     z = pos.Z();
     trackPoly->SetPoint(point,x,y,z);
     ++point;
+    x_min = std::min(x,x_min);
+    x_max = std::max(x,x_max);
+    y_min = std::min(y,y_min);
+    y_max = std::max(y,y_max);
+    z_min = std::min(z,z_min);
+    z_max = std::max(z,z_max);
+
+
+
   } // loop over track spacepoints
 
   //  we want to draw all of the PFParticles in the event
@@ -466,8 +497,8 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
     } else if (pfp->PdgCode()==13) { pfpTrackCounter += sps.size(); }
   }
 
-  TPolyMarker3D* pfpPolyTrack = new TPolyMarker3D(pfpTrackCounter);
-  TPolyMarker3D* pfpPolyShower = new TPolyMarker3D(pfpShowerCounter);
+  std::unique_ptr<TPolyMarker3D> pfpPolyTrack = std::unique_ptr<TPolyMarker3D>(new TPolyMarker3D(pfpTrackCounter));
+  std::unique_ptr<TPolyMarker3D> pfpPolyShower = std::unique_ptr<TPolyMarker3D>(new TPolyMarker3D(pfpShowerCounter));
 
   // initialise counters
   int trackPoints  = 0;
@@ -477,10 +508,20 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
     std::vector<art::Ptr<recob::SpacePoint> > sps = fmspp.at(pfp.key());
     int pdg = pfp->PdgCode(); // Track or shower
     for (auto sp : sps){
-      TVector3 pos = shower::TRACSAlg::SpacePointPosition(sp) - showerStartPosition;
+      //TVector3 pos = shower::TRACSAlg::SpacePointPosition(sp) - showerStartPosition;
+      TVector3 pos = shower::TRACSAlg::SpacePointPosition(sp);
+
       x = pos.X();
       y = pos.Y();
       z = pos.Z();
+      x_min = std::min(x,x_min);
+      x_max = std::max(x,x_max);
+      y_min = std::min(y,y_min);
+      y_max = std::max(y,y_max);
+      z_min = std::min(z,z_min);
+      z_max = std::max(z,z_max);
+
+
       if (pdg==11){
         pfpPolyShower->SetPoint(showerPoints,x,y,z);
         ++showerPoints;
@@ -490,16 +531,68 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
       }
     } // loop over sps
 
-    pfpPolyShower->SetMarkerStyle(20);
-    pfpPolyShower->SetMarkerColor(4);
-    pfpPolyShower->Draw();
-    pfpPolyTrack->SetMarkerStyle(20);
-    pfpPolyTrack->SetMarkerColor(6);
-    pfpPolyTrack->Draw();
+    //pfpPolyTrack->Draw();
 
   } // if (fDrawAllPFPs)
 
-    // Draw all of the things
+  std::unique_ptr<TPolyMarker3D> TrackTrajPoly = std::unique_ptr<TPolyMarker3D>(new TPolyMarker3D(1));
+  std::unique_ptr<TPolyMarker3D> TrackInitTrajPoly = std::unique_ptr<TPolyMarker3D>(new TPolyMarker3D(1));
+
+  if(ShowerEleHolder.CheckElement("InitialTrack")){
+
+    //Get the track
+    recob::Track InitialTrack;
+    ShowerEleHolder.GetElement("InitialTrack",InitialTrack);
+
+    if(InitialTrack.NumberTrajectoryPoints() != 0){
+
+      point = 0;
+      // Make 3D points for each trajectory point in the track stub
+      for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
+
+        //ignore bogus info.
+        auto flags = InitialTrack.FlagsAtPoint(traj);
+        if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
+        {continue;}
+
+        geo::Point_t TrajPositionPoint = InitialTrack.LocationAtPoint(traj);
+        TVector3 TrajPosition = {TrajPositionPoint.X(),TrajPositionPoint.Y(),TrajPositionPoint.Z()};
+
+        TVector3 pos = TrajPosition;
+
+        x = pos.X();
+        y = pos.Y();
+        z = pos.Z();
+        TrackTrajPoly->SetPoint(point,x,y,z);
+        ++point;
+
+      } // loop over trajectory points
+
+
+      geo::Point_t TrajInitPositionPoint = InitialTrack.LocationAtPoint(0);
+      TVector3 TrajPosition = {TrajInitPositionPoint.X(),TrajInitPositionPoint.Y(),TrajInitPositionPoint.Z()};
+      TVector3 pos = TrajPosition;
+      x = pos.X();
+      y = pos.Y();
+      z = pos.Z();
+      TrackInitTrajPoly->SetPoint(TrackInitTrajPoly->GetN(),x,y,z);
+    }
+  }
+  gStyle->SetOptStat(0);
+  std::unique_ptr<TH3F> axes = std::unique_ptr<TH3F>(new TH3F("axes","",1,x_min,x_max,1,y_min,y_max,1,z_min,z_max));
+  axes->SetDirectory(0);
+  axes->GetXaxis()->SetTitle("X");
+  axes->GetYaxis()->SetTitle("Y");
+  axes->GetZaxis()->SetTitle("Z");
+  axes->Draw();
+
+  // Draw all of the things
+  pfpPolyShower->SetMarkerStyle(20);
+  pfpPolyShower->SetMarkerColor(4);
+  pfpPolyShower->Draw();
+  pfpPolyTrack->SetMarkerStyle(20);
+  pfpPolyTrack->SetMarkerColor(6);
+  pfpPolyTrack->Draw();
   allPoly->SetMarkerStyle(20);
   allPoly->Draw();
   trackPoly->SetMarkerStyle(20);
@@ -512,56 +605,13 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
   dirPoly->SetLineWidth(1);
   dirPoly->SetLineColor(6);
   dirPoly->Draw();
+  TrackTrajPoly->SetMarkerStyle(22);
+  TrackTrajPoly->SetMarkerColor(7);
+  TrackTrajPoly->Draw();
+  TrackInitTrajPoly->SetMarkerStyle(22);
+  TrackInitTrajPoly->SetMarkerColor(4);
+  TrackInitTrajPoly->Draw();
 
-  if(ShowerEleHolder.CheckElement("InitialTrack")){
-
-    //Get the track
-    recob::Track InitialTrack;
-    ShowerEleHolder.GetElement("InitialTrack",InitialTrack);
-
-    if(InitialTrack.NumberTrajectoryPoints() != 0){
-    
-      point = 0;
-      // Make 3D points for each trajectory point in the track stub
-      TPolyMarker3D* TrackTrajPoly = new TPolyMarker3D(InitialTrack.NumberTrajectoryPoints());
-      for(unsigned int traj=0; traj< InitialTrack.NumberTrajectoryPoints(); ++traj){
-
-	//ignore bogus info.
-	auto flags = InitialTrack.FlagsAtPoint(traj);
-	if(flags.isSet(recob::TrajectoryPointFlagTraits::NoPoint))
-	  {continue;}
-      
-	geo::Point_t TrajPositionPoint = InitialTrack.LocationAtPoint(traj);
-	TVector3 TrajPosition = {TrajPositionPoint.X(),TrajPositionPoint.Y(),TrajPositionPoint.Z()};
-
-	TVector3 pos = TrajPosition - showerStartPosition;
-
-	x = pos.X();
-	y = pos.Y();
-	z = pos.Z();
-	TrackTrajPoly->SetPoint(point,x,y,z);
-	++point;
-
-      } // loop over trajectory points
-
-
-      TrackTrajPoly->SetMarkerStyle(22);
-      TrackTrajPoly->SetMarkerColor(7);
-      TrackTrajPoly->Draw();
-
-      TPolyMarker3D* TrackInitTrajPoly = new TPolyMarker3D(1);
-      geo::Point_t TrajInitPositionPoint = InitialTrack.LocationAtPoint(0);
-      TVector3 TrajPosition = {TrajInitPositionPoint.X(),TrajInitPositionPoint.Y(),TrajInitPositionPoint.Z()};
-      TVector3 pos = TrajPosition - showerStartPosition;
-      x = pos.X();
-      y = pos.Y();
-      z = pos.Z();
-      TrackInitTrajPoly->SetPoint(0,x,y,z);
-      TrackInitTrajPoly->SetMarkerStyle(22);
-      TrackInitTrajPoly->SetMarkerColor(4);
-      TrackInitTrajPoly->Draw();
-    }
-  }
 
   // Save the canvas. Don't usually need this when using TFileService but this in the alg
   // not a module and didn't work without this so im going with it.
