@@ -347,8 +347,6 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
   double y_min=999999999., y_max=-999999999.;
   double z_min=999999999., z_max=-999999999.;
 
-
-
   // Get a bunch of associations (again)
   // N.B. this is a horribly inefficient way of doing things but as this is only
   // going to be used to debug I don't care, I would rather have generality in this case
@@ -416,7 +414,6 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
     //TVector3 pos = shower::TRACSAlg::SpacePointPosition(spacePoint) - showerStartPosition;
     TVector3 pos = shower::TRACSAlg::SpacePointPosition(spacePoint);
 
-
     x = pos.X();
     y = pos.Y();
     z = pos.Z();
@@ -429,7 +426,6 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
     y_max = std::max(y,y_max);
     z_min = std::min(z,z_min);
     z_max = std::max(z,z_max);
-
 
     // Calculate the projection of (point-startpoint) along the direction
     double proj = shower::TRACSAlg::SpacePointProjection(spacePoint, showerStartPosition,
@@ -444,15 +440,11 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
 
   } // loop over spacepoints
 
-
-  // Create TPolyLine3D arrays
-  //minProj = -99999;
-  //maxProj = 999999;
   double xDirPoints[2] = {(showerStartPosition.X()+minProj*showerDirection.X()), (showerStartPosition.X()+maxProj*showerDirection.X())};
   double yDirPoints[2] = {(showerStartPosition.Y()+minProj*showerDirection.Y()), (showerStartPosition.Y()+maxProj*showerDirection.Y())};
   double zDirPoints[2] = {(showerStartPosition.Z()+minProj*showerDirection.Z()), (showerStartPosition.Z()+maxProj*showerDirection.Z())};
 
-  TPolyLine3D* dirPoly = new TPolyLine3D(2,xDirPoints,yDirPoints,zDirPoints);
+  std::unique_ptr<TPolyLine3D> dirPoly = std::unique_ptr<TPolyLine3D> (new TPolyLine3D(2,xDirPoints,yDirPoints,zDirPoints));
 
   point = 0; // re-initialise counter
   std::unique_ptr<TPolyMarker3D> trackPoly = std::unique_ptr<TPolyMarker3D>(new TPolyMarker3D(trackSpacePoints.size()));
@@ -471,9 +463,6 @@ void shower::TRACSAlg::DebugEVD(art::Ptr<recob::PFParticle> const& pfparticle,
     y_max = std::max(y,y_max);
     z_min = std::min(z,z_min);
     z_max = std::max(z,z_max);
-
-
-
   } // loop over track spacepoints
 
   //  we want to draw all of the PFParticles in the event
