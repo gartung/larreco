@@ -244,6 +244,8 @@ showerresidualtrackhitfinder:{
     UseShowerDirection:    true
     ForwardHitsOnly:       true
     MaxResidualDiff:       0.8
+    StartFitSize:          3
+    NMissPoints:           1
     ChargeWeighted:        false
 }
 

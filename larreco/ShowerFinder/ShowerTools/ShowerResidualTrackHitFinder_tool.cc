@@ -47,12 +47,11 @@ namespace ShowerRecoTools {
   private:
     
     double CalculateResidual(std::vector<art::Ptr<recob::SpacePoint> >& sps, 
-			     TVector3& PCAEigenvector, 
-			     TVector3& ShowerStartPosition);
+			     TVector3& PCAEigenvector,
+			     TVector3& TrackPosition);
 
     TVector3 ShowerPCAVector(std::vector<art::Ptr<recob::SpacePoint> >& sps, 
-			     art::FindManyP<recob::Hit>& fmh,
-			     TVector3& ShowerStartPosition);
+			     art::FindManyP<recob::Hit>& fmh);
 
 
     //Services
@@ -63,7 +62,8 @@ namespace ShowerRecoTools {
     bool          fChargeWeighted;
     bool          fForwardHitsOnly;
     float         fMaxResidualDiff;
-    
+    int           fStartFitSize;
+    int           fNMissPoints;
   };
 
 
@@ -74,7 +74,9 @@ namespace ShowerRecoTools {
     fUseShowerDirection(pset.get<bool>("UseShowerDirection")),
     fChargeWeighted(pset.get<bool>("ChargeWeighted")),
     fForwardHitsOnly(pset.get<bool>("ForwardHitsOnly")),
-    fMaxResidualDiff(pset.get<float>("MaxResidualDiff"))
+    fMaxResidualDiff(pset.get<float>("MaxResidualDiff")),
+    fStartFitSize(pset.get<int>("StartFitSize")),
+    fNMissPoints(pset.get<int>("NMissPoints"))
   {
   }
 
@@ -177,50 +179,75 @@ namespace ShowerRecoTools {
       return 1;
     }
 
-    double old_residual = 0;
 
+    // for(unsigned int sp=0; sp<spacePoints.size(); ++sp){
+    //   const Double32_t * pos = spacePoints[sp]->XYZ();
+    //   std::cout << "Spacpeoint " << sp << " X: " << pos[0] << " Y: " << pos[1] << " Z: " << pos[2] << std::endl;
+    // }
 
     for(unsigned int sp=0; sp<spacePoints.size(); ++sp){
 
       //No more spacepoints to do the analysis with bail.
-      if(sp+3 > spacePoints.size()-1){std::cout << "breaking at the start" << std::endl;break;}
+      if(sp+fStartFitSize > spacePoints.size()-1){std::cout << "breaking at the start" << std::endl;break;}
 
 
-      //Add the first 3 spacepoints
+      //Add the first n spacepoints
       std::vector<art::Ptr<recob::SpacePoint> > spacePoints_fit;
-      spacePoints_fit.push_back(spacePoints.at(sp));
-      spacePoints_fit.push_back(spacePoints.at(sp+1));
-      spacePoints_fit.push_back(spacePoints.at(sp+2));
-      sp += 3;
+      for(int newsp=0; newsp<fStartFitSize; ++newsp){
+	spacePoints_fit.push_back(spacePoints.at(sp));
+	++sp;
+      }
+
 
       //Calculate PCA
-      TVector3 Eigenvector = ShowerPCAVector(spacePoints_fit,fmh,ShowerStartPosition);
+      TVector3 Eigenvector   = ShowerPCAVector(spacePoints_fit,fmh);
+
+      //Calculate the Track Center
+      TVector3 TrackPosition = IShowerTool::GetTRACSAlg().ShowerCentre(spacePoints_fit,fmh); 
 
       //Calculate  residual
-      double residual = CalculateResidual(spacePoints_fit,Eigenvector,ShowerStartPosition);
+      double residual = CalculateResidual(spacePoints_fit,Eigenvector,TrackPosition);
+      double old_residual = 0;
+
+      //      std::cout << "first residual " << residual << std::endl;
 
       //We are starting at a bad fit
       if((residual-old_residual) > fMaxResidualDiff){
 
-	if(sp+1 == spacePoints.size()){
-	  std::cout << "too few sps" << std::endl;
-	  //we are somehow at the last point anyways so finish up
-	  break;
-	}
-	
-	//Check to see if its an odd one out.
-	spacePoints_fit.pop_back(); 
-	spacePoints_fit.push_back(spacePoints.at(sp+1)); 
-	TVector3 Eigenvector = ShowerPCAVector(spacePoints_fit,fmh,ShowerStartPosition);
-	double residual = CalculateResidual(spacePoints_fit,Eigenvector,ShowerStartPosition);
-	std::cout << "next residual: " << residual << std::endl;
-	if(residual- old_residual > fMaxResidualDiff){
-	  //Move on we have finished the vast traul of spacepoint exists to the end of trackstub (hopefully).
-	  std::cout << "breaking" << std::endl;
-	  break;
-	}
-      }
+	bool breaking = false;
 
+	//Check to see if its an odd one out.
+	for(int nextsp=1; nextsp<(fNMissPoints+1); ++nextsp){
+	  
+	  if(sp+nextsp == spacePoints.size()){
+	    //	    std::cout << "too few sps" << std::endl;
+	    //we are somehow at the last point anyways so finish up
+	    break;
+	  }
+
+	  spacePoints_fit.pop_back(); 
+	  spacePoints_fit.push_back(spacePoints.at(sp+nextsp)); 
+	  TVector3 Eigenvector = ShowerPCAVector(spacePoints_fit,fmh);
+	  TVector3 TrackPosition = IShowerTool::GetTRACSAlg().ShowerCentre(spacePoints_fit,fmh);
+	  double residual = CalculateResidual(spacePoints_fit,Eigenvector,TrackPosition);
+	  //	  std::cout << "next residual: " << residual << std::endl;
+
+	  //If we find a point that is okay then break free
+	  if(residual- old_residual < fMaxResidualDiff){
+	    sp += nextsp;
+	    break;
+	  }
+
+	  if(residual- old_residual > fMaxResidualDiff && nextsp == fNMissPoints){
+	    //Move on we have finished the vast traul of spacepoint exists to the end of trackstub (hopefully).
+	    breaking = true;
+	  }
+	}
+	//The fit wants to break free becuase its so satified it doesn't need any more hits 
+	if(breaking){break;}
+	
+      }
+	
       //Add a point recalculate
       while(sp<spacePoints.size()){
       
@@ -228,43 +255,66 @@ namespace ShowerRecoTools {
 	spacePoints_fit.push_back(spacePoints.at(sp)); 
 
 	//Calculate PCA
-	TVector3 Eigenvector = ShowerPCAVector(spacePoints_fit,fmh,ShowerStartPosition);
+	TVector3 Eigenvector = ShowerPCAVector(spacePoints_fit,fmh);
+
+	TVector3 TrackPosition = IShowerTool::GetTRACSAlg().ShowerCentre(spacePoints_fit,fmh); 
       
 	//Calculate  residual
-	double residual = CalculateResidual(spacePoints_fit,Eigenvector,ShowerStartPosition);
+	double residual = CalculateResidual(spacePoints_fit,Eigenvector,TrackPosition);
 
-	std::cout << "residual: " << residual << std::endl;
+	//	std::cout << "residual: " << residual  << " diff: " << residual-old_residual << std::endl;
 
 	//Check to see if the residual has blown up 
 	if((residual-old_residual) > fMaxResidualDiff){
+	  
+	  int breaking = false;
 	
-	  if(sp+1 == spacePoints.size()){
-	    //we are somehow at the last point anyways so finish up
-	    spacePoints_fit.pop_back();
-	    break;
-	  }
+	  for(int nextsp=1; nextsp<(fNMissPoints+1); ++nextsp){
+	    
+	    if(sp+nextsp == spacePoints.size()){
+	      //we are somehow at the last point anyways so finish up
+	      //	      std::cout << "at the end" << std::endl;
+	      spacePoints_fit.pop_back();
+	      break;
+	    }
 
-	  //Check to see if its an odd one out.
-	  spacePoints_fit.pop_back(); 
-	  spacePoints_fit.push_back(spacePoints.at(sp+1)); 
-	  TVector3 Eigenvector = ShowerPCAVector(spacePoints_fit,fmh,ShowerStartPosition);
-	  double residual = CalculateResidual(spacePoints_fit,Eigenvector,ShowerStartPosition);
-	  if(residual-old_residual > fMaxResidualDiff){
-	    //Move on to a new greater faster, more productive fit.
-	    spacePoints_fit.pop_back();
-	    break;
+	    //Check to see if its an odd one out.
+	    spacePoints_fit.pop_back(); 
+	    spacePoints_fit.push_back(spacePoints.at(sp+nextsp)); 
+	    TVector3 Eigenvector = ShowerPCAVector(spacePoints_fit,fmh);
+	    double residual = CalculateResidual(spacePoints_fit,Eigenvector,TrackPosition);
+	    
+	    //If the hit is okay continue with the fit
+	    if(residual-old_residual < fMaxResidualDiff){
+	      //std::cout << "the hit was good" << std::endl;
+	      sp += nextsp;
+	      break;
+	    }
+
+	    if(residual-old_residual > fMaxResidualDiff && nextsp == fNMissPoints){
+	      //Move on to a new greater faster, more productive fit.
+	      //std::cout << "the hit was poo trying a new one" << std::endl;
+	      spacePoints_fit.pop_back();
+	      --sp;
+	      breaking = true;
+	    }
 	  }
-	  else{
-	    //Remove the element and contine
-	    spacePoints_fit.pop_back();
-	  }
+	  //The sub fit wants to break free becuase its so satified it doesn't need any more hits. 
+	  if(breaking){std::cout << "breaking the subfit" << std::endl; break;}
 	}
-
+	
+	//	std::cout << "hit added" << std::endl;
 	old_residual = residual;
 	++sp;
       }
+	
       //Add to the track spacepoints
-      std::cout << "adding hit" << std::endl;
+      // std::cout << "adding hit" << std::endl;
+      // for(auto const& sSP: spacePoints_fit){ 
+      // 	const Double32_t * pos = sSP->XYZ();
+      // 	std::cout << "Adding Spacepoint " << sp << " X: " << pos[0] << " Y: " << pos[1] << " Z: " << pos[2] << std::endl;
+      // }
+      
       track_sps.insert(track_sps.end(), spacePoints_fit.begin(), spacePoints_fit.end());
     }
     
@@ -284,7 +334,7 @@ namespace ShowerRecoTools {
   }
 
   //Function to calculate the shower direction using a charge weight 3D PCA calculation.
-  TVector3 ShowerResidualTrackHitFinder::ShowerPCAVector(std::vector<art::Ptr<recob::SpacePoint> >& sps, art::FindManyP<recob::Hit>& fmh, TVector3& ShowerStartPosition){
+  TVector3 ShowerResidualTrackHitFinder::ShowerPCAVector(std::vector<art::Ptr<recob::SpacePoint> >& sps, art::FindManyP<recob::Hit>& fmh){
 
     //Initialise the the PCA.
     TPrincipal *pca = new TPrincipal(3,"");
@@ -297,9 +347,6 @@ namespace ShowerRecoTools {
       TVector3 sp_position = IShowerTool::GetTRACSAlg().SpacePointPosition(sp);
 
       float wht = 1;
-
-      //Normalise the spacepoint position.
-      sp_position = sp_position - ShowerStartPosition;
 
       if(fChargeWeighted){
 
@@ -335,18 +382,20 @@ namespace ShowerRecoTools {
 
     TVector3 Eigenvector = { (*Eigenvectors)[0][0], (*Eigenvectors)[1][0], (*Eigenvectors)[2][0] };
 
+    delete pca;
+
     return Eigenvector;
   }
   
   
-  double ShowerResidualTrackHitFinder::CalculateResidual(std::vector<art::Ptr<recob::SpacePoint> >& sps, TVector3& PCAEigenvector, TVector3& ShowerStartPosition){
+  double ShowerResidualTrackHitFinder::CalculateResidual(std::vector<art::Ptr<recob::SpacePoint> >& sps, TVector3& PCAEigenvector, TVector3& TrackPosition){
     
     double Residual = 0;
     
     for(auto const& sp: sps){
       
       //Get the relative position of the spacepoint
-      TVector3 pos= IShowerTool::GetTRACSAlg().SpacePointPosition(sp) - ShowerStartPosition; 
+      TVector3 pos= IShowerTool::GetTRACSAlg().SpacePointPosition(sp) - TrackPosition; 
       
       //Gen the perpendicular distance 
       double len  = pos.Dot(PCAEigenvector);
