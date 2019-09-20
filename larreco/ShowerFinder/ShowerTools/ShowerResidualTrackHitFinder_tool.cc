@@ -338,7 +338,7 @@ namespace ShowerRecoTools {
       //      std::cout << "first residual " << residual << std::endl;
 
       //We are starting at a bad fit
-      std::cout<<"The initial residual for this segment diff: " << residual-old_residual << std::endl;
+      //std::cout<<"The initial residual for this segment diff: " << residual-old_residual << std::endl;
       if((residual-old_residual) > fMaxResidualDiff){
 
         bool breaking = false;
@@ -365,7 +365,7 @@ namespace ShowerRecoTools {
           //	  std::cout << "next residual: " << residual << std::endl;
 
           //If we find a point that is okay then break free
-          std::cout<<"Removed a hit, added the next one.  The residual diff now is: " << residual-old_residual << std::endl;
+          //std::cout<<"Removed a hit, added the next one.  The residual diff now is: " << residual-old_residual << std::endl;
           if(residual- old_residual < fMaxResidualDiff){
             sp += nextsp;
             break;
@@ -386,7 +386,7 @@ namespace ShowerRecoTools {
 
         //Add the next point to consider 
         sps_fit.push_back(sps.at(sp)); 
-        std::cout<<"NSPS on track currently: " << sps_fit.size() << std::endl;
+        //std::cout<<"NSPS on track currently: " << sps_fit.size() << std::endl;
 
         //Calculate PCA
         TVector3 Eigenvector;
@@ -403,7 +403,7 @@ namespace ShowerRecoTools {
         //	std::cout << "residual: " << residual  << " diff: " << residual-old_residual << std::endl;
 
         //Check to see if the residual has blown up 
-        std::cout<<"Incrementing res diff: " << residual-old_residual << std::endl;
+        //std::cout<<"Incrementing res diff: " << residual-old_residual << std::endl;
         if((residual-old_residual) > fMaxResidualDiff){
 
           int breaking = false;
@@ -462,7 +462,7 @@ namespace ShowerRecoTools {
       // }
 
       track_sps.insert(track_sps.end(), sps_fit.begin(), sps_fit.end());
-      std::cout<<"Track sps size: " << track_sps.size() << std::endl;
+      //std::cout<<"Track sps size: " << track_sps.size() << std::endl;
     }
 
     return track_sps;
