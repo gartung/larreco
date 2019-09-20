@@ -343,7 +343,6 @@ namespace ShowerRecoTools {
       }
      std::cout<<"segment size: " << track_segment.size() << std::endl;
      std::cout<<"sp pool size: " << sps_pool.size() << std::endl;
-     size_t initial_segment_size = track_segment.size();
       //A sleight of hand coming up.  We are going to move the last sp from the segment back into the pool so 
       //that it makes kick starting the recursion easier (sneaky)
       //TODO defend against segments that are too small for this to work (I dunno who is running the alg with 
@@ -351,6 +350,7 @@ namespace ShowerRecoTools {
       sps_pool.insert(sps_pool.begin(), track_segment.back());
       track_segment.pop_back();
       double current_residual = 0;
+      size_t initial_segment_size = track_segment.size();
       IncrementallyFitSegment(track_segment, sps_pool, fmh, current_residual);
       //Check if the track has grown in size at all
       std::cout<<"Incremental fitter now finished before and after track sizes are: " << initial_segment_size << " vs " << track_segment.size() << std::endl;
@@ -421,9 +421,9 @@ namespace ShowerRecoTools {
         while (sub_sps_pool.size() > 0){
           sps_pool.insert(sps_pool.begin(), sub_sps_pool.back());
           sub_sps_pool.pop_back();
-          //Let's continue with the incremental fitting now that everything is OK
-          return ok;
         }
+        //We'll need the latest residual now that we've managed to refit the track
+        residual = FitSegmentAndCalculateResidual(segment, fmh);
       }
       else {
         //All of the space points in the reduced pool could not sensibly refit the track.  The reduced pool will be
@@ -433,10 +433,10 @@ namespace ShowerRecoTools {
           sps_pool.insert(sps_pool.begin(), sub_sps_pool_cache.back());
           sub_sps_pool_cache.pop_back();
         }
+        //The bad point is still on the segment, so remove it
+        segment.pop_back();
+        return !ok;
       }
-      //The residuals after repeated refitting are no good
-      //It's time to stop this round of incremental fitting
-      return !ok;
     }
 
     //Update the residual
