@@ -69,7 +69,7 @@ namespace ShowerRecoTools {
           art::FindManyP<recob::Hit> & fmh);
 
       bool RecursivelyReplaceLastSpacePointAndRefit(std::vector<art::Ptr<recob::SpacePoint> > & segment,
-          std::vector<art::Ptr< recob::SpacePoint> > reduced_sps_pool,
+          std::vector<art::Ptr< recob::SpacePoint> > & reduced_sps_pool,
           art::FindManyP<recob::Hit>  & fmh,
           double current_residual);
 
@@ -395,7 +395,7 @@ namespace ShowerRecoTools {
       std::vector<art::Ptr< recob::SpacePoint> > & sps_pool,
       art::FindManyP<recob::Hit> & fmh,
       double current_residual){
-    std::cout<<"Running IncrementallyFitSegment: segment size: " << segment.size() << "  pool size: " << sps_pool.size() <<"  current residual: " <<  current_residual << std::endl;
+    //std::cout<<"Running IncrementallyFitSegment: segment size: " << segment.size() << "  pool size: " << sps_pool.size() <<"  current residual: " <<  current_residual << std::endl;
     bool ok = true;
     //Firstly, are there any space points left???
     if (sps_pool.size() == 0) return !ok;
@@ -403,6 +403,7 @@ namespace ShowerRecoTools {
     AddSpacePointsToSegment(segment, sps_pool, 1);
 
     double residual = FitSegmentAndCalculateResidual(segment, fmh);
+    std::cout<<"Running IncrementallyFitSegment: segment size: " << segment.size() << "  pool size: " << sps_pool.size() <<"  residual: " << residual << std::endl;
     ok = IsResidualOK(residual, current_residual);
     if (!ok){
       std::cout<<"Residual not ok: " << residual << "  vs  " << current_residual <<std::endl;
@@ -424,6 +425,7 @@ namespace ShowerRecoTools {
         }
         //We'll need the latest residual now that we've managed to refit the track
         residual = FitSegmentAndCalculateResidual(segment, fmh);
+        std::cout<<"check the residuals: " << residual << " " << current_residual << std::endl;
       }
       else {
         //All of the space points in the reduced pool could not sensibly refit the track.  The reduced pool will be
@@ -463,10 +465,11 @@ namespace ShowerRecoTools {
   }
 
   bool ShowerResidualTrackHitFinder::RecursivelyReplaceLastSpacePointAndRefit(std::vector<art::Ptr<recob::SpacePoint> > & segment,
-      std::vector<art::Ptr< recob::SpacePoint> > reduced_sps_pool,
+      std::vector<art::Ptr< recob::SpacePoint> > & reduced_sps_pool,
       art::FindManyP<recob::Hit>  & fmh,
       double current_residual){
     bool ok = true;
+    std::cout<<"Running RecursivelyReplaceLastSpacePointAndRefit" << std::endl;
     //If the pool is empty, then there is nothing to do (sad)
     if (reduced_sps_pool.size() == 0) return !ok;
     //Drop the last space point
@@ -475,6 +478,7 @@ namespace ShowerRecoTools {
     AddSpacePointsToSegment(segment, reduced_sps_pool, 1);
     double residual = FitSegmentAndCalculateResidual(segment, fmh);
     ok = IsResidualOK(residual, current_residual);
+    std::cout<<"recursive refit: isok " << ok << "  res: " << residual << "  curr res: " << current_residual << std::endl;
     if (ok) return ok;
     return RecursivelyReplaceLastSpacePointAndRefit(segment, reduced_sps_pool, fmh, current_residual);
   }
