@@ -53,6 +53,12 @@ namespace ShowerRecoTools {
           std::vector< art::Ptr< recob::SpacePoint> > const& sps,
           art::FindManyP<recob::Hit> & fmh);
 
+      void PruneFrontOfSPSPool(
+          std::vector<art::Ptr<recob::SpacePoint> > & sps_pool,
+          std::vector<art::Ptr<recob::SpacePoint> > const& initial_track);
+
+      void PruneTrack(std::vector<art::Ptr<recob::SpacePoint> > & initial_track);
+
       void AddSpacePointsToSegment(
           std::vector<art::Ptr<recob::SpacePoint> > & segment,
           std::vector<art::Ptr<recob::SpacePoint> > & sps_pool,
@@ -74,6 +80,8 @@ namespace ShowerRecoTools {
           double current_residual);
 
       bool IsResidualOK(double new_residual, double current_residual) { return new_residual - current_residual < fMaxResidualDiff; };
+      bool IsResidualOK(double new_residual, double current_residual, size_t no_sps) { return (new_residual - current_residual < fMaxResidualDiff && new_residual/no_sps < fMaxAverageResidual); };
+
 
       double CalculateResidual(std::vector<art::Ptr<recob::SpacePoint> >& sps, 
           TVector3& PCAEigenvector,
@@ -97,8 +105,10 @@ namespace ShowerRecoTools {
       bool          fChargeWeighted;
       bool          fForwardHitsOnly;
       float         fMaxResidualDiff;
+      float         fMaxAverageResidual;
       int           fStartFitSize;
       int           fNMissPoints;
+      float         fTrackMaxAdjacentSPDistance;
       bool          fRunTest;
   };
 
@@ -111,8 +121,10 @@ namespace ShowerRecoTools {
     fChargeWeighted(pset.get<bool>("ChargeWeighted")),
     fForwardHitsOnly(pset.get<bool>("ForwardHitsOnly")),
     fMaxResidualDiff(pset.get<float>("MaxResidualDiff")),
+    fMaxAverageResidual(pset.get<float>("MaxAverageResidual")),
     fStartFitSize(pset.get<int>("StartFitSize")),
     fNMissPoints(pset.get<int>("NMissPoints")),
+    fTrackMaxAdjacentSPDistance(pset.get<float>("TrackMaxAdjacentSPDistance")),
     fRunTest(0)
   {
   }
@@ -333,6 +345,7 @@ namespace ShowerRecoTools {
     std::cout<<"Starting sp pool size: " << sps_pool.size() << std::endl;
     std::vector<art::Ptr<recob::SpacePoint> > initial_track;
     while (sps_pool.size() > 0){
+      //PruneFrontOfSPSPool(sps_pool, initial_track);
 
       std::vector<art::Ptr<recob::SpacePoint> > track_segment;
       AddSpacePointsToSegment(track_segment, sps_pool, (size_t)(fStartFitSize));
@@ -341,11 +354,8 @@ namespace ShowerRecoTools {
         sps_pool.clear();
         break;
       }
-     std::cout<<"segment size: " << track_segment.size() << std::endl;
-     std::cout<<"sp pool size: " << sps_pool.size() << std::endl;
-    std::cout<<"dumping sp"<<std::endl;
-    for (size_t i = 0; i < track_segment.size(); i++) std::cout<<"--"<<track_segment[i]->XYZ()[0] <<"  " << track_segment[i]->XYZ()[1] << "  " << track_segment[i]->XYZ()[2]<<std::endl;
-
+      std::cout<<"segment size: " << track_segment.size() << std::endl;
+      std::cout<<"sp pool size: " << sps_pool.size() << std::endl;
       //A sleight of hand coming up.  We are going to move the last sp from the segment back into the pool so 
       //that it makes kick starting the recursion easier (sneaky)
       //TODO defend against segments that are too small for this to work (I dunno who is running the alg with 
@@ -354,6 +364,8 @@ namespace ShowerRecoTools {
       track_segment.pop_back();
       double current_residual = 0;
       size_t initial_segment_size = track_segment.size();
+      std::cout<<"SPS in start fit"<<std::endl;
+      for (size_t i = 0; i < track_segment.size(); i++) std::cout<<track_segment[i]->XYZ()[0]<<"  "<<track_segment[i]->XYZ()[1]<<"  "<<track_segment[i]->XYZ()[2]<<std::endl;
       IncrementallyFitSegment(track_segment, sps_pool, fmh, current_residual);
       //Check if the track has grown in size at all
       std::cout<<"Incremental fitter now finished before and after track sizes are: " << initial_segment_size << " vs " << track_segment.size() << std::endl;
@@ -371,14 +383,47 @@ namespace ShowerRecoTools {
         std::cout<<"The size of the shower start is now: " << initial_track.size() << "  size of segment: " << track_segment.size() << std::endl;
       }
     }
+    PruneTrack(initial_track);
     return initial_track;
   }
+
+  void ShowerResidualTrackHitFinder::PruneFrontOfSPSPool(
+      std::vector<art::Ptr<recob::SpacePoint> > & sps_pool,
+      std::vector<art::Ptr<recob::SpacePoint> > const& initial_track){
+    //If the initial track is empty then there is no pruning to do
+    if (initial_track.size() == 0) return;
+    double distance = IShowerTool::GetTRACSAlg().DistanceBetweenSpacePoints(initial_track.back(), sps_pool.front());
+    std::cout<<"Distance: " <<distance << std::endl;
+    while (distance > 1 && sps_pool.size() > 0){
+      std::cout<<"Distance: " <<distance << std::endl;
+      sps_pool.erase(sps_pool.begin());
+      distance = IShowerTool::GetTRACSAlg().DistanceBetweenSpacePoints(initial_track.back(), sps_pool.front());
+    }
+    return;
+  }
+
+  void ShowerResidualTrackHitFinder::PruneTrack(std::vector<art::Ptr<recob::SpacePoint> > & initial_track){
+    if (initial_track.size() == 0) return;
+    std::vector<art::Ptr<recob::SpacePoint> >::iterator sps_it = initial_track.begin();
+    while (sps_it != std::next(initial_track.end(),-1)){
+      std::vector<art::Ptr<recob::SpacePoint> >::iterator next_sps_it = std::next(sps_it,1);
+      double distance = IShowerTool::GetTRACSAlg().DistanceBetweenSpacePoints(*sps_it,*next_sps_it);
+      std::cout<<"track size: " << initial_track.size() << "  distance: " << distance << std::endl;
+      if (distance > fTrackMaxAdjacentSPDistance){
+        initial_track.erase(next_sps_it);
+      }
+      else{
+        sps_it++;
+      }
+    }
+    return;
+  }
+
 
   void ShowerResidualTrackHitFinder::AddSpacePointsToSegment(
       std::vector<art::Ptr<recob::SpacePoint> > & segment,
       std::vector<art::Ptr<recob::SpacePoint> > & sps_pool,
       size_t num_sps_to_take){
-    //If there are not enough SPs left to make the segment size we want, return an empty segment.  Sad
     size_t new_segment_size = segment.size() + num_sps_to_take;
     while (segment.size() < new_segment_size && sps_pool.size() > 0){
       segment.push_back(sps_pool[0]);
@@ -398,18 +443,19 @@ namespace ShowerRecoTools {
       std::vector<art::Ptr< recob::SpacePoint> > & sps_pool,
       art::FindManyP<recob::Hit> & fmh,
       double current_residual){
-    //std::cout<<"Running IncrementallyFitSegment: segment size: " << segment.size() << "  pool size: " << sps_pool.size() <<"  current residual: " <<  current_residual << std::endl;
     bool ok = true;
     //Firstly, are there any space points left???
     if (sps_pool.size() == 0) return !ok;
+    //Fit the current line
+    current_residual = FitSegmentAndCalculateResidual(segment, fmh);
     //Take a space point from the pool and plonk it onto the seggieweggie
     AddSpacePointsToSegment(segment, sps_pool, 1);
-
+    //Fit again
     double residual = FitSegmentAndCalculateResidual(segment, fmh);
+
     std::cout<<"Running IncrementallyFitSegment: segment size: " << segment.size() << "  pool size: " << sps_pool.size() <<"  residual: " << residual << "  " << segment.back()->XYZ()[0] <<"  " << segment.back()->XYZ()[1] << "  " << segment.back()->XYZ()[2] << std::endl ;
-    ok = IsResidualOK(residual, current_residual);
+    ok = IsResidualOK(residual, current_residual, segment.size());
     if (!ok){
-      std::cout<<"Residual not ok: " << residual << "  vs  " << current_residual <<std::endl;
       //Create a sub pool of space points to pass to the refitter
       std::vector<art::Ptr<recob::SpacePoint> > sub_sps_pool;
       AddSpacePointsToSegment(sub_sps_pool, sps_pool, fNMissPoints);
@@ -432,7 +478,6 @@ namespace ShowerRecoTools {
         }
         //We'll need the latest residual now that we've managed to refit the track
         residual = FitSegmentAndCalculateResidual(segment, fmh);
-        std::cout<<"check the residuals: " << residual << " " << current_residual << std::endl;
       }
       else {
         //All of the space points in the reduced pool could not sensibly refit the track.  The reduced pool will be
@@ -476,21 +521,17 @@ namespace ShowerRecoTools {
       art::FindManyP<recob::Hit>  & fmh,
       double current_residual){
     bool ok = true;
-    std::cout<<"Running RecursivelyReplaceLastSpacePointAndRefit" << std::endl;
     //If the pool is empty, then there is nothing to do (sad)
     if (reduced_sps_pool.size() == 0) return !ok;
     //Drop the last space point
     segment.pop_back();
     //Add one point 
-    std::cout<<"Running RecursivelyReplaceLastSpacePointAndRefit: residual before adding new sp: " << FitSegmentAndCalculateResidual(segment, fmh) << "  seg size: " << segment.size() << std::endl;
     AddSpacePointsToSegment(segment, reduced_sps_pool, 1);
     double residual = FitSegmentAndCalculateResidual(segment, fmh);
     std::cout<<"Running RecursivelyReplaceLastSpacePointAndRefit: segment size: " << segment.size() << "  pool size: " << reduced_sps_pool.size() <<"  residual: " << residual << "  " << segment.back()->XYZ()[0] <<"  " << segment.back()->XYZ()[1] << "  " << segment.back()->XYZ()[2] << std::endl;
 
-    ok = IsResidualOK(residual, current_residual);
+    ok = IsResidualOK(residual, current_residual, segment.size());
     std::cout<<"recursive refit: isok " << ok << "  res: " << residual << "  curr res: " << current_residual << std::endl;
-    std::cout<<"dumping sp"<<std::endl;
-    for (size_t i = 0; i < segment.size(); i++) std::cout<<"--"<<segment[i]->XYZ()[0] <<"  " << segment[i]->XYZ()[1] << "  " << segment[i]->XYZ()[2]<<std::endl;
     if (ok) return ok;
     return RecursivelyReplaceLastSpacePointAndRefit(segment, reduced_sps_pool, fmh, current_residual);
   }
