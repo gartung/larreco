@@ -146,7 +146,6 @@ GausHitFinder::GausHitFinder(fhicl::ParameterSet const& pset)
     // and one with all hits. The key to doing this will be a non-null
     // instance name for the second collection
     // (with no particular product label)
-  std::cout<<"BB fMakeRawDigitAssns is "<<fMakeRawDigitAssns<<"\n";
     recob::HitCollectionCreator::declare_products(*this,fAllHitsInstanceName,true,fMakeRawDigitAssns);
 
     // and now the filtered hits...
@@ -216,10 +215,10 @@ void GausHitFinder::produce(art::Event& evt)
     // ###############################################
     // this contains the hit collection
     // and its associations to wires and raw digits
-    recob::HitCollectionCreator allHitCol(*this, evt, fAllHitsInstanceName);
+    recob::HitCollectionCreator allHitCol(*this, evt, fAllHitsInstanceName, true, fMakeRawDigitAssns);
 
     // Handle the filtered hits collection...
-    recob::HitCollectionCreator  hcol(*this, evt);
+    recob::HitCollectionCreator  hcol(*this, evt, "", true, fMakeRawDigitAssns);
     recob::HitCollectionCreator* filteredHitCol = 0;
 
     if( fFilterHits ) filteredHitCol = &hcol;
@@ -534,7 +533,6 @@ void GausHitFinder::produce(art::Event& evt)
         } //<---End looping over ROI's
 
    }//<---End looping over all the wires
-  std::cout<<"BB fMakeRawDigitAssns is "<<fMakeRawDigitAssns<<"\n";
 
 
     //==================================================================================================
