@@ -403,7 +403,7 @@ namespace ShowerRecoTools {
     AddSpacePointsToSegment(segment, sps_pool, 1);
 
     double residual = FitSegmentAndCalculateResidual(segment, fmh);
-    std::cout<<"Running IncrementallyFitSegment: segment size: " << segment.size() << "  pool size: " << sps_pool.size() <<"  residual: " << residual << std::endl;
+    std::cout<<"Running IncrementallyFitSegment: segment size: " << segment.size() << "  pool size: " << sps_pool.size() <<"  residual: " << residual << "  " << segment.back()->XYZ()[0] <<"  " << segment.back()->XYZ()[1] << "  " << segment.back()->XYZ()[2] << std::endl ;
     ok = IsResidualOK(residual, current_residual);
     if (!ok){
       std::cout<<"Residual not ok: " << residual << "  vs  " << current_residual <<std::endl;
@@ -477,6 +477,8 @@ namespace ShowerRecoTools {
     //Add one point 
     AddSpacePointsToSegment(segment, reduced_sps_pool, 1);
     double residual = FitSegmentAndCalculateResidual(segment, fmh);
+    std::cout<<"Running RecursivelyReplaceLastSpacePointAndRefit: segment size: " << segment.size() << "  pool size: " << reduced_sps_pool.size() <<"  residual: " << residual << "  " << segment.back()->XYZ()[0] <<"  " << segment.back()->XYZ()[1] << "  " << segment.back()->XYZ()[2] << std::endl;
+
     ok = IsResidualOK(residual, current_residual);
     std::cout<<"recursive refit: isok " << ok << "  res: " << residual << "  curr res: " << current_residual << std::endl;
     if (ok) return ok;
