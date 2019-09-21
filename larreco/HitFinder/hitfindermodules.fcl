@@ -176,6 +176,12 @@ gaus_hitfinderana:
  LArGeantModuleLabel:  "largeant"
 }
 
+standard_hitanafom:
+{
+  module_type:          "HitAnaFOM"
+  HitsModuleLabel:      "gaushit"
+}
+
 standard_fasthitfinder:
 {
  module_type:         "RawHitFinder"
