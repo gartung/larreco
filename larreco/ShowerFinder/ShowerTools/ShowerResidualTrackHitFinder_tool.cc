@@ -475,12 +475,15 @@ namespace ShowerRecoTools {
     //Drop the last space point
     segment.pop_back();
     //Add one point 
+    std::cout<<"Running RecursivelyReplaceLastSpacePointAndRefit: residual before adding new sp: " << FitSegmentAndCalculateResidual(segment, fmh) << "  seg size: " << segment.size() << std::endl;
     AddSpacePointsToSegment(segment, reduced_sps_pool, 1);
     double residual = FitSegmentAndCalculateResidual(segment, fmh);
     std::cout<<"Running RecursivelyReplaceLastSpacePointAndRefit: segment size: " << segment.size() << "  pool size: " << reduced_sps_pool.size() <<"  residual: " << residual << "  " << segment.back()->XYZ()[0] <<"  " << segment.back()->XYZ()[1] << "  " << segment.back()->XYZ()[2] << std::endl;
 
     ok = IsResidualOK(residual, current_residual);
     std::cout<<"recursive refit: isok " << ok << "  res: " << residual << "  curr res: " << current_residual << std::endl;
+    std::cout<<"dumping sp"<<std::endl;
+    for (size_t i = 0; i < segment.size(); i++) std::cout<<"--"<<segment[i]->XYZ()[0] <<"  " << segment[i]->XYZ()[1] << "  " << segment[i]->XYZ()[2]<<std::endl;
     if (ok) return ok;
     return RecursivelyReplaceLastSpacePointAndRefit(segment, reduced_sps_pool, fmh, current_residual);
   }
