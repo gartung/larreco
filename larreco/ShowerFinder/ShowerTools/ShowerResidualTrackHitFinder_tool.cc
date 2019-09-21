@@ -393,9 +393,7 @@ namespace ShowerRecoTools {
     //If the initial track is empty then there is no pruning to do
     if (initial_track.size() == 0) return;
     double distance = IShowerTool::GetTRACSAlg().DistanceBetweenSpacePoints(initial_track.back(), sps_pool.front());
-    std::cout<<"Distance: " <<distance << std::endl;
     while (distance > 1 && sps_pool.size() > 0){
-      std::cout<<"Distance: " <<distance << std::endl;
       sps_pool.erase(sps_pool.begin());
       distance = IShowerTool::GetTRACSAlg().DistanceBetweenSpacePoints(initial_track.back(), sps_pool.front());
     }
@@ -408,7 +406,6 @@ namespace ShowerRecoTools {
     while (sps_it != std::next(initial_track.end(),-1)){
       std::vector<art::Ptr<recob::SpacePoint> >::iterator next_sps_it = std::next(sps_it,1);
       double distance = IShowerTool::GetTRACSAlg().DistanceBetweenSpacePoints(*sps_it,*next_sps_it);
-      std::cout<<"track size: " << initial_track.size() << "  distance: " << distance << std::endl;
       if (distance > fTrackMaxAdjacentSPDistance){
         initial_track.erase(next_sps_it);
       }
