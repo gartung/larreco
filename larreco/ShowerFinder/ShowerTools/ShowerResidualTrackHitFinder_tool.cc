@@ -416,6 +416,10 @@ namespace ShowerRecoTools {
       //We'll need an additional copy of this pool, as we will need the space points if we have to start a new
       //segment later, but all of the funtionality drains the pools during use
       std::vector<art::Ptr<recob::SpacePoint> > sub_sps_pool_cache = sub_sps_pool;
+      //The most recently added SP to the segment is bad but it will get thrown away by RecursivelyReplaceLastSpacePointAndRefit
+      //It's possible that we will need it if we end up forming an entirely new line from scratch, so
+      //add the bad SP to the front of the cache
+      sub_sps_pool_cache.insert(sub_sps_pool_cache.begin(), segment.back());
       ok = RecursivelyReplaceLastSpacePointAndRefit(segment, sub_sps_pool, fmh, current_residual);
       if (ok){
         //The refitting may have dropped a couple of points but it managed to find a point that kept the residual
