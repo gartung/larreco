@@ -343,6 +343,9 @@ namespace ShowerRecoTools {
       }
      std::cout<<"segment size: " << track_segment.size() << std::endl;
      std::cout<<"sp pool size: " << sps_pool.size() << std::endl;
+    std::cout<<"dumping sp"<<std::endl;
+    for (size_t i = 0; i < track_segment.size(); i++) std::cout<<"--"<<track_segment[i]->XYZ()[0] <<"  " << track_segment[i]->XYZ()[1] << "  " << track_segment[i]->XYZ()[2]<<std::endl;
+
       //A sleight of hand coming up.  We are going to move the last sp from the segment back into the pool so 
       //that it makes kick starting the recursion easier (sneaky)
       //TODO defend against segments that are too small for this to work (I dunno who is running the alg with 
