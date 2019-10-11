@@ -200,6 +200,12 @@ void CandHitMorphological::findHitCandidates(const Waveform&  waveform,
                       fDilationThreshold,
                       hitCandidateVec);
 
+    // Limit start and stop tick to the neighborhood of the peak
+    for (auto& hc: hitCandidateVec) {
+      hc.startTick = std::max(hc.startTick, size_t(hc.hitCenter-5.*hc.hitSigma));
+      hc.stopTick = std::min(hc.stopTick, size_t(hc.hitCenter+5.*hc.hitSigma));
+    }
+
     // Reset the hit height from the input waveform
     for(auto& hitCandidate : hitCandidateVec)
     {
