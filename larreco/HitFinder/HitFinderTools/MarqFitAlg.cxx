@@ -260,7 +260,7 @@ namespace gshf{
     return 0;
   }
 
-  int MarqFitAlg::mrqdtfit(float &lambda, float p[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr)
+  int MarqFitAlg::mrqdtfit(float &lambda, float p[], float plimmin[], float plimmax[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr)
   {
     int j;
     float nu,rho,lzmlh,amax,chiSq0;
@@ -301,6 +301,9 @@ namespace gshf{
       }
       fgauss(y, p, nParam, nData, res);
       chiSqr = cal_xi2(res, nData);
+      for(j=0;j<nParam;j++){
+	if (p[j]<=plimmin[j] || p[j]>=plimmax[j]) chiSqr*=10000;//penalty for going out of limits!
+      }
 
       lzmlh=0.;
       for(j=0;j<nParam;j++){

@@ -95,6 +95,8 @@ namespace reco_tool
 
     std::vector<float> y(roiSize);
     std::vector<float> p(3*fhc_vec.size());
+    std::vector<float> plimmin(3*fhc_vec.size());
+    std::vector<float> plimmax(3*fhc_vec.size());
     std::vector<float> perr(3*fhc_vec.size());
 
     /* choose the fit function and set the parameters */
@@ -104,11 +106,19 @@ namespace reco_tool
       float const peakMean   = fhc_vec[ih].hitCenter - (float)startTime;
       float const peakWidth  = fhc_vec[ih].hitSigma;
       float const amplitude  = fhc_vec[ih].hitHeight;
-      //float const meanLowLim = fmax(peakMean - fPeakRange * peakWidth,       0.);
-      //float const meanHiLim  = fmin(peakMean + fPeakRange * peakWidth, (float)roiSize);
+      float const meanLowLim = fmax(peakMean - fPeakRange * peakWidth,       0.);
+      float const meanHiLim  = fmin(peakMean + fPeakRange * peakWidth, (float)roiSize);
       p[0+nParams]=amplitude;
       p[1+nParams]=peakMean;
       p[2+nParams]=peakWidth;
+
+      plimmin[0+nParams]=amplitude*0.1;
+      plimmin[1+nParams]=meanLowLim;
+      plimmin[2+nParams]=std::max(fMinWidth, 0.1 * peakWidth);
+
+      plimmax[0+nParams]=amplitude*fAmpRange;
+      plimmax[1+nParams]=meanHiLim;
+      plimmax[2+nParams]=fMaxWidthMult * peakWidth;
 
       nParams += 3;
     }
@@ -121,7 +131,7 @@ namespace reco_tool
     int trial=0;
     lambda=-1.;   /* initialize lambda on first call */
     do{
-      fitResult=fMarqFitAlg->gshf::MarqFitAlg::mrqdtfit(lambda, &p[0], &y[0], nParams, roiSize, chiSqr, dchiSqr);
+      fitResult=fMarqFitAlg->gshf::MarqFitAlg::mrqdtfit(lambda, &p[0], &plimmin[0], &plimmax[0], &y[0], nParams, roiSize, chiSqr, dchiSqr);
       trial++;
       if(fitResult||(trial>100))break;
     }
