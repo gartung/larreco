@@ -1,5 +1,6 @@
 #include "MarqFitAlg.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
+#include <limits>
 
 namespace gshf{
 
@@ -258,6 +259,13 @@ namespace gshf{
     }
   
     return 0;
+  }
+
+  int MarqFitAlg::mrqdtfit(float &lambda, float p[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr)
+  {
+    std::vector<float> plimmin(nParam,std::numeric_limits<float>::lowest());
+    std::vector<float> plimmax(nParam,std::numeric_limits<float>::max());
+    return mrqdtfit(lambda, p, &plimmin[0], &plimmax[0], y, nParam, nData, chiSqr, dchiSqr);
   }
 
   int MarqFitAlg::mrqdtfit(float &lambda, float p[], float plimmin[], float plimmax[], float y[], const int nParam, const int nData, float &chiSqr, float &dchiSqr)
