@@ -103,7 +103,7 @@ namespace reco_tool
     nParams = 0;
 
     for(size_t ih=0; ih<fhc_vec.size(); ih++){
-      float const peakMean   = fhc_vec[ih].hitCenter - (float)startTime;
+      float const peakMean   = fhc_vec[ih].hitCenter - 0.5 - (float)startTime; //shift by 0.5 to account for bin width
       float const peakWidth  = fhc_vec[ih].hitSigma;
       float const amplitude  = fhc_vec[ih].hitHeight;
       float const meanLowLim = fmax(peakMean - fPeakRange * peakWidth,       0.);
@@ -157,7 +157,7 @@ namespace reco_tool
 	  PeakFitParams_t mhpp;	  
 	  mhpp.peakAmplitude      = p[parIdx + 0];
           mhpp.peakAmplitudeError = perr[parIdx + 0];
-          mhpp.peakCenter         = p[parIdx + 1] + 0.5 + float(startTime);
+          mhpp.peakCenter         = p[parIdx + 1] + 0.5 + float(startTime); //shift by 0.5 to account for bin width
           mhpp.peakCenterError    = perr[parIdx + 1];
           mhpp.peakSigma          = std::abs(p[parIdx + 2]);
           mhpp.peakSigmaError     = perr[parIdx + 2];
