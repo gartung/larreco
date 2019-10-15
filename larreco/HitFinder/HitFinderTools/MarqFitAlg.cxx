@@ -281,6 +281,13 @@ namespace gshf{
     std::vector<float> dydp(nData*nParam);
     std::vector<float> alpha(nParam*nParam);
 
+    bool haslimits = false;
+    for(j=0;j<nParam;j++){
+      if (plimmin[j]>std::numeric_limits<float>::lowest() || plimmax[j]<std::numeric_limits<float>::max()) {
+	haslimits = true;
+	break;
+      }
+    }
 
     fgauss(y, p, nParam, nData, res);
     chiSq0=cal_xi2(res, nData);
@@ -309,8 +316,10 @@ namespace gshf{
       }
       fgauss(y, p, nParam, nData, res);
       chiSqr = cal_xi2(res, nData);
-      for(j=0;j<nParam;j++){
-	if (p[j]<=plimmin[j] || p[j]>=plimmax[j]) chiSqr*=10000;//penalty for going out of limits!
+      if (haslimits) {
+	for(j=0;j<nParam;j++){
+	  if (p[j]<=plimmin[j] || p[j]>=plimmax[j]) chiSqr*=10000;//penalty for going out of limits!
+	}
       }
 
       lzmlh=0.;
