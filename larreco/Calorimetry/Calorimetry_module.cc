@@ -370,7 +370,7 @@ void calo::Calorimetry::produce(art::Event& evt)
           GetPitch(allHits[hits[ipl][ihit]], trkx, trky, trkz, trkw, trkx0, xyz3d, pitch, TickT0);
 
         if (fBadhit) continue;
-	if (xyz3d[2]<-100) continue; //hit not on track
+	// if (xyz3d[2]<-100) continue; //hit not on track
 	if (pitch<=0) pitch = fTrkPitch;
 	if (!pitch) continue;
 
