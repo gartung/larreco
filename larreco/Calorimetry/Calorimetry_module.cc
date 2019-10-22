@@ -104,7 +104,8 @@ namespace calo {
     bool fUseArea;
     bool fSCE;
     bool fFlipTrack_dQdx; //flip track direction if significant rise of dQ/dx at the track start
-    std::optional<double> fNotOnTrackZcut; ///< Exclude trajectory points with _z_ lower than this [cm]
+    /// Exclude trajectory points with _z_ lower than this [cm]
+    std::optional<double const> const fNotOnTrackZcut;
     CalorimetryAlg caloAlg;
 
     int fnsps;
@@ -133,12 +134,12 @@ calo::Calorimetry::Calorimetry(fhicl::ParameterSet const& pset)
     fUseArea(pset.get< bool >("UseArea") ),
     fSCE(pset.get< bool >("CorrectSCE")),
     fFlipTrack_dQdx(pset.get< bool >("FlipTrack_dQdx",true)),
+    fNotOnTrackZcut(pset.has_key("NotOnTrackZcut")
+      ? std::make_optional(pset.get<double>("NotOnTrackZcut"))
+      : std::nullopt
+      ),
     caloAlg(pset.get< fhicl::ParameterSet >("CaloAlg"))
 {
-  
-  if (pset.has_key("NotOnTrackZcut"))
-    fNotOnTrackZcut = pset.get<double>("NotOnTrackZcut");
-  
   produces< std::vector<anab::Calorimetry>              >();
   produces< art::Assns<recob::Track, anab::Calorimetry> >();
 }
