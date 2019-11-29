@@ -1,0 +1,12 @@
+BEGIN_PROLOG
+
+standard_compressedhitfinder:
+{
+  module_type: "CompressedHitFinder"
+
+  WireLabel: "caldata"
+  Threshold: 15 # integral in ADC
+}
+
+END_PROLOG
+
