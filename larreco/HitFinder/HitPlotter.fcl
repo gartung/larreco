@@ -1,0 +1,12 @@
+BEGIN_PROLOG
+
+standard_hitplotter:
+{
+  module_type: "HitPlotter"
+
+  WireLabel: "caldata"
+  HitLabels: ["gaushit", "myhitfinder"]
+}
+
+END_PROLOG
+
