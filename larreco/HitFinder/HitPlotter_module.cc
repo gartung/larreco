@@ -72,7 +72,6 @@ void HitPlotter::analyze(const art::Event& evt)
     art::Handle<std::vector<recob::Hit>> hits;
     evt.getByLabel(label, hits);
 
-    int hitIdx = 0;
     for(const recob::Hit& hit: *hits){
       const geo::WireID id = fGeom->ChannelToWire(hit.Channel())[0];
       hitmap[label][id].push_back(hit);
