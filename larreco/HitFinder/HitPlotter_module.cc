@@ -13,6 +13,8 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 
+#include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RawData/raw.h" // Uncompress()
 
 #include <iostream>
 
@@ -34,6 +36,7 @@ protected:
   art::ServiceHandle<geo::Geometry> fGeom;
 
   std::string fWireLabel;
+  std::string fRawDigitLabel;
   std::vector<std::string> fHitLabels;
 };
 
@@ -43,6 +46,7 @@ DEFINE_ART_MODULE(HitPlotter)
 HitPlotter::HitPlotter(const fhicl::ParameterSet& pset)
 : EDAnalyzer(pset),
   fWireLabel(pset.get<std::string>("WireLabel")),
+  fRawDigitLabel(pset.get<std::string>("RawDigitLabel")),
   fHitLabels(pset.get<std::vector<std::string>>("HitLabels"))
 {
 }
@@ -66,6 +70,7 @@ void HitPlotter::analyze(const art::Event& evt)
 
   art::TFileDirectory evtdir = tfs->mkdir(Form("evt_%d", evt.event()));
 
+
   std::map<std::string, std::map<geo::WireID, std::vector<recob::Hit>>> hitmap;
 
   for(const std::string& label: fHitLabels){
@@ -79,6 +84,16 @@ void HitPlotter::analyze(const art::Event& evt)
   }
 
 
+  std::map<geo::WireID, const raw::RawDigit*> digmap;
+
+  art::Handle<std::vector<raw::RawDigit>> digs;
+  evt.getByLabel(fRawDigitLabel, digs);
+
+  for(const raw::RawDigit& dig: *digs){
+    digmap[fGeom->ChannelToWire(dig.Channel())[0]] = &dig;
+  }
+
+
   art::Handle<std::vector<recob::Wire>> wires;
   evt.getByLabel(fWireLabel, wires);
 
@@ -86,14 +101,27 @@ void HitPlotter::analyze(const art::Event& evt)
     const geo::WireID id = fGeom->ChannelToWire(wire.Channel())[0];
     art::TFileDirectory wiredir = evtdir.mkdir(safe_name(id));
 
+    std::vector<short> adcs;
+    const raw::RawDigit* dig = digmap[id];
+    if(dig) raw::Uncompress(dig->ADCs(), adcs, dig->Compression());
+
     for(const lar::sparse_vector<float>::datarange_t& range: wire.SignalROI().get_ranges()){
 
       art::TFileDirectory rangedir = wiredir.mkdir(TString::Format("range_%lu_%lu", range.begin_index(), range.end_index()).Data());
 
-      TH1* h = rangedir.make<TH1F>("wire", "", range.end_index()-range.begin_index()+1, range.begin_index()-.5, range.end_index()+.5);
+      TH1* hwire = rangedir.make<TH1F>("wire", "", range.end_index()-range.begin_index()+1, range.begin_index()-.5, range.end_index()+.5);
 
-      int idx = range.begin_index();
-      for(float y: range.data()) h->Fill((idx++), y);
+      int tick = range.begin_index();
+      for(float y: range.data()) hwire->Fill((tick++), y);
+
+      TH1* hdig = rangedir.make<TH1F>("dig", "", range.end_index()-range.begin_index()+1, range.begin_index()-.5, range.end_index()+.5);
+
+      for(unsigned int tick = range.begin_index();
+          tick < std::min(range.end_index()+1, adcs.size());
+          ++tick){
+        const int adc = adcs[tick] ? int(adcs[tick])-dig->GetPedestal() : 0;
+        hdig->Fill(tick, adc);
+      }
 
       for(const std::string& label: fHitLabels){
         art::TFileDirectory hitdir = rangedir.mkdir(label);

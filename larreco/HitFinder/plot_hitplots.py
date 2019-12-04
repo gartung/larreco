@@ -30,11 +30,21 @@ for wire in evtdir.GetListOfKeys():
         # in the raised pedestal to the left.
         if gausdir and mydir and len(gausdir.GetListOfKeys()) == 1 and len(mydir.GetListOfKeys()) == 2: continue
 
-        h = rng.Get('wire')
-        h.SetLineColor(kBlack)
-        h.SetLineWidth(2)
-        h.SetTitle(wire.GetName())
-        h.Draw('hist')
+        hwire = rng.Get('wire')
+        hwire.SetLineColor(kBlack)
+        hwire.SetLineWidth(2)
+        hwire.SetTitle(wire.GetName())
+        hwire.Draw('hist')
+
+        hdig = rng.Get('dig')
+        hdig.Scale(.5) # arbitrary, try to make more similar to wires
+        hdig.SetLineColor(kGray)
+        hdig.SetLineWidth(2)
+        hdig.SetTitle(wire.GetName())
+        hdig.Draw('hist same')
+
+        hwire.Draw('hist same')
+
 
         if gausdir:
             for gkey in gausdir.GetListOfKeys():

@@ -5,6 +5,7 @@ standard_hitplotter:
   module_type: "HitPlotter"
 
   WireLabel: "caldata"
+  RawDigitLabel: "daq"
   HitLabels: ["gaushit", "myhitfinder"]
 }
 
