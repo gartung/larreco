@@ -31,6 +31,7 @@ const double effective_threshold = 0.1;//1; // effectively this much is subtract
 const double L1_strength = 2*effective_threshold;
 
 const double kRMS = 2.75; // TODO
+const double kRMSBiPolar = 5.5; // TODO
 
 // ----------------------------------------------------------------------------
 /// TMatrixD::operator() does various sanity checks and shows up in profiles
@@ -57,23 +58,44 @@ public:
 };
 
 // ----------------------------------------------------------------------------
-class GausKernel
+class Kernel
 {
 public:
-  GausKernel(double rms, int range) : fRange(range), fData(2*range+1)
+  static Kernel Gaus(double rms, int range)
   {
+    Kernel ret(rms, range);
+
     const double norm = 1/(rms*sqrt(2*M_PI));
     for(int i = 0; i < 2*range+1; ++i){
       const double x = (i-range)/rms;
-      fData[i] = norm*exp(-x*x/2);
+      ret.fData[i] = norm*exp(-x*x/2);
     }
+
+    return ret;
+  }
+
+  static Kernel BiPolar(double rms, int range)
+  {
+    Kernel ret(rms, range);
+
+    const double norm = 1/(2*rms); // makes the total absolute area = 1
+    for(int i = 0; i < 2*range+1; ++i){
+      const double x = (i-range)/rms;
+      ret.fData[i] = -norm*x*exp(-x*x/2);
+    }
+
+    return ret;
   }
 
   inline double operator()(int dx) const {return fData[fRange+dx];}
   inline double operator[](int dx) const {return fData[fRange+dx];}
 
   inline int Range() const {return fRange;}
+  double RMS() const {return fRMS;}
 protected:
+  Kernel(double rms, int range) : fRMS(rms), fRange(range), fData(2*range+1) {}
+
+  double fRMS;
   int fRange;
   std::vector<double> fData;
 };
@@ -120,7 +142,7 @@ double find_min(double y0, double y1, double y2, double* pred = 0)
 class ExactSolver
 {
 public:
-  ExactSolver(const GausKernel& kern, const std::vector<float>& y)
+  ExactSolver(const Kernel& kern, const std::vector<float>& y)
     : A(y.size(), y.size()), B(y.size())
   {
     const int N = y.size();
@@ -129,6 +151,8 @@ public:
     // This matrix and vector give the solution to the full problem with all
     // variables free (which probably falls outside of the physical region).
 
+    // TODO this thing has such a simple structure we probably don't need to
+    // store it like this but can eg just keep one slice through it.
     for(int i = 0; i < N; ++i){
       for(int j = std::max(0, i-range); j < std::min(N, i+range+1); ++j){
         for(int k = std::max(0, i-range); k < std::min(N, i+range+1); ++k){
@@ -189,7 +213,7 @@ struct LiteHit
 // ----------------------------------------------------------------------------
 // Search through the array of amplitudes, and consolidate each consecutive
 // runs of non-zero amplitudes into its mean and total magnitude
-std::vector<LiteHit> consolidate(const TVectorDFast& alpha)
+std::vector<LiteHit> consolidate(const TVectorDFast& alpha, const Kernel& kern)
 {
   std::vector<LiteHit> ret;
 
@@ -201,7 +225,7 @@ std::vector<LiteHit> consolidate(const TVectorDFast& alpha)
   for(int i = 0; i <= N; ++i){
     // end of a run
     if((i == N || alpha[i] == 0) && tot > 0){
-      ret.emplace_back(tavg/tot, tot, kRMS);
+      ret.emplace_back(tavg/tot, tot, kern.RMS());
       tot = 0;
       tavg = 0;
     }
@@ -223,7 +247,7 @@ std::vector<LiteHit> consolidate(const TVectorDFast& alpha)
 bool project_to_wall(const TVectorDFast& step,
                      TVectorDFast& alpha,
                      TVectorDFast& pred,
-                     const GausKernel& kern)
+                     const Kernel& kern)
 {
   const int N = step.GetNrows();
 
@@ -260,15 +284,15 @@ bool project_to_wall(const TVectorDFast& step,
 }
 
 // ----------------------------------------------------------------------------
-std::vector<LiteHit> Fit(const std::vector<float>& yvec)
+std::vector<LiteHit> Fit(const std::vector<float>& yvec,
+                         const Kernel& kern)
 {
   const int N = yvec.size();
+  const int range = kern.Range();
+
   // Convert the input data to TVector format
   TVectorDFast y(N);
   for(int i = 0; i < N; ++i) y[i] = yvec[i];
-
-  const int range = 3*kRMS;
-  const GausKernel kern(kRMS, range);
 
   // Solver that we will be using throughout
   const ExactSolver exact(kern, yvec);
@@ -410,7 +434,7 @@ std::vector<LiteHit> Fit(const std::vector<float>& yvec)
   } // end for trial
 
   // Turn the alphas into actual hits
-  return consolidate(alpha);
+  return consolidate(alpha, kern);
 }
 
 
@@ -478,13 +502,17 @@ void CompressedHitFinder::produce(art::Event& evt)
 
 
   for(const recob::Wire& wire: *wires){
+    const geo::SigType_t sigType = fGeom->SignalType(wire.Channel());
+
+    const Kernel kern = (fFitRawDigits && sigType == geo::kInduction) ? Kernel::BiPolar(kRMSBiPolar, 3*kRMSBiPolar) : Kernel::Gaus(kRMS, 3*kRMS);
+
     const geo::WireID id = fGeom->ChannelToWire(wire.Channel())[0];
     const raw::RawDigit* dig = digmap[id];
 
     for(const lar::sparse_vector<float>::datarange_t& range: wire.SignalROI().get_ranges()){
       std::vector<LiteHit> hits;
       if(!fFitRawDigits){
-        hits = Fit(range.data());
+        hits = Fit(range.data(), kern);
       }
       else{
         std::vector<short> adcs;
@@ -495,7 +523,7 @@ void CompressedHitFinder::produce(art::Event& evt)
 
         for(float& y: tofit) if(y != 0) y -= dig->GetPedestal();
 
-        hits = Fit(tofit);
+        hits = Fit(tofit, kern);
       }
 
       for(const LiteHit& hit: hits){
@@ -520,6 +548,7 @@ recob::Hit CompressedHitFinder::LiteHitToHit(const LiteHit& hit,
   const double peaktime = hit.time + t0;
   const double integral = hit.amp;
   const double summedADC = hit.amp; // TODO - how is this supposed to be defined?
+  // TODO what formula to use for induction hits?
   const double peakamp =  hit.amp/(hit.rms*sqrt(2*M_PI));
 
   const geo::SigType_t sigType = fGeom->SignalType(wire.Channel());
