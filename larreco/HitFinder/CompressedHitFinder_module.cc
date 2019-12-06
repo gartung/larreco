@@ -12,10 +12,13 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 
+#include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RawData/raw.h" // Uncompress()
 
 #include <iostream>
 
 //#include "TDecompLU.h"
+//#include "TDecompChol.h"
 //#include "TDecompSVD.h" // much slower
 #include "TDecompSparse.h" // faster
 #include "TMatrixD.h"
@@ -428,7 +431,9 @@ protected:
 
   art::ServiceHandle<geo::Geometry> fGeom;
 
+  bool fFitRawDigits;
   std::string fWireLabel;
+  std::string fRawDigitLabel;
   double fThreshold;
 };
 
@@ -437,7 +442,9 @@ DEFINE_ART_MODULE(CompressedHitFinder)
 // ---------------------------------------------------------------------------
 CompressedHitFinder::CompressedHitFinder(const fhicl::ParameterSet& pset)
 : EDProducer(pset),
+  fFitRawDigits(pset.get<bool>("FitRawDigits")),
   fWireLabel(pset.get<std::string>("WireLabel")),
+  fRawDigitLabel(pset.get<std::string>("RawDigitLabel")),
   fThreshold(pset.get<double>("Threshold"))
 {
   produces<std::vector<recob::Hit>>();
@@ -456,17 +463,49 @@ void CompressedHitFinder::produce(art::Event& evt)
   art::Handle<std::vector<recob::Wire>> wires;
   evt.getByLabel(fWireLabel, wires);
 
-  int wireIdx = 0;
+
+  std::map<geo::WireID, const raw::RawDigit*> digmap;
+
+  art::Handle<std::vector<raw::RawDigit>> digs;
+
+  if(fFitRawDigits){
+    evt.getByLabel(fRawDigitLabel, digs);
+
+    for(const raw::RawDigit& dig: *digs){
+      digmap[fGeom->ChannelToWire(dig.Channel())[0]] = &dig;
+    }
+  }
+
+
   for(const recob::Wire& wire: *wires){
+    const geo::WireID id = fGeom->ChannelToWire(wire.Channel())[0];
+    const raw::RawDigit* dig = digmap[id];
+
     for(const lar::sparse_vector<float>::datarange_t& range: wire.SignalROI().get_ranges()){
-      for(const LiteHit& hit: Fit(range.data())){
+      std::vector<LiteHit> hits;
+      if(!fFitRawDigits){
+        hits = Fit(range.data());
+      }
+      else{
+        std::vector<short> adcs;
+        if(dig) raw::Uncompress(dig->ADCs(), adcs, dig->Compression());
+
+        std::vector<float> tofit(std::min(adcs.end(), adcs.begin()+range.begin_index()),
+                                std::min(adcs.end(), adcs.begin()+range.end_index()+1));
+
+        for(float& y: tofit) if(y != 0) y -= dig->GetPedestal();
+
+        hits = Fit(tofit);
+      }
+
+      for(const LiteHit& hit: hits){
         if(hit.amp < fThreshold) continue;
 
         hitcol->push_back(LiteHitToHit(hit, wire, range.begin_index()));
       } // end for hit
     } // end for range
 
-    ++wireIdx;
+    const int wireIdx = &wire - &wires->front();
     if(wireIdx%100 == 0) std::cout << wireIdx << " / " << wires->size() << std::endl;
   } // end for wire
 

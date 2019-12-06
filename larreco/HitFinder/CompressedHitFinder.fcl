@@ -4,7 +4,10 @@ standard_compressedhitfinder:
 {
   module_type: "CompressedHitFinder"
 
+  FitRawDigits: false
+
   WireLabel: "caldata"
+  RawDigitLabel: "daq"
   Threshold: 15 # integral in ADC
 }
 
