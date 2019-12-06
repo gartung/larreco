@@ -153,14 +153,14 @@ public:
 
     // TODO this thing has such a simple structure we probably don't need to
     // store it like this but can eg just keep one slice through it.
-    for(int i = 0; i < N; ++i){
-      for(int j = std::max(0, i-range); j < std::min(N, i+range+1); ++j){
-        for(int k = std::max(0, i-range); k < std::min(N, i+range+1); ++k){
-          A(j, k) += kern(i-j)*kern(i-k);
+    for(int k = 0; k < N; ++k){
+      for(int i = std::max(0, k-range); i < std::min(N, k+range+1); ++i){
+        for(int j = std::max(0, i-range); j < std::min(N, i+range+1); ++j){
+          A(k, j) += kern(i-j)*kern(i-k);
         }
-        B(i) += kern(i-j)*y[j];
+        B(k) += kern(i-k)*y[i];
       }
-      B(i) -= L1_strength/2;
+      B(k) -= L1_strength/2;
     }
   }
 
@@ -271,11 +271,11 @@ bool project_to_wall(const TVectorDFast& step,
 
   const int range = kern.Range();
 
-  for(int i = 0; i < N; ++i){
+  for(int j = 0; j < N; ++j){
     // This check does seem to be worthwhile
-    if(step[i] != 0){
-      for(int j = std::max(0, i-range); j < std::min(N, i+range+1); ++j){
-        pred[j] += stepsize*step[i]*kern(i-j);
+    if(step[j] != 0){
+      for(int i = std::max(0, j-range); i < std::min(N, j+range+1); ++i){
+        pred[i] += stepsize*step[j]*kern(i-j);
       }
     }
   }
@@ -310,7 +310,7 @@ std::vector<LiteHit> Fit(const std::vector<float>& yvec,
   TVectorDFast diff_static(N);
   for(int k = 0; k < N; ++k){
     for(int i = std::max(0, k-range); i < std::min(N, k+range+1); ++i){
-      diff_static[i] += -2*y[k]*kern(i-k);
+      diff_static[k] += -2*y[i]*kern(i-k);
     }
     diff_static[k] += L1_strength;
   }
@@ -324,9 +324,9 @@ std::vector<LiteHit> Fit(const std::vector<float>& yvec,
 
     // This is the hottest loop in the fit
     for(int k = 0; k < N; ++k){
-      // Suprisingly this is faster without checking pred[k] != 0 first
+      // Suprisingly this is faster without checking pred[i] != 0 first
       for(int i = std::max(0, k-range); i < std::min(N, k+range+1); ++i){
-        diff[i] += 2*pred[k]*kern(i-k);
+        diff[k] += 2*pred[i]*kern(i-k);
       }
     }
 
