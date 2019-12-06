@@ -144,12 +144,24 @@ void HitPlotter::analyze(const art::Event& evt)
                 y = hit.PeakAmplitude() * -x*exp(-x*x/2);
 
               g->SetPoint(g->GetN(), hit.PeakTime()+x*hit.RMS(), y);
-
-              // TODO This isn't really right. Need to loop through the hsum
-              // bins instead.
-              hsum->Fill(hit.PeakTime()+x*hit.RMS(), y);
             }
             g->Write();
+          }
+        }
+
+        for(int i = 1; i <= hsum->GetNbinsX(); ++i){
+          const double xi = hsum->GetBinCenter(i);
+
+          for(const recob::Hit& hit: hitmap[label][id]){
+            const double x = (xi-hit.PeakTime())/hit.RMS();
+
+            double y;
+            if(hit.SignalType() == geo::kCollection || !fPlotRawDigitFits)
+              y = hit.PeakAmplitude() * exp(-x*x/2);
+            else
+              y = hit.PeakAmplitude() * -x*exp(-x*x/2);
+
+            hsum->Fill(xi, y);
           }
         }
       }
