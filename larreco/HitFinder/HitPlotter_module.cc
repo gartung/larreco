@@ -38,6 +38,7 @@ protected:
   std::string fWireLabel;
   std::string fRawDigitLabel;
   std::vector<std::string> fHitLabels;
+  bool fPlotRawDigitFits;
 };
 
 DEFINE_ART_MODULE(HitPlotter)
@@ -47,7 +48,8 @@ HitPlotter::HitPlotter(const fhicl::ParameterSet& pset)
 : EDAnalyzer(pset),
   fWireLabel(pset.get<std::string>("WireLabel")),
   fRawDigitLabel(pset.get<std::string>("RawDigitLabel")),
-  fHitLabels(pset.get<std::vector<std::string>>("HitLabels"))
+  fHitLabels(pset.get<std::vector<std::string>>("HitLabels")),
+  fPlotRawDigitFits(pset.get<bool>("PlotRawDigitFits"))
 {
 }
 
@@ -126,14 +128,26 @@ void HitPlotter::analyze(const art::Event& evt)
       for(const std::string& label: fHitLabels){
         art::TFileDirectory hitdir = rangedir.mkdir(label);
 
+        TH1* hsum = hitdir.make<TH1F>("sum", "", range.end_index()-range.begin_index()+1, range.begin_index()-.5, range.end_index()+.5);
+
         int hitIdx = 0;
         for(const recob::Hit& hit: hitmap[label][id]){
           if(hit.PeakTime() > range.begin_index() && hit.PeakTime() < range.end_index()){
             TGraph* g = hitdir.make<TGraph>();
             g->SetName(TString::Format("hit_%d", hitIdx++).Data());
             for(double x = -3; x < +3.05; x += .1){
-              g->SetPoint(g->GetN(), hit.PeakTime()-x*hit.RMS(),
-                          hit.PeakAmplitude()*exp(-x*x/2));
+
+              double y;
+              if(hit.SignalType() == geo::kCollection || !fPlotRawDigitFits)
+                y = hit.PeakAmplitude() * exp(-x*x/2);
+              else
+                y = hit.PeakAmplitude() * -x*exp(-x*x/2);
+
+              g->SetPoint(g->GetN(), hit.PeakTime()+x*hit.RMS(), y);
+
+              // TODO This isn't really right. Need to loop through the hsum
+              // bins instead.
+              hsum->Fill(hit.PeakTime()+x*hit.RMS(), y);
             }
             g->Write();
           }
