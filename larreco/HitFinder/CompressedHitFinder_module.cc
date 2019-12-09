@@ -57,6 +57,77 @@ public:
   inline double& operator[](unsigned int i)       {return fElements[i];}
 };
 
+TVectorDFast RowReductionSolver(TMatrixDFast M, TVectorDFast v)
+{
+  const int N = v.GetNrows();
+
+  // Make unit diagonal. Not mathematically necessary, but seems to help
+  // stability.
+  for(int row = 0; row < N; ++row){
+    const double factor = 1/M(row, row);
+    for(int col = 0; col < N; ++col){
+      M(row, col) *= factor;
+    }
+    v(row) *= factor;
+  }
+
+  // Clear out the region below the diagonal
+  for(int row = 0; row < N; ++row){
+    // We know our matrix in practice can have a lot of zeros before the
+    // diagonal. The initialization of col0 can be moved outside of the loop
+    // for a small speedup if we're additionally willing to rely on the fact
+    // that in our matrices the length of that string of zeros is monotonically
+    // increasing. Likewise for col1 (though the logic will have to change a
+    // little).
+    int col0 = 0;
+    while(M(row, col0) == 0 && col0 < row) ++col0;
+    int col1 = N-1;
+    while(M(row, col1) == 0 && col1 >= 0) --col1;
+
+    for(int col = col0; col < row; ++col){
+      const double factor = -M(row, col);
+      const int origin_row = col;
+      M(row, col) = 0;
+      // All columns outside this range are already zero in the origin row
+      for(int i = col+1; i <= col1; ++i){
+        M(row, i) += factor * M(origin_row, i);
+      }
+      v(row) += factor * v(origin_row);
+    }
+
+    // Make sure we have 1 on the diagonal
+    const double div = 1/M(row, row);
+    M(row, row) = 1;
+    for(int i = row+1; i < N; ++i) M(row, i) *= div;
+    v(row) *= div;
+  }
+
+  // Now clear out the upper-right region
+  /*
+  for(int row = N-1; row >= 0; --row){
+    for(int col = row+1; col < N; ++col){
+      const int origin_row = col;
+      const double factor = -M(row, col);
+      for(int i = 0; i < N; ++i) M(row, i) += factor * M(origin_row, i);
+      v(row) += factor * v(origin_row);
+    }
+  }
+  */
+
+  // Which is equivalent to just this
+  for(int i = N; i >= 0; --i)
+    for(int j = i+1; j < N; ++j)
+      v(i) -= M(i, j) * v(j);
+  // Could also have made use of the trailing zeros in the rows here for
+  // another small speedup.
+
+
+  //  M.Print();
+  //  abort();
+
+  return v;
+}
+
 // ----------------------------------------------------------------------------
 class Kernel
 {
@@ -184,11 +255,15 @@ public:
       B_sub[i] = B[idxs[i]];
     }
 
+    const TVectorDFast proposed = RowReductionSolver(A_sub, B_sub);
+
+#if 0
     const TMatrixDSparse sparse(A_sub);
     TDecompSparse decomp(sparse, 0/*verbosity*/);
     bool ok;
     const TVectorDFast proposed = decomp.Solve(B_sub, ok);
     if(!ok) return false;
+#endif
 
     for(int i = 0; i < N_sub; ++i) ret[idxs[i]] = proposed[i];
 
