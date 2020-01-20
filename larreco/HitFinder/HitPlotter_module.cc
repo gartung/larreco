@@ -38,7 +38,6 @@ protected:
   std::string fWireLabel;
   std::string fRawDigitLabel;
   std::vector<std::string> fHitLabels;
-  bool fPlotRawDigitFits;
 };
 
 DEFINE_ART_MODULE(HitPlotter)
@@ -48,8 +47,7 @@ HitPlotter::HitPlotter(const fhicl::ParameterSet& pset)
 : EDAnalyzer(pset),
   fWireLabel(pset.get<std::string>("WireLabel")),
   fRawDigitLabel(pset.get<std::string>("RawDigitLabel")),
-  fHitLabels(pset.get<std::vector<std::string>>("HitLabels")),
-  fPlotRawDigitFits(pset.get<bool>("PlotRawDigitFits"))
+  fHitLabels(pset.get<std::vector<std::string>>("HitLabels"))
 {
 }
 
@@ -126,6 +124,11 @@ void HitPlotter::analyze(const art::Event& evt)
       }
 
       for(const std::string& label: fHitLabels){
+        // Figure out whether to draw wires or raw digits based on what was fit
+        art::Handle<art::Assns<recob::Hit, recob::Wire>> passn;
+        evt.getByLabel(label, passn);
+        const bool plotRawDigs = passn.failedToGet();
+
         art::TFileDirectory hitdir = rangedir.mkdir(label);
 
         TH1* hsum = hitdir.make<TH1F>("sum", "", range.end_index()-range.begin_index()+1, range.begin_index()-.5, range.end_index()+.5);
@@ -138,7 +141,7 @@ void HitPlotter::analyze(const art::Event& evt)
             for(double x = -3; x < +3.05; x += .1){
 
               double y;
-              if(hit.SignalType() == geo::kCollection || !fPlotRawDigitFits)
+              if(hit.SignalType() == geo::kCollection || !plotRawDigs)
                 y = hit.PeakAmplitude() * exp(-x*x/2);
               else
                 y = hit.PeakAmplitude() * -x*exp(-x*x/2);
@@ -156,7 +159,7 @@ void HitPlotter::analyze(const art::Event& evt)
             const double x = (xi-hit.PeakTime())/hit.RMS();
 
             double y;
-            if(hit.SignalType() == geo::kCollection || !fPlotRawDigitFits)
+            if(hit.SignalType() == geo::kCollection || !plotRawDigs)
               y = hit.PeakAmplitude() * exp(-x*x/2);
             else
               y = hit.PeakAmplitude() * -x*exp(-x*x/2);

@@ -7,9 +7,6 @@ standard_hitplotter:
   WireLabel: "caldata"
   RawDigitLabel: "daq"
   HitLabels: ["gaushit", "myhitfinder"]
-
-  # Whether to use bipolar functional form where appropriate
-  PlotRawDigitFits: true
 }
 
 END_PROLOG
