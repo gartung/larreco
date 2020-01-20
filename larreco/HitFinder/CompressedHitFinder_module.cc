@@ -7,6 +7,9 @@
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Framework/Principal/Event.h"
 
+#include "art/Persistency/Common/PtrMaker.h"
+#include "canvas/Persistency/Common/Assns.h"
+
 #include "larcore/Geometry/Geometry.h"
 
 #include "lardataobj/RecoBase/Hit.h"
@@ -547,6 +550,11 @@ CompressedHitFinder::CompressedHitFinder(const fhicl::ParameterSet& pset)
   fThreshold(pset.get<double>("Threshold"))
 {
   produces<std::vector<recob::Hit>>();
+
+  if(fFitRawDigits)
+    produces<art::Assns<recob::Hit, raw::RawDigit>>();
+  else
+    produces<art::Assns<recob::Hit, recob::Wire>>();
 }
 
 // ----------------------------------------------------------------------------
@@ -559,30 +567,39 @@ void CompressedHitFinder::produce(art::Event& evt)
 {
   auto hitcol = std::make_unique<std::vector<recob::Hit>>();
 
+  auto assns_dig  = std::make_unique<art::Assns<recob::Hit, raw::RawDigit>>();
+  auto assns_wire = std::make_unique<art::Assns<recob::Hit, recob::Wire>>();
+
+  art::PtrMaker<recob::Hit> pmaker(evt);
+
+
   art::Handle<std::vector<recob::Wire>> wires;
   evt.getByLabel(fWireLabel, wires);
 
 
-  std::map<geo::WireID, const raw::RawDigit*> digmap;
+  std::map<geo::WireID, const art::Ptr<raw::RawDigit>> digmap;
 
   art::Handle<std::vector<raw::RawDigit>> digs;
 
   if(fFitRawDigits){
     evt.getByLabel(fRawDigitLabel, digs);
 
-    for(const raw::RawDigit& dig: *digs){
-      digmap[fGeom->ChannelToWire(dig.Channel())[0]] = &dig;
+    for(unsigned int digIdx = 0; digIdx < digs->size(); ++digIdx){
+      const art::Ptr<raw::RawDigit> dig(digs, digIdx);
+      digmap.emplace(fGeom->ChannelToWire(dig->Channel())[0], dig);
     }
   }
 
 
-  for(const recob::Wire& wire: *wires){
+  for(unsigned int wireIdx = 0; wireIdx < wires->size(); ++wireIdx){
+    const recob::Wire& wire = (*wires)[wireIdx];
+
     const geo::SigType_t sigType = fGeom->SignalType(wire.Channel());
 
     const Kernel kern = (fFitRawDigits && sigType == geo::kInduction) ? Kernel::BiPolar(kRMSBiPolar, 3*kRMSBiPolar) : Kernel::Gaus(kRMS, 3*kRMS);
 
     const geo::WireID id = fGeom->ChannelToWire(wire.Channel())[0];
-    const raw::RawDigit* dig = digmap[id];
+    const raw::RawDigit* dig = digmap[id].get();
 
     for(const lar::sparse_vector<float>::datarange_t& range: wire.SignalROI().get_ranges()){
       std::vector<LiteHit> hits;
@@ -605,14 +622,25 @@ void CompressedHitFinder::produce(art::Event& evt)
         if(hit.amp < fThreshold) continue;
 
         hitcol->push_back(LiteHitToHit(hit, wire, range.begin_index()));
+
+        // Synthesize a Ptr for the hit we just pushed
+        art::Ptr<recob::Hit> phit = pmaker(hitcol->size()-1);
+
+        if(fFitRawDigits){
+          assns_dig->addSingle(phit, digmap[id]);
+        }
+        else{
+          assns_wire->addSingle(phit, art::Ptr<recob::Wire>(wires, wireIdx));
+        }
       } // end for hit
     } // end for range
 
-    const int wireIdx = &wire - &wires->front();
     if(wireIdx%100 == 0) std::cout << wireIdx << " / " << wires->size() << std::endl;
   } // end for wire
 
   evt.put(std::move(hitcol));
+
+  if(fFitRawDigits) evt.put(std::move(assns_dig)); else evt.put(std::move(assns_wire));
 }
 
 // ----------------------------------------------------------------------------
