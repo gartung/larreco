@@ -20,14 +20,9 @@
 
 #include <iostream>
 
-//#include "TDecompLU.h"
-//#include "TDecompChol.h"
-//#include "TDecompSVD.h" // much slower
-#include "TDecompSparse.h" // faster
 #include "TMatrixD.h"
 #include "TVectorD.h"
-
-#include "TMatrixDSparse.h"
+#include "TDecompLU.h"
 
 // Larger is faster
 const double effective_threshold = 0.1;//1; // effectively this much is subtracted from each alpha. TODO seems to be more than that?
@@ -124,10 +119,6 @@ TVectorDFast RowReductionSolver(TMatrixDFast M, TVectorDFast v)
   // Could also have made use of the trailing zeros in the rows here for
   // another small speedup.
 
-
-  //  M.Print();
-  //  abort();
-
   return v;
 }
 
@@ -166,6 +157,7 @@ public:
 
   inline int Range() const {return fRange;}
   double RMS() const {return fRMS;}
+
 protected:
   Kernel(double rms, int range) : fRMS(rms), fRange(range), fData(2*range+1) {}
 
@@ -173,44 +165,6 @@ protected:
   int fRange;
   std::vector<double> fData;
 };
-
-// ----------------------------------------------------------------------------
-inline double chisq(const TVectorDFast& y,
-                    const TVectorDFast& pred,
-                    const TVectorDFast& alpha)
-{
-  return (pred-y).Norm2Sqr() + L1_strength * alpha.Norm1();
-}
-
-// ----------------------------------------------------------------------------
-// Find the minimum of a parabola, given three points sampled from it.
-//
-// y0, y1, y2 should be evenly spaced, and the result is given as a fraction of
-// the distance from y0 to y2.
-double find_min(double y0, double y1, double y2, double* pred = 0)
-{
-  const double c = y0;
-  //  a/4 + b/2 + c = y1 (1)
-  //  a   + b   + c = y2 (2)
-  // 4(1)-(2) -> b + 3c = 4y1 - y2
-  const double b =  -y2 + 4*y1 - 3*y0;
-  //  const double a = y2 - b - c;
-  const double a = 2*y2 - 4*y1 + 2*y0;
-
-  // flat - either +ve or -ve infinity...
-  if(a == 0){
-    if(pred) *pred = y0;
-    return 0;
-  }
-
-  // 2ax + b = 0 -> x = -b/2a
-
-  const double x = -b/(2*a);
-
-  if(pred) *pred = a*x*x + b*x + c;
-
-  return x;
-}
 
 // Find the exact minimum of the chisq function for any subset of variables
 class ExactSolver
@@ -239,15 +193,13 @@ public:
   }
 
   // Solve the reduced problem with only indices 'idxs' free, and all other
-  // variables held fixed at zero. Returns false if something went wrong, in
-  // that case 'ret' can't be trusted.
-  bool Solve(const std::vector<int>& idxs, TVectorDFast& ret) const
+  // variables held fixed at zero.
+  void Solve(const std::vector<int>& idxs, TVectorDFast& ret) const
   {
     const int N_sub = idxs.size();
 
-    if(N_sub == 0) return false;
+    if(N_sub == 0) return;
 
-    // Surprisingly it's faster to accumulate this densely and sparsen after
     TMatrixDFast A_sub(N_sub, N_sub);
     TVectorDFast B_sub(N_sub);
 
@@ -258,19 +210,13 @@ public:
       B_sub[i] = B[idxs[i]];
     }
 
+    //    TDecompLU d(A_sub);
+    //    bool ok;
+    //    const TVectorDFast proposed = d.Solve(B_sub, ok);
+
     const TVectorDFast proposed = RowReductionSolver(A_sub, B_sub);
 
-#if 0
-    const TMatrixDSparse sparse(A_sub);
-    TDecompSparse decomp(sparse, 0/*verbosity*/);
-    bool ok;
-    const TVectorDFast proposed = decomp.Solve(B_sub, ok);
-    if(!ok) return false;
-#endif
-
     for(int i = 0; i < N_sub; ++i) ret[idxs[i]] = proposed[i];
-
-    return true;
   }
 
 protected:
@@ -318,10 +264,32 @@ std::vector<LiteHit> consolidate(const TVectorDFast& alpha, const Kernel& kern)
 }
 
 // ----------------------------------------------------------------------------
-// Updates 'alpha' to the first position in direction 'step' where one of the
-// coordinates becomes zero. Adjusts 'pred' correspondingly. If there is no
-// such intercept, steps an arbitrary distance. Returns whether the step was
-// indeed to a wall.
+void take_step(const TVectorDFast& step,
+               TVectorDFast& alpha,
+               TVectorDFast& pred,
+               const Kernel& kern)
+{
+  alpha += step;
+
+  // Update the predictions
+  const int N = step.GetNrows();
+  const int range = kern.Range();
+
+  for(int j = 0; j < N; ++j){
+    // This check does seem to be worthwhile
+    if(step[j] != 0){
+      for(int i = std::max(0, j-range); i < std::min(N, j+range+1); ++i){
+        pred[i] += step[j]*kern(i-j);
+      }
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Updates 'alpha' by 'step', unless that position would have a negative
+// coordinate. In that case , update to the first position in direction 'step'
+// where one of the coordinates becomes zero. Adjusts 'pred'
+// correspondingly. Returns whether the step was indeed to a wall.
 bool project_to_wall(const TVectorDFast& step,
                      TVectorDFast& alpha,
                      TVectorDFast& pred,
@@ -329,7 +297,7 @@ bool project_to_wall(const TVectorDFast& step,
 {
   const int N = step.GetNrows();
 
-  double stepsize = std::numeric_limits<double>::infinity();;
+  double stepsize = 1; // try to take the full step
   int closestIdx = -1;
   for(int i = 0; i < N; ++i){
     // Stepping towards the wall, and our current smallest step would take us
@@ -340,31 +308,18 @@ bool project_to_wall(const TVectorDFast& step,
     }
   }
 
-  // Motion away from all walls, just step by the original step size
-  if(closestIdx == -1) stepsize = 1;
-
-  alpha += stepsize*step;
+  take_step(stepsize*step, alpha, pred, kern);
 
   if(closestIdx >= 0) alpha[closestIdx] = 0; // make sure to touch wall exactly
-
-  const int range = kern.Range();
-
-  for(int j = 0; j < N; ++j){
-    // This check does seem to be worthwhile
-    if(step[j] != 0){
-      for(int i = std::max(0, j-range); i < std::min(N, j+range+1); ++i){
-        pred[i] += stepsize*step[j]*kern(i-j);
-      }
-    }
-  }
 
   return closestIdx >= 0;
 }
 
 // ----------------------------------------------------------------------------
-std::vector<LiteHit> Fit(const std::vector<float>& yvec,
-                         const Kernel& kern)
+std::vector<LiteHit> Fit(const std::vector<float>& yvec, const Kernel& kern)
 {
+  // We follow the algorithm from "Efficient sparse coding algorithms", H. Lee
+  // et al.
   const int N = yvec.size();
   const int range = kern.Range();
 
@@ -381,9 +336,6 @@ std::vector<LiteHit> Fit(const std::vector<float>& yvec,
   // Prediction implied by those amplitudes - ditto
   TVectorDFast pred(N);
 
-  // The chisq at the current position
-  double chisq0 = chisq(y, pred, alpha);
-
   // Those parts of the derivative dchisq/dalpha that are independent of alpha
   TVectorDFast diff_static(N);
   for(int k = 0; k < N; ++k){
@@ -392,9 +344,6 @@ std::vector<LiteHit> Fit(const std::vector<float>& yvec,
     }
     diff_static[k] += L1_strength;
   }
-
-  std::vector<int> prevIdxs;
-  prevIdxs.reserve(N);
 
   for(int trial = 0; ; ++trial){
     // Update the derivative by adding the alpha-depending terms
@@ -408,106 +357,41 @@ std::vector<LiteHit> Fit(const std::vector<float>& yvec,
       }
     }
 
-    std::vector<int> idxs;
-    idxs.reserve(N);
-
-    // Proposed step for gradient descent. Step downhill, but not if we're
-    // against a wall and the step is out of the space.
-    TVectorDFast step = -1.*diff;
+    // Search for the variable at a physical boundary that has the largest
+    // derivative downwards into the space.
+    double bestDiff = 0;
+    int bestIdx = -1;
     for(int i = 0; i < N; ++i){
-      if(alpha[i] == 0 && step[i] < 0){
-        step[i] = 0;
-      }
-      else{
-        // All good, so this variable will be free in the fit
-        idxs.push_back(i);
+      if(alpha[i] == 0 && diff[i] < bestDiff){
+        bestDiff = diff[i];
+        bestIdx = i;
       }
     }
 
-    // If we have a different set of variables fixed to zero than before, then
-    // it is worth trying the exact fit again.
-    if(idxs != prevIdxs){
-      prevIdxs = idxs;
+    // There are no variables left that it would be advantageous to add, so
+    // we're done
+    if(bestIdx == -1) break;
 
-      const int N_sub = idxs.size();
+    while(true){
+      // The active set is all those variables not on boundaries, plus, in the
+      // first loop, the one most powerful variable from above.
+      std::vector<int> idxs;
+      for(int i = 0; i < N; ++i) if(alpha[i] > 0) idxs.push_back(i);
+      if(bestIdx >= 0){idxs.push_back(bestIdx); bestIdx = -1;}
 
-      if(N_sub == 0) return {}; // no hits at all
-
+      // Where the exact solution would want us to move
       TVectorDFast proposed(N);
-      bool ok = exact.Solve(idxs, proposed);
-      if(!ok) continue; // something went wrong, don't step
-
-      // If the exact solution is inside the space then this will be the
-      // ultimate solution.
-      for(int i = 0; i < N; ++i){
-        if(proposed[i] < 0) ok = false;
-      }
-
-      if(ok){
-        std::cout << "Exact solution after " << trial
-                  << " with " << N_sub << std::endl;
-
-        alpha = proposed;
-        break;
-      }
+      exact.Solve(idxs, proposed);
 
       // Do the subtraction this way to be certain we get exact zeros where we
       // expect.
-      TVectorDFast exactStep(N);
-      for(int i: idxs) exactStep[i] = proposed[i]-alpha[i];
+      TVectorDFast step(N);
+      for(int i: idxs) step[i] = proposed[i]-alpha[i];
 
-      // Step as far as we can towards the exact minimum (which is outside the
-      // space), and go around the loop again (now with a new set of idxs).
-      project_to_wall(exactStep, alpha, pred, kern);
-      chisq0 = chisq(y, pred, alpha);
-      continue;
-    }
-
-    // We didn't do the exact solution thing, so we should try to take our best
-    // step downhill instead.
-
-    // How much would the prediction change if we took the full step?
-    TVectorDFast predStep(N);
-    for(int i = 0; i < N; ++i){
-      // Whereas this check does seem to be worthwhile
-      if(step[i] != 0){
-        for(int j = std::max(0, i-range); j < std::min(N, i+range+1); ++j){
-          predStep[j] += step[i]*kern(i-j);
-        }
-      }
-    }
-
-    // Step all the way to the wall (or random distance otherwise)
-    TVectorDFast alpha2 = alpha;
-    TVectorDFast pred2 = pred;
-    const bool toWall = project_to_wall(step, alpha2, pred2, kern);
-
-    // Also step half that distance
-    const TVectorDFast alpha1 = .5*(alpha + alpha2);
-    const TVectorDFast pred1 = .5*(pred + pred2);
-
-    // And then we'll interpolate the chisq and figure out the optimum step
-    const double chisq1 = chisq(y, pred1, alpha1);
-    const double chisq2 = chisq(y, pred2, alpha2);
-    const double opt_step = find_min(chisq0, chisq1, chisq2);
-
-    // If the optimum step is into open space, or not as far as the wall, take
-    // it
-    if(!toWall || opt_step < 1){
-      if(opt_step <= 0){ // TODO where do slightly negative values come from?
-        std::cout << "Zero step. Done" << std::endl;
-        break;
-      }
-
-      alpha = opt_step*alpha2 + (1-opt_step)*alpha;
-      pred  = opt_step*pred2  + (1-opt_step)*pred;
-      chisq0 = chisq(y, pred, alpha);
-    }
-    else{
-      // Otherwise take the full step to the wall
-      alpha = alpha2;
-      pred = pred2;
-      chisq0 = chisq2;
+      // Step as far as we can towards the exact minimum. If we hit a wall we
+      // remove that variable and go round again. If we don't hit any walls
+      // we'll break out and try to add a new variable.
+      if(!project_to_wall(step, alpha, pred, kern)) break;
     }
   } // end for trial
 
