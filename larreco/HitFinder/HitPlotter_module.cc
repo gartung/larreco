@@ -89,8 +89,14 @@ void HitPlotter::analyze(const art::Event& evt)
   art::Handle<std::vector<raw::RawDigit>> digs;
   evt.getByLabel(fRawDigitLabel, digs);
 
-  for(const raw::RawDigit& dig: *digs){
-    digmap[fGeom->ChannelToWire(dig.Channel())[0]] = &dig;
+  if(!digs.failedToGet()){
+    for(const raw::RawDigit& dig: *digs){
+      digmap[fGeom->ChannelToWire(dig.Channel())[0]] = &dig;
+    }
+  }
+  else if(!fRawDigitLabel.empty()){
+    std::cout << "HitPlotter: Warning, RawDigits not found under label '"
+              << fRawDigitLabel << "'" << std::endl;
   }
 
 
