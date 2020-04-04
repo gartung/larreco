@@ -1,4 +1,5 @@
-include_directories ( $ENV{G4INCLUDE} )
+include(${Geant4_USE_FILE})
+include_directories ( ${Geant4_INCLUDE_DIRS} )
 
 art_make(MODULE_LIBRARIES
            larreco_RecoAlg
@@ -6,4 +7,3 @@ art_make(MODULE_LIBRARIES
          )
 install_headers()
 install_fhicl()
-install_source()

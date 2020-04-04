@@ -13,15 +13,14 @@ art_make(LIB_LIBRARIES
            nusimdata_SimulationBase
            ${ART_FRAMEWORK_SERVICES_REGISTRY}
            ${ART_ROOT_IO_TFILE_SUPPORT}
-           ${ROOT_CORE}
-           ${ROOT_PHYSICS}
+           ROOT::Core
+           ROOT::Physics
            ${ART_ROOT_IO_TFILESERVICE_SERVICE}
            ${MF_MESSAGELOGGER}
          )
 
 install_headers()
 install_fhicl()
-install_source()
 
 add_subdirectory(RStarTree)
 add_subdirectory(TrackShowerSplitter)

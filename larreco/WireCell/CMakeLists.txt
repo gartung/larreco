@@ -4,15 +4,14 @@ art_make(MODULE_LIBRARIES
            lardataobj_RecoBase
            nusimdata_SimulationBase
            ${ART_FRAMEWORK_SERVICES_REGISTRY}
-           ${ROOT_CORE}
-           ${ROOT_RIO}
-           ${ROOT_TREE}
            ${MF_MESSAGELOGGER}
-           ${ROOT_EG}
-           ${ROOT_HIST}
-           ${ROOT_PHYSICS}
+           ROOT::Core
+           ROOT::RIO
+           ROOT::Tree
+           ROOT::EG
+           ROOT::Hist
+           ROOT::Physics
         )
 
 # install_headers()
 install_fhicl()
-install_source()

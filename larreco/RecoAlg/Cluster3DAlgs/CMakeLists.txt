@@ -1,5 +1,5 @@
 cet_enable_asserts()
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-int-in-bool-context")
 add_subdirectory(ConvexHull)
 add_subdirectory(Voronoi)
 add_subdirectory(PathFinding)
@@ -13,12 +13,12 @@ art_make(LIB_LIBRARIES
            ${ART_FRAMEWORK_PRINCIPAL}
            ${ART_FRAMEWORK_SERVICES_REGISTRY}
            ${ART_ROOT_IO_TFILE_SUPPORT}
-           ${ROOT_CORE}
-           ${ROOT_GPAD}
-           ${ROOT_HIST}
-           ${ROOT_MATRIX}
-           ${ROOT_PHYSICS}
-           ${ROOT_TREE}
+           ROOT::Core
+           ROOT::Gpad
+           ROOT::Hist
+           ROOT::Matrix
+           ROOT::Physics
+           ROOT::Tree
            ${ART_ROOT_IO_TFILESERVICE_SERVICE}
            art_Persistency_Provenance
            canvas

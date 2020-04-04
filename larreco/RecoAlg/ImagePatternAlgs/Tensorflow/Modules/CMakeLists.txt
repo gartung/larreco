@@ -18,7 +18,7 @@ art_make( MODULE_LIBRARIES
 		canvas
 		${MF_MESSAGELOGGER}	
 		cetlib cetlib_except
-		${ROOT_BASIC_LIB_LIST}
+		${ROOT_LIBRARIES}
 )
 
 install_fhicl()

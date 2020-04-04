@@ -1,4 +1,4 @@
-include_directories ( $ENV{TENSORFLOW_INC}/eigen )
+include_directories ( ${TENSORFLOW_INC}/eigen )
 
 add_subdirectory(PointIdAlg)
 add_subdirectory(TF)

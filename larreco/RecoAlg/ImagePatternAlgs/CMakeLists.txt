@@ -1,5 +1,5 @@
 # not ready for c2 yet
-if( DEFINED ENV{TENSORFLOW_DIR} )
+if( TENSORFLOW_DIR )
   add_subdirectory(Tensorflow)
 endif ()
 add_subdirectory(DataProvider)

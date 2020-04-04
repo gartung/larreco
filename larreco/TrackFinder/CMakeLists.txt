@@ -1,4 +1,4 @@
-include_directories ($ENV{G4INCLUDE})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 art_make(EXCLUDE
            Track3DKalman_module.cc
@@ -8,7 +8,7 @@ art_make(EXCLUDE
          MODULE_LIBRARIES
            larreco_RecoAlg
            nug4_MagneticField_MagneticField_service
-           ${ROOT_CORE}
+           ${ROOT_Core_LIBRARY}
            ${MF_MESSAGELOGGER}
          )
 
@@ -21,11 +21,11 @@ simple_plugin(Track3DKalman "module"
                 ${ART_FRAMEWORK_SERVICES_REGISTRY}
                 ${ART_ROOT_IO_TFILESERVICE_SERVICE}
                 ${ART_ROOT_IO_TFILE_SUPPORT}
-                ${CLHEP}
-                ${ROOT_CORE}
-                ${ROOT_MATRIX}
-                ${ROOT_PHYSICS}
-                ${ROOT_TREE}
+                ${CLHEP_LIBRARIES}
+                ROOT::Core
+                ROOT::Matrix
+                ROOT::Physics
+                ROOT::Tree
                 ${MF_MESSAGELOGGER}
               )
 
@@ -38,11 +38,11 @@ simple_plugin(Track3DKalmanSPS "module"
                 ${ART_ROOT_IO_TFILESERVICE_SERVICE}
                 ${ART_ROOT_IO_TFILE_SUPPORT}
                 ${MF_MESSAGELOGGER}
-                ${ROOT_CORE}
-                ${ROOT_HIST}
-                ${ROOT_MATRIX}
-                ${ROOT_PHYSICS}
-                ${ROOT_TREE}
+                ROOT::Core
+                ROOT::Hist
+                ROOT::Matrix
+                ROOT::Physics
+                ROOT::Tree
               )
 
 simple_plugin(KalmanFilterFitTrackMaker "tool"
@@ -53,4 +53,3 @@ simple_plugin(KalmanFilterFitTrackMaker "tool"
 
 install_headers()
 install_fhicl()
-install_source()

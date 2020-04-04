@@ -8,17 +8,16 @@ art_make(LIB_LIBRARIES
            ${MF_MESSAGELOGGER}
            ${FHICLCPP}
            cetlib_except
-           ${ROOT_CORE}
-           ${ROOT_PHYSICS}
+           ROOT::Core
+           ROOT::Physics
          MODULE_LIBRARIES
            larcorealg_Geometry
            larreco_Calorimetry
-           ${ROOT_CORE}
-           ${ROOT_HIST}
-           ${ROOT_PHYSICS}
+           ROOT::Core
+           ROOT::Hist
+           ROOT::Physics
            ${MF_MESSAGELOGGER}
          )
 
 install_headers()
 install_fhicl()
-install_source()

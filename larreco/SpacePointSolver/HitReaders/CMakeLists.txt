@@ -7,4 +7,3 @@ art_make(TOOL_LIBRARIES
 
 install_headers()
 install_fhicl()
-install_source()

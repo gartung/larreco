@@ -5,8 +5,8 @@ art_make(BASENAME_ONLY
          LIB_LIBRARIES
            larcorealg_Geometry
            ${ART_FRAMEWORK_SERVICES_REGISTRY}
-           ${ROOT_CORE}
-           ${ROOT_PHYSICS}
+           ROOT::Core
+           ROOT::Physics
            canvas
            cetlib_except
          MODULE_LIBRARIES
@@ -16,10 +16,9 @@ art_make(BASENAME_ONLY
            lardata_ArtDataHelper
            larreco_SpacePointSolver
            ${ART_FRAMEWORK_SERVICES_REGISTRY}
-           ${ROOT_CORE}
-           ${ROOT_HIST}
+           ROOT::Core
+           ROOT::Hist
         )
 
 install_headers()
 install_fhicl()
-install_source()
